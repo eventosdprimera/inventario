@@ -1,5 +1,5 @@
 // Inicializar Supabase usando las credenciales de config.js
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let heartbeatInterval = null;
 
@@ -17,7 +17,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     
     try {
         // PASO 1: Verificar si ya existe una sesión activa para este email
-        const { data: sesionExistente, error: errorVerificacion } = await supabase
+        const { data: sesionExistente, error: errorVerificacion } = await supabaseClient
             .from('sesiones_activas')
             .select('*')
             .eq('email', email)
@@ -36,7 +36,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
                 return;
             } else {
                 // Sesión expirada, eliminarla
-                await supabase
+                await supabaseClient
                     .from('sesiones_activas')
                     .delete()
                     .eq('email', email);
@@ -44,7 +44,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         }
         
         // PASO 2: Intentar iniciar sesión con Supabase Auth
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
             email: email,
             password: password
         });
@@ -58,7 +58,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         
         if (data.session) {
             // PASO 3: Registrar la nueva sesión activa
-            await supabase
+            await supabaseClient
                 .from('sesiones_activas')
                 .upsert({
                     user_id: data.session.user.id,
@@ -95,7 +95,7 @@ function iniciarHeartbeat(email) {
     
     heartbeatInterval = setInterval(async () => {
         try {
-            await supabase
+            await supabaseClient
                 .from('sesiones_activas')
                 .update({ last_activity: new Date().toISOString() })
                 .eq('email', email);
@@ -113,8 +113,7 @@ window.addEventListener('beforeunload', async () => {
             const session = JSON.parse(sessionStr);
             const email = session.user?.email;
             if (email) {
-                // Usar fetch con keepalive para que se ejecute aunque se cierre la página
-                await supabase
+                await supabaseClient
                     .from('sesiones_activas')
                     .delete()
                     .eq('email', email);
@@ -134,7 +133,7 @@ function mostrarMensaje(texto, tipo) {
 
 // Verificar si ya hay una sesión activa
 async function verificarSesion() {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await supabaseClient.auth.getSession();
     
     if (session) {
         window.location.href = 'dashboard.html';
