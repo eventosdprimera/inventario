@@ -15,10 +15,6 @@ async function iniciarDashboard() {
         return;
     }
     
-    // Mostrar información del usuario
-    document.getElementById('usuarioNombre').textContent = session.user.email.split('@')[0];
-    document.getElementById('usuarioEmail').textContent = session.user.email;
-    
     // Obtener datos completos del usuario (incluyendo rol)
     await cargarDatosUsuario(session.user.email);
     
@@ -35,35 +31,6 @@ async function iniciarDashboard() {
     iniciarReloj();
 }
 
-// Iniciar reloj en tiempo real
-function iniciarReloj() {
-    function actualizarReloj() {
-        const ahora = new Date();
-        
-        // Formatear fecha
-        const opcionesFecha = { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-        };
-        const fechaTexto = ahora.toLocaleDateString('es-ES', opcionesFecha);
-        document.getElementById('fechaActual').textContent = fechaTexto.charAt(0).toUpperCase() + fechaTexto.slice(1);
-        
-        // Formatear hora
-        const horas = String(ahora.getHours()).padStart(2, '0');
-        const minutos = String(ahora.getMinutes()).padStart(2, '0');
-        const segundos = String(ahora.getSeconds()).padStart(2, '0');
-        document.getElementById('horaActual').textContent = `${horas}:${minutos}:${segundos}`;
-    }
-    
-    // Actualizar inmediatamente
-    actualizarReloj();
-    
-    // Actualizar cada segundo
-    relojInterval = setInterval(actualizarReloj, 1000);
-}
-
 // Cargar datos completos del usuario desde la tabla usuarios
 async function cargarDatosUsuario(email) {
     try {
@@ -73,31 +40,54 @@ async function cargarDatosUsuario(email) {
             .eq('email', email)
             .single();
         
+        // Mostrar correo en el header
+        document.getElementById('usuarioCorreo').textContent = email;
+        
         if (data && !error) {
             currentUserData = data;
             currentUserRol = data.rol || 'consultor';
             
-            // Actualizar nombre si existe
-            if (data.nombre) {
-                document.getElementById('usuarioNombre').textContent = data.nombre;
-            }
+            // Nombre en mayúsculas
+            const nombreCompleto = data.nombre || email.split('@')[0];
+            document.getElementById('perfilNombre').textContent = nombreCompleto.toUpperCase();
+            
+            // Generar iniciales para el avatar
+            const iniciales = generarIniciales(nombreCompleto);
+            document.getElementById('perfilFoto').textContent = iniciales;
+            
         } else {
             currentUserRol = 'consultor';
-            console.log('Usuario no encontrado en tabla usuarios, usando rol por defecto');
+            const nombre = email.split('@')[0];
+            document.getElementById('perfilNombre').textContent = nombre.toUpperCase();
+            document.getElementById('perfilFoto').textContent = generarIniciales(nombre);
         }
         
-        // Mostrar rol con estilo
-        const rolElement = document.getElementById('usuarioRol');
+        // Mostrar rol con estilo en el sidebar
+        const rolElement = document.getElementById('perfilRol');
         rolElement.textContent = currentUserRol.toUpperCase();
-        rolElement.className = `usuario-rol rol-${currentUserRol}`;
+        rolElement.className = `perfil-rol rol-${currentUserRol}`;
         
     } catch (err) {
         console.error('Error al cargar datos del usuario:', err);
         currentUserRol = 'consultor';
-        const rolElement = document.getElementById('usuarioRol');
+        
+        const nombre = email.split('@')[0];
+        document.getElementById('perfilNombre').textContent = nombre.toUpperCase();
+        document.getElementById('perfilFoto').textContent = generarIniciales(nombre);
+        
+        const rolElement = document.getElementById('perfilRol');
         rolElement.textContent = 'CONSULTOR';
-        rolElement.className = 'usuario-rol rol-consultor';
+        rolElement.className = 'perfil-rol rol-consultor';
     }
+}
+
+// Generar iniciales del nombre
+function generarIniciales(nombre) {
+    const palabras = nombre.trim().split(/\s+/);
+    if (palabras.length === 1) {
+        return palabras[0].substring(0, 2).toUpperCase();
+    }
+    return (palabras[0][0] + palabras[palabras.length - 1][0]).toUpperCase();
 }
 
 // Aplicar permisos según el rol del usuario
@@ -110,29 +100,24 @@ function aplicarPermisosPorRol() {
         
         submenuBtns.forEach(btn => {
             const action = btn.dataset.action;
-            const operacion = action.split('-')[1]; // registrar, modificar, eliminar
+            const operacion = action.split('-')[1];
             
-            // Lógica de permisos por rol
             let permitido = false;
             
             if (currentUserRol === 'administrador') {
-                // Administrador: acceso total
                 permitido = true;
             } else if (currentUserRol === 'moderador') {
-                // Moderador: puede registrar y modificar, pero no eliminar (excepto en consulta)
                 if (operacion === 'registrar' || operacion === 'modificar') {
                     permitido = true;
                 } else if (operacion === 'eliminar' && menuName === 'consulta') {
                     permitido = true;
                 }
             } else if (currentUserRol === 'consultor') {
-                // Consultor: solo puede ver/modificar en consulta, no puede registrar ni eliminar
-                if (menuName === 'consulta' && (operacion === 'modificar')) {
+                if (menuName === 'consulta' && operacion === 'modificar') {
                     permitido = true;
                 }
             }
             
-            // Ocultar o deshabilitar botón según permisos
             if (!permitido) {
                 btn.style.display = 'none';
             } else {
@@ -140,8 +125,6 @@ function aplicarPermisosPorRol() {
             }
         });
         
-        // Si no hay submenús visibles, ocultar el menú principal
-        const visibleSubmenus = item.querySelectorAll('.submenu-btn[style="display: block"], .submenu-btn:not([style])');
         const allHidden = Array.from(item.querySelectorAll('.submenu-btn')).every(btn => btn.style.display === 'none');
         
         if (allHidden && currentUserRol !== 'administrador') {
@@ -161,7 +144,6 @@ function configurarMenu() {
             const menuName = btn.dataset.menu;
             const submenu = document.getElementById(`submenu-${menuName}`);
             
-            // Cerrar otros submenús
             document.querySelectorAll('.submenu').forEach(sm => {
                 if (sm.id !== `submenu-${menuName}`) {
                     sm.classList.remove('open');
@@ -174,21 +156,17 @@ function configurarMenu() {
                 }
             });
             
-            // Toggle menú actual
             btn.classList.toggle('active');
             submenu.classList.toggle('open');
         });
     });
     
-    // Configurar botones de submenú
     const submenuBtns = document.querySelectorAll('.submenu-btn');
     submenuBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            // Remover active de todos
             submenuBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             
-            // Cargar contenido
             const action = btn.dataset.action;
             cargarContenido(action);
         });
@@ -697,6 +675,30 @@ function generarFormularioReportes(operacion) {
     }
 }
 
+// Iniciar reloj en tiempo real
+function iniciarReloj() {
+    function actualizarReloj() {
+        const ahora = new Date();
+        
+        const opcionesFecha = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        };
+        const fechaTexto = ahora.toLocaleDateString('es-ES', opcionesFecha);
+        document.getElementById('fechaActual').textContent = fechaTexto.charAt(0).toUpperCase() + fechaTexto.slice(1);
+        
+        const horas = String(ahora.getHours()).padStart(2, '0');
+        const minutos = String(ahora.getMinutes()).padStart(2, '0');
+        const segundos = String(ahora.getSeconds()).padStart(2, '0');
+        document.getElementById('horaActual').textContent = `${horas}:${minutos}:${segundos}`;
+    }
+    
+    actualizarReloj();
+    relojInterval = setInterval(actualizarReloj, 1000);
+}
+
 // Heartbeat
 function iniciarHeartbeat(email) {
     if (heartbeatInterval) clearInterval(heartbeatInterval);
@@ -717,7 +719,7 @@ function iniciarHeartbeat(email) {
 document.getElementById('btnLogout').addEventListener('click', async () => {
     const btn = document.getElementById('btnLogout');
     btn.disabled = true;
-    btn.textContent = 'Cerrando...';
+    btn.textContent = '🚪 Cerrando...';
     
     try {
         const { data: { session } } = await supabaseClient.auth.getSession();
@@ -744,7 +746,7 @@ document.getElementById('btnLogout').addEventListener('click', async () => {
     } catch (err) {
         console.error('Error al cerrar sesión:', err);
         btn.disabled = false;
-        btn.textContent = 'Cerrar Sesión';
+        btn.textContent = '🚪 Cerrar Sesión';
     }
 });
 
