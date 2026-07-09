@@ -101,32 +101,6 @@
             color: white;
         }
 
-        /* FECHA Y HORA - Al lado derecho del usuario */
-        .fecha-hora {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background-color: rgba(255, 255, 255, 0.15);
-            padding: 6px 12px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            min-width: 140px;
-        }
-
-        .fecha {
-            font-size: 10px;
-            font-weight: 500;
-            margin-bottom: 2px;
-            text-transform: capitalize;
-        }
-
-        .hora {
-            font-size: 14px;
-            font-weight: 700;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 0.5px;
-        }
-
         .btn-logout {
             background-color: rgba(255, 255, 255, 0.2);
             color: white;
@@ -158,6 +132,8 @@
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
             overflow-y: auto;
             padding: 20px 0;
+            display: flex;
+            flex-direction: column;
         }
 
         .sidebar-titulo {
@@ -250,6 +226,46 @@
             color: #1e3a8a;
             font-weight: 600;
             background-color: #dbeafe;
+        }
+
+        /* FECHA Y HORA EN SIDEBAR */
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 15px 20px;
+            border-top: 2px solid #e5e7eb;
+            text-align: center;
+        }
+
+        .fecha-hora {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #bfdbfe;
+        }
+
+        .fecha-hora-label {
+            font-size: 10px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .fecha {
+            font-size: 12px;
+            color: #1e3a8a;
+            font-weight: 500;
+            margin-bottom: 4px;
+            text-transform: capitalize;
+        }
+
+        .hora {
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            color: #1e3a8a;
+            letter-spacing: 1px;
         }
 
         /* CONTENIDO PRINCIPAL */
@@ -465,18 +481,6 @@
         }
 
         /* RESPONSIVE */
-        @media (max-width: 1024px) {
-            .header {
-                flex-wrap: wrap;
-                gap: 15px;
-            }
-
-            .header-usuario {
-                flex-wrap: wrap;
-                justify-content: flex-end;
-            }
-        }
-
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -490,7 +494,7 @@
 
             .sidebar {
                 width: 100%;
-                max-height: 300px;
+                max-height: 400px;
             }
 
             .content {
@@ -508,15 +512,6 @@
             .welcome-card h2 {
                 font-size: 22px;
             }
-
-            .header-usuario {
-                flex-direction: column;
-                align-items: flex-end;
-            }
-
-            .fecha-hora {
-                min-width: 120px;
-            }
         }
     </style>
 </head>
@@ -529,12 +524,6 @@
         </div>
         
         <div class="header-usuario">
-            <!-- FECHA Y HORA AL LADO DERECHO DEL USUARIO -->
-            <div class="fecha-hora">
-                <div class="fecha" id="fechaActual">Cargando...</div>
-                <div class="hora" id="horaActual">00:00:00</div>
-            </div>
-            
             <div class="usuario-info">
                 <div class="usuario-nombre" id="usuarioNombre">Usuario</div>
                 <div class="usuario-email" id="usuarioEmail">email@ejemplo.com</div>
@@ -612,6 +601,15 @@
                     <button class="submenu-btn" data-action="reportes-registrar">Registrar</button>
                     <button class="submenu-btn" data-action="reportes-modificar">Modificar</button>
                     <button class="submenu-btn" data-action="reportes-eliminar">Eliminar</button>
+                </div>
+            </div>
+
+            <!-- FECHA Y HORA AL FINAL DEL SIDEBAR -->
+            <div class="sidebar-footer">
+                <div class="fecha-hora">
+                    <div class="fecha-hora-label">📅 Fecha y Hora</div>
+                    <div class="fecha" id="fechaActual">Cargando...</div>
+                    <div class="hora" id="horaActual">00:00:00</div>
                 </div>
             </div>
         </aside>
