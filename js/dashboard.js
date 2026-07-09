@@ -4,6 +4,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 let heartbeatInterval = null;
 let currentUserRol = 'consultor';
 let currentUserData = null;
+let relojInterval = null;
 
 // Verificar sesión al cargar
 async function iniciarDashboard() {
@@ -29,6 +30,38 @@ async function iniciarDashboard() {
     
     // Aplicar permisos según rol
     aplicarPermisosPorRol();
+    
+    // Iniciar reloj
+    iniciarReloj();
+}
+
+// Iniciar reloj en tiempo real
+function iniciarReloj() {
+    function actualizarReloj() {
+        const ahora = new Date();
+        
+        // Formatear fecha
+        const opcionesFecha = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        };
+        const fechaTexto = ahora.toLocaleDateString('es-ES', opcionesFecha);
+        document.getElementById('fechaActual').textContent = fechaTexto.charAt(0).toUpperCase() + fechaTexto.slice(1);
+        
+        // Formatear hora
+        const horas = String(ahora.getHours()).padStart(2, '0');
+        const minutos = String(ahora.getMinutes()).padStart(2, '0');
+        const segundos = String(ahora.getSeconds()).padStart(2, '0');
+        document.getElementById('horaActual').textContent = `${horas}:${minutos}:${segundos}`;
+    }
+    
+    // Actualizar inmediatamente
+    actualizarReloj();
+    
+    // Actualizar cada segundo
+    relojInterval = setInterval(actualizarReloj, 1000);
 }
 
 // Cargar datos completos del usuario desde la tabla usuarios
@@ -698,6 +731,10 @@ document.getElementById('btnLogout').addEventListener('click', async () => {
         
         if (heartbeatInterval) {
             clearInterval(heartbeatInterval);
+        }
+        
+        if (relojInterval) {
+            clearInterval(relojInterval);
         }
         
         await supabaseClient.auth.signOut();
