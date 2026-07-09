@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Inventario - Eventos D' Primera</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,7 +15,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f5f7fa;
             min-height: 100vh;
             display: flex;
@@ -67,12 +70,14 @@
         }
 
         .titulo-sistema {
+            font-family: 'Playfair Display', serif;
             color: #1e3a8a;
             text-align: center;
-            font-size: 22px;
+            font-size: 24px;
             font-weight: 700;
             margin-bottom: 8px;
             letter-spacing: 0.5px;
+            line-height: 1.3;
         }
 
         .subtitulo-sistema {
@@ -105,6 +110,7 @@
             font-size: 14px;
             transition: all 0.3s;
             background-color: #f9fafb;
+            font-family: 'Poppins', sans-serif;
         }
 
         .form-group input:focus {
@@ -128,6 +134,7 @@
             margin-top: 10px;
             letter-spacing: 0.5px;
             box-shadow: 0 4px 15px rgba(30, 58, 138, 0.3);
+            font-family: 'Poppins', sans-serif;
         }
 
         .btn-login:hover {
@@ -193,6 +200,7 @@
         .copyright strong {
             color: #6b7280;
             font-weight: 600;
+            font-size: 12px;
         }
 
         @media (max-width: 480px) {
@@ -202,7 +210,7 @@
             }
 
             .titulo-sistema {
-                font-size: 18px;
+                font-size: 20px;
             }
 
             .subtitulo-sistema {
