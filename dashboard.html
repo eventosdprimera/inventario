@@ -55,37 +55,10 @@
             font-weight: 700;
         }
 
-        .header-center {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .fecha-hora {
-            text-align: center;
-            background-color: rgba(255, 255, 255, 0.15);
-            padding: 8px 20px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .fecha {
-            font-size: 13px;
-            font-weight: 500;
-            margin-bottom: 2px;
-        }
-
-        .hora {
-            font-size: 18px;
-            font-weight: 700;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 1px;
-        }
-
         .header-usuario {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 20px;
         }
 
         .usuario-info {
@@ -126,6 +99,32 @@
         .rol-consultor {
             background-color: #10b981;
             color: white;
+        }
+
+        /* FECHA Y HORA - Al lado derecho del usuario */
+        .fecha-hora {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.15);
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-width: 140px;
+        }
+
+        .fecha {
+            font-size: 10px;
+            font-weight: 500;
+            margin-bottom: 2px;
+            text-transform: capitalize;
+        }
+
+        .hora {
+            font-size: 14px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.5px;
         }
 
         .btn-logout {
@@ -288,7 +287,7 @@
         .welcome-card .subtitle {
             color: #6b7280;
             font-size: 14px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             font-weight: 500;
         }
 
@@ -296,9 +295,9 @@
             color: #4b5563;
             font-size: 15px;
             line-height: 1.8;
-            max-width: 700px;
-            margin: 0 auto 20px;
+            margin: 0 auto 25px;
             text-align: justify;
+            padding: 0 20px;
         }
 
         .welcome-card .mensaje-bienvenida {
@@ -472,10 +471,9 @@
                 gap: 15px;
             }
 
-            .header-center {
-                order: 3;
-                width: 100%;
-                justify-content: center;
+            .header-usuario {
+                flex-wrap: wrap;
+                justify-content: flex-end;
             }
         }
 
@@ -510,6 +508,15 @@
             .welcome-card h2 {
                 font-size: 22px;
             }
+
+            .header-usuario {
+                flex-direction: column;
+                align-items: flex-end;
+            }
+
+            .fecha-hora {
+                min-width: 120px;
+            }
         }
     </style>
 </head>
@@ -521,14 +528,13 @@
             <div class="header-titulo">Sistema de Inventario</div>
         </div>
         
-        <div class="header-center">
+        <div class="header-usuario">
+            <!-- FECHA Y HORA AL LADO DERECHO DEL USUARIO -->
             <div class="fecha-hora">
                 <div class="fecha" id="fechaActual">Cargando...</div>
                 <div class="hora" id="horaActual">00:00:00</div>
             </div>
-        </div>
-
-        <div class="header-usuario">
+            
             <div class="usuario-info">
                 <div class="usuario-nombre" id="usuarioNombre">Usuario</div>
                 <div class="usuario-email" id="usuarioEmail">email@ejemplo.com</div>
@@ -619,7 +625,7 @@
                 <p class="subtitle">Selecciona una opción del menú para comenzar</p>
                 
                 <p class="descripcion">
-                    El <strong>Sistema de Inventario de Eventos D' Primera</strong> es una plataforma integral diseñada para gestionar de manera eficiente todos los recursos, productos y eventos de nuestra organización. Con este sistema podrás controlar el inventario en tiempo real, registrar eventos, administrar usuarios y generar reportes detallados que te permitirán tomar decisiones informadas para el crecimiento de tu negocio.
+                    El <strong>Sistema de Inventario de Eventos D' Primera</strong> es una plataforma integral diseñada para gestionar de manera eficiente todos los recursos, productos y eventos de nuestra organización. Con este sistema podrás controlar el inventario en tiempo real, registrar eventos, administrar usuarios y generar reportes detallados que te permitirán tomar decisiones informadas para el crecimiento de tu negocio. Nuestra solución tecnológica ha sido desarrollada pensando en las necesidades específicas del sector de eventos, ofreciendo herramientas intuitivas y poderosas que facilitan la gestión diaria. Desde el control de stock de productos hasta la planificación y ejecución de eventos, cada módulo ha sido cuidadosamente diseñado para optimizar los procesos, reducir errores y mejorar la productividad de todo el equipo. El sistema cuenta con una interfaz amigable que permite a los usuarios navegar fácilmente entre las diferentes secciones, acceder a la información relevante en todo momento y realizar operaciones de manera rápida y segura. Además, la plataforma se actualiza constantemente para incorporar nuevas funcionalidades y mejoras basadas en el feedback de nuestros usuarios, garantizando siempre la mejor experiencia posible.
                 </p>
 
                 <div class="mensaje-bienvenida">
