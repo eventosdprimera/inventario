@@ -3,6 +3,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 
 let heartbeatInterval = null;
 let currentUserRol = 'consultor';
+let currentUserData = null;
 
 // Verificar sesión al cargar
 async function iniciarDashboard() {
@@ -17,43 +18,105 @@ async function iniciarDashboard() {
     document.getElementById('usuarioNombre').textContent = session.user.email.split('@')[0];
     document.getElementById('usuarioEmail').textContent = session.user.email;
     
-    // Obtener rol del usuario
-    await cargarRolUsuario(session.user.email);
+    // Obtener datos completos del usuario (incluyendo rol)
+    await cargarDatosUsuario(session.user.email);
     
     // Iniciar heartbeat
     iniciarHeartbeat(session.user.email);
     
     // Configurar menú
     configurarMenu();
+    
+    // Aplicar permisos según rol
+    aplicarPermisosPorRol();
 }
 
-// Cargar rol del usuario
-async function cargarRolUsuario(email) {
+// Cargar datos completos del usuario desde la tabla usuarios
+async function cargarDatosUsuario(email) {
     try {
         const { data, error } = await supabaseClient
-            .from('roles_usuario')
-            .select('rol')
+            .from('usuarios')
+            .select('*')
             .eq('email', email)
             .single();
         
         if (data && !error) {
-            currentUserRol = data.rol;
+            currentUserData = data;
+            currentUserRol = data.rol || 'consultor';
+            
+            // Actualizar nombre si existe
+            if (data.nombre) {
+                document.getElementById('usuarioNombre').textContent = data.nombre;
+            }
         } else {
             currentUserRol = 'consultor';
+            console.log('Usuario no encontrado en tabla usuarios, usando rol por defecto');
         }
         
         // Mostrar rol con estilo
         const rolElement = document.getElementById('usuarioRol');
-        rolElement.textContent = currentUserRol;
+        rolElement.textContent = currentUserRol.toUpperCase();
         rolElement.className = `usuario-rol rol-${currentUserRol}`;
         
     } catch (err) {
-        console.error('Error al cargar rol:', err);
+        console.error('Error al cargar datos del usuario:', err);
         currentUserRol = 'consultor';
         const rolElement = document.getElementById('usuarioRol');
-        rolElement.textContent = 'consultor';
+        rolElement.textContent = 'CONSULTOR';
         rolElement.className = 'usuario-rol rol-consultor';
     }
+}
+
+// Aplicar permisos según el rol del usuario
+function aplicarPermisosPorRol() {
+    const menuItems = document.querySelectorAll('.menu-item');
+    
+    menuItems.forEach(item => {
+        const menuName = item.querySelector('.menu-btn').dataset.menu;
+        const submenuBtns = item.querySelectorAll('.submenu-btn');
+        
+        submenuBtns.forEach(btn => {
+            const action = btn.dataset.action;
+            const operacion = action.split('-')[1]; // registrar, modificar, eliminar
+            
+            // Lógica de permisos por rol
+            let permitido = false;
+            
+            if (currentUserRol === 'administrador') {
+                // Administrador: acceso total
+                permitido = true;
+            } else if (currentUserRol === 'moderador') {
+                // Moderador: puede registrar y modificar, pero no eliminar (excepto en consulta)
+                if (operacion === 'registrar' || operacion === 'modificar') {
+                    permitido = true;
+                } else if (operacion === 'eliminar' && menuName === 'consulta') {
+                    permitido = true;
+                }
+            } else if (currentUserRol === 'consultor') {
+                // Consultor: solo puede ver/modificar en consulta, no puede registrar ni eliminar
+                if (menuName === 'consulta' && (operacion === 'modificar')) {
+                    permitido = true;
+                }
+            }
+            
+            // Ocultar o deshabilitar botón según permisos
+            if (!permitido) {
+                btn.style.display = 'none';
+            } else {
+                btn.style.display = 'block';
+            }
+        });
+        
+        // Si no hay submenús visibles, ocultar el menú principal
+        const visibleSubmenus = item.querySelectorAll('.submenu-btn[style="display: block"], .submenu-btn:not([style])');
+        const allHidden = Array.from(item.querySelectorAll('.submenu-btn')).every(btn => btn.style.display === 'none');
+        
+        if (allHidden && currentUserRol !== 'administrador') {
+            item.style.display = 'none';
+        } else {
+            item.style.display = 'block';
+        }
+    });
 }
 
 // Configurar menú lateral
@@ -435,7 +498,7 @@ function generarFormularioUsuarios(operacion) {
                         <select>
                             <option value="administrador">Administrador</option>
                             <option value="moderador">Moderador</option>
-                            <option value="consultor">Consultor</option>
+                            <option value="consultor" selected>Consultor</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -455,23 +518,22 @@ function generarFormularioUsuarios(operacion) {
                 <div class="form-group">
                     <label>Seleccionar Usuario</label>
                     <select>
-                        <option>Usuario #001</option>
-                        <option>Usuario #002</option>
+                        <option>eventosdprimera@gmail.com</option>
                     </select>
                 </div>
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Nombre Completo</label>
-                        <input type="text">
+                        <input type="text" value="eventos de primera">
                     </div>
                     <div class="form-group">
                         <label>Email</label>
-                        <input type="email">
+                        <input type="email" value="eventosdprimera@gmail.com">
                     </div>
                     <div class="form-group">
                         <label>Rol</label>
                         <select>
-                            <option value="administrador">Administrador</option>
+                            <option value="administrador" selected>Administrador</option>
                             <option value="moderador">Moderador</option>
                             <option value="consultor">Consultor</option>
                         </select>
@@ -498,10 +560,10 @@ function generarFormularioUsuarios(operacion) {
                         </thead>
                         <tbody>
                             <tr>
-                                <td>U001</td>
-                                <td>Usuario Ejemplo</td>
-                                <td>ejemplo@correo.com</td>
-                                <td>Consultor</td>
+                                <td>06b7b932...</td>
+                                <td>eventos de primera</td>
+                                <td>eventosdprimera@gmail.com</td>
+                                <td>administrador</td>
                             </tr>
                         </tbody>
                     </table>
