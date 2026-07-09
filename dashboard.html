@@ -55,6 +55,33 @@
             font-weight: 700;
         }
 
+        .header-center {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .fecha-hora {
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.15);
+            padding: 8px 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .fecha {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .hora {
+            font-size: 18px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+        }
+
         .header-usuario {
             display: flex;
             align-items: center;
@@ -233,25 +260,60 @@
             overflow-y: auto;
         }
 
+        /* BIENVENIDA */
         .welcome-card {
             background-color: white;
-            padding: 25px;
+            padding: 40px;
             border-radius: 15px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
             margin-bottom: 25px;
             border-left: 5px solid #1e3a8a;
+            text-align: center;
+        }
+
+        .welcome-logo {
+            max-width: 200px;
+            height: auto;
+            margin-bottom: 25px;
+            opacity: 0.9;
         }
 
         .welcome-card h2 {
             font-family: 'Libre Caslon Text', serif;
             color: #1e3a8a;
-            font-size: 22px;
-            margin-bottom: 8px;
+            font-size: 28px;
+            margin-bottom: 10px;
         }
 
-        .welcome-card p {
+        .welcome-card .subtitle {
             color: #6b7280;
             font-size: 14px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .welcome-card .descripcion {
+            color: #4b5563;
+            font-size: 15px;
+            line-height: 1.8;
+            max-width: 700px;
+            margin: 0 auto 20px;
+            text-align: justify;
+        }
+
+        .welcome-card .mensaje-bienvenida {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #3b82f6;
+            margin-top: 20px;
+        }
+
+        .welcome-card .mensaje-bienvenida p {
+            color: #1e3a8a;
+            font-size: 14px;
+            line-height: 1.6;
+            font-style: italic;
         }
 
         /* FIELDSET */
@@ -404,6 +466,19 @@
         }
 
         /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            .header {
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+
+            .header-center {
+                order: 3;
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -423,6 +498,18 @@
             .content {
                 padding: 15px;
             }
+
+            .welcome-card {
+                padding: 25px;
+            }
+
+            .welcome-logo {
+                max-width: 150px;
+            }
+
+            .welcome-card h2 {
+                font-size: 22px;
+            }
         }
     </style>
 </head>
@@ -433,6 +520,14 @@
             <img src="img/logo.png" alt="Logo" class="header-logo">
             <div class="header-titulo">Sistema de Inventario</div>
         </div>
+        
+        <div class="header-center">
+            <div class="fecha-hora">
+                <div class="fecha" id="fechaActual">Cargando...</div>
+                <div class="hora" id="horaActual">00:00:00</div>
+            </div>
+        </div>
+
         <div class="header-usuario">
             <div class="usuario-info">
                 <div class="usuario-nombre" id="usuarioNombre">Usuario</div>
@@ -519,8 +614,19 @@
         <main class="content">
             <!-- BIENVENIDA -->
             <div class="welcome-card">
+                <img src="img/logo.png" alt="Logo" class="welcome-logo">
                 <h2>Bienvenido al Sistema</h2>
-                <p>Selecciona una opción del menú para comenzar</p>
+                <p class="subtitle">Selecciona una opción del menú para comenzar</p>
+                
+                <p class="descripcion">
+                    El <strong>Sistema de Inventario de Eventos D' Primera</strong> es una plataforma integral diseñada para gestionar de manera eficiente todos los recursos, productos y eventos de nuestra organización. Con este sistema podrás controlar el inventario en tiempo real, registrar eventos, administrar usuarios y generar reportes detallados que te permitirán tomar decisiones informadas para el crecimiento de tu negocio.
+                </p>
+
+                <div class="mensaje-bienvenida">
+                    <p>
+                        💡 Nuestro sistema cuenta con tres niveles de acceso: <strong>Administrador</strong> con control total del sistema, <strong>Moderador</strong> con capacidad de gestión operativa, y <strong>Consultor</strong> con acceso de solo lectura. Cada usuario tiene permisos específicos según su rol para garantizar la seguridad y organización de la información.
+                    </p>
+                </div>
             </div>
 
             <!-- CONTENIDO DINÁMICO -->
