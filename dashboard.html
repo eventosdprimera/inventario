@@ -36,54 +36,108 @@
 
         .header-left {
             display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .header-logo {
-            width: 50px;
-            height: 50px;
-            object-fit: contain;
-            background-color: white;
-            border-radius: 8px;
-            padding: 5px;
+            flex-direction: column;
+            gap: 3px;
         }
 
         .header-titulo {
             font-family: 'Libre Caslon Text', serif;
-            font-size: 22px;
+            font-size: 24px;
             font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .header-subtitulo {
+            font-size: 12px;
+            opacity: 0.85;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            font-style: italic;
         }
 
         .header-usuario {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
         }
 
-        .usuario-info {
-            text-align: right;
+        .usuario-correo {
+            font-size: 13px;
+            font-weight: 500;
+            padding: 8px 16px;
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
         }
 
-        .usuario-nombre {
+        /* LAYOUT PRINCIPAL */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 280px;
+            background-color: white;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+            overflow-y: auto;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* PERFIL DE USUARIO EN SIDEBAR */
+        .perfil-usuario {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            padding: 25px 20px;
+            text-align: center;
+            color: white;
+            border-bottom: 3px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .perfil-foto {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e3a8a;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            text-transform: uppercase;
+        }
+
+        .perfil-foto img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .perfil-nombre {
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            word-break: break-word;
         }
 
-        .usuario-email {
-            font-size: 12px;
-            opacity: 0.9;
-        }
-
-        .usuario-rol {
+        .perfil-rol {
             display: inline-block;
-            padding: 3px 10px;
-            border-radius: 12px;
+            padding: 4px 14px;
+            border-radius: 15px;
             font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-top: 3px;
         }
 
         .rol-administrador {
@@ -101,39 +155,28 @@
             color: white;
         }
 
-        .btn-logout {
-            background-color: rgba(255, 255, 255, 0.2);
+        .btn-logout-sidebar {
+            margin-top: 12px;
+            background-color: rgba(255, 255, 255, 0.15);
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 8px 16px;
-            border-radius: 8px;
+            padding: 6px 14px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 500;
             transition: all 0.3s;
             font-family: 'Poppins', sans-serif;
         }
 
-        .btn-logout:hover {
-            background-color: rgba(255, 255, 255, 0.3);
+        .btn-logout-sidebar:hover {
+            background-color: rgba(255, 255, 255, 0.25);
         }
 
-        /* LAYOUT PRINCIPAL */
-        .main-container {
-            display: flex;
+        /* MENÚ */
+        .sidebar-menu {
             flex: 1;
-            overflow: hidden;
-        }
-
-        /* SIDEBAR */
-        .sidebar {
-            width: 280px;
-            background-color: white;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
-            overflow-y: auto;
             padding: 20px 0;
-            display: flex;
-            flex-direction: column;
         }
 
         .sidebar-titulo {
@@ -230,7 +273,6 @@
 
         /* FECHA Y HORA EN SIDEBAR */
         .sidebar-footer {
-            margin-top: auto;
             padding: 15px 20px;
             border-top: 2px solid #e5e7eb;
             text-align: center;
@@ -486,6 +528,7 @@
                 flex-direction: column;
                 gap: 15px;
                 padding: 15px;
+                text-align: center;
             }
 
             .main-container {
@@ -519,17 +562,12 @@
     <!-- HEADER -->
     <header class="header">
         <div class="header-left">
-            <img src="img/logo.png" alt="Logo" class="header-logo">
             <div class="header-titulo">Sistema de Inventario</div>
+            <div class="header-subtitulo">Gestión y administración automatizada de inventario</div>
         </div>
         
         <div class="header-usuario">
-            <div class="usuario-info">
-                <div class="usuario-nombre" id="usuarioNombre">Usuario</div>
-                <div class="usuario-email" id="usuarioEmail">email@ejemplo.com</div>
-                <div class="usuario-rol" id="usuarioRol">Cargando...</div>
-            </div>
-            <button class="btn-logout" id="btnLogout">Cerrar Sesión</button>
+            <div class="usuario-correo" id="usuarioCorreo">usuario@ejemplo.com</div>
         </div>
     </header>
 
@@ -537,70 +575,82 @@
     <div class="main-container">
         <!-- SIDEBAR -->
         <aside class="sidebar">
-            <div class="sidebar-titulo">Menú Principal</div>
-            
-            <!-- 1. CONSULTA -->
-            <div class="menu-item">
-                <button class="menu-btn" data-menu="consulta">
-                    <span><span class="menu-btn-icon">🔍</span>Consulta</span>
-                    <span class="menu-btn-arrow">▼</span>
-                </button>
-                <div class="submenu" id="submenu-consulta">
-                    <button class="submenu-btn" data-action="consulta-registrar">Registrar</button>
-                    <button class="submenu-btn" data-action="consulta-modificar">Modificar</button>
-                    <button class="submenu-btn" data-action="consulta-eliminar">Eliminar</button>
-                </div>
+            <!-- PERFIL DE USUARIO -->
+            <div class="perfil-usuario">
+                <div class="perfil-foto" id="perfilFoto">EP</div>
+                <div class="perfil-nombre" id="perfilNombre">EVENTOS DE PRIMERA</div>
+                <div class="perfil-rol" id="perfilRol">ADMINISTRADOR</div>
+                <br>
+                <button class="btn-logout-sidebar" id="btnLogout">🚪 Cerrar Sesión</button>
             </div>
 
-            <!-- 2. PRODUCTOS -->
-            <div class="menu-item">
-                <button class="menu-btn" data-menu="productos">
-                    <span><span class="menu-btn-icon">📦</span>Productos</span>
-                    <span class="menu-btn-arrow">▼</span>
-                </button>
-                <div class="submenu" id="submenu-productos">
-                    <button class="submenu-btn" data-action="productos-registrar">Registrar</button>
-                    <button class="submenu-btn" data-action="productos-modificar">Modificar</button>
-                    <button class="submenu-btn" data-action="productos-eliminar">Eliminar</button>
+            <!-- MENÚ -->
+            <div class="sidebar-menu">
+                <div class="sidebar-titulo">Menú Principal</div>
+                
+                <!-- 1. CONSULTA -->
+                <div class="menu-item">
+                    <button class="menu-btn" data-menu="consulta">
+                        <span><span class="menu-btn-icon">🔍</span>Consulta</span>
+                        <span class="menu-btn-arrow">▼</span>
+                    </button>
+                    <div class="submenu" id="submenu-consulta">
+                        <button class="submenu-btn" data-action="consulta-registrar">Registrar</button>
+                        <button class="submenu-btn" data-action="consulta-modificar">Modificar</button>
+                        <button class="submenu-btn" data-action="consulta-eliminar">Eliminar</button>
+                    </div>
                 </div>
-            </div>
 
-            <!-- 3. EVENTOS -->
-            <div class="menu-item">
-                <button class="menu-btn" data-menu="eventos">
-                    <span><span class="menu-btn-icon">🎉</span>Eventos</span>
-                    <span class="menu-btn-arrow">▼</span>
-                </button>
-                <div class="submenu" id="submenu-eventos">
-                    <button class="submenu-btn" data-action="eventos-registrar">Registrar</button>
-                    <button class="submenu-btn" data-action="eventos-modificar">Modificar</button>
-                    <button class="submenu-btn" data-action="eventos-eliminar">Eliminar</button>
+                <!-- 2. PRODUCTOS -->
+                <div class="menu-item">
+                    <button class="menu-btn" data-menu="productos">
+                        <span><span class="menu-btn-icon">📦</span>Productos</span>
+                        <span class="menu-btn-arrow">▼</span>
+                    </button>
+                    <div class="submenu" id="submenu-productos">
+                        <button class="submenu-btn" data-action="productos-registrar">Registrar</button>
+                        <button class="submenu-btn" data-action="productos-modificar">Modificar</button>
+                        <button class="submenu-btn" data-action="productos-eliminar">Eliminar</button>
+                    </div>
                 </div>
-            </div>
 
-            <!-- 4. USUARIOS -->
-            <div class="menu-item">
-                <button class="menu-btn" data-menu="usuarios">
-                    <span><span class="menu-btn-icon">👥</span>Usuarios</span>
-                    <span class="menu-btn-arrow">▼</span>
-                </button>
-                <div class="submenu" id="submenu-usuarios">
-                    <button class="submenu-btn" data-action="usuarios-registrar">Registrar</button>
-                    <button class="submenu-btn" data-action="usuarios-modificar">Modificar</button>
-                    <button class="submenu-btn" data-action="usuarios-eliminar">Eliminar</button>
+                <!-- 3. EVENTOS -->
+                <div class="menu-item">
+                    <button class="menu-btn" data-menu="eventos">
+                        <span><span class="menu-btn-icon">🎉</span>Eventos</span>
+                        <span class="menu-btn-arrow">▼</span>
+                    </button>
+                    <div class="submenu" id="submenu-eventos">
+                        <button class="submenu-btn" data-action="eventos-registrar">Registrar</button>
+                        <button class="submenu-btn" data-action="eventos-modificar">Modificar</button>
+                        <button class="submenu-btn" data-action="eventos-eliminar">Eliminar</button>
+                    </div>
                 </div>
-            </div>
 
-            <!-- 5. REPORTES -->
-            <div class="menu-item">
-                <button class="menu-btn" data-menu="reportes">
-                    <span><span class="menu-btn-icon">📊</span>Reportes</span>
-                    <span class="menu-btn-arrow">▼</span>
-                </button>
-                <div class="submenu" id="submenu-reportes">
-                    <button class="submenu-btn" data-action="reportes-registrar">Registrar</button>
-                    <button class="submenu-btn" data-action="reportes-modificar">Modificar</button>
-                    <button class="submenu-btn" data-action="reportes-eliminar">Eliminar</button>
+                <!-- 4. USUARIOS -->
+                <div class="menu-item">
+                    <button class="menu-btn" data-menu="usuarios">
+                        <span><span class="menu-btn-icon">👥</span>Usuarios</span>
+                        <span class="menu-btn-arrow">▼</span>
+                    </button>
+                    <div class="submenu" id="submenu-usuarios">
+                        <button class="submenu-btn" data-action="usuarios-registrar">Registrar</button>
+                        <button class="submenu-btn" data-action="usuarios-modificar">Modificar</button>
+                        <button class="submenu-btn" data-action="usuarios-eliminar">Eliminar</button>
+                    </div>
+                </div>
+
+                <!-- 5. REPORTES -->
+                <div class="menu-item">
+                    <button class="menu-btn" data-menu="reportes">
+                        <span><span class="menu-btn-icon">📊</span>Reportes</span>
+                        <span class="menu-btn-arrow">▼</span>
+                    </button>
+                    <div class="submenu" id="submenu-reportes">
+                        <button class="submenu-btn" data-action="reportes-registrar">Registrar</button>
+                        <button class="submenu-btn" data-action="reportes-modificar">Modificar</button>
+                        <button class="submenu-btn" data-action="reportes-eliminar">Eliminar</button>
+                    </div>
                 </div>
             </div>
 
