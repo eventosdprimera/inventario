@@ -1,11 +1,11 @@
 // Inicializar Supabase
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let heartbeatInterval = null;
 
 // Verificar sesión al cargar
 async function iniciarDashboard() {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await supabaseClient.auth.getSession();
     
     if (!session) {
         window.location.href = 'index.html';
@@ -40,7 +40,7 @@ function iniciarHeartbeat(email) {
     
     heartbeatInterval = setInterval(async () => {
         try {
-            await supabase
+            await supabaseClient
                 .from('sesiones_activas')
                 .update({ last_activity: new Date().toISOString() })
                 .eq('email', email);
@@ -58,11 +58,11 @@ document.getElementById('btnLogout').addEventListener('click', async () => {
     
     try {
         // Obtener sesión actual
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         
         if (session) {
             // Eliminar registro de sesión activa
-            await supabase
+            await supabaseClient
                 .from('sesiones_activas')
                 .delete()
                 .eq('email', session.user.email);
@@ -74,7 +74,7 @@ document.getElementById('btnLogout').addEventListener('click', async () => {
         }
         
         // Cerrar sesión de Supabase Auth
-        await supabase.auth.signOut();
+        await supabaseClient.auth.signOut();
         
         // Limpiar localStorage
         localStorage.removeItem('session');
@@ -97,7 +97,7 @@ window.addEventListener('beforeunload', async () => {
             const session = JSON.parse(sessionStr);
             const email = session.user?.email;
             if (email) {
-                await supabase
+                await supabaseClient
                     .from('sesiones_activas')
                     .delete()
                     .eq('email', email);
@@ -109,7 +109,7 @@ window.addEventListener('beforeunload', async () => {
 });
 
 // Escuchar cambios de autenticación
-supabase.auth.onAuthStateChange((event, session) => {
+supabaseClient.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_OUT') {
         window.location.href = 'index.html';
     }
