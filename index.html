@@ -189,11 +189,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 8px;
         }
 
         .seguridad-icono {
-            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            color: #1e3a8a;
+        }
+
+        .seguridad-icono svg {
+            width: 16px;
+            height: 16px;
         }
 
         .copyright {
@@ -265,13 +272,17 @@
 
         <div class="seguridad-info">
             <p class="seguridad-texto">
-                <span class="seguridad-icono"></span>
+                <span class="seguridad-icono">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 1C8.676 1 6 3.676 6 7v2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V11c0-1.1-.9-2-2-2h-2V7c0-3.324-2.676-6-6-6zm0 2c2.276 0 4 1.724 4 4v2H8V7c0-2.276 1.724-4 4-4zm0 10c-1.1 0-2 .9-2 2 0 .74.4 1.38 1 1.72V18c0 1.1.9 2 2 2s2-.9 2-2v-2.28c.6-.34 1-.98 1-1.72 0-1.1-.9-2-2-2z"/>
+                    </svg>
+                </span>
                 Seguridad de Extremo a Extremo
             </p>
         </div>
 
         <div class="copyright">
-            <strong>Eventos de Primera</strong>
+            <strong>©copyright Eventos de Primera</strong>
             2026-2027 | Versión 0.1
         </div>
     </div>
