@@ -79,7 +79,6 @@ font-size: 14px;
 font-weight: 600;
 letter-spacing: 0.5px;
 }
-/* CÓDIGO DE BARRAS */
 .codigo-barras-section {
 background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
 padding: 25px;
@@ -133,7 +132,6 @@ font-size: 12px;
 color: #065f46;
 font-weight: 500;
 }
-/* FOTOS */
 .fotos-section { margin-bottom: 30px; }
 .fotos-grid {
 display: grid;
@@ -185,7 +183,7 @@ color: #475569;
 margin-bottom: 8px;
 font-weight: 600;
 }
-.foto-label-text .required { color: #dc2626; font-weight: 700; }
+.foto-label-text .required { color: #dc2626; font-weight: 700; font-size: 14px; }
 .foto-remove {
 position: absolute;
 top: 8px;
@@ -270,17 +268,11 @@ transition: left 0.5s;
 .foto-action-btn:hover::before {
 left: 100%;
 }
-/* FORMULARIO - LAYOUT ORGANIZADO */
 .form-row { margin-bottom: 20px; }
 .form-row-full { margin-bottom: 20px; }
 .form-grid-4 {
 display: grid;
 grid-template-columns: repeat(4, 1fr);
-gap: 20px;
-}
-.form-grid-3 {
-display: grid;
-grid-template-columns: 1fr 1fr 1fr;
 gap: 20px;
 }
 .form-grid-2 {
@@ -342,7 +334,6 @@ font-size: 18px;
 .medida-group { display: flex; gap: 8px; align-items: center; }
 .medida-group input { flex: 0 0 80px; max-width: 80px; padding: 12px 8px; }
 .medida-group select { flex: 1; min-width: 0; }
-/* BOTONES PRINCIPALES */
 .btn-action {
 padding: 14px 28px;
 border: none;
@@ -389,7 +380,6 @@ display: flex;
 flex-wrap: wrap;
 gap: 12px;
 }
-/* MENSAJES */
 .mensaje {
 padding: 16px 20px;
 border-radius: 10px;
@@ -543,7 +533,6 @@ border-top: 1px solid #e5e7eb;
 .header { flex-direction: column; gap: 15px; text-align: center; }
 .container { padding: 15px; }
 .form-grid-4 { grid-template-columns: 1fr 1fr; }
-.form-grid-3 { grid-template-columns: 1fr; }
 .form-grid-2 { grid-template-columns: 1fr; }
 .fotos-grid { grid-template-columns: repeat(2, 1fr); }
 .codigo-barras-header { flex-direction: column; }
@@ -567,7 +556,6 @@ border-top: 1px solid #e5e7eb;
 <p class="page-subtitle">Complete el formulario para agregar un equipo al inventario. El código de barras se genera automáticamente.</p>
 <div id="mensaje" class="mensaje"></div>
 <form id="formRegistro" onsubmit="return false;">
-<!-- CÓDIGO DE BARRAS -->
 <fieldset>
 <legend>🔖 Código de Barras (Automático)</legend>
 <div class="codigo-barras-section">
@@ -586,10 +574,8 @@ border-top: 1px solid #e5e7eb;
 </div>
 </div>
 </fieldset>
-<!-- DATOS DEL EQUIPO -->
 <fieldset>
 <legend>📋 Datos del Equipo</legend>
-<!-- FOTOS -->
 <div class="fotos-section">
 <div class="fotos-grid">
 <!-- FOTO 1 -->
@@ -662,8 +648,7 @@ border-top: 1px solid #e5e7eb;
 </div>
 </div>
 </div>
-<!-- CAMPOS DEL FORMULARIO -->
-<!-- FILA 1: Nombre del Equipo (full width) -->
+<!-- FILA 1: Nombre del Equipo -->
 <div class="form-row-full">
 <div class="form-group">
 <label>Nombre del Equipo <span class="required">*</span></label>
@@ -686,7 +671,7 @@ border-top: 1px solid #e5e7eb;
 <input type="text" id="serialEquipo" placeholder="Ej: YMH-2024-001234" required>
 </div>
 <div class="form-group">
-<label>Medida</label>
+<label>Medida (Peso o Dimensión)</label>
 <div class="medida-group">
 <input type="number" id="medidaValor" step="0.01" min="0" placeholder="0.00">
 <select id="medidaUnidad">
@@ -718,15 +703,14 @@ border-top: 1px solid #e5e7eb;
 </div>
 </div>
 </div>
-<!-- FILA 4: Observación (full width, al final) -->
+<!-- FILA 4: Observación -->
 <div class="form-row-full">
 <div class="form-group">
 <label>Observación</label>
-<textarea id="observacionEquipo" rows="4" placeholder="Observaciones adicionales sobre el equipo (estado físico, accesorios incluidos, detalles importantes, etc.)..."></textarea>
+<textarea id="observacionEquipo" rows="4" placeholder="Observaciones adicionales sobre el equipo..."></textarea>
 </div>
 </div>
 </fieldset>
-<!-- BOTONES -->
 <div class="button-group">
 <button type="button" class="btn-action btn-primary" id="btnGuardar" onclick="guardarEquipo()">💾 Guardar Equipo</button>
 <button type="button" class="btn-action btn-secondary" onclick="limpiarFormulario()">🧹 Limpiar Formulario</button>
