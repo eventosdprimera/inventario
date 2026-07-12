@@ -469,20 +469,23 @@ border-top: 1px solid #e5e7eb;
 .fotos-grid { grid-template-columns: 1fr; }
 }
 
-/* ============ CAMPO MEDIDA COMPUESTO ============ */
-.medida-compuesta {
+/* ============ CAMPO MEDIDA + COSTO COMPUESTO ============ */
+.medida-costo-compuesto {
     display: flex;
     gap: 8px;
     align-items: stretch;
 }
-.medida-compuesta input[type="number"] {
-    flex: 2;
+.medida-costo-compuesto input[type="number"] {
+    flex: 1;
     text-align: center;
 }
-.medida-compuesta select {
+.medida-costo-compuesto select {
     flex: 1;
     min-width: 100px;
     cursor: pointer;
+}
+.medida-costo-compuesto .costo-input {
+    flex: 1.5;
 }
 </style>
 </head>
@@ -596,22 +599,19 @@ border-top: 1px solid #e5e7eb;
 </div>
 </div>
 
-<!-- FILA: MEDIDA | COSTO | ESTATUS (en la misma línea) -->
+<!-- FILA: MEDIDA + COSTO (juntos) | ESTATUS -->
 <div class="form-row">
-<div class="form-grid-3">
+<div class="form-grid-2">
 <div class="form-group">
-<label>Medida</label>
-<div class="medida-compuesta">
+<label>Medida | Costo ($) <span class="required-underline">*</span></label>
+<div class="medida-costo-compuesto">
 <input type="number" id="medidaValor" step="0.01" min="0" placeholder="0.00">
 <select id="medidaUnidad">
 <option value="metro">metro</option>
 <option value="centimetro">centímetros</option>
 </select>
+<input type="number" id="costoEquipo" step="0.01" min="0" placeholder="$ 0.00" class="costo-input" required>
 </div>
-</div>
-<div class="form-group">
-<label>Costo ($) <span class="required-underline">*</span></label>
-<input type="number" id="costoEquipo" step="0.01" min="0" placeholder="0.00" required>
 </div>
 <div class="form-group">
 <label>Estatus <span class="required">*</span></label>
