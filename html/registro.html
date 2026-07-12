@@ -555,37 +555,23 @@ border-top: 1px solid #e5e7eb;
 .fotos-grid { grid-template-columns: 1fr; }
 }
 
-/* ============ CAMPO MEDIDA + COSTO COMPUESTO ============ */
-.medida-costo-compuesto {
+/* ============ CAMPO MEDIDA COMPUESTO ============ */
+.medida-compuesta {
     display: flex;
     gap: 8px;
     align-items: stretch;
 }
-.medida-costo-compuesto input[type="number"] {
-    flex: 1;
+.medida-compuesta input[type="number"] {
+    flex: 2;
     text-align: center;
 }
-.medida-costo-compuesto select {
+.medida-compuesta select {
     flex: 1;
     min-width: 100px;
     cursor: pointer;
 }
-.medida-costo-compuesto .costo-input {
-    flex: 1.5;
-}
-.campo-costo-separado {
-    display: flex;
-    flex-direction: column;
-    flex: 1.5;
-}
-.campo-costo-separado label {
-    color: #374151;
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+.medida-compuesta .costo-input {
+    flex: 2;
 }
 </style>
 </head>
@@ -699,22 +685,19 @@ border-top: 1px solid #e5e7eb;
 </div>
 </div>
 
-<!-- FILA: MEDIDA | COSTO | ESTATUS -->
+<!-- FILA: MEDIDA + COSTO (juntos) | ESTATUS -->
 <div class="form-row">
-<div class="form-grid-3">
+<div class="form-grid-2">
 <div class="form-group">
-<label>Medida</label>
-<div class="medida-costo-compuesto">
+<label>Medida | Costo ($) <span class="required-underline">*</span></label>
+<div class="medida-compuesta">
 <input type="number" id="medidaValor" step="0.01" min="0" placeholder="0.00">
 <select id="medidaUnidad">
 <option value="metro">metro</option>
 <option value="centimetro">centímetros</option>
 </select>
+<input type="number" id="costoEquipo" step="0.01" min="0" placeholder="$ 0.00" class="costo-input" required>
 </div>
-</div>
-<div class="campo-costo-separado">
-<label>Costo ($) <span class="required-underline">*</span></label>
-<input type="number" id="costoEquipo" step="0.01" min="0" placeholder="$ 0.00" required>
 </div>
 <div class="form-group">
 <label>Estatus <span class="required">*</span></label>
