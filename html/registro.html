@@ -47,7 +47,7 @@
         .container {
             flex: 1;
             padding: 30px;
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
             width: 100%;
         }
@@ -133,11 +133,14 @@
         }
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: 1fr 1fr;
             gap: 20px;
             margin-bottom: 20px;
         }
         .form-group { display: flex; flex-direction: column; }
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
         .form-group label {
             color: #374151;
             font-size: 13px;
@@ -162,38 +165,105 @@
             border-color: #1e3a8a;
             box-shadow: 0 0 0 3px rgba(30,58,138,0.1);
         }
-        .foto-section {
+        .input-with-symbol {
+            position: relative;
+        }
+        .input-with-symbol input {
+            padding-right: 30px;
+        }
+        .input-with-symbol .symbol {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+            font-weight: 600;
+            pointer-events: none;
+        }
+        .medida-group {
             display: flex;
-            gap: 20px;
-            align-items: flex-start;
+            gap: 10px;
+        }
+        .medida-group input {
+            flex: 1;
+        }
+        .medida-group select {
+            width: 120px;
+        }
+        .fotos-section {
             margin-bottom: 20px;
         }
-        .foto-upload { flex: 1; }
-        .foto-preview-container {
-            width: 180px;
-            height: 180px;
+        .fotos-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .foto-item {
+            position: relative;
+        }
+        .foto-preview {
+            width: 100%;
+            height: 120px;
             border: 2px dashed #e5e7eb;
-            border-radius: 12px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             background-color: #f9fafb;
             overflow: hidden;
-            flex-shrink: 0;
+            cursor: pointer;
+            transition: all 0.3s;
         }
-        .foto-preview-container img {
+        .foto-preview:hover {
+            border-color: #1e3a8a;
+            background-color: #eff6ff;
+        }
+        .foto-preview img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-        .foto-placeholder {
+        .foto-preview-placeholder {
             text-align: center;
             color: #9ca3af;
-            font-size: 12px;
+            font-size: 11px;
         }
-        .foto-placeholder-icon {
-            font-size: 48px;
-            margin-bottom: 8px;
+        .foto-preview-placeholder-icon {
+            font-size: 32px;
+            margin-bottom: 4px;
+        }
+        .foto-input {
+            display: none;
+        }
+        .foto-label-text {
+            text-align: center;
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 5px;
+            font-weight: 500;
+        }
+        .foto-label-text .required { color: #dc2626; }
+        .foto-remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(220, 38, 38, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .foto-remove:hover {
+            background: rgba(185, 28, 28, 1);
+            transform: scale(1.1);
         }
         .btn-action {
             padding: 12px 24px;
@@ -268,8 +338,8 @@
         @media (max-width: 768px) {
             .header { flex-direction: column; gap: 15px; text-align: center; }
             .container { padding: 15px; }
-            .foto-section { flex-direction: column; }
-            .foto-preview-container { width: 100%; height: 200px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .fotos-grid { grid-template-columns: repeat(2, 1fr); }
             .codigo-barras-header { flex-direction: column; }
         }
     </style>
@@ -278,21 +348,21 @@
     <header class="header">
         <div class="header-left">
             <div class="header-titulo">Sistema de Inventario</div>
-            <div class="header-subtitulo">Registro de Equipos</div>
+            <div class="header-subtitulo">Registro de Equipos de Sonido</div>
         </div>
         <a href="../dashboard.html" class="btn-volver">← Volver al Dashboard</a>
     </header>
 
     <div class="container">
-        <h1 class="page-title">📦 Registrar Nuevo Equipo</h1>
+        <h1 class="page-title"> Registrar Equipo de Sonido</h1>
         <p class="page-subtitle">Complete el formulario para agregar un equipo al inventario. El código de barras se genera automáticamente.</p>
 
         <div id="mensaje" class="mensaje"></div>
 
         <form id="formRegistro" onsubmit="return false;">
-            <!-- CÓDIGO DE BARRAS CON BOTÓN DE IMPRIMIR -->
+            <!-- CÓDIGO DE BARRAS -->
             <fieldset>
-                <legend> Código de Barras (Automático)</legend>
+                <legend>🔖 Código de Barras (Automático)</legend>
                 <div class="codigo-barras-section">
                     <div class="codigo-barras-header">
                         <div>
@@ -314,54 +384,115 @@
             <fieldset>
                 <legend>📋 Datos del Equipo</legend>
                 
-                <div class="foto-section">
-                    <div class="foto-upload">
-                        <div class="form-group">
-                            <label>Foto del Equipo</label>
-                            <input type="file" id="fotoEquipo" accept="image/*" onchange="previsualizarFoto(event)">
-                            <small style="color: #6b7280; margin-top: 4px;">JPG, PNG (máx. 5MB)</small>
+                <!-- FOTOS (arriba, 4 fotos) -->
+                <div class="fotos-section">
+                    <div class="fotos-grid">
+                        <div class="foto-item">
+                            <div class="foto-preview" onclick="document.getElementById('foto1').click()">
+                                <div class="foto-preview-placeholder" id="preview1-placeholder">
+                                    <div class="foto-preview-placeholder-icon">📷</div>
+                                    <div>Foto 1</div>
+                                </div>
+                                <img id="preview1" style="display: none;" alt="Foto 1">
+                            </div>
+                            <button type="button" class="foto-remove" id="remove1" style="display: none;" onclick="removerFoto(1)">×</button>
+                            <input type="file" id="foto1" class="foto-input" accept="image/*" onchange="previsualizarFoto(1, event)">
+                            <div class="foto-label-text">Foto Principal <span class="required">*</span></div>
                         </div>
-                    </div>
-                    <div class="foto-preview-container" id="fotoPreviewContainer">
-                        <div class="foto-placeholder">
-                            <div class="foto-placeholder-icon"></div>
-                            <div>Sin foto</div>
+                        <div class="foto-item">
+                            <div class="foto-preview" onclick="document.getElementById('foto2').click()">
+                                <div class="foto-preview-placeholder" id="preview2-placeholder">
+                                    <div class="foto-preview-placeholder-icon">📷</div>
+                                    <div>Foto 2</div>
+                                </div>
+                                <img id="preview2" style="display: none;" alt="Foto 2">
+                            </div>
+                            <button type="button" class="foto-remove" id="remove2" style="display: none;" onclick="removerFoto(2)">×</button>
+                            <input type="file" id="foto2" class="foto-input" accept="image/*" onchange="previsualizarFoto(2, event)">
+                            <div class="foto-label-text">Foto 2 (opcional)</div>
+                        </div>
+                        <div class="foto-item">
+                            <div class="foto-preview" onclick="document.getElementById('foto3').click()">
+                                <div class="foto-preview-placeholder" id="preview3-placeholder">
+                                    <div class="foto-preview-placeholder-icon"></div>
+                                    <div>Foto 3</div>
+                                </div>
+                                <img id="preview3" style="display: none;" alt="Foto 3">
+                            </div>
+                            <button type="button" class="foto-remove" id="remove3" style="display: none;" onclick="removerFoto(3)">×</button>
+                            <input type="file" id="foto3" class="foto-input" accept="image/*" onchange="previsualizarFoto(3, event)">
+                            <div class="foto-label-text">Foto 3 (opcional)</div>
+                        </div>
+                        <div class="foto-item">
+                            <div class="foto-preview" onclick="document.getElementById('foto4').click()">
+                                <div class="foto-preview-placeholder" id="preview4-placeholder">
+                                    <div class="foto-preview-placeholder-icon">📷</div>
+                                    <div>Foto 4</div>
+                                </div>
+                                <img id="preview4" style="display: none;" alt="Foto 4">
+                            </div>
+                            <button type="button" class="foto-remove" id="remove4" style="display: none;" onclick="removerFoto(4)">×</button>
+                            <input type="file" id="foto4" class="foto-input" accept="image/*" onchange="previsualizarFoto(4, event)">
+                            <div class="foto-label-text">Foto 4 (opcional)</div>
                         </div>
                     </div>
                 </div>
 
+                <!-- CAMPOS DEL FORMULARIO -->
                 <div class="form-grid">
-                    <div class="form-group">
+                    <!-- Nombre del Equipo (full width) -->
+                    <div class="form-group full-width">
                         <label>Nombre del Equipo <span class="required">*</span></label>
-                        <input type="text" id="nombreEquipo" placeholder="Ej: Laptop Dell" required>
+                        <input type="text" id="nombreEquipo" placeholder="Ej: Consola de Mezclas Yamaha MG20XU 20 Canales" required>
                     </div>
+                    
+                    <!-- Marca -->
                     <div class="form-group">
                         <label>Marca <span class="required">*</span></label>
-                        <input type="text" id="marcaEquipo" placeholder="Ej: Dell, HP, Lenovo" required>
+                        <input type="text" id="marcaEquipo" placeholder="Ej: Yamaha, JBL, Shure, Sennheiser" required>
                     </div>
+                    
+                    <!-- Modelo -->
                     <div class="form-group">
                         <label>Modelo</label>
-                        <input type="text" id="modeloEquipo" placeholder="Ej: Latitude 5420">
+                        <input type="text" id="modeloEquipo" placeholder="Ej: MG20XU, EON615, SM58">
                     </div>
+                    
+                    <!-- Serial -->
                     <div class="form-group">
-                        <label>Serial</label>
-                        <input type="text" id="serialEquipo" placeholder="Número de serie">
+                        <label>Serial <span class="required">*</span></label>
+                        <input type="text" id="serialEquipo" placeholder="Ej: YMH-2024-001234" required>
                     </div>
+                    
+                    <!-- Medida (valor + unidad) -->
                     <div class="form-group">
-                        <label>Metros</label>
-                        <input type="number" id="metrosEquipo" step="0.01" min="0" placeholder="0.00">
+                        <label>Medida (Peso o Dimensión)</label>
+                        <div class="medida-group">
+                            <input type="number" id="medidaValor" step="0.01" min="0" placeholder="0.00">
+                            <select id="medidaUnidad">
+                                <option value="metros">Metros</option>
+                                <option value="cm">Centímetros</option>
+                            </select>
+                        </div>
                     </div>
+                    
+                    <!-- Costo con símbolo $ -->
                     <div class="form-group">
                         <label>Costo del Equipo ($) <span class="required">*</span></label>
-                        <input type="number" id="costoEquipo" step="0.01" min="0" placeholder="0.00" required>
+                        <div class="input-with-symbol">
+                            <input type="number" id="costoEquipo" step="0.01" min="0" placeholder="0.00" required>
+                            <span class="symbol">$</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="form-group" style="margin-bottom: 20px;">
+                <!-- Observación -->
+                <div class="form-group full-width" style="margin-bottom: 20px;">
                     <label>Observación</label>
-                    <textarea id="observacionEquipo" rows="3" placeholder="Observaciones adicionales sobre el equipo..."></textarea>
+                    <textarea id="observacionEquipo" rows="3" placeholder="Observaciones adicionales sobre el equipo (estado, accesorios incluidos, etc.)..."></textarea>
                 </div>
 
+                <!-- Estatus -->
                 <div class="form-group">
                     <label>Estatus <span class="required">*</span></label>
                     <select id="estatusEquipo" required>
