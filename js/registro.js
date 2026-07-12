@@ -1,3 +1,6 @@
+// ==========================================
+// VARIABLES GLOBALES
+// ==========================================
 let codigoBarrasActual = null;
 let fotosSeleccionadas = [null, null, null, null];
 let usuarioActual = null;
@@ -8,23 +11,43 @@ let yaInicializado = false;
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarRegistroEquipo() {
+    console.log('🚀 === INICIANDO REGISTRO DE EQUIPO ===');
+    
     if (yaInicializado) {
-        console.log('⏭️ Ya inicializado');
+        console.log('⏭️ Ya inicializado, saltando...');
         return;
     }
     
+    // Verificar elementos del DOM
     const formRegistro = document.getElementById('formRegistro');
     const btnGuardar = document.getElementById('btnGuardar');
+    const modalSelector = document.getElementById('modalSelector');
+    const modalCamara = document.getElementById('modalCamara');
+    const svgBarcode = document.getElementById('barcode');
+    
+    console.log('🔍 Verificando elementos del DOM:');
+    console.log('  - formRegistro:', formRegistro ? '✅' : '❌');
+    console.log('  - btnGuardar:', btnGuardar ? '✅' : '❌');
+    console.log('  - modalSelector:', modalSelector ? '✅' : '❌');
+    console.log('  - modalCamara:', modalCamara ? '✅' : '❌');
+    console.log('  - svgBarcode:', svgBarcode ? '✅' : '❌');
     
     if (!formRegistro || !btnGuardar) {
-        console.log('ℹ️ No es la página de registro');
+        console.log('ℹ️ No estamos en la página de registro');
+        return;
+    }
+    
+    if (!modalSelector || !modalCamara) {
+        console.error('❌ ERROR: Faltan modales en el HTML');
+        alert('Error: Faltan elementos en la página. Recarga la página.');
         return;
     }
     
     yaInicializado = true;
-    console.log('🚀 Iniciando registro...');
+    console.log('✅ Elementos verificados');
     
-    // Esperar a que Supabase esté disponible
+    // Esperar Supabase
+    console.log('⏳ Esperando Supabase...');
     let intentosSupabase = 0;
     while (typeof supabaseClient === 'undefined' && intentosSupabase < 50) {
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -32,14 +55,14 @@ async function inicializarRegistroEquipo() {
     }
     
     if (typeof supabaseClient === 'undefined') {
-        console.error('❌ Supabase no disponible después de 5 segundos');
-        // Continuar sin Supabase, el código se generará localmente
+        console.warn('⚠️ Supabase no disponible, continuando sin él');
     } else {
         console.log('✅ Supabase disponible');
         await cargarUsuario();
     }
     
     // Esperar JsBarcode
+    console.log('⏳ Esperando JsBarcode...');
     let intentosJsBarcode = 0;
     while (typeof JsBarcode === 'undefined' && intentosJsBarcode < 50) {
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -48,18 +71,32 @@ async function inicializarRegistroEquipo() {
     
     if (typeof JsBarcode === 'undefined') {
         console.error('❌ JsBarcode no disponible');
+        alert('Error: No se pudo cargar el generador de códigos de barras');
         return;
     }
     console.log('✅ JsBarcode disponible');
     
+    // Generar código de barras
     await generarCodigoBarras();
-    console.log('✅ Inicialización completada');
+    
+    console.log('✅ === INICIALIZACIÓN COMPLETADA ===');
 }
 
+// ==========================================
+// CARGAR USUARIO
+// ==========================================
 async function cargarUsuario() {
     try {
+        if (typeof supabaseClient === 'undefined') {
+            console.warn('⚠️ Supabase no disponible para cargar usuario');
+            return;
+        }
+        
         const { data: { session } } = await supabaseClient.auth.getSession();
-        if (!session) return;
+        if (!session) {
+            console.warn('⚠️ No hay sesión activa');
+            return;
+        }
         
         const { data, error } = await supabaseClient
             .from('usuarios')
@@ -69,32 +106,45 @@ async function cargarUsuario() {
         
         if (data && !error) {
             usuarioActual = data;
+            console.log('✅ Usuario cargado:', usuarioActual.email);
         } else {
             usuarioActual = { email: session.user.email, id: session.user.id };
+            console.log('✅ Usuario básico cargado:', usuarioActual.email);
         }
     } catch (err) {
-        console.error('Error al cargar usuario:', err);
+        console.error('❌ Error al cargar usuario:', err);
     }
 }
 
+// ==========================================
+// GENERAR CÓDIGO DE BARRAS
+// ==========================================
 async function generarCodigoBarras() {
     try {
+        console.log('🔖 Generando código de barras...');
+        
         const codigoGuardado = sessionStorage.getItem('codigoBarrasPendiente');
         
         if (codigoGuardado) {
+            console.log('📋 Usando código guardado:', codigoGuardado);
             codigoBarrasActual = codigoGuardado;
             const elementoCodigo = document.getElementById('codigoBarrasValor');
             if (elementoCodigo) elementoCodigo.textContent = codigoBarrasActual;
             
             try {
                 JsBarcode("#barcode", codigoBarrasActual, {
-                    format: "CODE128", width: 2, height: 60,
-                    displayValue: true, fontSize: 14, margin: 5,
-                    font: "Courier New", fontOptions: "bold"
+                    format: "CODE128",
+                    width: 2,
+                    height: 60,
+                    displayValue: true,
+                    fontSize: 14,
+                    margin: 5,
+                    font: "Courier New",
+                    fontOptions: "bold"
                 });
-                console.log('✅ Código generado desde sessionStorage');
+                console.log('✅ Código de barras renderizado');
             } catch (e) {
-                console.error('Error JsBarcode:', e);
+                console.error('❌ Error al renderizar código:', e);
             }
             
             const btnImprimir = document.getElementById('btnImprimir');
@@ -102,20 +152,20 @@ async function generarCodigoBarras() {
             return;
         }
         
-        // Generar código único
+        // Generar nuevo código
         let nuevoCodigo;
         let existe = true;
         let intentos = 0;
         
         while (existe && intentos < 10) {
             const ahora = new Date();
-            const fechaParte = ahora.toISOString().slice(0,10).replace(/-/g,'');
-            const horaParte = ahora.toTimeString().slice(0,8).replace(/:/g,'');
+            const fechaParte = ahora.toISOString().slice(0, 10).replace(/-/g, '');
+            const horaParte = ahora.toTimeString().slice(0, 8).replace(/:/g, '');
             const randomParte = Math.floor(Math.random() * 999999).toString().padStart(6, '0');
             
             nuevoCodigo = `EP-${fechaParte}-${horaParte}-${randomParte}`;
             
-            // Solo verificar en Supabase si está disponible
+            // Verificar en Supabase si está disponible
             if (typeof supabaseClient !== 'undefined') {
                 try {
                     const { data, error } = await supabaseClient
@@ -124,19 +174,22 @@ async function generarCodigoBarras() {
                         .eq('codigo_barras', nuevoCodigo)
                         .single();
                     
-                    if (error || !data) existe = false;
-                    else intentos++;
+                    if (error || !data) {
+                        existe = false;
+                    } else {
+                        intentos++;
+                    }
                 } catch (err) {
-                    // Si hay error, asumir que el código es único
                     existe = false;
                 }
             } else {
-                // Sin Supabase, asumir que es único
                 existe = false;
             }
         }
         
-        if (existe) throw new Error('No se pudo generar un código único');
+        if (existe) {
+            throw new Error('No se pudo generar un código único después de 10 intentos');
+        }
         
         codigoBarrasActual = nuevoCodigo;
         sessionStorage.setItem('codigoBarrasPendiente', codigoBarrasActual);
@@ -146,20 +199,25 @@ async function generarCodigoBarras() {
         
         try {
             JsBarcode("#barcode", codigoBarrasActual, {
-                format: "CODE128", width: 2, height: 60,
-                displayValue: true, fontSize: 14, margin: 5,
-                font: "Courier New", fontOptions: "bold"
+                format: "CODE128",
+                width: 2,
+                height: 60,
+                displayValue: true,
+                fontSize: 14,
+                margin: 5,
+                font: "Courier New",
+                fontOptions: "bold"
             });
             console.log('✅ Código generado:', codigoBarrasActual);
         } catch (e) {
-            console.error('Error JsBarcode:', e);
+            console.error('❌ Error al renderizar código:', e);
         }
         
         const btnImprimir = document.getElementById('btnImprimir');
         if (btnImprimir) btnImprimir.disabled = false;
         
     } catch (err) {
-        console.error('Error al generar código:', err);
+        console.error('❌ Error al generar código:', err);
         const elementoCodigo = document.getElementById('codigoBarrasValor');
         if (elementoCodigo) elementoCodigo.textContent = 'Error al generar';
         mostrarMensajeRegistro('Error al generar el código: ' + err.message, 'error');
@@ -207,7 +265,7 @@ window.seleccionarCamara = function() {
 };
 
 // ==========================================
-// FOTOS
+// PREVISUALIZAR FOTO
 // ==========================================
 window.previsualizarFoto = function(numero, event) {
     const file = event.target.files[0];
@@ -248,6 +306,9 @@ window.previsualizarFoto = function(numero, event) {
     reader.readAsDataURL(file);
 };
 
+// ==========================================
+// REMOVER FOTO
+// ==========================================
 window.removerFoto = function(numero) {
     fotosSeleccionadas[numero - 1] = null;
     
@@ -268,7 +329,7 @@ window.removerFoto = function(numero) {
 };
 
 // ==========================================
-// CÁMARA
+// ABRIR CÁMARA
 // ==========================================
 window.abrirCamara = async function(numero) {
     fotoSeleccionadaActual = numero;
@@ -281,17 +342,20 @@ window.abrirCamara = async function(numero) {
     }
     
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: 'environment' } 
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' }
         });
         video.srcObject = stream;
         modal.classList.add('activo');
     } catch (err) {
-        console.error('Error al acceder a la cámara:', err);
+        console.error('❌ Error al acceder a la cámara:', err);
         alert('No se pudo acceder a la cámara. Verifica los permisos.');
     }
 };
 
+// ==========================================
+// CERRAR CÁMARA
+// ==========================================
 window.cerrarCamara = function() {
     const modal = document.getElementById('modalCamara');
     const video = document.getElementById('videoCamara');
@@ -304,6 +368,9 @@ window.cerrarCamara = function() {
     fotoSeleccionadaActual = null;
 };
 
+// ==========================================
+// CAPTURAR FOTO
+// ==========================================
 window.capturarFoto = function() {
     const video = document.getElementById('videoCamara');
     const canvas = document.getElementById('canvasCamara');
@@ -315,8 +382,8 @@ window.capturarFoto = function() {
     canvas.getContext('2d').drawImage(video, 0, 0);
     
     canvas.toBlob(function(blob) {
-        const file = new File([blob], `foto_${fotoSeleccionadaActual}_${Date.now()}.jpg`, { 
-            type: 'image/jpeg' 
+        const file = new File([blob], `foto_${fotoSeleccionadaActual}_${Date.now()}.jpg`, {
+            type: 'image/jpeg'
         });
         
         fotosSeleccionadas[fotoSeleccionadaActual - 1] = file;
@@ -340,7 +407,7 @@ window.capturarFoto = function() {
 };
 
 // ==========================================
-// GUARDAR EQUIPO
+// VERIFICAR SERIAL
 // ==========================================
 async function verificarSerial(serial) {
     try {
@@ -357,9 +424,14 @@ async function verificarSerial(serial) {
     }
 }
 
+// ==========================================
+// GUARDAR EQUIPO
+// ==========================================
 window.guardarEquipo = async function() {
+    console.log('💾 Guardando equipo...');
+    
     if (typeof supabaseClient === 'undefined') {
-        alert('Error: Supabase no está configurado');
+        alert('Error: Supabase no está configurado. Verifica tu archivo config.js');
         return;
     }
     
@@ -404,7 +476,9 @@ window.guardarEquipo = async function() {
         for (let i = 0; i < 4; i++) {
             if (fotosSeleccionadas[i]) {
                 const fileExt = fotosSeleccionadas[i].name.split('.').pop();
-                const fileName = `${codigoBarrasActual}_foto${i+1}_${Date.now()}.${fileExt}`;
+                const fileName = `${codigoBarrasActual}_foto${i + 1}_${Date.now()}.${fileExt}`;
+                
+                console.log(`📤 Subiendo foto ${i + 1}...`);
                 
                 const { error: uploadError } = await supabaseClient.storage
                     .from('equipos-fotos')
@@ -420,8 +494,11 @@ window.guardarEquipo = async function() {
                     .getPublicUrl(fileName);
                 
                 fotoUrls[i] = urlData.publicUrl;
+                console.log(`✅ Foto ${i + 1} subida`);
             }
         }
+        
+        console.log('📝 Guardando en base de datos...');
         
         const { data, error } = await supabaseClient
             .from('equipos')
@@ -451,6 +528,8 @@ window.guardarEquipo = async function() {
             throw error;
         }
         
+        console.log('✅ Equipo guardado exitosamente');
+        
         mostrarMensajeRegistro('✅ Equipo registrado con código: ' + codigoBarrasActual, 'exito');
         sessionStorage.removeItem('codigoBarrasPendiente');
         
@@ -473,7 +552,7 @@ window.guardarEquipo = async function() {
         }, 500);
         
     } catch (err) {
-        console.error('Error al guardar:', err);
+        console.error('❌ Error al guardar:', err);
         mostrarMensajeRegistro('Error al guardar: ' + err.message, 'error');
         btnGuardar.disabled = false;
         btnGuardar.textContent = '💾 Guardar Equipo';
@@ -500,8 +579,12 @@ window.imprimirSticker = function() {
     
     try {
         JsBarcode("#stickerBarcode", codigoBarrasActual, {
-            format: "CODE128", width: 1.5, height: 40,
-            displayValue: true, fontSize: 12, margin: 2,
+            format: "CODE128",
+            width: 1.5,
+            height: 40,
+            displayValue: true,
+            fontSize: 12,
+            margin: 2,
             font: "Courier New"
         });
         
@@ -546,7 +629,7 @@ window.imprimirSticker = function() {
         `);
         ventana.document.close();
     } catch (err) {
-        console.error('Error al generar sticker:', err);
+        console.error('❌ Error al generar sticker:', err);
         alert('Error al generar el sticker');
         if (document.body.contains(tempDiv)) document.body.removeChild(tempDiv);
     }
@@ -584,6 +667,9 @@ window.limpiarFormulario = function() {
     document.getElementById('btnGuardar').textContent = '💾 Guardar Equipo';
 };
 
+// ==========================================
+// MOSTRAR MENSAJE
+// ==========================================
 function mostrarMensajeRegistro(texto, tipo) {
     const mensajeDiv = document.getElementById('mensaje');
     if (mensajeDiv) {
@@ -594,7 +680,7 @@ function mostrarMensajeRegistro(texto, tipo) {
 }
 
 // ==========================================
-// INICIAR
+// INICIAR CUANDO EL DOM ESTÉ LISTO
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📄 DOM cargado');
