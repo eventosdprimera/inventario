@@ -2,30 +2,22 @@ let codigoBarrasActual = null;
 let fotosSeleccionadas = [null, null, null, null];
 let usuarioActual = null;
 let fotoSeleccionadaActual = null;
-let inicializado = false;
 
+// Función de inicialización
 async function inicializarRegistroEquipo() {
-    // Evitar doble ejecución
-    if (inicializado) {
-        console.log('Ya inicializado, saltando...');
+    console.log('🚀 Iniciando registro de equipo...');
+    
+    // Verificar que el SVG existe
+    const svgElement = document.getElementById('barcode');
+    console.log('SVG encontrado:', svgElement);
+    
+    if (!svgElement) {
+        console.error('❌ ERROR: No se encontró el elemento <svg id="barcode">');
+        console.log('Verifica que tu HTML tenga exactamente: <svg id="barcode"></svg>');
         return;
     }
     
-    console.log('Inicializando registro de equipo...');
-    
-    // Marcar como inicializado inmediatamente para evitar doble ejecución
-    inicializado = true;
-    
-    // Esperar a que el DOM esté completamente cargado
-    if (document.readyState === 'loading') {
-        await new Promise(resolve => {
-            document.addEventListener('DOMContentLoaded', resolve, { once: true });
-        });
-    }
-    
-    // Esperar un poco más para asegurar que todo esté renderizado
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
+    // Esperar a que JsBarcode esté disponible
     let intentos = 0;
     const maxIntentos = 50;
     
@@ -35,22 +27,12 @@ async function inicializarRegistroEquipo() {
     }
     
     if (typeof JsBarcode === 'undefined') {
-        console.error('JsBarcode no está disponible');
-        mostrarMensajeRegistro('Error: No se pudo cargar el generador de códigos. Recarga la página.', 'error');
+        console.error('❌ JsBarcode no está disponible');
         return;
     }
     
-    console.log('JsBarcode disponible ✓');
-    
-    // Verificar que el elemento SVG existe
-    const svgElement = document.getElementById('barcode');
-    if (!svgElement) {
-        console.error('Elemento SVG #barcode no encontrado');
-        mostrarMensajeRegistro('Error: Elemento de código de barras no encontrado', 'error');
-        return;
-    }
-    
-    console.log('Elemento SVG encontrado ✓');
+    console.log('✅ JsBarcode disponible');
+    console.log('✅ SVG disponible');
     
     await cargarUsuario();
     await generarCodigoBarras();
@@ -101,6 +83,7 @@ async function generarCodigoBarras() {
                         font: "Courier New",
                         fontOptions: "bold"
                     });
+                    console.log('✅ Código de barras generado desde sessionStorage');
                 }
             } catch (e) {
                 console.error('Error JsBarcode:', e);
@@ -162,6 +145,7 @@ async function generarCodigoBarras() {
                     font: "Courier New",
                     fontOptions: "bold"
                 });
+                console.log('✅ Código de barras generado:', codigoBarrasActual);
             }
         } catch (e) {
             console.error('Error JsBarcode:', e);
@@ -596,9 +580,8 @@ function mostrarMensajeRegistro(texto, tipo) {
     }
 }
 
-// Inicializar solo una vez
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', inicializarRegistroEquipo, { once: true });
-} else {
+// Ejecutar cuando la página esté completamente cargada
+window.addEventListener('load', function() {
+    console.log('🔄 Window load event');
     inicializarRegistroEquipo();
-}
+});
