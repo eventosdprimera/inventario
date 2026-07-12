@@ -597,7 +597,7 @@ border-top: 1px solid #e5e7eb;
 .form-grid-4 { grid-template-columns: 1fr; }
 .fotos-grid { grid-template-columns: 1fr; }
 }
-    /* ============ MEDIDA + COSTO COMPACTOS ============ */
+ /* ============ MEDIDA + COSTO COMPACTOS ============ */
 .form-grid-2-custom {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -632,19 +632,23 @@ border-top: 1px solid #e5e7eb;
     align-items: center;
 }
 
+/* INPUT DE MEDIDA - MÁS PEQUEÑO */
 .medida-costo-item .medida-group input {
-    flex: 0 0 50px;
-    max-width: 50px;
-    padding: 10px 4px;
+    flex: 0 0 45px !important;
+    max-width: 45px !important;
+    width: 45px !important;
+    padding: 8px 2px !important;
     text-align: center;
     font-size: 13px;
 }
 
+/* SELECT DE UNIDADES - MÁS PEQUEÑO */
 .medida-costo-item .medida-group select {
-    flex: 1;
-    min-width: 0;
-    padding: 10px 8px;
-    font-size: 13px;
+    flex: 0 0 55px !important;
+    max-width: 55px !important;
+    width: 55px !important;
+    padding: 8px 4px !important;
+    font-size: 12px;
 }
 
 .medida-costo-item .input-with-symbol input {
