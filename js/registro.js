@@ -1,25 +1,28 @@
 // js/registro.js
-// NO se ejecuta automáticamente. Las funciones se llaman desde dashboard.js
-
 let codigoBarrasActual = null;
 let fotosSeleccionadas = [null, null, null, null];
 let usuarioActual = null;
 
-// Función principal de inicialización (llamada desde dashboard.js)
+// Función principal de inicialización
 async function inicializarRegistroEquipo() {
     console.log('Inicializando registro de equipo...');
     
-    // Esperar a que JsBarcode esté disponible
-    if (typeof JsBarcode === 'undefined') {
-        console.log('Esperando JsBarcode...');
-        await new Promise(resolve => setTimeout(resolve, 500));
-        if (typeof JsBarcode === 'undefined') {
-            console.error('JsBarcode no está disponible');
-            mostrarMensajeRegistro('Error: No se pudo cargar el generador de códigos de barras', 'error');
-            return;
-        }
+    // Esperar a que JsBarcode esté disponible (hasta 10 segundos)
+    let intentos = 0;
+    const maxIntentos = 50;
+    
+    while (typeof JsBarcode === 'undefined' && intentos < maxIntentos) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        intentos++;
     }
     
+    if (typeof JsBarcode === 'undefined') {
+        console.error('JsBarcode no está disponible');
+        mostrarMensajeRegistro('Error: No se pudo cargar el generador de códigos. Recarga la página.', 'error');
+        return;
+    }
+    
+    console.log('JsBarcode disponible ✓');
     await cargarUsuario();
     await generarCodigoBarras();
 }
@@ -55,16 +58,20 @@ async function generarCodigoBarras() {
             codigoBarrasActual = codigoGuardado;
             document.getElementById('codigoBarrasValor').textContent = codigoBarrasActual;
             
-            JsBarcode("#barcode", codigoBarrasActual, {
-                format: "CODE128",
-                width: 2,
-                height: 60,
-                displayValue: true,
-                fontSize: 14,
-                margin: 5,
-                font: "Courier New",
-                fontOptions: "bold"
-            });
+            try {
+                JsBarcode("#barcode", codigoBarrasActual, {
+                    format: "CODE128",
+                    width: 2,
+                    height: 60,
+                    displayValue: true,
+                    fontSize: 14,
+                    margin: 5,
+                    font: "Courier New",
+                    fontOptions: "bold"
+                });
+            } catch (e) {
+                console.error('Error JsBarcode:', e);
+            }
             
             const btnImprimir = document.getElementById('btnImprimir');
             if (btnImprimir) btnImprimir.disabled = false;
@@ -106,16 +113,20 @@ async function generarCodigoBarras() {
         
         document.getElementById('codigoBarrasValor').textContent = codigoBarrasActual;
         
-        JsBarcode("#barcode", codigoBarrasActual, {
-            format: "CODE128",
-            width: 2,
-            height: 60,
-            displayValue: true,
-            fontSize: 14,
-            margin: 5,
-            font: "Courier New",
-            fontOptions: "bold"
-        });
+        try {
+            JsBarcode("#barcode", codigoBarrasActual, {
+                format: "CODE128",
+                width: 2,
+                height: 60,
+                displayValue: true,
+                fontSize: 14,
+                margin: 5,
+                font: "Courier New",
+                fontOptions: "bold"
+            });
+        } catch (e) {
+            console.error('Error JsBarcode:', e);
+        }
         
         const btnImprimir = document.getElementById('btnImprimir');
         if (btnImprimir) btnImprimir.disabled = false;
@@ -127,7 +138,7 @@ async function generarCodigoBarras() {
     }
 }
 
-// Previsualizar foto (llamada desde HTML con onclick)
+// Previsualizar foto (desde archivo o cámara)
 window.previsualizarFoto = function(numero, event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -151,6 +162,7 @@ window.previsualizarFoto = function(numero, event) {
         const preview = document.getElementById(`preview${numero}`);
         const placeholder = document.getElementById(`preview${numero}-placeholder`);
         const removeBtn = document.getElementById(`remove${numero}`);
+        const previewBox = document.getElementById(`previewBox${numero}`);
         
         if (preview) {
             preview.src = e.target.result;
@@ -158,6 +170,12 @@ window.previsualizarFoto = function(numero, event) {
         }
         if (placeholder) placeholder.style.display = 'none';
         if (removeBtn) removeBtn.style.display = 'flex';
+        
+        // Quitar el onclick del previewBox para que no se abra el selector al hacer click en la imagen
+        if (previewBox) {
+            previewBox.onclick = null;
+            previewBox.style.cursor = 'default';
+        }
     };
     reader.readAsDataURL(file);
 };
@@ -170,11 +188,20 @@ window.removerFoto = function(numero) {
     const placeholder = document.getElementById(`preview${numero}-placeholder`);
     const removeBtn = document.getElementById(`remove${numero}`);
     const input = document.getElementById(`foto${numero}`);
+    const inputCamara = document.getElementById(`foto${numero}-camara`);
+    const previewBox = document.getElementById(`previewBox${numero}`);
     
     if (preview) { preview.style.display = 'none'; preview.src = ''; }
     if (placeholder) placeholder.style.display = 'block';
     if (removeBtn) removeBtn.style.display = 'none';
     if (input) input.value = '';
+    if (inputCamara) inputCamara.value = '';
+    
+    // Restaurar el onclick
+    if (previewBox) {
+        previewBox.onclick = function() { document.getElementById(`foto${numero}`).click(); };
+        previewBox.style.cursor = 'pointer';
+    }
 };
 
 // Verificar serial único
@@ -396,11 +423,18 @@ window.limpiarFormulario = function() {
         const placeholder = document.getElementById(`preview${i}-placeholder`);
         const removeBtn = document.getElementById(`remove${i}`);
         const input = document.getElementById(`foto${i}`);
+        const inputCamara = document.getElementById(`foto${i}-camara`);
+        const previewBox = document.getElementById(`previewBox${i}`);
         
         if (preview) { preview.style.display = 'none'; preview.src = ''; }
         if (placeholder) placeholder.style.display = 'block';
         if (removeBtn) removeBtn.style.display = 'none';
         if (input) input.value = '';
+        if (inputCamara) inputCamara.value = '';
+        if (previewBox) {
+            previewBox.onclick = function() { document.getElementById(`foto${i}`).click(); };
+            previewBox.style.cursor = 'pointer';
+        }
     }
     
     window.equipoRegistrado = null;
