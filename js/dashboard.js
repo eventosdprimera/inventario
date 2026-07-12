@@ -154,7 +154,7 @@ async function cargarContenido(action) {
             
             // Cargar registro.js si no está disponible
             if (typeof inicializarRegistroEquipo === 'undefined') {
-                await cargarScript('../js/registro.js');
+                await cargarScript('js/registro.js');  // ← RUTA CORREGIDA
             }
             
             const response = await fetch('html/registro.html');
