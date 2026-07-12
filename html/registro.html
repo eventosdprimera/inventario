@@ -565,7 +565,7 @@ border-top: 1px solid #e5e7eb;
 }
 .medida-compuesta select {
     flex: 1;
-    min-width: 70px;
+    min-width: 100px;
     cursor: pointer;
 }
 </style>
@@ -696,7 +696,7 @@ border-top: 1px solid #e5e7eb;
 </div>
 </div>
 
-<!-- FILA: MEDIDA | COSTO | ESTATUS - USANDO LA MISMA ESTRUCTURA form-grid-3 -->
+<!-- FILA: MEDIDA | COSTO | ESTATUS -->
 <div class="form-row">
 <div class="form-grid-3">
 <div class="form-group">
@@ -704,8 +704,8 @@ border-top: 1px solid #e5e7eb;
 <div class="medida-compuesta">
 <input type="number" id="medidaValor" step="0.01" min="0" placeholder="0.00">
 <select id="medidaUnidad">
-<option value="metros">m</option>
-<option value="cm">cm</option>
+<option value="metro">metro</option>
+<option value="centimetro">centímetros</option>
 </select>
 </div>
 </div>
@@ -719,7 +719,6 @@ border-top: 1px solid #e5e7eb;
 <option value="">Seleccionar estatus...</option>
 <option value="operativo">✅ Operativo</option>
 <option value="inoperativo">⚠️ Inoperativo</option>
-<option value="averiado">❌ Averiado</option>
 </select>
 </div>
 </div>
