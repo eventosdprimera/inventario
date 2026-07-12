@@ -607,9 +607,16 @@ function mostrarMensajeRegistro(texto, tipo) {
 }
 
 // ==========================================
-// INICIAR
+// INICIAR - Funciona con o sin defer
 // ==========================================
-window.addEventListener('DOMContentLoaded', function() {
-    console.log('📄 DOM cargado');
+if (document.readyState === 'loading') {
+    // El DOM aún se está cargando, esperar
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('📄 DOM cargado');
+        inicializarRegistroEquipo();
+    });
+} else {
+    // El DOM ya está listo (por ejemplo, con defer)
+    console.log('📄 DOM ya estaba listo');
     inicializarRegistroEquipo();
-});
+}
