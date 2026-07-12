@@ -411,6 +411,63 @@ legend {
     border-top: 1px solid #e5e7eb;
 }
 .copyright strong { color: #6b7280; font-weight: 600; }
+    /* BOTONES ARCHIVO/CÁMARA ESTILIZADOS */
+.foto-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+}
+.foto-action-btn {
+    flex: 1;
+    padding: 8px 6px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-family: 'Poppins', sans-serif;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    color: white;
+}
+.foto-action-btn.archivo {
+    background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+}
+.foto-action-btn.archivo:hover {
+    background: linear-gradient(135deg, #d97706 0%, #ea580c 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(245,158,11,0.3);
+}
+.foto-action-btn.camara {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+}
+.foto-action-btn.camara:hover {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(30,58,138,0.3);
+}
+.foto-action-btn:active {
+    transform: translateY(0);
+}
+
+/* MEDIDA GROUP - CAMPO CORTO */
+.medida-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.medida-group input {
+    flex: 0 0 100px;
+    max-width: 100px;
+}
+.medida-group select {
+    flex: 1;
+    min-width: 0;
+}
 
 @media (max-width: 768px) {
     .header { flex-direction: column; gap: 15px; text-align: center; }
@@ -424,6 +481,7 @@ legend {
     .form-grid-4 { grid-template-columns: 1fr; }
     .fotos-grid { grid-template-columns: 1fr; }
 }
+    
 </style>
 </head>
 <body>
