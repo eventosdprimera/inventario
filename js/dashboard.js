@@ -1,4 +1,5 @@
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// js/dashboard.js
+// NO declarar supabaseClient aquí - ya viene de config.js
 
 let heartbeatInterval = null;
 let currentUserRol = 'consultor';
@@ -6,6 +7,8 @@ let currentUserData = null;
 let relojInterval = null;
 
 async function iniciarDashboard() {
+    console.log('🚀 Iniciando dashboard...');
+    
     const { data: { session } } = await supabaseClient.auth.getSession();
     
     if (!session) {
@@ -19,6 +22,8 @@ async function iniciarDashboard() {
     aplicarPermisosPorRol();
     iniciarReloj();
     mostrarBienvenida();
+    
+    console.log('✅ Dashboard iniciado correctamente');
 }
 
 function mostrarBienvenida() {
@@ -147,6 +152,11 @@ async function cargarContenido(action) {
                 await cargarScript('https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js');
             }
             
+            // Cargar registro.js si no está disponible
+            if (typeof inicializarRegistroEquipo === 'undefined') {
+                await cargarScript('../js/registro.js');
+            }
+            
             const response = await fetch('html/registro.html');
             if (!response.ok) throw new Error('No se pudo cargar');
             
@@ -155,10 +165,21 @@ async function cargarContenido(action) {
             const doc = parser.parseFromString(htmlText, 'text/html');
             const bodyContent = doc.querySelector('.container').innerHTML;
             
+            // Agregar modales si no existen
+            const modalSelector = doc.querySelector('#modalSelector');
+            const modalCamara = doc.querySelector('#modalCamara');
+            
             contenidoDiv.innerHTML = bodyContent;
             
+            if (modalSelector && !document.getElementById('modalSelector')) {
+                document.body.appendChild(modalSelector.cloneNode(true));
+            }
+            if (modalCamara && !document.getElementById('modalCamara')) {
+                document.body.appendChild(modalCamara.cloneNode(true));
+            }
+            
             // Esperar a que el DOM esté listo
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise(resolve => setTimeout(resolve, 300));
             
             // Inicializar el formulario
             if (typeof inicializarRegistroEquipo === 'function') {
@@ -185,10 +206,8 @@ async function cargarContenido(action) {
     contenidoDiv.innerHTML = html;
 }
 
-// Función auxiliar para cargar scripts dinámicamente
 function cargarScript(url) {
     return new Promise((resolve, reject) => {
-        // Verificar si ya existe
         const scripts = document.querySelectorAll('script[src]');
         for (let script of scripts) {
             if (script.src === url) {
@@ -381,4 +400,8 @@ supabaseClient.auth.onAuthStateChange((event) => {
     if (event === 'SIGNED_OUT') window.location.href = 'index.html';
 });
 
-iniciarDashboard();
+// Iniciar dashboard cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 Dashboard DOM cargado');
+    iniciarDashboard();
+});
