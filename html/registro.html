@@ -207,96 +207,6 @@ box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 background: #b91c1c;
 transform: scale(1.15);
 }
-.foto-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 12px;
-}
-.foto-action-btn {
-    flex: 1;
-    padding: 10px 12px;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 600;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    font-family: 'Poppins', sans-serif;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-.foto-action-btn .btn-icon {
-    font-size: 16px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-.foto-action-btn.archivo {
-    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-    color: white;
-    border: 2px solid transparent;
-}
-.foto-action-btn.archivo:hover {
-    background: linear-gradient(135deg, #d97706 0%, #dc2626 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.35);
-    border-color: rgba(239, 68, 68, 0.3);
-}
-.foto-action-btn.archivo:active {
-    transform: translateY(0);
-    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.25);
-}
-.foto-action-btn.camara {
-    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-    color: white;
-    border: 2px solid transparent;
-}
-.foto-action-btn.camara:hover {
-    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(30, 58, 138, 0.35);
-    border-color: rgba(30, 58, 138, 0.3);
-}
-.foto-action-btn.camara:active {
-    transform: translateY(0);
-    box-shadow: 0 3px 8px rgba(30, 58, 138, 0.25);
-}
-.foto-action-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    transition: left 0.5s;
-}
-.foto-action-btn:hover::before {
-    left: 100%;
-}
-@media (max-width: 768px) {
-    .foto-action-btn {
-        padding: 8px 10px;
-        font-size: 11px;
-    }
-    .foto-action-btn .btn-icon {
-        font-size: 14px;
-    }
-}
-@media (max-width: 480px) {
-    .foto-actions {
-        flex-direction: column;
-        gap: 6px;
-    }
-    .foto-action-btn {
-        width: 100%;
-    }
-}
 .form-row { margin-bottom: 20px; }
 .form-row-full { margin-bottom: 20px; }
 .form-grid-4 {
@@ -553,7 +463,7 @@ border-top: 1px solid #e5e7eb;
 .fotos-grid { grid-template-columns: 1fr; }
 }
 
-/* ============ CAMPO MEDIDA COMPUESTO ========= */
+/* ============ CAMPO MEDIDA COMPUESTO ============ */
 .medida-compuesta {
     display: flex;
     gap: 8px;
@@ -616,10 +526,6 @@ border-top: 1px solid #e5e7eb;
 <button type="button" class="foto-remove" id="remove1" style="display: none;" onclick="removerFoto(1)">×</button>
 <input type="file" id="foto1" class="foto-input" accept="image/*" onchange="previsualizarFoto(1, event)">
 <div class="foto-label-text">Principal <span class="required">*</span></div>
-<div class="foto-actions">
-<button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto1').click()"><span class="btn-icon"></span> Archivo</button>
-<button type="button" class="foto-action-btn camara" onclick="abrirCamara(1)"><span class="btn-icon">📷</span> Cámara</button>
-</div>
 </div>
 <div class="foto-item">
 <div class="foto-preview" id="previewBox2" onclick="document.getElementById('foto2').click()">
@@ -632,10 +538,6 @@ border-top: 1px solid #e5e7eb;
 <button type="button" class="foto-remove" id="remove2" style="display: none;" onclick="removerFoto(2)">×</button>
 <input type="file" id="foto2" class="foto-input" accept="image/*" onchange="previsualizarFoto(2, event)">
 <div class="foto-label-text">Foto 2 (opcional)</div>
-<div class="foto-actions">
-<button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto2').click()"><span class="btn-icon"></span> Archivo</button>
-<button type="button" class="foto-action-btn camara" onclick="abrirCamara(2)"><span class="btn-icon">📷</span> Cámara</button>
-</div>
 </div>
 <div class="foto-item">
 <div class="foto-preview" id="previewBox3" onclick="document.getElementById('foto3').click()">
@@ -648,10 +550,6 @@ border-top: 1px solid #e5e7eb;
 <button type="button" class="foto-remove" id="remove3" style="display: none;" onclick="removerFoto(3)">×</button>
 <input type="file" id="foto3" class="foto-input" accept="image/*" onchange="previsualizarFoto(3, event)">
 <div class="foto-label-text">Foto 3 (opcional)</div>
-<div class="foto-actions">
-<button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto3').click()"><span class="btn-icon">📁</span> Archivo</button>
-<button type="button" class="foto-action-btn camara" onclick="abrirCamara(3)"><span class="btn-icon">📷</span> Cámara</button>
-</div>
 </div>
 <div class="foto-item">
 <div class="foto-preview" id="previewBox4" onclick="document.getElementById('foto4').click()">
@@ -664,10 +562,6 @@ border-top: 1px solid #e5e7eb;
 <button type="button" class="foto-remove" id="remove4" style="display: none;" onclick="removerFoto(4)">×</button>
 <input type="file" id="foto4" class="foto-input" accept="image/*" onchange="previsualizarFoto(4, event)">
 <div class="foto-label-text">Foto 4 (opcional)</div>
-<div class="foto-actions">
-<button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto4').click()"><span class="btn-icon"></span> Archivo</button>
-<button type="button" class="foto-action-btn camara" onclick="abrirCamara(4)"><span class="btn-icon">📷</span> Cámara</button>
-</div>
 </div>
 </div>
 </div>
@@ -696,7 +590,7 @@ border-top: 1px solid #e5e7eb;
 </div>
 </div>
 
-<!-- FILA: MEDIDA | COSTO | ESTATUS (en ese orden, de izcha) -->
+<!-- FILA: MEDIDA | COSTO | ESTATUS (en la misma línea) -->
 <div class="form-row">
 <div class="form-grid-3">
 <div class="form-group">
