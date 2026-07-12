@@ -139,46 +139,37 @@ async function cargarContenido(action) {
     
     ocultarBienvenida();
     
-    // Caso especial: Inventario → Registrar (cargar registro.html)
+    // Caso especial: Inventario → Registrar
     if (modulo === 'productos' && operacion === 'registrar') {
         try {
             const response = await fetch('html/registro.html');
-            if (!response.ok) throw new Error('No se pudo cargar el formulario');
+            if (!response.ok) throw new Error('No se pudo cargar');
             
             const htmlText = await response.text();
-            
-            // Crear un parser para extraer el contenido
             const parser = new DOMParser();
             const doc = parser.parseFromString(htmlText, 'text/html');
-            
-            // Extraer solo el contenido del body (sin header, sin scripts duplicados)
             const bodyContent = doc.querySelector('.container').innerHTML;
             
-            // Insertar en el dashboard
             contenidoDiv.innerHTML = bodyContent;
             
-            // Cargar los scripts necesarios
-            const scriptBarcode = document.createElement('script');
-            scriptBarcode.src = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js';
-            document.body.appendChild(scriptBarcode);
-            
-            // Inicializar el formulario después de cargar
-            scriptBarcode.onload = async function() {
+            // Esperar un momento para que el DOM esté listo
+            setTimeout(async () => {
                 if (typeof inicializarRegistroEquipo === 'function') {
                     await inicializarRegistroEquipo();
+                } else {
+                    console.error('inicializarRegistroEquipo no está definida');
                 }
-            };
+            }, 100);
             
         } catch (err) {
-            console.error('Error al cargar formulario:', err);
-            contenidoDiv.innerHTML = '<fieldset><legend>Error</legend><p>No se pudo cargar el formulario de registro.</p></fieldset>';
+            console.error('Error:', err);
+            contenidoDiv.innerHTML = '<fieldset><legend>Error</legend><p>No se pudo cargar el formulario.</p></fieldset>';
         }
         return;
     }
     
-    // Otros casos...
+    // Otros casos
     let html = '';
-    
     switch(modulo) {
         case 'consulta': html = generarFormularioConsulta(operacion); break;
         case 'productos': html = generarFormularioProductos(operacion); break;
