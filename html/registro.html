@@ -328,6 +328,92 @@ color: #991b1b;
 border-left-color: #dc2626;
 display: block;
 }
+.modal-selector {
+display: none;
+position: fixed;
+top: 0; left: 0;
+width: 100%; height: 100%;
+background: rgba(0,0,0,0.75);
+z-index: 9998;
+justify-content: center;
+align-items: center;
+backdrop-filter: blur(4px);
+}
+.modal-selector.activo { display: flex; }
+.modal-selector-content {
+background: white;
+border-radius: 16px;
+padding: 30px;
+max-width: 400px;
+width: 90%;
+box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.modal-selector-header {
+text-align: center;
+margin-bottom: 25px;
+}
+.modal-selector-title {
+font-family: 'Libre Caslon Text', serif;
+color: #1e3a8a;
+font-size: 20px;
+font-weight: 700;
+margin-bottom: 8px;
+}
+.modal-selector-subtitle {
+color: #6b7280;
+font-size: 13px;
+}
+.modal-selector-options {
+display: flex;
+flex-direction: column;
+gap: 12px;
+}
+.modal-selector-btn {
+padding: 18px 24px;
+border: 2px solid #e5e7eb;
+border-radius: 12px;
+cursor: pointer;
+font-weight: 600;
+font-family: 'Poppins', sans-serif;
+font-size: 15px;
+transition: all 0.3s;
+display: flex;
+align-items: center;
+gap: 12px;
+background: white;
+}
+.modal-selector-btn:hover {
+transform: translateY(-2px);
+box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+}
+.modal-selector-btn.archivo {
+color: #f59e0b;
+border-color: #f59e0b;
+}
+.modal-selector-btn.archivo:hover {
+background: #fffbeb;
+border-color: #d97706;
+}
+.modal-selector-btn.camara {
+color: #1e3a8a;
+border-color: #1e3a8a;
+}
+.modal-selector-btn.camara:hover {
+background: #eff6ff;
+border-color: #1e40af;
+}
+.modal-selector-btn.cancelar {
+color: #6b7280;
+border-color: #e5e7eb;
+justify-content: center;
+margin-top: 8px;
+}
+.modal-selector-btn.cancelar:hover {
+background: #f3f4f6;
+}
+.modal-selector-btn-icon {
+font-size: 24px;
+}
 .modal-camara {
 display: none;
 position: fixed;
@@ -487,6 +573,20 @@ border-top: 1px solid #e5e7eb;
 .medida-costo-compuesto .costo-input {
     flex: 1.5;
 }
+.campo-costo-separado {
+    display: flex;
+    flex-direction: column;
+    flex: 1.5;
+}
+.campo-costo-separado label {
+    color: #374151;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
 </style>
 </head>
 <body>
@@ -525,7 +625,7 @@ border-top: 1px solid #e5e7eb;
 <div class="fotos-section">
 <div class="fotos-grid">
 <div class="foto-item">
-<div class="foto-preview" id="previewBox1" onclick="document.getElementById('foto1').click()">
+<div class="foto-preview" id="previewBox1" onclick="abrirSelectorFoto(1)">
 <div class="foto-preview-placeholder" id="preview1-placeholder">
 <span class="foto-preview-placeholder-icon">📷</span>
 <div>Foto 1</div>
@@ -537,7 +637,7 @@ border-top: 1px solid #e5e7eb;
 <div class="foto-label-text">Principal <span class="required">*</span></div>
 </div>
 <div class="foto-item">
-<div class="foto-preview" id="previewBox2" onclick="document.getElementById('foto2').click()">
+<div class="foto-preview" id="previewBox2" onclick="abrirSelectorFoto(2)">
 <div class="foto-preview-placeholder" id="preview2-placeholder">
 <span class="foto-preview-placeholder-icon">📷</span>
 <div>Foto 2</div>
@@ -549,7 +649,7 @@ border-top: 1px solid #e5e7eb;
 <div class="foto-label-text">Foto 2 (opcional)</div>
 </div>
 <div class="foto-item">
-<div class="foto-preview" id="previewBox3" onclick="document.getElementById('foto3').click()">
+<div class="foto-preview" id="previewBox3" onclick="abrirSelectorFoto(3)">
 <div class="foto-preview-placeholder" id="preview3-placeholder">
 <span class="foto-preview-placeholder-icon">📷</span>
 <div>Foto 3</div>
@@ -561,7 +661,7 @@ border-top: 1px solid #e5e7eb;
 <div class="foto-label-text">Foto 3 (opcional)</div>
 </div>
 <div class="foto-item">
-<div class="foto-preview" id="previewBox4" onclick="document.getElementById('foto4').click()">
+<div class="foto-preview" id="previewBox4" onclick="abrirSelectorFoto(4)">
 <div class="foto-preview-placeholder" id="preview4-placeholder">
 <span class="foto-preview-placeholder-icon">📷</span>
 <div>Foto 4</div>
@@ -599,19 +699,22 @@ border-top: 1px solid #e5e7eb;
 </div>
 </div>
 
-<!-- FILA: MEDIDA + COSTO (juntos) | ESTATUS -->
+<!-- FILA: MEDIDA | COSTO | ESTATUS -->
 <div class="form-row">
-<div class="form-grid-2">
+<div class="form-grid-3">
 <div class="form-group">
-<label>Medida | Costo ($) <span class="required-underline">*</span></label>
+<label>Medida</label>
 <div class="medida-costo-compuesto">
 <input type="number" id="medidaValor" step="0.01" min="0" placeholder="0.00">
 <select id="medidaUnidad">
 <option value="metro">metro</option>
 <option value="centimetro">centímetros</option>
 </select>
-<input type="number" id="costoEquipo" step="0.01" min="0" placeholder="$ 0.00" class="costo-input" required>
 </div>
+</div>
+<div class="campo-costo-separado">
+<label>Costo ($) <span class="required-underline">*</span></label>
+<input type="number" id="costoEquipo" step="0.01" min="0" placeholder="$ 0.00" required>
 </div>
 <div class="form-group">
 <label>Estatus <span class="required">*</span></label>
@@ -619,6 +722,7 @@ border-top: 1px solid #e5e7eb;
 <option value="">Seleccionar estatus...</option>
 <option value="operativo">✅ Operativo</option>
 <option value="inoperativo">⚠️ Inoperativo</option>
+<option value="averiado">❌ Averiado</option>
 </select>
 </div>
 </div>
@@ -637,6 +741,31 @@ border-top: 1px solid #e5e7eb;
 </div>
 </form>
 </div>
+
+<!-- Modal Selector de Foto -->
+<div id="modalSelector" class="modal-selector">
+<div class="modal-selector-content">
+<div class="modal-selector-header">
+<div class="modal-selector-title">Seleccionar método</div>
+<div class="modal-selector-subtitle">¿Cómo deseas agregar la foto?</div>
+</div>
+<div class="modal-selector-options">
+<button type="button" class="modal-selector-btn archivo" onclick="seleccionarArchivo()">
+<span class="modal-selector-btn-icon">📁</span>
+<span>Subir archivo</span>
+</button>
+<button type="button" class="modal-selector-btn camara" onclick="seleccionarCamara()">
+<span class="modal-selector-btn-icon">📷</span>
+<span>Tomar foto con cámara</span>
+</button>
+<button type="button" class="modal-selector-btn cancelar" onclick="cerrarSelectorFoto()">
+<span>Cancelar</span>
+</button>
+</div>
+</div>
+</div>
+
+<!-- Modal Cámara -->
 <div id="modalCamara" class="modal-camara">
 <div class="modal-camara-content">
 <div class="modal-camara-header">
@@ -649,10 +778,11 @@ border-top: 1px solid #e5e7eb;
 </div>
 <div class="modal-camara-actions">
 <button type="button" class="modal-camara-btn cancelar" onclick="cerrarCamara()">❌ Cancelar</button>
-<button type="button" class="modal-camara-btn capturar" id="btnCapturar" onclick="capturarFoto()"> Capturar Foto</button>
+<button type="button" class="modal-camara-btn capturar" id="btnCapturar" onclick="capturarFoto()">📸 Capturar Foto</button>
 </div>
 </div>
 </div>
+
 <div class="copyright">
 <strong>©copyright Eventos de Primera</strong><br>
 2026-2027 | Versión 0.1
