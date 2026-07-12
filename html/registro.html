@@ -383,60 +383,60 @@
             <!-- DATOS DEL EQUIPO -->
             <fieldset>
                 <legend>📋 Datos del Equipo</legend>
-                
-                <!-- FOTOS (arriba, 4 fotos) -->
-                <div class="fotos-section">
-                    <div class="fotos-grid">
-                        <div class="foto-item">
-                            <div class="foto-preview" onclick="document.getElementById('foto1').click()">
-                                <div class="foto-preview-placeholder" id="preview1-placeholder">
-                                    <div class="foto-preview-placeholder-icon">📷</div>
-                                    <div>Foto 1</div>
-                                </div>
-                                <img id="preview1" style="display: none;" alt="Foto 1">
-                            </div>
-                            <button type="button" class="foto-remove" id="remove1" style="display: none;" onclick="removerFoto(1)">×</button>
-                            <input type="file" id="foto1" class="foto-input" accept="image/*" onchange="previsualizarFoto(1, event)">
-                            <div class="foto-label-text">Foto Principal <span class="required">*</span></div>
-                        </div>
-                        <div class="foto-item">
-                            <div class="foto-preview" onclick="document.getElementById('foto2').click()">
-                                <div class="foto-preview-placeholder" id="preview2-placeholder">
-                                    <div class="foto-preview-placeholder-icon">📷</div>
-                                    <div>Foto 2</div>
-                                </div>
-                                <img id="preview2" style="display: none;" alt="Foto 2">
-                            </div>
-                            <button type="button" class="foto-remove" id="remove2" style="display: none;" onclick="removerFoto(2)">×</button>
-                            <input type="file" id="foto2" class="foto-input" accept="image/*" onchange="previsualizarFoto(2, event)">
-                            <div class="foto-label-text">Foto 2 (opcional)</div>
-                        </div>
-                        <div class="foto-item">
-                            <div class="foto-preview" onclick="document.getElementById('foto3').click()">
-                                <div class="foto-preview-placeholder" id="preview3-placeholder">
-                                    <div class="foto-preview-placeholder-icon"></div>
-                                    <div>Foto 3</div>
-                                </div>
-                                <img id="preview3" style="display: none;" alt="Foto 3">
-                            </div>
-                            <button type="button" class="foto-remove" id="remove3" style="display: none;" onclick="removerFoto(3)">×</button>
-                            <input type="file" id="foto3" class="foto-input" accept="image/*" onchange="previsualizarFoto(3, event)">
-                            <div class="foto-label-text">Foto 3 (opcional)</div>
-                        </div>
-                        <div class="foto-item">
-                            <div class="foto-preview" onclick="document.getElementById('foto4').click()">
-                                <div class="foto-preview-placeholder" id="preview4-placeholder">
-                                    <div class="foto-preview-placeholder-icon">📷</div>
-                                    <div>Foto 4</div>
-                                </div>
-                                <img id="preview4" style="display: none;" alt="Foto 4">
-                            </div>
-                            <button type="button" class="foto-remove" id="remove4" style="display: none;" onclick="removerFoto(4)">×</button>
-                            <input type="file" id="foto4" class="foto-input" accept="image/*" onchange="previsualizarFoto(4, event)">
-                            <div class="foto-label-text">Foto 4 (opcional)</div>
-                        </div>
-                    </div>
+              
+              <!-- FOTOS EN HORIZONTAL -->
+<div class="fotos-section">
+    <div class="fotos-grid">
+        <div class="foto-item">
+            <div class="foto-preview" onclick="document.getElementById('foto1').click()">
+                <div class="foto-preview-placeholder" id="preview1-placeholder">
+                    <div class="foto-preview-placeholder-icon">📷</div>
+                    <div>Foto 1</div>
                 </div>
+                <img id="preview1" style="display: none;" alt="Foto 1">
+            </div>
+            <button type="button" class="foto-remove" id="remove1" style="display: none;" onclick="removerFoto(1)">×</button>
+            <input type="file" id="foto1" class="foto-input" accept="image/*" onchange="previsualizarFoto(1, event)">
+            <div class="foto-label-text">Principal <span class="required">*</span></div>
+        </div>
+        <div class="foto-item">
+            <div class="foto-preview" onclick="document.getElementById('foto2').click()">
+                <div class="foto-preview-placeholder" id="preview2-placeholder">
+                    <div class="foto-preview-placeholder-icon">📷</div>
+                    <div>Foto 2</div>
+                </div>
+                <img id="preview2" style="display: none;" alt="Foto 2">
+            </div>
+            <button type="button" class="foto-remove" id="remove2" style="display: none;" onclick="removerFoto(2)">×</button>
+            <input type="file" id="foto2" class="foto-input" accept="image/*" onchange="previsualizarFoto(2, event)">
+            <div class="foto-label-text">Foto 2</div>
+        </div>
+        <div class="foto-item">
+            <div class="foto-preview" onclick="document.getElementById('foto3').click()">
+                <div class="foto-preview-placeholder" id="preview3-placeholder">
+                    <div class="foto-preview-placeholder-icon">📷</div>
+                    <div>Foto 3</div>
+                </div>
+                <img id="preview3" style="display: none;" alt="Foto 3">
+            </div>
+            <button type="button" class="foto-remove" id="remove3" style="display: none;" onclick="removerFoto(3)">×</button>
+            <input type="file" id="foto3" class="foto-input" accept="image/*" onchange="previsualizarFoto(3, event)">
+            <div class="foto-label-text">Foto 3</div>
+        </div>
+        <div class="foto-item">
+            <div class="foto-preview" onclick="document.getElementById('foto4').click()">
+                <div class="foto-preview-placeholder" id="preview4-placeholder">
+                    <div class="foto-preview-placeholder-icon">📷</div>
+                    <div>Foto 4</div>
+                </div>
+                <img id="preview4" style="display: none;" alt="Foto 4">
+            </div>
+            <button type="button" class="foto-remove" id="remove4" style="display: none;" onclick="removerFoto(4)">×</button>
+            <input type="file" id="foto4" class="foto-input" accept="image/*" onchange="previsualizarFoto(4, event)">
+            <div class="foto-label-text">Foto 4</div>
+        </div>
+    </div>
+</div>
 
                 <!-- CAMPOS DEL FORMULARIO -->
                 <div class="form-grid">
