@@ -467,151 +467,151 @@ legend {
             <legend>📋 Datos del Equipo</legend>
             
             <!-- FOTOS -->
-            <div class="fotos-section">
-                <div class="fotos-titulo">📸 Fotos del Equipo</div>
-                <div class="fotos-grid">
-                    <!-- FOTO 1 -->
-                    <div class="foto-item">
-                        <div class="foto-preview" id="previewBox1" onclick="document.getElementById('foto1').click()">
-                            <div class="foto-preview-placeholder" id="preview1-placeholder">
-                                <span class="foto-preview-placeholder-icon">📷</span>
-                                <div>Foto 1</div>
-                            </div>
-                            <img id="preview1" style="display: none;" alt="Foto 1">
-                        </div>
-                        <button type="button" class="foto-remove" id="remove1" style="display: none;" onclick="removerFoto(1)">×</button>
-                        <input type="file" id="foto1" class="foto-input" accept="image/*" onchange="previsualizarFoto(1, event)">
-                        <input type="file" id="foto1-camara" class="foto-input" accept="image/*" capture="environment" onchange="previsualizarFoto(1, event)">
-                        <div class="foto-actions">
-                            <button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto1').click()">📁 Archivo</button>
-                            <button type="button" class="foto-action-btn camara" onclick="document.getElementById('foto1-camara').click()">📷 Cámara</button>
-                        </div>
-                        <div class="foto-label-text">Principal <span class="required">*</span></div>
-                    </div>
-                    
-                    <!-- FOTO 2 -->
-                    <div class="foto-item">
-                        <div class="foto-preview" id="previewBox2" onclick="document.getElementById('foto2').click()">
-                            <div class="foto-preview-placeholder" id="preview2-placeholder">
-                                <span class="foto-preview-placeholder-icon">📷</span>
-                                <div>Foto 2</div>
-                            </div>
-                            <img id="preview2" style="display: none;" alt="Foto 2">
-                        </div>
-                        <button type="button" class="foto-remove" id="remove2" style="display: none;" onclick="removerFoto(2)">×</button>
-                        <input type="file" id="foto2" class="foto-input" accept="image/*" onchange="previsualizarFoto(2, event)">
-                        <input type="file" id="foto2-camara" class="foto-input" accept="image/*" capture="environment" onchange="previsualizarFoto(2, event)">
-                        <div class="foto-actions">
-                            <button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto2').click()">📁 Archivo</button>
-                            <button type="button" class="foto-action-btn camara" onclick="document.getElementById('foto2-camara').click()">📷 Cámara</button>
-                        </div>
-                        <div class="foto-label-text">Foto 2 (opcional)</div>
-                    </div>
-                    
-                    <!-- FOTO 3 -->
-                    <div class="foto-item">
-                        <div class="foto-preview" id="previewBox3" onclick="document.getElementById('foto3').click()">
-                            <div class="foto-preview-placeholder" id="preview3-placeholder">
-                                <span class="foto-preview-placeholder-icon"></span>
-                                <div>Foto 3</div>
-                            </div>
-                            <img id="preview3" style="display: none;" alt="Foto 3">
-                        </div>
-                        <button type="button" class="foto-remove" id="remove3" style="display: none;" onclick="removerFoto(3)">×</button>
-                        <input type="file" id="foto3" class="foto-input" accept="image/*" onchange="previsualizarFoto(3, event)">
-                        <input type="file" id="foto3-camara" class="foto-input" accept="image/*" capture="environment" onchange="previsualizarFoto(3, event)">
-                        <div class="foto-actions">
-                            <button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto3').click()"> Archivo</button>
-                            <button type="button" class="foto-action-btn camara" onclick="document.getElementById('foto3-camara').click()"> Cámara</button>
-                        </div>
-                        <div class="foto-label-text">Foto 3 (opcional)</div>
-                    </div>
-                    
-                    <!-- FOTO 4 -->
-                    <div class="foto-item">
-                        <div class="foto-preview" id="previewBox4" onclick="document.getElementById('foto4').click()">
-                            <div class="foto-preview-placeholder" id="preview4-placeholder">
-                                <span class="foto-preview-placeholder-icon">📷</span>
-                                <div>Foto 4</div>
-                            </div>
-                            <img id="preview4" style="display: none;" alt="Foto 4">
-                        </div>
-                        <button type="button" class="foto-remove" id="remove4" style="display: none;" onclick="removerFoto(4)">×</button>
-                        <input type="file" id="foto4" class="foto-input" accept="image/*" onchange="previsualizarFoto(4, event)">
-                        <input type="file" id="foto4-camara" class="foto-input" accept="image/*" capture="environment" onchange="previsualizarFoto(4, event)">
-                        <div class="foto-actions">
-                            <button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto4').click()">📁 Archivo</button>
-                            <button type="button" class="foto-action-btn camara" onclick="document.getElementById('foto4-camara').click()">📷 Cámara</button>
-                        </div>
-                        <div class="foto-label-text">Foto 4 (opcional)</div>
-                    </div>
+          <!-- FOTOS -->
+<div class="fotos-section">
+    <div class="fotos-grid">
+        <!-- FOTO 1 -->
+        <div class="foto-item">
+            <div class="foto-preview" id="previewBox1" onclick="document.getElementById('foto1').click()">
+                <div class="foto-preview-placeholder" id="preview1-placeholder">
+                    <span class="foto-preview-placeholder-icon">📷</span>
+                    <div>Foto 1</div>
                 </div>
+                <img id="preview1" style="display: none;" alt="Foto 1">
             </div>
+            <button type="button" class="foto-remove" id="remove1" style="display: none;" onclick="removerFoto(1)">×</button>
+            <input type="file" id="foto1" class="foto-input" accept="image/*" onchange="previsualizarFoto(1, event)">
+            <input type="file" id="foto1-camara" class="foto-input" accept="image/*" capture="environment" onchange="previsualizarFoto(1, event)">
+            <div class="foto-actions">
+                <button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto1').click()">📁 Archivo</button>
+                <button type="button" class="foto-action-btn camara" onclick="document.getElementById('foto1-camara').click()">📷 Cámara</button>
+            </div>
+            <div class="foto-label-text">Principal <span class="required">*</span></div>
+        </div>
+        
+        <!-- FOTO 2 -->
+        <div class="foto-item">
+            <div class="foto-preview" id="previewBox2" onclick="document.getElementById('foto2').click()">
+                <div class="foto-preview-placeholder" id="preview2-placeholder">
+                    <span class="foto-preview-placeholder-icon">📷</span>
+                    <div>Foto 2</div>
+                </div>
+                <img id="preview2" style="display: none;" alt="Foto 2">
+            </div>
+            <button type="button" class="foto-remove" id="remove2" style="display: none;" onclick="removerFoto(2)">×</button>
+            <input type="file" id="foto2" class="foto-input" accept="image/*" onchange="previsualizarFoto(2, event)">
+            <input type="file" id="foto2-camara" class="foto-input" accept="image/*" capture="environment" onchange="previsualizarFoto(2, event)">
+            <div class="foto-actions">
+                <button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto2').click()">📁 Archivo</button>
+                <button type="button" class="foto-action-btn camara" onclick="document.getElementById('foto2-camara').click()">📷 Cámara</button>
+            </div>
+            <div class="foto-label-text">Foto 2 (opcional)</div>
+        </div>
+        
+        <!-- FOTO 3 -->
+        <div class="foto-item">
+            <div class="foto-preview" id="previewBox3" onclick="document.getElementById('foto3').click()">
+                <div class="foto-preview-placeholder" id="preview3-placeholder">
+                    <span class="foto-preview-placeholder-icon">📷</span>
+                    <div>Foto 3</div>
+                </div>
+                <img id="preview3" style="display: none;" alt="Foto 3">
+            </div>
+            <button type="button" class="foto-remove" id="remove3" style="display: none;" onclick="removerFoto(3)">×</button>
+            <input type="file" id="foto3" class="foto-input" accept="image/*" onchange="previsualizarFoto(3, event)">
+            <input type="file" id="foto3-camara" class="foto-input" accept="image/*" capture="environment" onchange="previsualizarFoto(3, event)">
+            <div class="foto-actions">
+                <button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto3').click()">📁 Archivo</button>
+                <button type="button" class="foto-action-btn camara" onclick="document.getElementById('foto3-camara').click()">📷 Cámara</button>
+            </div>
+            <div class="foto-label-text">Foto 3 (opcional)</div>
+        </div>
+        
+        <!-- FOTO 4 -->
+        <div class="foto-item">
+            <div class="foto-preview" id="previewBox4" onclick="document.getElementById('foto4').click()">
+                <div class="foto-preview-placeholder" id="preview4-placeholder">
+                    <span class="foto-preview-placeholder-icon">📷</span>
+                    <div>Foto 4</div>
+                </div>
+                <img id="preview4" style="display: none;" alt="Foto 4">
+            </div>
+            <button type="button" class="foto-remove" id="remove4" style="display: none;" onclick="removerFoto(4)">×</button>
+            <input type="file" id="foto4" class="foto-input" accept="image/*" onchange="previsualizarFoto(4, event)">
+            <input type="file" id="foto4-camara" class="foto-input" accept="image/*" capture="environment" onchange="previsualizarFoto(4, event)">
+            <div class="foto-actions">
+                <button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto4').click()">📁 Archivo</button>
+                <button type="button" class="foto-action-btn camara" onclick="document.getElementById('foto4-camara').click()">📷 Cámara</button>
+            </div>
+            <div class="foto-label-text">Foto 4 (opcional)</div>
+        </div>
+    </div>
+</div>
 
-            <!-- FILA 1: Nombre del Equipo (solo, full width) -->
-            <div class="form-row-full">
-                <div class="form-group">
-                    <label>Nombre del Equipo <span class="required">*</span></label>
-                    <input type="text" id="nombreEquipo" placeholder="Ej: Consola de Mezclas Digital Yamaha MG20XU de 20 Canales con Efectos" required>
-                </div>
-            </div>
-            
-            <!-- FILA 2: Marca | Modelo | Serial | Medida -->
-            <div class="form-row">
-                <div class="form-grid-4">
-                    <div class="form-group">
-                        <label>Marca <span class="required">*</span></label>
-                        <input type="text" id="marcaEquipo" placeholder="Ej: Yamaha, JBL, Shure" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Modelo</label>
-                        <input type="text" id="modeloEquipo" placeholder="Ej: MG20XU, EON615">
-                    </div>
-                    <div class="form-group">
-                        <label>Serial <span class="required">*</span></label>
-                        <input type="text" id="serialEquipo" placeholder="Ej: YMH-2024-001234" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Medida (Peso o Dimensión)</label>
-                        <div class="medida-group">
-                            <input type="number" id="medidaValor" step="0.01" min="0" placeholder="0.00">
-                            <select id="medidaUnidad">
-                                <option value="metros">Metros</option>
-                                <option value="cm">Centímetros</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- FILA 3: Costo | Estatus -->
-            <div class="form-row">
-                <div class="form-grid-2">
-                    <div class="form-group">
-                        <label>Costo del Equipo ($) <span class="required">*</span></label>
-                        <div class="input-with-symbol">
-                            <input type="number" id="costoEquipo" step="0.01" min="0" placeholder="0.00" required>
-                            <span class="symbol">$</span>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Estatus <span class="required">*</span></label>
-                        <select id="estatusEquipo" required>
-                            <option value="">Seleccionar estatus...</option>
-                            <option value="operativo">✅ Operativo</option>
-                            <option value="inoperativo">⚠️ Inoperativo</option>
-                            <option value="averiado">❌ Averiado</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- FILA 4: Observación (full width, al final) -->
-            <div class="form-row-full">
-                <div class="form-group">
-                    <label>Observación</label>
-                    <textarea id="observacionEquipo" rows="4" placeholder="Observaciones adicionales sobre el equipo (estado físico, accesorios incluidos, detalles importantes, etc.)..."></textarea>
-                </div>
+<!-- CAMPOS DEL FORMULARIO -->
+<div class="form-grid">
+    <!-- Nombre del Equipo (full width) -->
+    <div class="form-group full-width">
+        <label>Nombre del Equipo <span class="required">*</span></label>
+        <input type="text" id="nombreEquipo" placeholder="Ej: Consola de Mezclas Yamaha MG20XU 20 Canales" required>
+    </div>
+    
+    <!-- Marca -->
+    <div class="form-group">
+        <label>Marca <span class="required">*</span></label>
+        <input type="text" id="marcaEquipo" placeholder="Ej: Yamaha, JBL, Shure, Sennheiser" required>
+    </div>
+    
+    <!-- Modelo -->
+    <div class="form-group">
+        <label>Modelo</label>
+        <input type="text" id="modeloEquipo" placeholder="Ej: MG20XU, EON615, SM58">
+    </div>
+    
+    <!-- Serial -->
+    <div class="form-group">
+        <label>Serial <span class="required">*</span></label>
+        <input type="text" id="serialEquipo" placeholder="Ej: YMH-2024-001234" required>
+    </div>
+    
+    <!-- Costo con símbolo $ -->
+    <div class="form-group">
+        <label>Costo del Equipo ($) <span class="required">*</span></label>
+        <div class="input-with-symbol">
+            <input type="number" id="costoEquipo" step="0.01" min="0" placeholder="0.00" required>
+            <span class="symbol">$</span>
+        </div>
+    </div>
+    
+    <!-- Medida (valor + unidad) - CAMPO CORTO -->
+    <div class="form-group">
+        <label>Medida (Peso o Dimensión)</label>
+        <div class="medida-group">
+            <input type="number" id="medidaValor" step="0.01" min="0" placeholder="0.00">
+            <select id="medidaUnidad">
+                <option value="metros">Metros</option>
+                <option value="cm">Centímetros</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Estatus -->
+<div class="form-group" style="margin-bottom: 20px;">
+    <label>Estatus <span class="required">*</span></label>
+    <select id="estatusEquipo" required>
+        <option value="">Seleccionar estatus...</option>
+        <option value="operativo">✅ Operativo</option>
+        <option value="inoperativo">⚠️ Inoperativo</option>
+        <option value="averiado">❌ Averiado</option>
+    </select>
+</div>
+
+<!-- Observación -->
+<div class="form-group full-width" style="margin-bottom: 20px;">
+    <label>Observación</label>
+    <textarea id="observacionEquipo" rows="3" placeholder="Observaciones adicionales sobre el equipo (estado, accesorios incluidos, etc.)..."></textarea>
+</div>
             </div>
         </fieldset>
 
