@@ -4,7 +4,7 @@ let usuarioActual = null;
 let fotoSeleccionadaActual = null;
 let yaInicializado = false;
 
-// ==================================
+// ==========================================
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarRegistroEquipo() {
@@ -24,39 +24,26 @@ async function inicializarRegistroEquipo() {
     yaInicializado = true;
     console.log('🚀 Iniciando registro...');
     
-    // Verificar modales
-    const modalSelector = document.getElementById('modalSelector');
-    const modalCamara = document.getElementById('modalCamara');
-    
-    console.log('🔍 Verificando modales:');
-    console.log('  - modalSelector:', modalSelector ? '✅ Encontrado' : '❌ NO encontrado');
-    console.log('  - modalCamara:', modalCamara ? '✅ Encontrado' : '❌ NO encontrado');
-    
-    if (!modalSelector || !modalCamara) {
-        console.error('❌ ERROR: Faltan modales en el HTML');
-        console.log('Asegúrate de que el HTML tenga los divs con id="modalSelector" y id="modalCamara"');
-        return;
+    // Esperar a que Supabase esté disponible
+    let intentosSupabase = 0;
+    while (typeof supabaseClient === 'undefined' && intentosSupabase < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        intentosSupabase++;
     }
     
-    // Verificar SVG
-    let svgElement = document.getElementById('barcode');
-    if (!svgElement) {
-        const previewContainer = document.querySelector('.codigo-barras-preview');
-        if (previewContainer) {
-            svgElement = document.createElement('svg');
-            svgElement.id = 'barcode';
-            previewContainer.appendChild(svgElement);
-            console.log('✅ SVG creado');
-        }
+    if (typeof supabaseClient === 'undefined') {
+        console.error('❌ Supabase no disponible después de 5 segundos');
+        // Continuar sin Supabase, el código se generará localmente
     } else {
-        console.log('✅ SVG disponible');
+        console.log('✅ Supabase disponible');
+        await cargarUsuario();
     }
     
     // Esperar JsBarcode
-    let intentos = 0;
-    while (typeof JsBarcode === 'undefined' && intentos < 50) {
-        await new Promise(resolve => setTimeout(resolve, 200));
-        intentos++;
+    let intentosJsBarcode = 0;
+    while (typeof JsBarcode === 'undefined' && intentosJsBarcode < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        intentosJsBarcode++;
     }
     
     if (typeof JsBarcode === 'undefined') {
@@ -65,15 +52,12 @@ async function inicializarRegistroEquipo() {
     }
     console.log('✅ JsBarcode disponible');
     
-    await cargarUsuario();
     await generarCodigoBarras();
     console.log('✅ Inicialización completada');
 }
 
 async function cargarUsuario() {
     try {
-        if (typeof supabaseClient === 'undefined') return;
-        
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) return;
         
@@ -95,8 +79,6 @@ async function cargarUsuario() {
 
 async function generarCodigoBarras() {
     try {
-        if (typeof supabaseClient === 'undefined') return;
-        
         const codigoGuardado = sessionStorage.getItem('codigoBarrasPendiente');
         
         if (codigoGuardado) {
@@ -105,15 +87,12 @@ async function generarCodigoBarras() {
             if (elementoCodigo) elementoCodigo.textContent = codigoBarrasActual;
             
             try {
-                const svgElement = document.getElementById('barcode');
-                if (svgElement) {
-                    JsBarcode(svgElement, codigoBarrasActual, {
-                        format: "CODE128", width: 2, height: 60,
-                        displayValue: true, fontSize: 14, margin: 5,
-                        font: "Courier New", fontOptions: "bold"
-                    });
-                    console.log('✅ Código generado desde sessionStorage');
-                }
+                JsBarcode("#barcode", codigoBarrasActual, {
+                    format: "CODE128", width: 2, height: 60,
+                    displayValue: true, fontSize: 14, margin: 5,
+                    font: "Courier New", fontOptions: "bold"
+                });
+                console.log('✅ Código generado desde sessionStorage');
             } catch (e) {
                 console.error('Error JsBarcode:', e);
             }
@@ -123,6 +102,7 @@ async function generarCodigoBarras() {
             return;
         }
         
+        // Generar código único
         let nuevoCodigo;
         let existe = true;
         let intentos = 0;
@@ -135,14 +115,25 @@ async function generarCodigoBarras() {
             
             nuevoCodigo = `EP-${fechaParte}-${horaParte}-${randomParte}`;
             
-            const { data, error } = await supabaseClient
-                .from('equipos')
-                .select('codigo_barras')
-                .eq('codigo_barras', nuevoCodigo)
-                .single();
-            
-            if (error || !data) existe = false;
-            else intentos++;
+            // Solo verificar en Supabase si está disponible
+            if (typeof supabaseClient !== 'undefined') {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('equipos')
+                        .select('codigo_barras')
+                        .eq('codigo_barras', nuevoCodigo)
+                        .single();
+                    
+                    if (error || !data) existe = false;
+                    else intentos++;
+                } catch (err) {
+                    // Si hay error, asumir que el código es único
+                    existe = false;
+                }
+            } else {
+                // Sin Supabase, asumir que es único
+                existe = false;
+            }
         }
         
         if (existe) throw new Error('No se pudo generar un código único');
@@ -154,15 +145,12 @@ async function generarCodigoBarras() {
         if (elementoCodigo) elementoCodigo.textContent = codigoBarrasActual;
         
         try {
-            const svgElement = document.getElementById('barcode');
-            if (svgElement) {
-                JsBarcode(svgElement, codigoBarrasActual, {
-                    format: "CODE128", width: 2, height: 60,
-                    displayValue: true, fontSize: 14, margin: 5,
-                    font: "Courier New", fontOptions: "bold"
-                });
-                console.log('✅ Código generado:', codigoBarrasActual);
-            }
+            JsBarcode("#barcode", codigoBarrasActual, {
+                format: "CODE128", width: 2, height: 60,
+                displayValue: true, fontSize: 14, margin: 5,
+                font: "Courier New", fontOptions: "bold"
+            });
+            console.log('✅ Código generado:', codigoBarrasActual);
         } catch (e) {
             console.error('Error JsBarcode:', e);
         }
@@ -188,7 +176,6 @@ window.abrirSelectorFoto = function(numero) {
     
     if (!modal) {
         console.error('❌ Modal selector NO encontrado');
-        console.log('Elementos en el DOM:', document.querySelectorAll('[id^="modal"]').length);
         alert('Error: El modal de selección no está disponible. Recarga la página.');
         return;
     }
@@ -607,16 +594,9 @@ function mostrarMensajeRegistro(texto, tipo) {
 }
 
 // ==========================================
-// INICIAR - Funciona con o sin defer
+// INICIAR
 // ==========================================
-if (document.readyState === 'loading') {
-    // El DOM aún se está cargando, esperar
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('📄 DOM cargado');
-        inicializarRegistroEquipo();
-    });
-} else {
-    // El DOM ya está listo (por ejemplo, con defer)
-    console.log('📄 DOM ya estaba listo');
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 DOM cargado');
     inicializarRegistroEquipo();
-}
+});
