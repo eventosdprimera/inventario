@@ -6,6 +6,11 @@ let fotoSeleccionadaActual = null;
 async function inicializarRegistroEquipo() {
     console.log('Inicializando registro de equipo...');
     
+    // Esperar a que el DOM esté completamente cargado
+    if (document.readyState === 'loading') {
+        await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
+    }
+    
     let intentos = 0;
     const maxIntentos = 50;
     
@@ -52,7 +57,10 @@ async function generarCodigoBarras() {
         
         if (codigoGuardado) {
             codigoBarrasActual = codigoGuardado;
-            document.getElementById('codigoBarrasValor').textContent = codigoBarrasActual;
+            const elementoCodigo = document.getElementById('codigoBarrasValor');
+            if (elementoCodigo) {
+                elementoCodigo.textContent = codigoBarrasActual;
+            }
             
             try {
                 JsBarcode("#barcode", codigoBarrasActual, {
@@ -107,7 +115,10 @@ async function generarCodigoBarras() {
         codigoBarrasActual = nuevoCodigo;
         sessionStorage.setItem('codigoBarrasPendiente', codigoBarrasActual);
         
-        document.getElementById('codigoBarrasValor').textContent = codigoBarrasActual;
+        const elementoCodigo = document.getElementById('codigoBarrasValor');
+        if (elementoCodigo) {
+            elementoCodigo.textContent = codigoBarrasActual;
+        }
         
         try {
             JsBarcode("#barcode", codigoBarrasActual, {
@@ -129,7 +140,10 @@ async function generarCodigoBarras() {
         
     } catch (err) {
         console.error('Error al generar código:', err);
-        document.getElementById('codigoBarrasValor').textContent = 'Error al generar';
+        const elementoCodigo = document.getElementById('codigoBarrasValor');
+        if (elementoCodigo) {
+            elementoCodigo.textContent = 'Error al generar';
+        }
         mostrarMensajeRegistro('Error al generar el código de barras: ' + err.message, 'error');
     }
 }
@@ -550,4 +564,9 @@ function mostrarMensajeRegistro(texto, tipo) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', inicializarRegistroEquipo);
+// Inicializar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializarRegistroEquipo);
+} else {
+    inicializarRegistroEquipo();
+}
