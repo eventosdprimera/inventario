@@ -207,15 +207,16 @@ box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 background: #b91c1c;
 transform: scale(1.15);
 }
-/* BOTONES ARCHIVO/CÁMARA - REDISEÑADOS */
+
+/* ============ BOTONES ARCHIVO/CÁMARA - DISEÑO BONITO ============ */
 .foto-actions {
 display: flex;
 gap: 6px;
-margin-top: 8px;
+margin-top: 10px;
 }
 .foto-action-btn {
 flex: 1;
-padding: 9px 6px;
+padding: 10px 8px;
 border: none;
 border-radius: 8px;
 cursor: pointer;
@@ -268,6 +269,7 @@ transition: left 0.5s;
 .foto-action-btn:hover::before {
 left: 100%;
 }
+
 .form-row { margin-bottom: 20px; }
 .form-row-full { margin-bottom: 20px; }
 .form-grid-4 {
@@ -278,6 +280,11 @@ gap: 20px;
 .form-grid-2 {
 display: grid;
 grid-template-columns: 1fr 1fr;
+gap: 20px;
+}
+.form-grid-3 {
+display: grid;
+grid-template-columns: 1fr 1fr 1fr;
 gap: 20px;
 }
 .form-group { display: flex; flex-direction: column; }
@@ -311,14 +318,6 @@ border-color: #1e3a8a;
 background-color: white;
 box-shadow: 0 0 0 3px rgba(30,58,138,0.1);
 }
-.form-group input:disabled,
-.form-group select:disabled,
-.form-group textarea:disabled {
-background-color: #f3f4f6;
-color: #6b7280;
-cursor: not-allowed;
-opacity: 0.7;
-}
 .input-with-symbol { position: relative; }
 .input-with-symbol input { padding-right: 35px; }
 .input-with-symbol .symbol {
@@ -331,9 +330,17 @@ font-weight: 700;
 pointer-events: none;
 font-size: 18px;
 }
+
+/* ============ MEDIDA - CAMPO CORTO ============ */
 .medida-group { display: flex; gap: 8px; align-items: center; }
-.medida-group input { flex: 0 0 80px; max-width: 80px; padding: 12px 8px; }
+.medida-group input { 
+    flex: 0 0 80px; 
+    max-width: 80px; 
+    padding: 12px 8px; 
+    text-align: center;
+}
 .medida-group select { flex: 1; min-width: 0; }
+
 .btn-action {
 padding: 14px 28px;
 border: none;
@@ -534,6 +541,7 @@ border-top: 1px solid #e5e7eb;
 .container { padding: 15px; }
 .form-grid-4 { grid-template-columns: 1fr 1fr; }
 .form-grid-2 { grid-template-columns: 1fr; }
+.form-grid-3 { grid-template-columns: 1fr; }
 .fotos-grid { grid-template-columns: repeat(2, 1fr); }
 .codigo-barras-header { flex-direction: column; }
 }
@@ -655,9 +663,9 @@ border-top: 1px solid #e5e7eb;
 <input type="text" id="nombreEquipo" placeholder="Ej: Consola de Mezclas Digital Yamaha MG20XU de 20 Canales con Efectos" required>
 </div>
 </div>
-<!-- FILA 2: Marca | Modelo | Serial | Medida -->
+<!-- FILA 2: Marca | Modelo | Serial -->
 <div class="form-row">
-<div class="form-grid-4">
+<div class="form-grid-3">
 <div class="form-group">
 <label>Marca <span class="required">*</span></label>
 <input type="text" id="marcaEquipo" placeholder="Ej: Yamaha, JBL, Shure" required>
@@ -670,6 +678,11 @@ border-top: 1px solid #e5e7eb;
 <label>Serial <span class="required">*</span></label>
 <input type="text" id="serialEquipo" placeholder="Ej: YMH-2024-001234" required>
 </div>
+</div>
+</div>
+<!-- FILA 3: Medida | Costo | Estatus -->
+<div class="form-row">
+<div class="form-grid-3">
 <div class="form-group">
 <label>Medida (Peso o Dimensión)</label>
 <div class="medida-group">
@@ -680,11 +693,6 @@ border-top: 1px solid #e5e7eb;
 </select>
 </div>
 </div>
-</div>
-</div>
-<!-- FILA 3: Costo | Estatus -->
-<div class="form-row">
-<div class="form-grid-2">
 <div class="form-group">
 <label>Costo del Equipo ($) <span class="required">*</span></label>
 <div class="input-with-symbol">
@@ -717,7 +725,6 @@ border-top: 1px solid #e5e7eb;
 </div>
 </form>
 </div>
-
 <!-- MODAL CÁMARA -->
 <div id="modalCamara" class="modal-camara">
 <div class="modal-camara-content">
@@ -735,7 +742,6 @@ border-top: 1px solid #e5e7eb;
 </div>
 </div>
 </div>
-
 <div class="copyright">
 <strong>©copyright Eventos de Primera</strong><br>
 2026-2027 | Versión 0.1
