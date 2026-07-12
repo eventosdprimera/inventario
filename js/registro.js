@@ -13,6 +13,9 @@ async function inicializarRegistroEquipo() {
     
     console.log('Inicializando registro de equipo...');
     
+    // Marcar como inicializado inmediatamente para evitar doble ejecución
+    inicializado = true;
+    
     // Esperar a que el DOM esté completamente cargado
     if (document.readyState === 'loading') {
         await new Promise(resolve => {
@@ -51,8 +54,6 @@ async function inicializarRegistroEquipo() {
     
     await cargarUsuario();
     await generarCodigoBarras();
-    
-    inicializado = true;
 }
 
 async function cargarUsuario() {
@@ -595,9 +596,9 @@ function mostrarMensajeRegistro(texto, tipo) {
     }
 }
 
-// Inicializar solo una vez cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', function() {
-    if (!inicializado) {
-        inicializarRegistroEquipo();
-    }
-}, { once: true });
+// Inicializar solo una vez
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializarRegistroEquipo, { once: true });
+} else {
+    inicializarRegistroEquipo();
+}
