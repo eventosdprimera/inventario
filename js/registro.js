@@ -2,22 +2,46 @@
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let codigoBarrasActual = null;
-let fotoSeleccionada = null;
+let fotosSeleccionadas = [null, null, null, null]; // Array para 4 fotos
 let usuarioActual = null;
 
 // Inicializar el formulario de registro
 async function inicializarRegistroEquipo() {
+    await cargarUsuario();
     await generarCodigoBarras();
+}
+
+// Cargar datos del usuario actual
+async function cargarUsuario() {
+    try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) {
+            window.location.href = '../index.html';
+            return;
+        }
+        
+        const { data, error } = await supabaseClient
+            .from('usuarios')
+            .select('*')
+            .eq('email', session.user.email)
+            .single();
+        
+        if (data && !error) {
+            usuarioActual = data;
+        } else {
+            usuarioActual = { email: session.user.email, id: session.user.id, nombre: session.user.email.split('@')[0] };
+        }
+    } catch (err) {
+        console.error('Error al cargar usuario:', err);
+    }
 }
 
 // Generar código de barras único
 async function generarCodigoBarras() {
     try {
-        // Verificar si ya existe un código en sessionStorage (para no perderlo al recargar)
         const codigoGuardado = sessionStorage.getItem('codigoBarrasPendiente');
         
         if (codigoGuardado) {
-            // Usar el código guardado
             codigoBarrasActual = codigoGuardado;
             document.getElementById('codigoBarrasValor').textContent = codigoBarrasActual;
             
@@ -36,14 +60,12 @@ async function generarCodigoBarras() {
             return;
         }
         
-        // Generar nuevo código único
         let nuevoCodigo;
         let existe = true;
         let intentos = 0;
         const maxIntentos = 10;
         
         while (existe && intentos < maxIntentos) {
-            // Formato: EP-YYYYMMDD-HHMMSS-XXXXXX
             const ahora = new Date();
             const fechaParte = ahora.toISOString().slice(0,10).replace(/-/g,'');
             const horaParte = ahora.toTimeString().slice(0,8).replace(/:/g,'');
@@ -51,7 +73,6 @@ async function generarCodigoBarras() {
             
             nuevoCodigo = `EP-${fechaParte}-${horaParte}-${randomParte}`;
             
-            // Verificar si ya existe en la base de datos
             const { data, error } = await supabaseClient
                 .from('equipos')
                 .select('codigo_barras')
@@ -70,14 +91,10 @@ async function generarCodigoBarras() {
         }
         
         codigoBarrasActual = nuevoCodigo;
-        
-        // Guardar en sessionStorage para que no se pierda
         sessionStorage.setItem('codigoBarrasPendiente', codigoBarrasActual);
         
-        // Mostrar el código
         document.getElementById('codigoBarrasValor').textContent = codigoBarrasActual;
         
-        // Generar código de barras visual
         JsBarcode("#barcode", codigoBarrasActual, {
             format: "CODE128",
             width: 2,
@@ -89,7 +106,6 @@ async function generarCodigoBarras() {
             fontOptions: "bold"
         });
         
-        // Habilitar botón de imprimir
         document.getElementById('btnImprimir').disabled = false;
         
     } catch (err) {
@@ -99,31 +115,71 @@ async function generarCodigoBarras() {
     }
 }
 
-// Previsualizar foto
-function previsualizarFoto(event) {
+// Previsualizar foto (1-4)
+function previsualizarFoto(numero, event) {
     const file = event.target.files[0];
     if (!file) return;
     
     if (file.size > 5 * 1024 * 1024) {
-        alert('La imagen no debe superar los 5MB');
+        alert(`La foto ${numero} no debe superar los 5MB`);
         event.target.value = '';
         return;
     }
     
     if (!file.type.startsWith('image/')) {
-        alert('Por favor selecciona un archivo de imagen válido');
+        alert(`Por favor selecciona un archivo de imagen válido para la foto ${numero}`);
         event.target.value = '';
         return;
     }
     
-    fotoSeleccionada = file;
+    fotosSeleccionadas[numero - 1] = file;
     
     const reader = new FileReader();
     reader.onload = function(e) {
-        document.getElementById('fotoPreviewContainer').innerHTML = 
-            `<img src="${e.target.result}" alt="Preview">`;
+        const preview = document.getElementById(`preview${numero}`);
+        const placeholder = document.getElementById(`preview${numero}-placeholder`);
+        const removeBtn = document.getElementById(`remove${numero}`);
+        
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+        removeBtn.style.display = 'flex';
     };
     reader.readAsDataURL(file);
+}
+
+// Remover foto
+function removerFoto(numero) {
+    fotosSeleccionadas[numero - 1] = null;
+    
+    const preview = document.getElementById(`preview${numero}`);
+    const placeholder = document.getElementById(`preview${numero}-placeholder`);
+    const removeBtn = document.getElementById(`remove${numero}`);
+    const input = document.getElementById(`foto${numero}`);
+    
+    preview.style.display = 'none';
+    preview.src = '';
+    placeholder.style.display = 'block';
+    removeBtn.style.display = 'none';
+    input.value = '';
+}
+
+// Verificar si el serial ya existe
+async function verificarSerial(serial) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('equipos')
+            .select('serial')
+            .eq('serial', serial)
+            .single();
+        
+        if (data && !error) {
+            return true; // Ya existe
+        }
+        return false; // No existe
+    } catch (err) {
+        return false;
+    }
 }
 
 // Guardar equipo
@@ -132,13 +188,14 @@ async function guardarEquipo() {
     const marca = document.getElementById('marcaEquipo').value.trim();
     const modelo = document.getElementById('modeloEquipo').value.trim();
     const serial = document.getElementById('serialEquipo').value.trim();
-    const metros = document.getElementById('metrosEquipo').value;
+    const medidaValor = document.getElementById('medidaValor').value;
+    const medidaUnidad = document.getElementById('medidaUnidad').value;
     const costo = document.getElementById('costoEquipo').value;
     const observacion = document.getElementById('observacionEquipo').value.trim();
     const estatus = document.getElementById('estatusEquipo').value;
     
     // Validaciones
-    if (!nombre || !marca || !costo || !estatus) {
+    if (!nombre || !marca || !serial || !costo || !estatus) {
         mostrarMensaje('Por favor completa todos los campos obligatorios (*)', 'error');
         return;
     }
@@ -148,28 +205,43 @@ async function guardarEquipo() {
         return;
     }
     
+    // Verificar que al menos la foto 1 esté seleccionada
+    if (!fotosSeleccionadas[0]) {
+        mostrarMensaje('La Foto Principal es obligatoria', 'error');
+        return;
+    }
+    
+    // Verificar que el serial no exista
+    const serialExiste = await verificarSerial(serial);
+    if (serialExiste) {
+        mostrarMensaje('El serial ya está registrado en el sistema. No se pueden repetir seriales.', 'error');
+        return;
+    }
+    
     const btnGuardar = document.getElementById('btnGuardar');
     btnGuardar.disabled = true;
     btnGuardar.textContent = '💾 Guardando...';
     
     try {
-        let fotoUrl = null;
+        let fotoUrls = [null, null, null, null];
         
-        // Subir foto si existe
-        if (fotoSeleccionada) {
-            const fileExt = fotoSeleccionada.name.split('.').pop();
-            const fileName = `${codigoBarrasActual}_${Date.now()}.${fileExt}`;
-            const filePath = `equipos/${fileName}`;
-            
-            const { error: uploadError } = await supabaseClient.storage
-                .from('equipos-fotos')
-                .upload(filePath, fotoSeleccionada);
-            
-            if (uploadError) throw uploadError;
-            fotoUrl = filePath;
+        // Subir fotos
+        for (let i = 0; i < 4; i++) {
+            if (fotosSeleccionadas[i]) {
+                const fileExt = fotosSeleccionadas[i].name.split('.').pop();
+                const fileName = `${codigoBarrasActual}_foto${i+1}_${Date.now()}.${fileExt}`;
+                const filePath = `equipos/${fileName}`;
+                
+                const { error: uploadError } = await supabaseClient.storage
+                    .from('equipos-fotos')
+                    .upload(filePath, fotosSeleccionadas[i]);
+                
+                if (uploadError) throw uploadError;
+                fotoUrls[i] = filePath;
+            }
         }
         
-        // Insertar equipo en la base de datos
+        // Insertar equipo
         const { data, error } = await supabaseClient
             .from('equipos')
             .insert({
@@ -177,29 +249,34 @@ async function guardarEquipo() {
                 nombre_equipo: nombre,
                 marca: marca,
                 modelo: modelo || null,
-                serial: serial || null,
-                metros: metros || 0,
+                serial: serial,
+                medida_valor: medidaValor || 0,
+                medida_unidad: medidaUnidad,
                 costo: costo,
                 observacion: observacion || null,
                 estatus: estatus,
-                foto_url: fotoUrl,
+                foto_url: fotoUrls[0],
+                foto2_url: fotoUrls[1],
+                foto3_url: fotoUrls[2],
+                foto4_url: fotoUrls[3],
                 usuario_registro: usuarioActual?.email || 'unknown',
                 usuario_registro_id: usuarioActual?.id || null
             })
             .select()
             .single();
         
-        if (error) throw error;
+        if (error) {
+            if (error.code === '23505') {
+                throw new Error('El serial ya está registrado en el sistema');
+            }
+            throw error;
+        }
         
         mostrarMensaje('✅ Equipo registrado exitosamente con código: ' + codigoBarrasActual, 'exito');
         
-        // Limpiar sessionStorage del código
         sessionStorage.removeItem('codigoBarrasPendiente');
-        
-        // Deshabilitar botón de imprimir
         document.getElementById('btnImprimir').disabled = true;
         
-        // Guardar datos para imprimir
         window.equipoRegistrado = {
             codigo_barras: codigoBarrasActual,
             nombre_equipo: nombre,
@@ -212,7 +289,6 @@ async function guardarEquipo() {
         
         btnGuardar.textContent = '✅ Guardado';
         
-        // Preguntar si quiere imprimir
         setTimeout(() => {
             if (confirm('¿Deseas imprimir el sticker del código de barras?')) {
                 imprimirSticker();
@@ -239,7 +315,6 @@ function imprimirSticker() {
     const modelo = document.getElementById('modeloEquipo').value.trim() || '';
     const serial = document.getElementById('serialEquipo').value.trim() || '';
     
-    // Generar código de barras en SVG
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = '<svg id="stickerBarcode"></svg>';
     document.body.appendChild(tempDiv);
@@ -258,7 +333,6 @@ function imprimirSticker() {
         const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
         document.body.removeChild(tempDiv);
         
-        // Crear ventana de impresión
         const ventana = window.open('', '_blank', 'width=600,height=500');
         
         ventana.document.write(`
@@ -315,24 +389,31 @@ function limpiarFormulario() {
     }
     
     document.getElementById('formRegistro').reset();
-    document.getElementById('fotoPreviewContainer').innerHTML = `
-        <div class="foto-placeholder">
-            <div class="foto-placeholder-icon"></div>
-            <div>Sin foto</div>
-        </div>
-    `;
-    fotoSeleccionada = null;
+    
+    // Limpiar fotos
+    for (let i = 1; i <= 4; i++) {
+        fotosSeleccionadas[i - 1] = null;
+        const preview = document.getElementById(`preview${i}`);
+        const placeholder = document.getElementById(`preview${i}-placeholder`);
+        const removeBtn = document.getElementById(`remove${i}`);
+        const input = document.getElementById(`foto${i}`);
+        
+        preview.style.display = 'none';
+        preview.src = '';
+        placeholder.style.display = 'block';
+        removeBtn.style.display = 'none';
+        input.value = '';
+    }
+    
     window.equipoRegistrado = null;
     document.getElementById('mensaje').className = 'mensaje';
     document.getElementById('btnGuardar').disabled = false;
     document.getElementById('btnGuardar').textContent = '💾 Guardar Equipo';
     
-    // Limpiar código anterior y generar nuevo
     sessionStorage.removeItem('codigoBarrasPendiente');
     codigoBarrasActual = null;
     document.getElementById('btnImprimir').disabled = true;
     
-    // Generar nuevo código
     generarCodigoBarras();
 }
 
@@ -345,4 +426,4 @@ function mostrarMensaje(texto, tipo) {
 }
 
 // Iniciar al cargar
-iniciarRegistroEquipo();
+inicializarRegistroEquipo();
