@@ -1,59 +1,84 @@
-// Inicializar Supabase
+// js/registro.js
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let codigoBarrasActual = null;
 let fotoSeleccionada = null;
 let usuarioActual = null;
 
-// Iniciar página
-async function iniciarRegistro() {
-    // Verificar sesión
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    
-    if (!session) {
-        window.location.href = 'index.html';
-        return;
-    }
-    
-    // Cargar datos del usuario
-    await cargarUsuario(session.user.email);
-    
-    // Generar código de barras automáticamente
+// Inicializar el formulario de registro
+async function inicializarRegistroEquipo() {
     await generarCodigoBarras();
-}
-
-// Cargar datos del usuario actual
-async function cargarUsuario(email) {
-    try {
-        const { data, error } = await supabaseClient
-            .from('usuarios')
-            .select('*')
-            .eq('email', email)
-            .single();
-        
-        if (data && !error) {
-            usuarioActual = data;
-        } else {
-            usuarioActual = { email: email, id: null, nombre: email.split('@')[0] };
-        }
-    } catch (err) {
-        console.error('Error al cargar usuario:', err);
-        usuarioActual = { email: email, id: null, nombre: email.split('@')[0] };
-    }
 }
 
 // Generar código de barras único
 async function generarCodigoBarras() {
     try {
-        const { data, error } = await supabaseClient.rpc('generar_codigo_barras');
+        // Verificar si ya existe un código en sessionStorage (para no perderlo al recargar)
+        const codigoGuardado = sessionStorage.getItem('codigoBarrasPendiente');
         
-        if (error) throw error;
+        if (codigoGuardado) {
+            // Usar el código guardado
+            codigoBarrasActual = codigoGuardado;
+            document.getElementById('codigoBarrasValor').textContent = codigoBarrasActual;
+            
+            JsBarcode("#barcode", codigoBarrasActual, {
+                format: "CODE128",
+                width: 2,
+                height: 60,
+                displayValue: true,
+                fontSize: 14,
+                margin: 5,
+                font: "Courier New",
+                fontOptions: "bold"
+            });
+            
+            document.getElementById('btnImprimir').disabled = false;
+            return;
+        }
         
-        codigoBarrasActual = data;
-        document.getElementById('codigoBarrasValor').textContent = data;
+        // Generar nuevo código único
+        let nuevoCodigo;
+        let existe = true;
+        let intentos = 0;
+        const maxIntentos = 10;
+        
+        while (existe && intentos < maxIntentos) {
+            // Formato: EP-YYYYMMDD-HHMMSS-XXXXXX
+            const ahora = new Date();
+            const fechaParte = ahora.toISOString().slice(0,10).replace(/-/g,'');
+            const horaParte = ahora.toTimeString().slice(0,8).replace(/:/g,'');
+            const randomParte = Math.floor(Math.random() * 999999).toString().padStart(6, '0');
+            
+            nuevoCodigo = `EP-${fechaParte}-${horaParte}-${randomParte}`;
+            
+            // Verificar si ya existe en la base de datos
+            const { data, error } = await supabaseClient
+                .from('equipos')
+                .select('codigo_barras')
+                .eq('codigo_barras', nuevoCodigo)
+                .single();
+            
+            if (error || !data) {
+                existe = false;
+            } else {
+                intentos++;
+            }
+        }
+        
+        if (existe) {
+            throw new Error('No se pudo generar un código único después de múltiples intentos');
+        }
+        
+        codigoBarrasActual = nuevoCodigo;
+        
+        // Guardar en sessionStorage para que no se pierda
+        sessionStorage.setItem('codigoBarrasPendiente', codigoBarrasActual);
+        
+        // Mostrar el código
+        document.getElementById('codigoBarrasValor').textContent = codigoBarrasActual;
         
         // Generar código de barras visual
-        JsBarcode("#barcode", data, {
+        JsBarcode("#barcode", codigoBarrasActual, {
             format: "CODE128",
             width: 2,
             height: 60,
@@ -64,10 +89,13 @@ async function generarCodigoBarras() {
             fontOptions: "bold"
         });
         
+        // Habilitar botón de imprimir
+        document.getElementById('btnImprimir').disabled = false;
+        
     } catch (err) {
         console.error('Error al generar código:', err);
         document.getElementById('codigoBarrasValor').textContent = 'Error al generar';
-        mostrarMensaje('Error al generar el código de barras', 'error');
+        mostrarMensaje('Error al generar el código de barras: ' + err.message, 'error');
     }
 }
 
@@ -92,8 +120,8 @@ function previsualizarFoto(event) {
     
     const reader = new FileReader();
     reader.onload = function(e) {
-        const container = document.getElementById('fotoPreviewContainer');
-        container.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+        document.getElementById('fotoPreviewContainer').innerHTML = 
+            `<img src="${e.target.result}" alt="Preview">`;
     };
     reader.readAsDataURL(file);
 }
@@ -165,8 +193,11 @@ async function guardarEquipo() {
         
         mostrarMensaje('✅ Equipo registrado exitosamente con código: ' + codigoBarrasActual, 'exito');
         
-        // Habilitar botón de imprimir
-        document.getElementById('btnImprimir').disabled = false;
+        // Limpiar sessionStorage del código
+        sessionStorage.removeItem('codigoBarrasPendiente');
+        
+        // Deshabilitar botón de imprimir
+        document.getElementById('btnImprimir').disabled = true;
         
         // Guardar datos para imprimir
         window.equipoRegistrado = {
@@ -179,6 +210,15 @@ async function guardarEquipo() {
             fecha_registro: data.fecha_registro
         };
         
+        btnGuardar.textContent = '✅ Guardado';
+        
+        // Preguntar si quiere imprimir
+        setTimeout(() => {
+            if (confirm('¿Deseas imprimir el sticker del código de barras?')) {
+                imprimirSticker();
+            }
+        }, 500);
+        
     } catch (err) {
         console.error('Error al guardar:', err);
         mostrarMensaje('Error al guardar el equipo: ' + err.message, 'error');
@@ -189,13 +229,15 @@ async function guardarEquipo() {
 
 // Imprimir sticker
 function imprimirSticker() {
-    if (!window.equipoRegistrado) {
-        alert('Primero debes guardar un equipo');
+    if (!codigoBarrasActual) {
+        alert('No hay código de barras generado');
         return;
     }
     
-    const eq = window.equipoRegistrado;
-    const fecha = new Date(eq.fecha_registro).toLocaleDateString('es-ES');
+    const nombre = document.getElementById('nombreEquipo').value.trim() || 'Sin asignar';
+    const marca = document.getElementById('marcaEquipo').value.trim() || '';
+    const modelo = document.getElementById('modeloEquipo').value.trim() || '';
+    const serial = document.getElementById('serialEquipo').value.trim() || '';
     
     // Generar código de barras en SVG
     const tempDiv = document.createElement('div');
@@ -203,7 +245,7 @@ function imprimirSticker() {
     document.body.appendChild(tempDiv);
     
     try {
-        JsBarcode("#stickerBarcode", eq.codigo_barras, {
+        JsBarcode("#stickerBarcode", codigoBarrasActual, {
             format: "CODE128",
             width: 1.5,
             height: 40,
@@ -223,69 +265,33 @@ function imprimirSticker() {
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Sticker - ${eq.codigo_barras}</title>
+                <title>Sticker - ${codigoBarrasActual}</title>
                 <style>
-                    @page { 
-                        size: 4in 2.5in; 
-                        margin: 0.1in; 
-                    }
+                    @page { size: 4in 2.5in; margin: 0.1in; }
                     * { margin: 0; padding: 0; box-sizing: border-box; }
-                    body { 
-                        font-family: Arial, sans-serif; 
-                        padding: 5px;
-                    }
-                    .sticker {
-                        border: 2px solid #000;
-                        padding: 8px;
-                        text-align: center;
-                        width: 100%;
-                    }
-                    .empresa {
-                        font-size: 10px;
-                        font-weight: bold;
-                        color: #1e3a8a;
-                        margin-bottom: 4px;
-                        text-transform: uppercase;
-                    }
-                    .nombre {
-                        font-size: 11px;
-                        font-weight: bold;
-                        margin: 4px 0;
-                        word-break: break-word;
-                    }
-                    .barcode {
-                        margin: 6px 0;
-                    }
-                    .barcode svg {
-                        max-width: 100%;
-                        height: auto;
-                    }
-                    .info {
-                        font-size: 8px;
-                        color: #333;
-                        margin-top: 4px;
-                        line-height: 1.3;
-                    }
-                    @media print {
-                        body { padding: 0; }
-                    }
+                    body { font-family: Arial, sans-serif; padding: 5px; }
+                    .sticker { border: 2px solid #000; padding: 8px; text-align: center; width: 100%; }
+                    .empresa { font-size: 10px; font-weight: bold; color: #1e3a8a; margin-bottom: 4px; text-transform: uppercase; }
+                    .nombre { font-size: 11px; font-weight: bold; margin: 4px 0; word-break: break-word; }
+                    .barcode { margin: 6px 0; }
+                    .barcode svg { max-width: 100%; height: auto; }
+                    .info { font-size: 8px; color: #333; margin-top: 4px; line-height: 1.3; }
+                    .codigo { font-size: 10px; font-weight: bold; margin-top: 4px; font-family: 'Courier New', monospace; }
                 </style>
             </head>
             <body>
                 <div class="sticker">
                     <div class="empresa">Eventos D' Primera</div>
-                    <div class="nombre">${eq.nombre_equipo}</div>
+                    <div class="nombre">${nombre}</div>
                     <div class="barcode">${barcodeSVG}</div>
+                    <div class="codigo">${codigoBarrasActual}</div>
                     <div class="info">
-                        ${eq.marca}${eq.modelo ? ' - ' + eq.modelo : ''}<br>
-                        ${eq.serial ? 'S/N: ' + eq.serial + '<br>' : ''}
-                        Reg: ${fecha}
+                        ${marca}${modelo ? ' - ' + modelo : ''}<br>
+                        ${serial ? 'S/N: ' + serial + '<br>' : ''}
                     </div>
                 </div>
                 <script>
-                    window.onload = function() {
-                        setTimeout(function() { window.print(); }, 300);
-                    };
+                    window.onload = function() { setTimeout(function() { window.print(); }, 300); };
                 <\/script>
             </body>
             </html>
@@ -304,23 +310,27 @@ function imprimirSticker() {
 
 // Limpiar formulario
 function limpiarFormulario() {
-    if (!confirm('¿Estás seguro de limpiar el formulario? Se generará un nuevo código de barras.')) {
+    if (!confirm('¿Estás seguro de limpiar el formulario? Se generará un NUEVO código de barras único.')) {
         return;
     }
     
     document.getElementById('formRegistro').reset();
     document.getElementById('fotoPreviewContainer').innerHTML = `
-        <div class="foto-placeholder" id="fotoPlaceholder">
-            <div class="foto-placeholder-icon">📷</div>
+        <div class="foto-placeholder">
+            <div class="foto-placeholder-icon"></div>
             <div>Sin foto</div>
         </div>
     `;
     fotoSeleccionada = null;
     window.equipoRegistrado = null;
-    document.getElementById('btnImprimir').disabled = true;
     document.getElementById('mensaje').className = 'mensaje';
     document.getElementById('btnGuardar').disabled = false;
     document.getElementById('btnGuardar').textContent = '💾 Guardar Equipo';
+    
+    // Limpiar código anterior y generar nuevo
+    sessionStorage.removeItem('codigoBarrasPendiente');
+    codigoBarrasActual = null;
+    document.getElementById('btnImprimir').disabled = true;
     
     // Generar nuevo código
     generarCodigoBarras();
@@ -335,4 +345,4 @@ function mostrarMensaje(texto, tipo) {
 }
 
 // Iniciar al cargar
-iniciarRegistro();
+iniciarRegistroEquipo();
