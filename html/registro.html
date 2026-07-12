@@ -487,6 +487,20 @@ border-top: 1px solid #e5e7eb;
 .medida-costo-compuesto .costo-input {
     flex: 1.5;
 }
+.campo-costo-separado {
+    display: flex;
+    flex-direction: column;
+    flex: 1.5;
+}
+.campo-costo-separado label {
+    color: #374151;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
 </style>
 </head>
 <body>
@@ -599,19 +613,22 @@ border-top: 1px solid #e5e7eb;
 </div>
 </div>
 
-<!-- FILA: MEDIDA + COSTO (juntos) | ESTATUS -->
+<!-- FILA: MEDIDA | COSTO | ESTATUS -->
 <div class="form-row">
-<div class="form-grid-2">
+<div class="form-grid-3">
 <div class="form-group">
-<label>Medida | Costo ($) <span class="required-underline">*</span></label>
+<label>Medida</label>
 <div class="medida-costo-compuesto">
 <input type="number" id="medidaValor" step="0.01" min="0" placeholder="0.00">
 <select id="medidaUnidad">
 <option value="metro">metro</option>
 <option value="centimetro">centímetros</option>
 </select>
-<input type="number" id="costoEquipo" step="0.01" min="0" placeholder="$ 0.00" class="costo-input" required>
 </div>
+</div>
+<div class="campo-costo-separado">
+<label>Costo ($) <span class="required-underline">*</span></label>
+<input type="number" id="costoEquipo" step="0.01" min="0" placeholder="$ 0.00" required>
 </div>
 <div class="form-group">
 <label>Estatus <span class="required">*</span></label>
@@ -619,6 +636,7 @@ border-top: 1px solid #e5e7eb;
 <option value="">Seleccionar estatus...</option>
 <option value="operativo">✅ Operativo</option>
 <option value="inoperativo">⚠️ Inoperativo</option>
+<option value="averiado">❌ Averiado</option>
 </select>
 </div>
 </div>
