@@ -597,6 +597,72 @@ border-top: 1px solid #e5e7eb;
 .form-grid-4 { grid-template-columns: 1fr; }
 .fotos-grid { grid-template-columns: 1fr; }
 }
+    /* ============ MEDIDA + COSTO COMPACTOS ============ */
+.form-grid-2-custom {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.medida-costo-group {
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+}
+
+.medida-costo-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.medida-costo-item label {
+    color: #374151;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.medida-costo-item .medida-group {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.medida-costo-item .medida-group input {
+    flex: 0 0 70px;
+    max-width: 70px;
+    padding: 10px 6px;
+    text-align: center;
+    font-size: 13px;
+}
+
+.medida-costo-item .medida-group select {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 8px;
+    font-size: 13px;
+}
+
+.medida-costo-item .input-with-symbol input {
+    padding: 10px 35px 10px 12px;
+    font-size: 13px;
+}
+
+/* Responsive para medida+costo */
+@media (max-width: 768px) {
+    .form-grid-2-custom {
+        grid-template-columns: 1fr;
+    }
+    
+    .medida-costo-group {
+        flex-direction: column;
+        gap: 12px;
+    }
+}
 </style>
 </head>
 <body>
@@ -728,24 +794,28 @@ border-top: 1px solid #e5e7eb;
 </div>
 </div>
 </div>
-<!-- FILA 3: Medida | Costo | Estatus -->
+<!-- FILA 3: Medida + Costo (compactos) | Estatus -->
 <div class="form-row">
-<div class="form-grid-3">
+<div class="form-grid-2-custom">
 <div class="form-group">
-<label>Medida (Peso o Dimensión)</label>
+<div class="medida-costo-group">
+<div class="medida-costo-item">
+<label>Medida</label>
 <div class="medida-group">
 <input type="number" id="medidaValor" step="0.01" min="0" placeholder="0.00">
 <select id="medidaUnidad">
-<option value="metros">Metros</option>
-<option value="cm">Centímetros</option>
+<option value="metros">m</option>
+<option value="cm">cm</option>
 </select>
 </div>
 </div>
-<div class="form-group">
-<label>Costo del Equipo ($) <span class="required">*</span></label>
+<div class="medida-costo-item">
+<label>Costo ($) <span class="required">*</span></label>
 <div class="input-with-symbol">
 <input type="number" id="costoEquipo" step="0.01" min="0" placeholder="0.00" required>
 <span class="symbol">$</span>
+</div>
+</div>
 </div>
 </div>
 <div class="form-group">
