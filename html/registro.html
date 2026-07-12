@@ -588,78 +588,125 @@ border-top: 1px solid #e5e7eb;
 .fotos-grid { grid-template-columns: 1fr; }
 }
 
-/* ============ MEDIDA + COSTO COMPACTOS ============ */
+/* ============ MEDIDA + COSTO COMPACTOS - VERSIÓN FINAL ============ */
 .form-grid-2-custom {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    display: grid !important;
+    grid-template-columns: 1.2fr 1fr !important;
+    gap: 20px !important;
 }
 
 .medida-costo-group {
-    display: flex;
-    gap: 15px;
-    align-items: flex-start;
+    display: flex !important;
+    gap: 12px !important;
+    align-items: flex-end !important;
+    width: 100% !important;
 }
 
 .medida-costo-item {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* PRIMERA COLUMNA - Medida + Costo juntos */
+.form-grid-2-custom > .form-group:first-child {
+    width: 100% !important;
+}
+
+/* SEGUNDA COLUMNA - Estatus */
+.form-grid-2-custom > .form-group:last-child {
+    width: 100% !important;
 }
 
 .medida-costo-item label {
-    color: #374151;
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+    color: #374151 !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    margin-bottom: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
 }
 
 .medida-costo-item .medida-group {
-    display: flex;
-    gap: 6px;
-    align-items: center;
+    display: flex !important;
+    gap: 8px !important;
+    align-items: center !important;
 }
 
-/* 🔥 INPUT DE MEDIDA - MUY PEQUEÑO (POR ID) */
+/* 🔥 INPUT MEDIDA - ULTRA COMPACTO */
 #medidaValor {
-    width: 50px !important;
-    max-width: 50px !important;
-    min-width: 50px !important;
-    flex: 0 0 50px !important;
-    padding: 8px 2px !important;
+    width: 60px !important;
+    max-width: 60px !important;
+    min-width: 60px !important;
+    flex: 0 0 60px !important;
+    padding: 10px 4px !important;
     text-align: center !important;
+    font-size: 13px !important;
+    box-sizing: border-box !important;
+    display: inline-block !important;
+}
+
+/* 🔥 SELECT UNIDADES - COMPACTO */
+#medidaUnidad {
+    width: 65px !important;
+    max-width: 65px !important;
+    min-width: 65px !important;
+    flex: 0 0 65px !important;
+    padding: 10px 8px !important;
+    font-size: 12px !important;
+    box-sizing: border-box !important;
+    appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 8px center !important;
+    padding-right: 28px !important;
+}
+
+/* 🔥 INPUT COSTO */
+#costoEquipo {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.medida-costo-item .input-with-symbol {
+    position: relative !important;
+    width: 100% !important;
+}
+
+.medida-costo-item .input-with-symbol input {
+    width: 100% !important;
+    padding: 10px 35px 10px 12px !important;
     font-size: 13px !important;
     box-sizing: border-box !important;
 }
 
-/* 🔥 SELECT DE UNIDADES - COMPACTO (POR ID) */
-#medidaUnidad {
-    width: 55px !important;
-    max-width: 55px !important;
-    min-width: 55px !important;
-    flex: 0 0 55px !important;
-    padding: 8px 4px !important;
-    font-size: 12px !important;
-    box-sizing: border-box !important;
+.medida-costo-item .input-with-symbol .symbol {
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: #1e3a8a !important;
+    font-weight: 700 !important;
+    pointer-events: none !important;
+    font-size: 16px !important;
 }
 
-.medida-costo-item .input-with-symbol input {
-    padding: 10px 35px 10px 12px;
-    font-size: 13px;
-}
-
-/* Responsive para medida+costo */
+/* Responsive */
 @media (max-width: 768px) {
     .form-grid-2-custom {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
     }
     
     .medida-costo-group {
-        flex-direction: column;
-        gap: 12px;
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+    
+    #medidaValor,
+    #medidaUnidad {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 1 1 100% !important;
     }
 }
 </style>
@@ -720,7 +767,7 @@ border-top: 1px solid #e5e7eb;
 <div class="foto-item">
 <div class="foto-preview" id="previewBox2" onclick="document.getElementById('foto2').click()">
 <div class="foto-preview-placeholder" id="preview2-placeholder">
-<span class="foto-preview-placeholder-icon">📷</span>
+<span class="foto-preview-placeholder-icon"></span>
 <div>Foto 2</div>
 </div>
 <img id="preview2" style="display: none;" alt="Foto 2">
@@ -730,7 +777,7 @@ border-top: 1px solid #e5e7eb;
 <div class="foto-label-text">Foto 2 (opcional)</div>
 <div class="foto-actions">
 <button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto2').click()"><span class="btn-icon">📁</span> Archivo</button>
-<button type="button" class="foto-action-btn camara" onclick="abrirCamara(2)"><span class="btn-icon">📷</span> Cámara</button>
+<button type="button" class="foto-action-btn camara" onclick="abrirCamara(2)"><span class="btn-icon"></span> Cámara</button>
 </div>
 </div>
 <!-- FOTO 3 -->
@@ -763,7 +810,7 @@ border-top: 1px solid #e5e7eb;
 <input type="file" id="foto4" class="foto-input" accept="image/*" onchange="previsualizarFoto(4, event)">
 <div class="foto-label-text">Foto 4 (opcional)</div>
 <div class="foto-actions">
-<button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto4').click()"><span class="btn-icon">📁</span> Archivo</button>
+<button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto4').click()"><span class="btn-icon"></span> Archivo</button>
 <button type="button" class="foto-action-btn camara" onclick="abrirCamara(4)"><span class="btn-icon">📷</span> Cámara</button>
 </div>
 </div>
@@ -795,38 +842,38 @@ border-top: 1px solid #e5e7eb;
 </div>
 <!-- FILA 3: Medida + Costo (compactos) | Estatus -->
 <div class="form-row">
-<div class="form-grid-2-custom">
-<div class="form-group">
-<div class="medida-costo-group">
-<div class="medida-costo-item">
-<label>Medida</label>
-<div class="medida-group">
-<input type="number" id="medidaValor" step="0.01" min="0" placeholder="0.00">
-<select id="medidaUnidad">
-<option value="metros">m</option>
-<option value="cm">cm</option>
-</select>
-</div>
-</div>
-<div class="medida-costo-item">
-<label>Costo ($) <span class="required">*</span></label>
-<div class="input-with-symbol">
-<input type="number" id="costoEquipo" step="0.01" min="0" placeholder="0.00" required>
-<span class="symbol">$</span>
-</div>
-</div>
-</div>
-</div>
-<div class="form-group">
-<label>Estatus <span class="required">*</span></label>
-<select id="estatusEquipo" required>
-<option value="">Seleccionar estatus...</option>
-<option value="operativo">✅ Operativo</option>
-<option value="inoperativo">⚠️ Inoperativo</option>
-<option value="averiado">❌ Averiado</option>
-</select>
-</div>
-</div>
+    <div class="form-grid-2-custom">
+        <div class="form-group">
+            <div class="medida-costo-group">
+                <div class="medida-costo-item">
+                    <label>Medida</label>
+                    <div class="medida-group">
+                        <input type="number" id="medidaValor" step="0.01" min="0" placeholder="0.00">
+                        <select id="medidaUnidad">
+                            <option value="metros">m</option>
+                            <option value="cm">cm</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="medida-costo-item" style="flex: 1;">
+                    <label>Costo ($) <span class="required">*</span></label>
+                    <div class="input-with-symbol">
+                        <input type="number" id="costoEquipo" step="0.01" min="0" placeholder="0.00" required>
+                        <span class="symbol">$</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Estatus <span class="required">*</span></label>
+            <select id="estatusEquipo" required>
+                <option value="">Seleccionar estatus...</option>
+                <option value="operativo">✅ Operativo</option>
+                <option value="inoperativo">⚠️ Inoperativo</option>
+                <option value="averiado">❌ Averiado</option>
+            </select>
+        </div>
+    </div>
 </div>
 <!-- FILA 4: Observación -->
 <div class="form-row-full">
@@ -838,11 +885,11 @@ border-top: 1px solid #e5e7eb;
 </fieldset>
 <div class="button-group">
 <button type="button" class="btn-action btn-primary" id="btnGuardar" onclick="guardarEquipo()">💾 Guardar Equipo</button>
-<button type="button" class="btn-action btn-secondary" onclick="limpiarFormulario()">🧹 Limpiar Formulario</button>
+<button type="button" class="btn-action btn-secondary" onclick="limpiarFormulario()"> Limpiar Formulario</button>
 </div>
 </form>
 </div>
-<!-- MO CÁMARA -->
+<!-- MODAL CÁMARA -->
 <div id="modalCamara" class="modal-camara">
 <div class="modal-camara-content">
 <div class="modal-camara-header">
@@ -855,7 +902,7 @@ border-top: 1px solid #e5e7eb;
 </div>
 <div class="modal-camara-actions">
 <button type="button" class="modal-camara-btn cancelar" onclick="cerrarCamara()">❌ Cancelar</button>
-<button type="button" class="modal-camara-btn capturar" id="btnCapturar" onclick="capturarFoto()">📸 Capturar Foto</button>
+<button type="button" class="modal-camara-btn capturar" id="btnCapturar" onclick="capturarFoto()"> Capturar Foto</button>
 </div>
 </div>
 </div>
