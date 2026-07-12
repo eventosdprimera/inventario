@@ -7,15 +7,28 @@ let fotoSeleccionadaActual = null;
 async function inicializarRegistroEquipo() {
     console.log('🚀 Iniciando registro de equipo...');
     
-    // Verificar que el SVG existe
-    const svgElement = document.getElementById('barcode');
-    console.log('SVG encontrado:', svgElement);
+    // Verificar si el SVG existe, si no, crearlo
+    let svgElement = document.getElementById('barcode');
     
     if (!svgElement) {
-        console.error('❌ ERROR: No se encontró el elemento <svg id="barcode">');
-        console.log('Verifica que tu HTML tenga exactamente: <svg id="barcode"></svg>');
-        return;
+        console.warn('⚠️ SVG no encontrado, creándolo dinámicamente...');
+        
+        // Buscar el contenedor del código de barras
+        const previewContainer = document.querySelector('.codigo-barras-preview');
+        
+        if (previewContainer) {
+            svgElement = document.createElement('svg');
+            svgElement.id = 'barcode';
+            previewContainer.appendChild(svgElement);
+            console.log('✅ SVG creado dinámicamente');
+        } else {
+            console.error('❌ ERROR: No se encontró el contenedor .codigo-barras-preview');
+            console.log('Verifica que tu HTML tenga: <div class="codigo-barras-preview"></div>');
+            return;
+        }
     }
+    
+    console.log('✅ SVG disponible:', svgElement);
     
     // Esperar a que JsBarcode esté disponible
     let intentos = 0;
@@ -32,12 +45,10 @@ async function inicializarRegistroEquipo() {
     }
     
     console.log('✅ JsBarcode disponible');
-    console.log('✅ SVG disponible');
     
     await cargarUsuario();
     await generarCodigoBarras();
 }
-
 async function cargarUsuario() {
     try {
         const { data: { session } } = await supabaseClient.auth.getSession();
