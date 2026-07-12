@@ -180,9 +180,12 @@ function generarFormularioConsulta(operacion) {
 
 function generarFormularioProductos(operacion) {
     if (operacion === 'registrar') {
-        // Redirigir a la página externa de registro
-        window.location.href = 'registro.html';
+        // Redirigir a html/registro.html
+        window.location.href = 'html/registro.html';
         return '';
+    }
+    // ... resto del código
+}
     } else if (operacion === 'modificar') {
         return `
             <fieldset>
