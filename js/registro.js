@@ -330,7 +330,7 @@ window.imprimirSticker = function() {
         return;
     }
     
-    const nombre = document.getElementById('nombreEquipo').value.trim() || '';
+    const nombre = document.getElementById('nombreEquipo').value.trim();
     const marca = document.getElementById('marcaEquipo').value.trim() || '';
     const modelo = document.getElementById('modeloEquipo').value.trim() || '';
     const serial = document.getElementById('serialEquipo').value.trim() || '';
@@ -400,7 +400,6 @@ window.imprimirSticker = function() {
     }
 };
 
-// Limpiar formulario (sin generar nuevo código)
 window.limpiarFormulario = function() {
     if (!confirm('¿Limpiar el formulario? El código de barras se mantendrá.')) return;
     
@@ -430,8 +429,6 @@ window.limpiarFormulario = function() {
     document.getElementById('mensaje').className = 'mensaje';
     document.getElementById('btnGuardar').disabled = false;
     document.getElementById('btnGuardar').textContent = '💾 Guardar Equipo';
-    
-    // NO se limpia el código de barras ni se genera uno nuevo
 };
 
 function mostrarMensajeRegistro(texto, tipo) {
@@ -443,10 +440,11 @@ function mostrarMensajeRegistro(texto, tipo) {
         // Scroll suave hacia arriba para ver el mensaje
         window.scrollTo({ top: 0, behavior: 'smooth' });
         
-        // También hacer scroll al contenedor si está dentro del dashboard
         const container = document.querySelector('.container');
         if (container) {
-            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(() => {
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
         }
     }
 }
