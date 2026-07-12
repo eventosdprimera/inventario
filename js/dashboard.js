@@ -18,17 +18,13 @@ async function iniciarDashboard() {
     configurarMenu();
     aplicarPermisosPorRol();
     iniciarReloj();
-    
-    // Mostrar mensaje de bienvenida al cargar
     mostrarBienvenida();
 }
 
-// Mostrar mensaje de bienvenida
 function mostrarBienvenida() {
     document.querySelector('.welcome-card').style.display = 'block';
 }
 
-// Ocultar mensaje de bienvenida
 function ocultarBienvenida() {
     document.querySelector('.welcome-card').style.display = 'none';
 }
@@ -131,26 +127,46 @@ function configurarMenu() {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.submenu-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            
-            // Ocultar mensaje de bienvenida al seleccionar un módulo
             ocultarBienvenida();
-            
             cargarContenido(btn.dataset.action);
         });
     });
 }
 
-function cargarContenido(action) {
+async function cargarContenido(action) {
     const [modulo, operacion] = action.split('-');
     const contenidoDiv = document.getElementById('contenidoDinamico');
     
-    switch(modulo) {
-        case 'consulta': contenidoDiv.innerHTML = generarFormularioConsulta(operacion); break;
-        case 'productos': contenidoDiv.innerHTML = generarFormularioProductos(operacion); break;
-        case 'eventos': contenidoDiv.innerHTML = generarFormularioEventos(operacion); break;
-        case 'usuarios': contenidoDiv.innerHTML = generarFormularioUsuarios(operacion); break;
-        case 'reportes': contenidoDiv.innerHTML = generarFormularioReportes(operacion); break;
+    ocultarBienvenida();
+    
+    // Caso especial: Inventario → Registrar (redirigir a registro.html)
+    if (modulo === 'productos' && operacion === 'registrar') {
+        window.location.href = 'registro.html';
+        return;
     }
+    
+    // Otros casos
+    let html = '';
+    
+    switch(modulo) {
+        case 'consulta':
+            html = generarFormularioConsulta(operacion);
+            break;
+        case 'productos':
+            html = generarFormularioProductos(operacion);
+            break;
+        case 'eventos':
+            html = generarFormularioEventos(operacion);
+            break;
+        case 'usuarios':
+            html = generarFormularioUsuarios(operacion);
+            break;
+        case 'reportes':
+            html = generarFormularioReportes(operacion);
+            break;
+    }
+    
+    contenidoDiv.innerHTML = html;
 }
 
 function generarFormularioConsulta(operacion) {
@@ -179,53 +195,15 @@ function generarFormularioConsulta(operacion) {
 }
 
 function generarFormularioProductos(operacion) {
-    if (operacion === 'registrar') {
-        // Redirigir a html/registro.html
-        window.location.href = 'html/registro.html';
-        return '';
-    }
-    // ... resto del código
-}
-    } else if (operacion === 'modificar') {
-        return `
-            <fieldset>
-                <legend>Modificar Equipo</legend>
-                <div class="form-group">
-                    <label>Seleccionar Equipo</label>
-                    <select id="selectEquipo" onchange="cargarDatosEquipo()">
-                        <option value="">Seleccionar equipo...</option>
-                    </select>
-                </div>
-                <div id="formularioModificacion"></div>
-                <br>
-                <button class="btn-action btn-primary" onclick="actualizarEquipo()">💾 Actualizar</button>
-                <button class="btn-action btn-secondary" onclick="limpiarFormularioEquipo()">🔄 Cancelar</button>
-            </fieldset>
-        `;
+    if (operacion === 'modificar') {
+        return `<fieldset><legend>Modificar Equipo</legend>
+            <p>Próximamente: formulario de modificación de equipos.</p>
+        </fieldset>`;
     } else {
-        return `
-            <fieldset>
-                <legend>Eliminar Equipo</legend>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Código</th>
-                                <th>Nombre</th>
-                                <th>Marca</th>
-                                <th>Serial</th>
-                                <th>Estatus</th>
-                                <th>Fecha</th>
-                                <th>Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaEquipos">
-                            <tr><td colspan="7" style="text-align: center;">Cargando equipos...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </fieldset>
-        `;
+        return `<fieldset><legend>Eliminar Equipo</legend>
+            <div class="table-container"><table><thead><tr><th>Código</th><th>Nombre</th><th>Marca</th><th>Serial</th><th>Estatus</th><th>Fecha</th></tr></thead>
+            <tbody><tr><td colspan="6" style="text-align: center;">Próximamente: listado de equipos</td></tr></tbody></table></div>
+        </fieldset>`;
     }
 }
 
