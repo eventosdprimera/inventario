@@ -142,6 +142,11 @@ async function cargarContenido(action) {
     // Caso especial: Inventario → Registrar
     if (modulo === 'productos' && operacion === 'registrar') {
         try {
+            // Cargar JsBarcode si no está disponible
+            if (typeof JsBarcode === 'undefined') {
+                await cargarScript('https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js');
+            }
+            
             const response = await fetch('html/registro.html');
             if (!response.ok) throw new Error('No se pudo cargar');
             
@@ -152,18 +157,17 @@ async function cargarContenido(action) {
             
             contenidoDiv.innerHTML = bodyContent;
             
-            // Esperar un momento para que el DOM esté listo
-            setTimeout(async () => {
-                if (typeof inicializarRegistroEquipo === 'function') {
-                    await inicializarRegistroEquipo();
-                } else {
-                    console.error('inicializarRegistroEquipo no está definida');
-                }
-            }, 100);
+            // Esperar a que el DOM esté listo
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            // Inicializar el formulario
+            if (typeof inicializarRegistroEquipo === 'function') {
+                await inicializarRegistroEquipo();
+            }
             
         } catch (err) {
             console.error('Error:', err);
-            contenidoDiv.innerHTML = '<fieldset><legend>Error</legend><p>No se pudo cargar el formulario.</p></fieldset>';
+            contenidoDiv.innerHTML = '<fieldset><legend>Error</legend><p>No se pudo cargar el formulario: ' + err.message + '</p></fieldset>';
         }
         return;
     }
@@ -179,6 +183,26 @@ async function cargarContenido(action) {
     }
     
     contenidoDiv.innerHTML = html;
+}
+
+// Función auxiliar para cargar scripts dinámicamente
+function cargarScript(url) {
+    return new Promise((resolve, reject) => {
+        // Verificar si ya existe
+        const scripts = document.querySelectorAll('script[src]');
+        for (let script of scripts) {
+            if (script.src === url) {
+                resolve();
+                return;
+            }
+        }
+        
+        const script = document.createElement('script');
+        script.src = url;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
 }
 
 function generarFormularioConsulta(operacion) {
