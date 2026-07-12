@@ -11,6 +11,7 @@ async function iniciarRegistro() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     
     if (!session) {
+        // Redirigir al login (que está en html/)
         window.location.href = 'index.html';
         return;
     }
@@ -178,6 +179,8 @@ async function guardarEquipo() {
             estatus: estatus,
             fecha_registro: data.fecha_registro
         };
+        
+        btnGuardar.textContent = '✅ Guardado';
         
     } catch (err) {
         console.error('Error al guardar:', err);
