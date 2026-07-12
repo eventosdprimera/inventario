@@ -565,13 +565,16 @@ border-top: 1px solid #e5e7eb;
 .campo-medida {
     display: flex;
     flex-direction: column;
-    gap: 8px;
 }
 
 .campo-medida label {
     color: #374151;
     font-size: 13px;
     font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .grupo-medida-inputs {
@@ -586,8 +589,8 @@ border-top: 1px solid #e5e7eb;
     border-radius: 8px;
     font-size: 14px;
     font-family: 'Poppins', sans-serif;
-    background-color: #fafafa;
     transition: all 0.3s;
+    background-color: #fafafa;
 }
 
 .grupo-medida-inputs input {
@@ -611,13 +614,22 @@ border-top: 1px solid #e5e7eb;
 .campo-costo {
     display: flex;
     flex-direction: column;
-    gap: 8px;
 }
 
 .campo-costo label {
     color: #374151;
     font-size: 13px;
     font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.campo-costo label .required {
+    color: #dc2626;
+    font-weight: 700;
+    font-size: 14px;
 }
 
 .campo-costo input {
@@ -627,8 +639,8 @@ border-top: 1px solid #e5e7eb;
     border-radius: 8px;
     font-size: 14px;
     font-family: 'Poppins', sans-serif;
-    background-color: #fafafa;
     transition: all 0.3s;
+    background-color: #fafafa;
 }
 
 .campo-costo input:focus {
@@ -641,13 +653,22 @@ border-top: 1px solid #e5e7eb;
 .campo-estatus {
     display: flex;
     flex-direction: column;
-    gap: 8px;
 }
 
 .campo-estatus label {
     color: #374151;
     font-size: 13px;
     font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.campo-estatus label .required {
+    color: #dc2626;
+    font-weight: 700;
+    font-size: 14px;
 }
 
 .campo-estatus select {
