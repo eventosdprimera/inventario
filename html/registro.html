@@ -121,6 +121,8 @@ padding: 15px;
 border-radius: 8px;
 display: inline-block;
 margin: 15px 0;
+min-height: 100px;
+min-width: 300px;
 }
 .codigo-info {
 display: flex;
@@ -328,6 +330,8 @@ color: #991b1b;
 border-left-color: #dc2626;
 display: block;
 }
+
+/* ============ MODAL SELECTOR DE FOTO ============ */
 .modal-selector {
 display: none;
 position: fixed;
@@ -347,6 +351,11 @@ padding: 30px;
 max-width: 400px;
 width: 90%;
 box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+animation: modalSlideIn 0.3s ease;
+}
+@keyframes modalSlideIn {
+from { transform: translateY(-50px); opacity: 0; }
+to { transform: translateY(0); opacity: 1; }
 }
 .modal-selector-header {
 text-align: center;
@@ -414,6 +423,8 @@ background: #f3f4f6;
 .modal-selector-btn-icon {
 font-size: 24px;
 }
+
+/* ============ MODAL CÁMARA ============ */
 .modal-camara {
 display: none;
 position: fixed;
@@ -510,28 +521,7 @@ color: #374151;
 .modal-camara-btn.cancelar:hover {
 background: #d1d5db;
 }
-.modal-camara-error {
-background: #fee2e2;
-color: #991b1b;
-padding: 20px;
-border-radius: 10px;
-text-align: center;
-border-left: 4px solid #dc2626;
-}
-.modal-camara-error-icon {
-font-size: 48px;
-margin-bottom: 10px;
-display: block;
-}
-.modal-camara-error-title {
-font-size: 16px;
-font-weight: 700;
-margin-bottom: 6px;
-}
-.modal-camara-error-text {
-font-size: 13px;
-line-height: 1.5;
-}
+
 .copyright {
 text-align: center;
 padding: 15px;
@@ -598,7 +588,7 @@ border-top: 1px solid #e5e7eb;
 </div>
 <button type="button" class="btn-action btn-print" id="btnImprimir" onclick="imprimirSticker()" disabled>🖨️ Imprimir Sticker</button>
 </div>
-<div class="codigo-barras-preview">
+<div class="codigo-barras-preview" id="barcodePreview">
 <svg id="barcode"></svg>
 </div>
 <div class="codigo-info">
@@ -725,11 +715,13 @@ border-top: 1px solid #e5e7eb;
 </form>
 </div>
 
-<!-- Modal Selector de Foto -->
+<!-- ============================================ -->
+<!-- MODAL SELECTOR DE FOTO - ¡IMPORTANTE! -->
+<!-- ============================================ -->
 <div id="modalSelector" class="modal-selector">
 <div class="modal-selector-content">
 <div class="modal-selector-header">
-<div class="modal-selector-title">Seleccionar método</div>
+<div class="modal-selector-title">📸 Seleccionar método</div>
 <div class="modal-selector-subtitle">¿Cómo deseas agregar la foto?</div>
 </div>
 <div class="modal-selector-options">
@@ -742,13 +734,15 @@ border-top: 1px solid #e5e7eb;
 <span>Tomar foto con cámara</span>
 </button>
 <button type="button" class="modal-selector-btn cancelar" onclick="cerrarSelectorFoto()">
-<span>Cancelar</span>
+<span>❌ Cancelar</span>
 </button>
 </div>
 </div>
 </div>
 
-<!-- Modal Cámara -->
+<!-- ============================================ -->
+<!-- MODAL CÁMARA - ¡IMPORTANTE! -->
+<!-- ============================================ -->
 <div id="modalCamara" class="modal-camara">
 <div class="modal-camara-content">
 <div class="modal-camara-header">
