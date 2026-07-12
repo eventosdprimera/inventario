@@ -3,11 +3,9 @@ let codigoBarrasActual = null;
 let fotosSeleccionadas = [null, null, null, null];
 let usuarioActual = null;
 
-// Función principal de inicialización
 async function inicializarRegistroEquipo() {
     console.log('Inicializando registro de equipo...');
     
-    // Esperar a que JsBarcode esté disponible (hasta 10 segundos)
     let intentos = 0;
     const maxIntentos = 50;
     
@@ -27,7 +25,6 @@ async function inicializarRegistroEquipo() {
     await generarCodigoBarras();
 }
 
-// Cargar datos del usuario
 async function cargarUsuario() {
     try {
         const { data: { session } } = await supabaseClient.auth.getSession();
@@ -49,7 +46,6 @@ async function cargarUsuario() {
     }
 }
 
-// Generar código de barras único
 async function generarCodigoBarras() {
     try {
         const codigoGuardado = sessionStorage.getItem('codigoBarrasPendiente');
@@ -138,7 +134,6 @@ async function generarCodigoBarras() {
     }
 }
 
-// Previsualizar foto (desde archivo o cámara)
 window.previsualizarFoto = function(numero, event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -171,7 +166,6 @@ window.previsualizarFoto = function(numero, event) {
         if (placeholder) placeholder.style.display = 'none';
         if (removeBtn) removeBtn.style.display = 'flex';
         
-        // Quitar el onclick del previewBox para que no se abra el selector al hacer click en la imagen
         if (previewBox) {
             previewBox.onclick = null;
             previewBox.style.cursor = 'default';
@@ -180,7 +174,6 @@ window.previsualizarFoto = function(numero, event) {
     reader.readAsDataURL(file);
 };
 
-// Remover foto
 window.removerFoto = function(numero) {
     fotosSeleccionadas[numero - 1] = null;
     
@@ -197,14 +190,12 @@ window.removerFoto = function(numero) {
     if (input) input.value = '';
     if (inputCamara) inputCamara.value = '';
     
-    // Restaurar el onclick
     if (previewBox) {
         previewBox.onclick = function() { document.getElementById(`foto${numero}`).click(); };
         previewBox.style.cursor = 'pointer';
     }
 };
 
-// Verificar serial único
 async function verificarSerial(serial) {
     try {
         const { data, error } = await supabaseClient
@@ -219,7 +210,6 @@ async function verificarSerial(serial) {
     }
 }
 
-// Guardar equipo
 window.guardarEquipo = async function() {
     const nombre = document.getElementById('nombreEquipo').value.trim();
     const marca = document.getElementById('marcaEquipo').value.trim();
@@ -334,14 +324,13 @@ window.guardarEquipo = async function() {
     }
 };
 
-// Imprimir sticker
 window.imprimirSticker = function() {
     if (!codigoBarrasActual) {
         alert('No hay código de barras');
         return;
     }
     
-    const nombre = document.getElementById('nombreEquipo').value.trim() || 'Sin asignar';
+    const nombre = document.getElementById('nombreEquipo').value.trim() || '';
     const marca = document.getElementById('marcaEquipo').value.trim() || '';
     const modelo = document.getElementById('modeloEquipo').value.trim() || '';
     const serial = document.getElementById('serialEquipo').value.trim() || '';
@@ -387,7 +376,7 @@ window.imprimirSticker = function() {
             <body>
                 <div class="sticker">
                     <div class="empresa">Eventos D' Primera</div>
-                    <div class="nombre">${nombre}</div>
+                    ${nombre ? `<div class="nombre">${nombre}</div>` : ''}
                     <div class="barcode">${barcodeSVG}</div>
                     <div class="codigo">${codigoBarrasActual}</div>
                     <div class="info">
@@ -411,9 +400,9 @@ window.imprimirSticker = function() {
     }
 };
 
-// Limpiar formulario
+// Limpiar formulario (sin generar nuevo código)
 window.limpiarFormulario = function() {
-    if (!confirm('¿Limpiar el formulario? Se generará un NUEVO código.')) return;
+    if (!confirm('¿Limpiar el formulario? El código de barras se mantendrá.')) return;
     
     document.getElementById('formRegistro').reset();
     
@@ -442,20 +431,22 @@ window.limpiarFormulario = function() {
     document.getElementById('btnGuardar').disabled = false;
     document.getElementById('btnGuardar').textContent = '💾 Guardar Equipo';
     
-    sessionStorage.removeItem('codigoBarrasPendiente');
-    codigoBarrasActual = null;
-    
-    const btnImprimir = document.getElementById('btnImprimir');
-    if (btnImprimir) btnImprimir.disabled = true;
-    
-    generarCodigoBarras();
+    // NO se limpia el código de barras ni se genera uno nuevo
 };
 
-// Mostrar mensajes
 function mostrarMensajeRegistro(texto, tipo) {
     const mensajeDiv = document.getElementById('mensaje');
     if (mensajeDiv) {
         mensajeDiv.textContent = texto;
         mensajeDiv.className = `mensaje ${tipo}`;
+        
+        // Scroll suave hacia arriba para ver el mensaje
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // También hacer scroll al contenedor si está dentro del dashboard
+        const container = document.querySelector('.container');
+        if (container) {
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 }
