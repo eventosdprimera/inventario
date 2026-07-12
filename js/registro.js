@@ -2,14 +2,26 @@ let codigoBarrasActual = null;
 let fotosSeleccionadas = [null, null, null, null];
 let usuarioActual = null;
 let fotoSeleccionadaActual = null;
+let inicializado = false;
 
 async function inicializarRegistroEquipo() {
+    // Evitar doble ejecución
+    if (inicializado) {
+        console.log('Ya inicializado, saltando...');
+        return;
+    }
+    
     console.log('Inicializando registro de equipo...');
     
     // Esperar a que el DOM esté completamente cargado
     if (document.readyState === 'loading') {
-        await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
+        await new Promise(resolve => {
+            document.addEventListener('DOMContentLoaded', resolve, { once: true });
+        });
     }
+    
+    // Esperar un poco más para asegurar que todo esté renderizado
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     let intentos = 0;
     const maxIntentos = 50;
@@ -26,8 +38,21 @@ async function inicializarRegistroEquipo() {
     }
     
     console.log('JsBarcode disponible ✓');
+    
+    // Verificar que el elemento SVG existe
+    const svgElement = document.getElementById('barcode');
+    if (!svgElement) {
+        console.error('Elemento SVG #barcode no encontrado');
+        mostrarMensajeRegistro('Error: Elemento de código de barras no encontrado', 'error');
+        return;
+    }
+    
+    console.log('Elemento SVG encontrado ✓');
+    
     await cargarUsuario();
     await generarCodigoBarras();
+    
+    inicializado = true;
 }
 
 async function cargarUsuario() {
@@ -63,16 +88,19 @@ async function generarCodigoBarras() {
             }
             
             try {
-                JsBarcode("#barcode", codigoBarrasActual, {
-                    format: "CODE128",
-                    width: 2,
-                    height: 60,
-                    displayValue: true,
-                    fontSize: 14,
-                    margin: 5,
-                    font: "Courier New",
-                    fontOptions: "bold"
-                });
+                const svgElement = document.getElementById('barcode');
+                if (svgElement) {
+                    JsBarcode(svgElement, codigoBarrasActual, {
+                        format: "CODE128",
+                        width: 2,
+                        height: 60,
+                        displayValue: true,
+                        fontSize: 14,
+                        margin: 5,
+                        font: "Courier New",
+                        fontOptions: "bold"
+                    });
+                }
             } catch (e) {
                 console.error('Error JsBarcode:', e);
             }
@@ -121,16 +149,19 @@ async function generarCodigoBarras() {
         }
         
         try {
-            JsBarcode("#barcode", codigoBarrasActual, {
-                format: "CODE128",
-                width: 2,
-                height: 60,
-                displayValue: true,
-                fontSize: 14,
-                margin: 5,
-                font: "Courier New",
-                fontOptions: "bold"
-            });
+            const svgElement = document.getElementById('barcode');
+            if (svgElement) {
+                JsBarcode(svgElement, codigoBarrasActual, {
+                    format: "CODE128",
+                    width: 2,
+                    height: 60,
+                    displayValue: true,
+                    fontSize: 14,
+                    margin: 5,
+                    font: "Courier New",
+                    fontOptions: "bold"
+                });
+            }
         } catch (e) {
             console.error('Error JsBarcode:', e);
         }
@@ -564,9 +595,9 @@ function mostrarMensajeRegistro(texto, tipo) {
     }
 }
 
-// Inicializar cuando el DOM esté listo
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', inicializarRegistroEquipo);
-} else {
-    inicializarRegistroEquipo();
-}
+// Inicializar solo una vez cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    if (!inicializado) {
+        inicializarRegistroEquipo();
+    }
+}, { once: true });
