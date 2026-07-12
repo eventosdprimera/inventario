@@ -180,27 +180,49 @@ function generarFormularioConsulta(operacion) {
 
 function generarFormularioProductos(operacion) {
     if (operacion === 'registrar') {
-        return `<fieldset><legend>Registrar Producto</legend>
-            <div class="form-grid">
-                <div class="form-group"><label>Nombre</label><input type="text" placeholder="Nombre del producto"></div>
-                <div class="form-group"><label>Código</label><input type="text" placeholder="Código único"></div>
-                <div class="form-group"><label>Cantidad</label><input type="number" placeholder="0"></div>
-                <div class="form-group"><label>Precio</label><input type="number" step="0.01" placeholder="0.00"></div>
-            </div>
-            <br><button class="btn-action btn-primary">Guardar</button><button class="btn-action btn-secondary">Cancelar</button></fieldset>`;
+        // Redirigir a la página externa de registro
+        window.location.href = 'registro.html';
+        return '';
     } else if (operacion === 'modificar') {
-        return `<fieldset><legend>Modificar Producto</legend>
-            <div class="form-group"><label>Seleccionar Producto</label><select><option>Producto #001</option></select></div>
-            <div class="form-grid">
-                <div class="form-group"><label>Nombre</label><input type="text"></div>
-                <div class="form-group"><label>Código</label><input type="text"></div>
-            </div>
-            <br><button class="btn-action btn-primary">Actualizar</button><button class="btn-action btn-secondary">Cancelar</button></fieldset>`;
+        return `
+            <fieldset>
+                <legend>Modificar Equipo</legend>
+                <div class="form-group">
+                    <label>Seleccionar Equipo</label>
+                    <select id="selectEquipo" onchange="cargarDatosEquipo()">
+                        <option value="">Seleccionar equipo...</option>
+                    </select>
+                </div>
+                <div id="formularioModificacion"></div>
+                <br>
+                <button class="btn-action btn-primary" onclick="actualizarEquipo()">💾 Actualizar</button>
+                <button class="btn-action btn-secondary" onclick="limpiarFormularioEquipo()">🔄 Cancelar</button>
+            </fieldset>
+        `;
     } else {
-        return `<fieldset><legend>Eliminar Producto</legend>
-            <div class="table-container"><table><thead><tr><th>Código</th><th>Nombre</th><th>Cantidad</th><th>Precio</th></tr></thead>
-            <tbody><tr><td>P001</td><td>Producto Ejemplo</td><td>10</td><td>$50.00</td></tr></tbody></table></div>
-            <br><button class="btn-action btn-danger">Eliminar Seleccionado</button></fieldset>`;
+        return `
+            <fieldset>
+                <legend>Eliminar Equipo</legend>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Marca</th>
+                                <th>Serial</th>
+                                <th>Estatus</th>
+                                <th>Fecha</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaEquipos">
+                            <tr><td colspan="7" style="text-align: center;">Cargando equipos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </fieldset>
+        `;
     }
 }
 
