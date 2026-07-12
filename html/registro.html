@@ -135,13 +135,13 @@ legend {
     font-weight: 500;
 }
 
-/* FOTOS - HORIZONTAL */
+/* FOTOS */
 .fotos-section { margin-bottom: 25px; }
 .fotos-titulo {
-    color: #374151;
     font-size: 14px;
     font-weight: 600;
-    margin-bottom: 12px;
+    color: #1e3a8a;
+    margin-bottom: 15px;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -150,12 +150,11 @@ legend {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 15px;
-    margin-bottom: 10px;
 }
 .foto-item { position: relative; }
 .foto-preview {
     width: 100%;
-    height: 150px;
+    height: 140px;
     border: 2px dashed #e5e7eb;
     border-radius: 10px;
     display: flex;
@@ -166,7 +165,6 @@ legend {
     cursor: pointer;
     transition: all 0.3s;
     flex-direction: column;
-    gap: 8px;
 }
 .foto-preview:hover {
     border-color: #1e3a8a;
@@ -181,54 +179,17 @@ legend {
     text-align: center;
     color: #9ca3af;
     font-size: 11px;
-    padding: 10px;
 }
 .foto-preview-placeholder-icon {
     font-size: 36px;
     margin-bottom: 4px;
-}
-.foto-buttons {
-    display: flex;
-    gap: 5px;
-    margin-top: 8px;
-    justify-content: center;
-}
-.foto-btn {
-    flex: 1;
-    padding: 6px 8px;
-    border: 1px solid #e5e7eb;
-    background-color: white;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 11px;
-    font-weight: 500;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    font-family: 'Poppins', sans-serif;
-}
-.foto-btn:hover {
-    background-color: #eff6ff;
-    border-color: #1e3a8a;
-    color: #1e3a8a;
-}
-.foto-btn-camara {
-    background-color: #1e3a8a;
-    color: white;
-    border-color: #1e3a8a;
-}
-.foto-btn-camara:hover {
-    background-color: #1e40af;
-    color: white;
 }
 .foto-input { display: none; }
 .foto-label-text {
     text-align: center;
     font-size: 11px;
     color: #6b7280;
-    margin-top: 5px;
+    margin-top: 8px;
     font-weight: 500;
 }
 .foto-label-text .required { color: #dc2626; }
@@ -254,8 +215,44 @@ legend {
     background: rgba(185, 28, 28, 1);
     transform: scale(1.1);
 }
+.foto-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+}
+.foto-action-btn {
+    flex: 1;
+    padding: 8px 6px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-family: 'Poppins', sans-serif;
+    color: #374151;
+}
+.foto-action-btn:hover {
+    background: #eff6ff;
+    border-color: #1e3a8a;
+    color: #1e3a8a;
+}
+.foto-action-btn.camara {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    color: white;
+    border-color: #1e3a8a;
+}
+.foto-action-btn.camara:hover {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+    color: white;
+}
 
-/* FORMULARIO - LAYOUT ORGANIZADO */
+/* FORMULARIO */
 .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -263,9 +260,7 @@ legend {
     margin-bottom: 20px;
 }
 .form-group { display: flex; flex-direction: column; }
-.form-group.full-width {
-    grid-column: 1 / -1;
-}
+.form-group.full-width { grid-column: 1 / -1; }
 .form-group label {
     color: #374151;
     font-size: 13px;
@@ -381,57 +376,12 @@ legend {
 }
 .copyright strong { color: #6b7280; font-weight: 600; }
 
-/* MODAL CÁMARA */
-.modal-camara {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.8);
-    align-items: center;
-    justify-content: center;
-}
-.modal-camara.active { display: flex; }
-.modal-camara-content {
-    background-color: white;
-    padding: 25px;
-    border-radius: 15px;
-    max-width: 600px;
-    width: 90%;
-    text-align: center;
-}
-.modal-camara-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: #1e3a8a;
-    margin-bottom: 15px;
-}
-#videoPreview {
-    width: 100%;
-    max-width: 500px;
-    height: auto;
-    border-radius: 10px;
-    background-color: #000;
-    margin-bottom: 15px;
-}
-#canvasPreview { display: none; }
-.modal-camara-buttons {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
 @media (max-width: 768px) {
     .header { flex-direction: column; gap: 15px; text-align: center; }
     .container { padding: 15px; }
     .form-grid { grid-template-columns: 1fr; }
     .fotos-grid { grid-template-columns: repeat(2, 1fr); }
     .codigo-barras-header { flex-direction: column; }
-    .codigo-barras-valor { min-width: 100%; }
 }
 </style>
 </head>
@@ -445,7 +395,7 @@ legend {
 </header>
 
 <div class="container">
-    <h1 class="page-title">📦 Registrar Equipo de Sonido</h1>
+    <h1 class="page-title"> Registrar Equipo de Sonido</h1>
     <p class="page-subtitle">Complete el formulario para agregar un equipo al inventario. El código de barras se genera automáticamente.</p>
 
     <div id="mensaje" class="mensaje"></div>
@@ -460,7 +410,7 @@ legend {
                         <div class="codigo-barras-label">Código Único del Equipo</div>
                         <div class="codigo-barras-valor" id="codigoBarrasValor">Generando...</div>
                     </div>
-                    <button type="button" class="btn-action btn-print" id="btnImprimir" onclick="imprimirSticker()" disabled>🖨️ Imprimir Sticker</button>
+                    <button type="button" class="btn-action btn-print" id="btnImprimir" onclick="imprimirSticker()" disabled>️ Imprimir Sticker</button>
                 </div>
                 <div class="codigo-barras-preview">
                     <svg id="barcode"></svg>
@@ -475,15 +425,15 @@ legend {
         <fieldset>
             <legend>📋 Datos del Equipo</legend>
             
-            <!-- FOTOS EN HORIZONTAL CON CÁMARA -->
+            <!-- FOTOS -->
             <div class="fotos-section">
-                <div class="fotos-titulo">📸 Fotos del Equipo (hasta 4 fotos)</div>
+                <div class="fotos-titulo">📸 Fotos del Equipo</div>
                 <div class="fotos-grid">
                     <!-- FOTO 1 -->
                     <div class="foto-item">
                         <div class="foto-preview" id="previewBox1" onclick="document.getElementById('foto1').click()">
                             <div class="foto-preview-placeholder" id="preview1-placeholder">
-                                <div class="foto-preview-placeholder-icon">📷</div>
+                                <div class="foto-preview-placeholder-icon"></div>
                                 <div>Foto 1</div>
                             </div>
                             <img id="preview1" style="display: none;" alt="Foto 1">
@@ -491,9 +441,9 @@ legend {
                         <button type="button" class="foto-remove" id="remove1" style="display: none;" onclick="removerFoto(1)">×</button>
                         <input type="file" id="foto1" class="foto-input" accept="image/*" onchange="previsualizarFoto(1, event)">
                         <input type="file" id="foto1-camara" class="foto-input" accept="image/*" capture="environment" onchange="previsualizarFoto(1, event)">
-                        <div class="foto-buttons">
-                            <button type="button" class="foto-btn" onclick="document.getElementById('foto1').click()">📁 Archivo</button>
-                            <button type="button" class="foto-btn foto-btn-camara" onclick="document.getElementById('foto1-camara').click()">📷 Cámara</button>
+                        <div class="foto-actions">
+                            <button type="button" class="foto-action-btn" onclick="document.getElementById('foto1').click()">📁 Archivo</button>
+                            <button type="button" class="foto-action-btn camara" onclick="document.getElementById('foto1-camara').click()">📷 Cámara</button>
                         </div>
                         <div class="foto-label-text">Principal <span class="required">*</span></div>
                     </div>
@@ -510,9 +460,9 @@ legend {
                         <button type="button" class="foto-remove" id="remove2" style="display: none;" onclick="removerFoto(2)">×</button>
                         <input type="file" id="foto2" class="foto-input" accept="image/*" onchange="previsualizarFoto(2, event)">
                         <input type="file" id="foto2-camara" class="foto-input" accept="image/*" capture="environment" onchange="previsualizarFoto(2, event)">
-                        <div class="foto-buttons">
-                            <button type="button" class="foto-btn" onclick="document.getElementById('foto2').click()">📁 Archivo</button>
-                            <button type="button" class="foto-btn foto-btn-camara" onclick="document.getElementById('foto2-camara').click()">📷 Cámara</button>
+                        <div class="foto-actions">
+                            <button type="button" class="foto-action-btn" onclick="document.getElementById('foto2').click()">📁 Archivo</button>
+                            <button type="button" class="foto-action-btn camara" onclick="document.getElementById('foto2-camara').click()">📷 Cámara</button>
                         </div>
                         <div class="foto-label-text">Foto 2 (opcional)</div>
                     </div>
@@ -529,9 +479,9 @@ legend {
                         <button type="button" class="foto-remove" id="remove3" style="display: none;" onclick="removerFoto(3)">×</button>
                         <input type="file" id="foto3" class="foto-input" accept="image/*" onchange="previsualizarFoto(3, event)">
                         <input type="file" id="foto3-camara" class="foto-input" accept="image/*" capture="environment" onchange="previsualizarFoto(3, event)">
-                        <div class="foto-buttons">
-                            <button type="button" class="foto-btn" onclick="document.getElementById('foto3').click()">📁 Archivo</button>
-                            <button type="button" class="foto-btn foto-btn-camara" onclick="document.getElementById('foto3-camara').click()">📷 Cámara</button>
+                        <div class="foto-actions">
+                            <button type="button" class="foto-action-btn" onclick="document.getElementById('foto3').click()">📁 Archivo</button>
+                            <button type="button" class="foto-action-btn camara" onclick="document.getElementById('foto3-camara').click()">📷 Cámara</button>
                         </div>
                         <div class="foto-label-text">Foto 3 (opcional)</div>
                     </div>
@@ -548,18 +498,18 @@ legend {
                         <button type="button" class="foto-remove" id="remove4" style="display: none;" onclick="removerFoto(4)">×</button>
                         <input type="file" id="foto4" class="foto-input" accept="image/*" onchange="previsualizarFoto(4, event)">
                         <input type="file" id="foto4-camara" class="foto-input" accept="image/*" capture="environment" onchange="previsualizarFoto(4, event)">
-                        <div class="foto-buttons">
-                            <button type="button" class="foto-btn" onclick="document.getElementById('foto4').click()">📁 Archivo</button>
-                            <button type="button" class="foto-btn foto-btn-camara" onclick="document.getElementById('foto4-camara').click()">📷 Cámara</button>
+                        <div class="foto-actions">
+                            <button type="button" class="foto-action-btn" onclick="document.getElementById('foto4').click()">📁 Archivo</button>
+                            <button type="button" class="foto-action-btn camara" onclick="document.getElementById('foto4-camara').click()">📷 Cámara</button>
                         </div>
                         <div class="foto-label-text">Foto 4 (opcional)</div>
                     </div>
                 </div>
             </div>
 
-            <!-- CAMPOS DEL FORMULARIO - LAYOUT ORGANIZADO -->
+            <!-- CAMPOS DEL FORMULARIO -->
             <div class="form-grid">
-                <!-- FILA 1: Nombre completo -->
+                <!-- FILA 1: Nombre completo (primero y solo) -->
                 <div class="form-group full-width">
                     <label>Nombre del Equipo <span class="required">*</span></label>
                     <input type="text" id="nombreEquipo" placeholder="Ej: Consola de Mezclas Digital Yamaha MG20XU de 20 Canales con Efectos" required>
@@ -604,15 +554,15 @@ legend {
                     <select id="estatusEquipo" required>
                         <option value="">Seleccionar estatus...</option>
                         <option value="operativo">✅ Operativo</option>
-                        <option value="inoperativo">⚠️ Inoperativo</option>
+                        <option value="inoperativo">️ Inoperativo</option>
                         <option value="averiado">❌ Averiado</option>
                     </select>
                 </div>
                 
-                <!-- FILA 5: Observación completa -->
+                <!-- FILA 5: Observación completa al final -->
                 <div class="form-group full-width">
                     <label>Observación</label>
-                    <textarea id="observacionEquipo" rows="3" placeholder="Observaciones adicionales sobre el equipo (estado, accesorios incluidos, detalles, etc.)..."></textarea>
+                    <textarea id="observacionEquipo" rows="4" placeholder="Observaciones adicionales sobre el equipo (estado físico, accesorios incluidos, detalles importantes, etc.)..."></textarea>
                 </div>
             </div>
         </fieldset>
@@ -620,7 +570,7 @@ legend {
         <!-- BOTONES -->
         <div class="button-group">
             <button type="button" class="btn-action btn-primary" id="btnGuardar" onclick="guardarEquipo()">💾 Guardar Equipo</button>
-            <button type="button" class="btn-action btn-secondary" onclick="limpiarFormulario()">🔄 Limpiar y Generar Nuevo Código</button>
+            <button type="button" class="btn-action btn-secondary" onclick="limpiarFormulario()"> Limpiar Formulario</button>
         </div>
     </form>
 </div>
