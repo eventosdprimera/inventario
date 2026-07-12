@@ -4,7 +4,7 @@ let usuarioActual = null;
 let fotoSeleccionadaActual = null;
 let yaInicializado = false;
 
-// ==========================================
+// ==================================
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarRegistroEquipo() {
