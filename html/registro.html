@@ -81,11 +81,19 @@
         }
         .codigo-barras-section {
             background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-            padding: 20px;
-            border-radius: 10px;
+            padding: 25px;
+            border-radius: 12px;
             border: 2px dashed #3b82f6;
             margin-bottom: 25px;
             text-align: center;
+        }
+        .codigo-barras-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
         .codigo-barras-label {
             font-size: 12px;
@@ -93,7 +101,6 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 10px;
         }
         .codigo-barras-valor {
             font-size: 22px;
@@ -101,7 +108,6 @@
             color: #1e3a8a;
             font-family: 'Courier New', monospace;
             letter-spacing: 2px;
-            margin-bottom: 15px;
             background-color: white;
             padding: 10px 20px;
             border-radius: 8px;
@@ -113,7 +119,7 @@
             padding: 15px;
             border-radius: 8px;
             display: inline-block;
-            margin-top: 10px;
+            margin: 15px 0;
         }
         .codigo-info {
             display: flex;
@@ -155,10 +161,6 @@
             outline: none;
             border-color: #1e3a8a;
             box-shadow: 0 0 0 3px rgba(30,58,138,0.1);
-        }
-        .form-group input[readonly] {
-            background-color: #f3f4f6;
-            cursor: not-allowed;
         }
         .foto-section {
             display: flex;
@@ -268,6 +270,7 @@
             .container { padding: 15px; }
             .foto-section { flex-direction: column; }
             .foto-preview-container { width: 100%; height: 200px; }
+            .codigo-barras-header { flex-direction: column; }
         }
     </style>
 </head>
@@ -287,20 +290,29 @@
         <div id="mensaje" class="mensaje"></div>
 
         <form id="formRegistro" onsubmit="return false;">
+            <!-- CÓDIGO DE BARRAS CON BOTÓN DE IMPRIMIR -->
             <fieldset>
-                <legend>🔖 Código de Barras (Automático)</legend>
+                <legend> Código de Barras (Automático)</legend>
                 <div class="codigo-barras-section">
-                    <div class="codigo-barras-label">Código Único del Equipo</div>
-                    <div class="codigo-barras-valor" id="codigoBarrasValor">Generando...</div>
+                    <div class="codigo-barras-header">
+                        <div>
+                            <div class="codigo-barras-label">Código Único del Equipo</div>
+                            <div class="codigo-barras-valor" id="codigoBarrasValor">Generando...</div>
+                        </div>
+                        <button type="button" class="btn-action btn-print" id="btnImprimir" onclick="imprimirSticker()" disabled>️ Imprimir Sticker</button>
+                    </div>
                     <div class="codigo-barras-preview">
                         <svg id="barcode"></svg>
                     </div>
-                    <div class="codigo-info">🔒 Este código es único, inmutable y no puede ser modificado</div>
+                    <div class="codigo-info">
+                        🔒 Este código es único, inmutable y no puede ser modificado
+                    </div>
                 </div>
             </fieldset>
 
+            <!-- DATOS DEL EQUIPO -->
             <fieldset>
-                <legend> Datos del Equipo</legend>
+                <legend>📋 Datos del Equipo</legend>
                 
                 <div class="foto-section">
                     <div class="foto-upload">
@@ -312,7 +324,7 @@
                     </div>
                     <div class="foto-preview-container" id="fotoPreviewContainer">
                         <div class="foto-placeholder">
-                            <div class="foto-placeholder-icon">📷</div>
+                            <div class="foto-placeholder-icon"></div>
                             <div>Sin foto</div>
                         </div>
                     </div>
@@ -361,10 +373,10 @@
                 </div>
             </fieldset>
 
+            <!-- BOTONES -->
             <div class="button-group">
                 <button type="button" class="btn-action btn-primary" id="btnGuardar" onclick="guardarEquipo()">💾 Guardar Equipo</button>
-                <button type="button" class="btn-action btn-print" id="btnImprimir" onclick="imprimirSticker()" disabled>️ Imprimir Sticker</button>
-                <button type="button" class="btn-action btn-secondary" onclick="limpiarFormulario()">🔄 Limpiar</button>
+                <button type="button" class="btn-action btn-secondary" onclick="limpiarFormulario()">🔄 Limpiar y Generar Nuevo Código</button>
             </div>
         </form>
     </div>
@@ -374,7 +386,6 @@
         2026-2027 | Versión 0.1
     </div>
 
-    <!-- RUTAS CORREGIDAS: ../js/ porque estamos en html/ -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../js/config.js"></script>
     <script src="../js/registro.js"></script>
