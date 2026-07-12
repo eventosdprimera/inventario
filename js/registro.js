@@ -1,7 +1,7 @@
-// js/registro.js
 let codigoBarrasActual = null;
 let fotosSeleccionadas = [null, null, null, null];
 let usuarioActual = null;
+let fotoSeleccionadaActual = null;
 
 async function inicializarRegistroEquipo() {
     console.log('Inicializando registro de equipo...');
@@ -134,6 +134,31 @@ async function generarCodigoBarras() {
     }
 }
 
+// Funciones para el selector de foto
+window.abrirSelectorFoto = function(numero) {
+    fotoSeleccionadaActual = numero;
+    document.getElementById('modalSelector').classList.add('activo');
+};
+
+window.cerrarSelectorFoto = function() {
+    document.getElementById('modalSelector').classList.remove('activo');
+    fotoSeleccionadaActual = null;
+};
+
+window.seleccionarArchivo = function() {
+    if (fotoSeleccionadaActual) {
+        document.getElementById(`foto${fotoSeleccionadaActual}`).click();
+        cerrarSelectorFoto();
+    }
+};
+
+window.seleccionarCamara = function() {
+    if (fotoSeleccionadaActual) {
+        cerrarSelectorFoto();
+        abrirCamara(fotoSeleccionadaActual);
+    }
+};
+
 window.previsualizarFoto = function(numero, event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -181,19 +206,90 @@ window.removerFoto = function(numero) {
     const placeholder = document.getElementById(`preview${numero}-placeholder`);
     const removeBtn = document.getElementById(`remove${numero}`);
     const input = document.getElementById(`foto${numero}`);
-    const inputCamara = document.getElementById(`foto${numero}-camara`);
     const previewBox = document.getElementById(`previewBox${numero}`);
     
     if (preview) { preview.style.display = 'none'; preview.src = ''; }
     if (placeholder) placeholder.style.display = 'block';
     if (removeBtn) removeBtn.style.display = 'none';
     if (input) input.value = '';
-    if (inputCamara) inputCamara.value = '';
     
     if (previewBox) {
-        previewBox.onclick = function() { document.getElementById(`foto${numero}`).click(); };
+        previewBox.onclick = function() { abrirSelectorFoto(numero); };
         previewBox.style.cursor = 'pointer';
     }
+};
+
+window.abrirCamara = async function(numero) {
+    fotoSeleccionadaActual = numero;
+    const modal = document.getElementById('modalCamara');
+    const video = document.getElementById('videoCamara');
+    
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'environment' } 
+        });
+        video.srcObject = stream;
+        modal.classList.add('activo');
+    } catch (err) {
+        console.error('Error al acceder a la cámara:', err);
+        alert('No se pudo acceder a la cámara. Verifica los permisos.');
+    }
+};
+
+window.cerrarCamara = function() {
+    const modal = document.getElementById('modalCamara');
+    const video = document.getElementById('videoCamara');
+    
+    if (video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+    }
+    
+    modal.classList.remove('activo');
+    fotoSeleccionadaActual = null;
+};
+
+window.capturarFoto = function() {
+    const video = document.getElementById('videoCamara');
+    const canvas = document.getElementById('canvasCamara');
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    
+    canvas.toBlob(function(blob) {
+        const file = new File([blob], `foto_${fotoSeleccionadaActual}_${Date.now()}.jpg`, { 
+            type: 'image/jpeg' 
+        });
+        
+        fotosSeleccionadas[fotoSeleccionadaActual - 1] = file;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const numero = fotoSeleccionadaActual;
+            const preview = document.getElementById(`preview${numero}`);
+            const placeholder = document.getElementById(`preview${numero}-placeholder`);
+            const removeBtn = document.getElementById(`remove${numero}`);
+            const previewBox = document.getElementById(`previewBox${numero}`);
+            
+            if (preview) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            if (placeholder) placeholder.style.display = 'none';
+            if (removeBtn) removeBtn.style.display = 'flex';
+            
+            if (previewBox) {
+                previewBox.onclick = null;
+                previewBox.style.cursor = 'default';
+            }
+        };
+        reader.readAsDataURL(file);
+        
+        cerrarCamara();
+    }, 'image/jpeg', 0.9);
 };
 
 async function verificarSerial(serial) {
@@ -253,14 +349,22 @@ window.guardarEquipo = async function() {
             if (fotosSeleccionadas[i]) {
                 const fileExt = fotosSeleccionadas[i].name.split('.').pop();
                 const fileName = `${codigoBarrasActual}_foto${i+1}_${Date.now()}.${fileExt}`;
-                const filePath = `equipos/${fileName}`;
+                const filePath = `${fileName}`;
                 
                 const { error: uploadError } = await supabaseClient.storage
                     .from('equipos-fotos')
-                    .upload(filePath, fotosSeleccionadas[i]);
+                    .upload(filePath, fotosSeleccionadas[i], {
+                        cacheControl: '3600',
+                        upsert: false
+                    });
                 
                 if (uploadError) throw uploadError;
-                fotoUrls[i] = filePath;
+                
+                const { data: urlData } = supabaseClient.storage
+                    .from('equipos-fotos')
+                    .getPublicUrl(filePath);
+                
+                fotoUrls[i] = urlData.publicUrl;
             }
         }
         
@@ -411,16 +515,14 @@ window.limpiarFormulario = function() {
         const placeholder = document.getElementById(`preview${i}-placeholder`);
         const removeBtn = document.getElementById(`remove${i}`);
         const input = document.getElementById(`foto${i}`);
-        const inputCamara = document.getElementById(`foto${i}-camara`);
         const previewBox = document.getElementById(`previewBox${i}`);
         
         if (preview) { preview.style.display = 'none'; preview.src = ''; }
         if (placeholder) placeholder.style.display = 'block';
         if (removeBtn) removeBtn.style.display = 'none';
         if (input) input.value = '';
-        if (inputCamara) inputCamara.value = '';
         if (previewBox) {
-            previewBox.onclick = function() { document.getElementById(`foto${i}`).click(); };
+            previewBox.onclick = function() { abrirSelectorFoto(i); };
             previewBox.style.cursor = 'pointer';
         }
     }
@@ -437,7 +539,6 @@ function mostrarMensajeRegistro(texto, tipo) {
         mensajeDiv.textContent = texto;
         mensajeDiv.className = `mensaje ${tipo}`;
         
-        // Scroll suave hacia arriba para ver el mensaje
         window.scrollTo({ top: 0, behavior: 'smooth' });
         
         const container = document.querySelector('.container');
@@ -448,3 +549,5 @@ function mostrarMensajeRegistro(texto, tipo) {
         }
     }
 }
+
+document.addEventListener('DOMContentLoaded', inicializarRegistroEquipo);
