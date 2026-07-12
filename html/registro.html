@@ -345,18 +345,6 @@ border-color: #1e3a8a;
 background-color: white;
 box-shadow: 0 0 0 3px rgba(30,58,138,0.1);
 }
-.input-with-symbol { position: relative; }
-.input-with-symbol input { padding-right: 35px; }
-.input-with-symbol .symbol {
-position: absolute;
-right: 14px;
-top: 50%;
-transform: translateY(-50%);
-color: #1e3a8a;
-font-weight: 700;
-pointer-events: none;
-font-size: 18px;
-}
 .btn-action {
 padding: 14px 28px;
 border: none;
@@ -565,131 +553,104 @@ border-top: 1px solid #e5e7eb;
 .fotos-grid { grid-template-columns: 1fr; }
 }
 
-/* ============ FILA MEDIDA + COSTO + ESTATUS ============ */
-.fila-tres-columnas {
+/* ============ FILA MEDIDA | COSTO | ESTATUS ============ */
+.fila-campos {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 180px 1fr 220px;
     gap: 20px;
     margin-bottom: 20px;
+    align-items: end;
 }
 
-/* Grupo Medida - input + select juntos */
-.grupo-medida {
+.campo-medida {
     display: flex;
     flex-direction: column;
+    gap: 8px;
 }
 
-.grupo-medida label {
+.campo-medida label {
     color: #374151;
     font-size: 13px;
     font-weight: 600;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
 }
 
-.contenedor-medida {
+.grupo-medida-inputs {
     display: flex;
     gap: 8px;
-    align-items: center;
 }
 
-#medidaValor {
-    width: 80px !important;
-    max-width: 80px !important;
-    min-width: 80px !important;
-    padding: 12px 8px !important;
-    text-align: center !important;
-    font-size: 14px !important;
-    flex: none !important;
+.grupo-medida-inputs input,
+.grupo-medida-inputs select {
+    padding: 12px 10px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'Poppins', sans-serif;
+    background-color: #fafafa;
+    transition: all 0.3s;
 }
 
-#medidaValor:focus {
-    outline: none !important;
-    border-color: #1e3a8a !important;
-    background-color: white !important;
-    box-shadow: 0 0 0 3px rgba(30,58,138,0.1) !important;
+.grupo-medida-inputs input {
+    width: 80px;
+    text-align: center;
 }
 
-#medidaUnidad {
-    width: 80px !important;
-    max-width: 80px !important;
-    min-width: 80px !important;
-    padding: 12px 8px !important;
-    font-size: 14px !important;
-    flex: none !important;
+.grupo-medida-inputs select {
+    width: 70px;
+    cursor: pointer;
 }
 
-#medidaUnidad:focus {
-    outline: none !important;
-    border-color: #1e3a8a !important;
-    background-color: white !important;
-    box-shadow: 0 0 0 3px rgba(30,58,138,0.1) !important;
+.grupo-medida-inputs input:focus,
+.grupo-medida-inputs select:focus {
+    outline: none;
+    border-color: #1e3a8a;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(30,58,138,0.1);
 }
 
-/* Grupo Costo - con símbolo $ */
-.grupo-costo {
+.campo-costo {
     display: flex;
     flex-direction: column;
+    gap: 8px;
 }
 
-.grupo-costo label {
+.campo-costo label {
     color: #374151;
     font-size: 13px;
     font-weight: 600;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
 }
 
-.grupo-costo .input-with-symbol {
-    position: relative;
+.campo-costo input {
     width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'Poppins', sans-serif;
+    background-color: #fafafa;
+    transition: all 0.3s;
 }
 
-.grupo-costo .input-with-symbol input {
-    width: 100% !important;
-    padding: 12px 35px 12px 14px !important;
-    font-size: 14px !important;
+.campo-costo input:focus {
+    outline: none;
+    border-color: #1e3a8a;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(30,58,138,0.1);
 }
 
-.grupo-costo .input-with-symbol input:focus {
-    outline: none !important;
-    border-color: #1e3a8a !important;
-    background-color: white !important;
-    box-shadow: 0 0 0 3px rgba(30,58,138,0.1) !important;
-}
-
-.grupo-costo .input-with-symbol .symbol {
-    position: absolute;
-    right: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #1e3a8a;
-    font-weight: 700;
-    pointer-events: none;
-    font-size: 18px;
-}
-
-/* Grupo Estatus */
-.grupo-estatus {
+.campo-estatus {
     display: flex;
     flex-direction: column;
+    gap: 8px;
 }
 
-.grupo-estatus label {
+.campo-estatus label {
     color: #374151;
     font-size: 13px;
     font-weight: 600;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
 }
 
-#estatusEquipo {
+.campo-estatus select {
     width: 100%;
     padding: 12px 14px;
     border: 2px solid #e5e7eb;
@@ -701,7 +662,7 @@ border-top: 1px solid #e5e7eb;
     transition: all 0.3s;
 }
 
-#estatusEquipo:focus {
+.campo-estatus select:focus {
     outline: none;
     border-color: #1e3a8a;
     background-color: white;
@@ -709,18 +670,19 @@ border-top: 1px solid #e5e7eb;
 }
 
 @media (max-width: 768px) {
-    .fila-tres-columnas {
+    .fila-campos {
         grid-template-columns: 1fr;
     }
     
-    .contenedor-medida {
+    .grupo-medida-inputs {
         flex-wrap: wrap;
     }
     
-    #medidaValor,
-    #medidaUnidad {
-        width: 100% !important;
-        max-width: 100% !important;
+    .grupo-medida-inputs input,
+    .grupo-medida-inputs select {
+        width: auto;
+        flex: 1;
+        min-width: 120px;
     }
 }
 </style>
@@ -746,7 +708,7 @@ border-top: 1px solid #e5e7eb;
 <div class="codigo-barras-label">Código Único del Equipo</div>
 <div class="codigo-barras-valor" id="codigoBarrasValor">Generando...</div>
 </div>
-<button type="button" class="btn-action btn-print" id="btnImprimir" onclick="imprimirSticker()" disabled>️ Imprimir Sticker</button>
+<button type="button" class="btn-action btn-print" id="btnImprimir" onclick="imprimirSticker()" disabled>🖨️ Imprimir Sticker</button>
 </div>
 <div class="codigo-barras-preview">
 <svg id="barcode"></svg>
@@ -772,7 +734,7 @@ border-top: 1px solid #e5e7eb;
 <input type="file" id="foto1" class="foto-input" accept="image/*" onchange="previsualizarFoto(1, event)">
 <div class="foto-label-text">Principal <span class="required">*</span></div>
 <div class="foto-actions">
-<button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto1').click()"><span class="btn-icon">📁</span> Archivo</button>
+<button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto1').click()"><span class="btn-icon"></span> Archivo</button>
 <button type="button" class="foto-action-btn camara" onclick="abrirCamara(1)"><span class="btn-icon">📷</span> Cámara</button>
 </div>
 </div>
@@ -788,7 +750,7 @@ border-top: 1px solid #e5e7eb;
 <input type="file" id="foto2" class="foto-input" accept="image/*" onchange="previsualizarFoto(2, event)">
 <div class="foto-label-text">Foto 2 (opcional)</div>
 <div class="foto-actions">
-<button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto2').click()"><span class="btn-icon">📁</span> Archivo</button>
+<button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto2').click()"><span class="btn-icon"></span> Archivo</button>
 <button type="button" class="foto-action-btn camara" onclick="abrirCamara(2)"><span class="btn-icon">📷</span> Cámara</button>
 </div>
 </div>
@@ -805,13 +767,13 @@ border-top: 1px solid #e5e7eb;
 <div class="foto-label-text">Foto 3 (opcional)</div>
 <div class="foto-actions">
 <button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto3').click()"><span class="btn-icon">📁</span> Archivo</button>
-<button type="button" class="foto-action-btn camara" onclick="abrirCamara(3)"><span class="btn-icon"></span> Cámara</button>
+<button type="button" class="foto-action-btn camara" onclick="abrirCamara(3)"><span class="btn-icon">📷</span> Cámara</button>
 </div>
 </div>
 <div class="foto-item">
 <div class="foto-preview" id="previewBox4" onclick="document.getElementById('foto4').click()">
 <div class="foto-preview-placeholder" id="preview4-placeholder">
-<span class="foto-preview-placeholder-icon"></span>
+<span class="foto-preview-placeholder-icon">📷</span>
 <div>Foto 4</div>
 </div>
 <img id="preview4" style="display: none;" alt="Foto 4">
@@ -820,7 +782,7 @@ border-top: 1px solid #e5e7eb;
 <input type="file" id="foto4" class="foto-input" accept="image/*" onchange="previsualizarFoto(4, event)">
 <div class="foto-label-text">Foto 4 (opcional)</div>
 <div class="foto-actions">
-<button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto4').click()"><span class="btn-icon">📁</span> Archivo</button>
+<button type="button" class="foto-action-btn archivo" onclick="document.getElementById('foto4').click()"><span class="btn-icon"></span> Archivo</button>
 <button type="button" class="foto-action-btn camara" onclick="abrirCamara(4)"><span class="btn-icon">📷</span> Cámara</button>
 </div>
 </div>
@@ -851,11 +813,11 @@ border-top: 1px solid #e5e7eb;
 </div>
 </div>
 
-<!-- TRES COLUMNAS: Medida | Costo | Estatus -->
-<div class="fila-tres-columnas">
-    <div class="grupo-medida">
+<!-- FILA: MEDIDA | COSTO | ESTATUS (UNA SOLA LÍNEA) -->
+<div class="fila-campos">
+    <div class="campo-medida">
         <label>Medida</label>
-        <div class="contenedor-medida">
+        <div class="grupo-medida-inputs">
             <input type="number" id="medidaValor" step="0.01" min="0" placeholder="0.00">
             <select id="medidaUnidad">
                 <option value="metros">m</option>
@@ -864,15 +826,12 @@ border-top: 1px solid #e5e7eb;
         </div>
     </div>
     
-    <div class="grupo-costo">
+    <div class="campo-costo">
         <label>Costo ($) <span class="required">*</span></label>
-        <div class="input-with-symbol">
-            <input type="number" id="costoEquipo" step="0.01" min="0" placeholder="0.00" required>
-            <span class="symbol">$</span>
-        </div>
+        <input type="number" id="costoEquipo" step="0.01" min="0" placeholder="0.00" required>
     </div>
     
-    <div class="grupo-estatus">
+    <div class="campo-estatus">
         <label>Estatus <span class="required">*</span></label>
         <select id="estatusEquipo" required>
             <option value="">Seleccionar estatus...</option>
@@ -908,7 +867,7 @@ border-top: 1px solid #e5e7eb;
 </div>
 <div class="modal-camara-actions">
 <button type="button" class="modal-camara-btn cancelar" onclick="cerrarCamara()">❌ Cancelar</button>
-<button type="button" class="modal-camara-btn capturar" id="btnCapturar" onclick="capturarFoto()">📸 Capturar Foto</button>
+<button type="button" class="modal-camara-btn capturar" id="btnCapturar" onclick="capturarFoto()"> Capturar Foto</button>
 </div>
 </div>
 </div>
