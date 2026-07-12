@@ -140,10 +140,11 @@ async function cargarContenido(action) {
     ocultarBienvenida();
     
     // Caso especial: Inventario → Registrar (redirigir a registro.html)
-    if (modulo === 'productos' && operacion === 'registrar') {
-        window.location.href = 'registro.html';
-        return;
-    }
+   // Caso especial: Inventario → Registrar (redirigir a html/registro.html)
+if (modulo === 'productos' && operacion === 'registrar') {
+    window.location.href = 'html/registro.html';  // ✅ CORRECTO
+    return;
+}
     
     // Otros casos
     let html = '';
