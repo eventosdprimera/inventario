@@ -2,9 +2,16 @@ let codigoBarrasActual = null;
 let fotosSeleccionadas = [null, null, null, null];
 let usuarioActual = null;
 let fotoSeleccionadaActual = null;
+let inicializacionCompletada = false;
 
 // Función de inicialización
 async function inicializarRegistroEquipo() {
+    // Evitar doble ejecución
+    if (inicializacionCompletada) {
+        console.log('⏭️ Ya inicializado, saltando...');
+        return;
+    }
+    
     console.log('🚀 Iniciando registro de equipo...');
     
     // Verificar si el SVG existe, si no, crearlo
@@ -13,7 +20,6 @@ async function inicializarRegistroEquipo() {
     if (!svgElement) {
         console.warn('⚠️ SVG no encontrado, creándolo dinámicamente...');
         
-        // Buscar el contenedor del código de barras
         const previewContainer = document.querySelector('.codigo-barras-preview');
         
         if (previewContainer) {
@@ -23,7 +29,6 @@ async function inicializarRegistroEquipo() {
             console.log('✅ SVG creado dinámicamente');
         } else {
             console.error('❌ ERROR: No se encontró el contenedor .codigo-barras-preview');
-            console.log('Verifica que tu HTML tenga: <div class="codigo-barras-preview"></div>');
             return;
         }
     }
@@ -48,7 +53,10 @@ async function inicializarRegistroEquipo() {
     
     await cargarUsuario();
     await generarCodigoBarras();
+    
+    inicializacionCompletada = true;
 }
+
 async function cargarUsuario() {
     try {
         const { data: { session } } = await supabaseClient.auth.getSession();
@@ -177,18 +185,32 @@ async function generarCodigoBarras() {
 
 // Funciones para el selector de foto
 window.abrirSelectorFoto = function(numero) {
+    const modalSelector = document.getElementById('modalSelector');
+    
+    if (!modalSelector) {
+        console.error('❌ Modal selector no encontrado en el HTML');
+        alert('Error: El modal de selección de foto no está configurado. Contacta al administrador.');
+        return;
+    }
+    
     fotoSeleccionadaActual = numero;
-    document.getElementById('modalSelector').classList.add('activo');
+    modalSelector.classList.add('activo');
 };
 
 window.cerrarSelectorFoto = function() {
-    document.getElementById('modalSelector').classList.remove('activo');
+    const modalSelector = document.getElementById('modalSelector');
+    if (modalSelector) {
+        modalSelector.classList.remove('activo');
+    }
     fotoSeleccionadaActual = null;
 };
 
 window.seleccionarArchivo = function() {
     if (fotoSeleccionadaActual) {
-        document.getElementById(`foto${fotoSeleccionadaActual}`).click();
+        const input = document.getElementById(`foto${fotoSeleccionadaActual}`);
+        if (input) {
+            input.click();
+        }
         cerrarSelectorFoto();
     }
 };
@@ -265,6 +287,12 @@ window.abrirCamara = async function(numero) {
     const modal = document.getElementById('modalCamara');
     const video = document.getElementById('videoCamara');
     
+    if (!modal || !video) {
+        console.error('❌ Modal de cámara no encontrado');
+        alert('Error: El modal de cámara no está configurado');
+        return;
+    }
+    
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ 
             video: { facingMode: 'environment' } 
@@ -281,18 +309,25 @@ window.cerrarCamara = function() {
     const modal = document.getElementById('modalCamara');
     const video = document.getElementById('videoCamara');
     
-    if (video.srcObject) {
+    if (video && video.srcObject) {
         video.srcObject.getTracks().forEach(track => track.stop());
         video.srcObject = null;
     }
     
-    modal.classList.remove('activo');
+    if (modal) {
+        modal.classList.remove('activo');
+    }
     fotoSeleccionadaActual = null;
 };
 
 window.capturarFoto = function() {
     const video = document.getElementById('videoCamara');
     const canvas = document.getElementById('canvasCamara');
+    
+    if (!video || !canvas) {
+        console.error('❌ Video o canvas no encontrado');
+        return;
+    }
     
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
@@ -591,8 +626,10 @@ function mostrarMensajeRegistro(texto, tipo) {
     }
 }
 
-// Ejecutar cuando la página esté completamente cargada
+// Ejecutar solo una vez cuando la página esté completamente cargada
 window.addEventListener('load', function() {
-    console.log('🔄 Window load event');
-    inicializarRegistroEquipo();
-});
+    if (!inicializacionCompletada) {
+        console.log('🔄 Window load event');
+        inicializarRegistroEquipo();
+    }
+}, { once: true });
