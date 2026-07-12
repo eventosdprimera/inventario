@@ -379,16 +379,6 @@ pointer-events: none;
 font-size: 18px;
 }
 
-/* ============ MEDIDA - CAMPO CORTO ============ */
-.medida-group { display: flex; gap: 8px; align-items: center; }
-.medida-group input { 
-    flex: 0 0 80px; 
-    max-width: 80px; 
-    padding: 12px 8px; 
-    text-align: center;
-}
-.medida-group select { flex: 1; min-width: 0; }
-
 .btn-action {
 padding: 14px 28px;
 border: none;
@@ -597,7 +587,8 @@ border-top: 1px solid #e5e7eb;
 .form-grid-4 { grid-template-columns: 1fr; }
 .fotos-grid { grid-template-columns: 1fr; }
 }
- /* ============ MEDIDA + COSTO COMPACTOS ============ */
+
+/* ============ MEDIDA + COSTO COMPACTOS ============ */
 .form-grid-2-custom {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -632,23 +623,27 @@ border-top: 1px solid #e5e7eb;
     align-items: center;
 }
 
-/* INPUT DE MEDIDA - MÁS PEQUEÑO */
-.medida-costo-item .medida-group input {
-    flex: 0 0 45px !important;
-    max-width: 45px !important;
-    width: 45px !important;
+/* 🔥 INPUT DE MEDIDA - MUY PEQUEÑO (POR ID) */
+#medidaValor {
+    width: 50px !important;
+    max-width: 50px !important;
+    min-width: 50px !important;
+    flex: 0 0 50px !important;
     padding: 8px 2px !important;
-    text-align: center;
-    font-size: 13px;
+    text-align: center !important;
+    font-size: 13px !important;
+    box-sizing: border-box !important;
 }
 
-/* SELECT DE UNIDADES - MÁS PEQUEÑO */
-.medida-costo-item .medida-group select {
-    flex: 0 0 55px !important;
-    max-width: 55px !important;
+/* 🔥 SELECT DE UNIDADES - COMPACTO (POR ID) */
+#medidaUnidad {
     width: 55px !important;
+    max-width: 55px !important;
+    min-width: 55px !important;
+    flex: 0 0 55px !important;
     padding: 8px 4px !important;
-    font-size: 12px;
+    font-size: 12px !important;
+    box-sizing: border-box !important;
 }
 
 .medida-costo-item .input-with-symbol input {
