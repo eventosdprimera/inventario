@@ -139,32 +139,52 @@ async function cargarContenido(action) {
     
     ocultarBienvenida();
     
-    // Caso especial: Inventario → Registrar (redirigir a registro.html)
-   // Caso especial: Inventario → Registrar (redirigir a html/registro.html)
-if (modulo === 'productos' && operacion === 'registrar') {
-    window.location.href = 'html/registro.html';  // ✅ CORRECTO
-    return;
-}
+    // Caso especial: Inventario → Registrar (cargar registro.html)
+    if (modulo === 'productos' && operacion === 'registrar') {
+        try {
+            const response = await fetch('html/registro.html');
+            if (!response.ok) throw new Error('No se pudo cargar el formulario');
+            
+            const htmlText = await response.text();
+            
+            // Crear un parser para extraer el contenido
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlText, 'text/html');
+            
+            // Extraer solo el contenido del body (sin header, sin scripts duplicados)
+            const bodyContent = doc.querySelector('.container').innerHTML;
+            
+            // Insertar en el dashboard
+            contenidoDiv.innerHTML = bodyContent;
+            
+            // Cargar los scripts necesarios
+            const scriptBarcode = document.createElement('script');
+            scriptBarcode.src = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js';
+            document.body.appendChild(scriptBarcode);
+            
+            // Inicializar el formulario después de cargar
+            scriptBarcode.onload = async function() {
+                if (typeof inicializarRegistroEquipo === 'function') {
+                    await inicializarRegistroEquipo();
+                }
+            };
+            
+        } catch (err) {
+            console.error('Error al cargar formulario:', err);
+            contenidoDiv.innerHTML = '<fieldset><legend>Error</legend><p>No se pudo cargar el formulario de registro.</p></fieldset>';
+        }
+        return;
+    }
     
-    // Otros casos
+    // Otros casos...
     let html = '';
     
     switch(modulo) {
-        case 'consulta':
-            html = generarFormularioConsulta(operacion);
-            break;
-        case 'productos':
-            html = generarFormularioProductos(operacion);
-            break;
-        case 'eventos':
-            html = generarFormularioEventos(operacion);
-            break;
-        case 'usuarios':
-            html = generarFormularioUsuarios(operacion);
-            break;
-        case 'reportes':
-            html = generarFormularioReportes(operacion);
-            break;
+        case 'consulta': html = generarFormularioConsulta(operacion); break;
+        case 'productos': html = generarFormularioProductos(operacion); break;
+        case 'eventos': html = generarFormularioEventos(operacion); break;
+        case 'usuarios': html = generarFormularioUsuarios(operacion); break;
+        case 'reportes': html = generarFormularioReportes(operacion); break;
     }
     
     contenidoDiv.innerHTML = html;
