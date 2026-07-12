@@ -2,63 +2,70 @@ let codigoBarrasActual = null;
 let fotosSeleccionadas = [null, null, null, null];
 let usuarioActual = null;
 let fotoSeleccionadaActual = null;
-let inicializacionCompletada = false;
+let yaInicializado = false;
 
-// Función de inicialización
+// ==========================================
+// INICIALIZACIÓN - Solo si estamos en la página correcta
+// ==========================================
 async function inicializarRegistroEquipo() {
-    // Evitar doble ejecución
-    if (inicializacionCompletada) {
+    if (yaInicializado) {
         console.log('⏭️ Ya inicializado, saltando...');
         return;
     }
     
+    // Verificar si estamos en la página de registro
+    const formRegistro = document.getElementById('formRegistro');
+    const btnGuardar = document.getElementById('btnGuardar');
+    
+    if (!formRegistro || !btnGuardar) {
+        console.log('ℹ️ No estamos en la página de registro, omitiendo inicialización');
+        return;
+    }
+    
+    yaInicializado = true;
     console.log('🚀 Iniciando registro de equipo...');
     
-    // Verificar si el SVG existe, si no, crearlo
+    // Verificar SVG
     let svgElement = document.getElementById('barcode');
-    
     if (!svgElement) {
-        console.warn('⚠️ SVG no encontrado, creándolo dinámicamente...');
-        
         const previewContainer = document.querySelector('.codigo-barras-preview');
-        
         if (previewContainer) {
             svgElement = document.createElement('svg');
             svgElement.id = 'barcode';
             previewContainer.appendChild(svgElement);
             console.log('✅ SVG creado dinámicamente');
         } else {
-            console.error('❌ ERROR: No se encontró el contenedor .codigo-barras-preview');
-            return;
+            console.warn('⚠️ No se encontró el contenedor del código de barras, continuando sin él');
         }
+    } else {
+        console.log('✅ SVG disponible');
     }
     
-    console.log('✅ SVG disponible:', svgElement);
-    
-    // Esperar a que JsBarcode esté disponible
+    // Esperar JsBarcode
     let intentos = 0;
-    const maxIntentos = 50;
-    
-    while (typeof JsBarcode === 'undefined' && intentos < maxIntentos) {
+    while (typeof JsBarcode === 'undefined' && intentos < 50) {
         await new Promise(resolve => setTimeout(resolve, 200));
         intentos++;
     }
     
     if (typeof JsBarcode === 'undefined') {
-        console.error('❌ JsBarcode no está disponible');
+        console.error('❌ JsBarcode no disponible');
         return;
     }
-    
     console.log('✅ JsBarcode disponible');
     
     await cargarUsuario();
     await generarCodigoBarras();
-    
-    inicializacionCompletada = true;
+    console.log('✅ Inicialización completada');
 }
 
 async function cargarUsuario() {
     try {
+        if (typeof supabaseClient === 'undefined') {
+            console.warn('⚠️ Supabase client no disponible');
+            return;
+        }
+        
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) return;
         
@@ -80,29 +87,27 @@ async function cargarUsuario() {
 
 async function generarCodigoBarras() {
     try {
+        if (typeof supabaseClient === 'undefined') {
+            console.warn('⚠️ Supabase no disponible para generar código');
+            return;
+        }
+        
         const codigoGuardado = sessionStorage.getItem('codigoBarrasPendiente');
         
         if (codigoGuardado) {
             codigoBarrasActual = codigoGuardado;
             const elementoCodigo = document.getElementById('codigoBarrasValor');
-            if (elementoCodigo) {
-                elementoCodigo.textContent = codigoBarrasActual;
-            }
+            if (elementoCodigo) elementoCodigo.textContent = codigoBarrasActual;
             
             try {
                 const svgElement = document.getElementById('barcode');
                 if (svgElement) {
                     JsBarcode(svgElement, codigoBarrasActual, {
-                        format: "CODE128",
-                        width: 2,
-                        height: 60,
-                        displayValue: true,
-                        fontSize: 14,
-                        margin: 5,
-                        font: "Courier New",
-                        fontOptions: "bold"
+                        format: "CODE128", width: 2, height: 60,
+                        displayValue: true, fontSize: 14, margin: 5,
+                        font: "Courier New", fontOptions: "bold"
                     });
-                    console.log('✅ Código de barras generado desde sessionStorage');
+                    console.log('✅ Código generado desde sessionStorage');
                 }
             } catch (e) {
                 console.error('Error JsBarcode:', e);
@@ -116,9 +121,8 @@ async function generarCodigoBarras() {
         let nuevoCodigo;
         let existe = true;
         let intentos = 0;
-        const maxIntentos = 10;
         
-        while (existe && intentos < maxIntentos) {
+        while (existe && intentos < 10) {
             const ahora = new Date();
             const fechaParte = ahora.toISOString().slice(0,10).replace(/-/g,'');
             const horaParte = ahora.toTimeString().slice(0,8).replace(/:/g,'');
@@ -132,39 +136,27 @@ async function generarCodigoBarras() {
                 .eq('codigo_barras', nuevoCodigo)
                 .single();
             
-            if (error || !data) {
-                existe = false;
-            } else {
-                intentos++;
-            }
+            if (error || !data) existe = false;
+            else intentos++;
         }
         
-        if (existe) {
-            throw new Error('No se pudo generar un código único');
-        }
+        if (existe) throw new Error('No se pudo generar un código único');
         
         codigoBarrasActual = nuevoCodigo;
         sessionStorage.setItem('codigoBarrasPendiente', codigoBarrasActual);
         
         const elementoCodigo = document.getElementById('codigoBarrasValor');
-        if (elementoCodigo) {
-            elementoCodigo.textContent = codigoBarrasActual;
-        }
+        if (elementoCodigo) elementoCodigo.textContent = codigoBarrasActual;
         
         try {
             const svgElement = document.getElementById('barcode');
             if (svgElement) {
                 JsBarcode(svgElement, codigoBarrasActual, {
-                    format: "CODE128",
-                    width: 2,
-                    height: 60,
-                    displayValue: true,
-                    fontSize: 14,
-                    margin: 5,
-                    font: "Courier New",
-                    fontOptions: "bold"
+                    format: "CODE128", width: 2, height: 60,
+                    displayValue: true, fontSize: 14, margin: 5,
+                    font: "Courier New", fontOptions: "bold"
                 });
-                console.log('✅ Código de barras generado:', codigoBarrasActual);
+                console.log('✅ Código generado:', codigoBarrasActual);
             }
         } catch (e) {
             console.error('Error JsBarcode:', e);
@@ -176,32 +168,27 @@ async function generarCodigoBarras() {
     } catch (err) {
         console.error('Error al generar código:', err);
         const elementoCodigo = document.getElementById('codigoBarrasValor');
-        if (elementoCodigo) {
-            elementoCodigo.textContent = 'Error al generar';
-        }
-        mostrarMensajeRegistro('Error al generar el código de barras: ' + err.message, 'error');
+        if (elementoCodigo) elementoCodigo.textContent = 'Error al generar';
+        mostrarMensajeRegistro('Error al generar el código: ' + err.message, 'error');
     }
 }
 
-// Funciones para el selector de foto
+// ==========================================
+// SELECTOR DE FOTO
+// ==========================================
 window.abrirSelectorFoto = function(numero) {
-    const modalSelector = document.getElementById('modalSelector');
-    
-    if (!modalSelector) {
-        console.error('❌ Modal selector no encontrado en el HTML');
-        alert('Error: El modal de selección de foto no está configurado. Contacta al administrador.');
-        return;
-    }
-    
     fotoSeleccionadaActual = numero;
-    modalSelector.classList.add('activo');
+    const modal = document.getElementById('modalSelector');
+    if (modal) {
+        modal.classList.add('activo');
+    } else {
+        console.warn('⚠️ Modal selector no encontrado - ¿Estás en la página de registro?');
+    }
 };
 
 window.cerrarSelectorFoto = function() {
-    const modalSelector = document.getElementById('modalSelector');
-    if (modalSelector) {
-        modalSelector.classList.remove('activo');
-    }
+    const modal = document.getElementById('modalSelector');
+    if (modal) modal.classList.remove('activo');
     fotoSeleccionadaActual = null;
 };
 
@@ -222,6 +209,9 @@ window.seleccionarCamara = function() {
     }
 };
 
+// ==========================================
+// FOTOS
+// ==========================================
 window.previsualizarFoto = function(numero, event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -253,7 +243,6 @@ window.previsualizarFoto = function(numero, event) {
         }
         if (placeholder) placeholder.style.display = 'none';
         if (removeBtn) removeBtn.style.display = 'flex';
-        
         if (previewBox) {
             previewBox.onclick = null;
             previewBox.style.cursor = 'default';
@@ -275,21 +264,22 @@ window.removerFoto = function(numero) {
     if (placeholder) placeholder.style.display = 'block';
     if (removeBtn) removeBtn.style.display = 'none';
     if (input) input.value = '';
-    
     if (previewBox) {
         previewBox.onclick = function() { abrirSelectorFoto(numero); };
         previewBox.style.cursor = 'pointer';
     }
 };
 
+// ==========================================
+// CÁMARA
+// ==========================================
 window.abrirCamara = async function(numero) {
     fotoSeleccionadaActual = numero;
     const modal = document.getElementById('modalCamara');
     const video = document.getElementById('videoCamara');
     
     if (!modal || !video) {
-        console.error('❌ Modal de cámara no encontrado');
-        alert('Error: El modal de cámara no está configurado');
+        alert('Error: Modal de cámara no encontrado. Asegúrate de estar en la página de registro.');
         return;
     }
     
@@ -313,10 +303,7 @@ window.cerrarCamara = function() {
         video.srcObject.getTracks().forEach(track => track.stop());
         video.srcObject = null;
     }
-    
-    if (modal) {
-        modal.classList.remove('activo');
-    }
+    if (modal) modal.classList.remove('activo');
     fotoSeleccionadaActual = null;
 };
 
@@ -324,16 +311,11 @@ window.capturarFoto = function() {
     const video = document.getElementById('videoCamara');
     const canvas = document.getElementById('canvasCamara');
     
-    if (!video || !canvas) {
-        console.error('❌ Video o canvas no encontrado');
-        return;
-    }
+    if (!video || !canvas) return;
     
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0);
+    canvas.getContext('2d').drawImage(video, 0, 0);
     
     canvas.toBlob(function(blob) {
         const file = new File([blob], `foto_${fotoSeleccionadaActual}_${Date.now()}.jpg`, { 
@@ -350,32 +332,28 @@ window.capturarFoto = function() {
             const removeBtn = document.getElementById(`remove${numero}`);
             const previewBox = document.getElementById(`previewBox${numero}`);
             
-            if (preview) {
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-            }
+            if (preview) { preview.src = e.target.result; preview.style.display = 'block'; }
             if (placeholder) placeholder.style.display = 'none';
             if (removeBtn) removeBtn.style.display = 'flex';
-            
-            if (previewBox) {
-                previewBox.onclick = null;
-                previewBox.style.cursor = 'default';
-            }
+            if (previewBox) { previewBox.onclick = null; previewBox.style.cursor = 'default'; }
         };
         reader.readAsDataURL(file);
-        
         cerrarCamara();
     }, 'image/jpeg', 0.9);
 };
 
+// ==========================================
+// GUARDAR EQUIPO
+// ==========================================
 async function verificarSerial(serial) {
     try {
+        if (typeof supabaseClient === 'undefined') return false;
+        
         const { data, error } = await supabaseClient
             .from('equipos')
             .select('serial')
             .eq('serial', serial)
             .single();
-        
         return data && !error;
     } catch (err) {
         return false;
@@ -383,6 +361,11 @@ async function verificarSerial(serial) {
 }
 
 window.guardarEquipo = async function() {
+    if (typeof supabaseClient === 'undefined') {
+        alert('Error: Supabase no está configurado');
+        return;
+    }
+    
     const nombre = document.getElementById('nombreEquipo').value.trim();
     const marca = document.getElementById('marcaEquipo').value.trim();
     const modelo = document.getElementById('modeloEquipo').value.trim();
@@ -410,7 +393,7 @@ window.guardarEquipo = async function() {
     
     const serialExiste = await verificarSerial(serial);
     if (serialExiste) {
-        mostrarMensajeRegistro('El serial ya está registrado. No se pueden repetir seriales.', 'error');
+        mostrarMensajeRegistro('El serial ya está registrado.', 'error');
         return;
     }
     
@@ -425,11 +408,10 @@ window.guardarEquipo = async function() {
             if (fotosSeleccionadas[i]) {
                 const fileExt = fotosSeleccionadas[i].name.split('.').pop();
                 const fileName = `${codigoBarrasActual}_foto${i+1}_${Date.now()}.${fileExt}`;
-                const filePath = `${fileName}`;
                 
                 const { error: uploadError } = await supabaseClient.storage
                     .from('equipos-fotos')
-                    .upload(filePath, fotosSeleccionadas[i], {
+                    .upload(fileName, fotosSeleccionadas[i], {
                         cacheControl: '3600',
                         upsert: false
                     });
@@ -438,7 +420,7 @@ window.guardarEquipo = async function() {
                 
                 const { data: urlData } = supabaseClient.storage
                     .from('equipos-fotos')
-                    .getPublicUrl(filePath);
+                    .getPublicUrl(fileName);
                 
                 fotoUrls[i] = urlData.publicUrl;
             }
@@ -468,14 +450,11 @@ window.guardarEquipo = async function() {
             .single();
         
         if (error) {
-            if (error.code === '23505') {
-                throw new Error('El serial ya está registrado');
-            }
+            if (error.code === '23505') throw new Error('El serial ya está registrado');
             throw error;
         }
         
         mostrarMensajeRegistro('✅ Equipo registrado con código: ' + codigoBarrasActual, 'exito');
-        
         sessionStorage.removeItem('codigoBarrasPendiente');
         
         window.equipoRegistrado = {
@@ -504,6 +483,9 @@ window.guardarEquipo = async function() {
     }
 };
 
+// ==========================================
+// IMPRIMIR STICKER
+// ==========================================
 window.imprimirSticker = function() {
     if (!codigoBarrasActual) {
         alert('No hay código de barras');
@@ -521,12 +503,8 @@ window.imprimirSticker = function() {
     
     try {
         JsBarcode("#stickerBarcode", codigoBarrasActual, {
-            format: "CODE128",
-            width: 1.5,
-            height: 40,
-            displayValue: true,
-            fontSize: 12,
-            margin: 2,
+            format: "CODE128", width: 1.5, height: 40,
+            displayValue: true, fontSize: 12, margin: 2,
             font: "Courier New"
         });
         
@@ -534,7 +512,6 @@ window.imprimirSticker = function() {
         document.body.removeChild(tempDiv);
         
         const ventana = window.open('', '_blank', 'width=600,height=500');
-        
         ventana.document.write(`
             <!DOCTYPE html>
             <html>
@@ -570,9 +547,7 @@ window.imprimirSticker = function() {
             </body>
             </html>
         `);
-        
         ventana.document.close();
-        
     } catch (err) {
         console.error('Error al generar sticker:', err);
         alert('Error al generar el sticker');
@@ -580,6 +555,9 @@ window.imprimirSticker = function() {
     }
 };
 
+// ==========================================
+// LIMPIAR FORMULARIO
+// ==========================================
 window.limpiarFormulario = function() {
     if (!confirm('¿Limpiar el formulario? El código de barras se mantendrá.')) return;
     
@@ -614,22 +592,17 @@ function mostrarMensajeRegistro(texto, tipo) {
     if (mensajeDiv) {
         mensajeDiv.textContent = texto;
         mensajeDiv.className = `mensaje ${tipo}`;
-        
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        
-        const container = document.querySelector('.container');
-        if (container) {
-            setTimeout(() => {
-                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
-        }
     }
 }
 
-// Ejecutar solo una vez cuando la página esté completamente cargada
-window.addEventListener('load', function() {
-    if (!inicializacionCompletada) {
-        console.log('🔄 Window load event');
+// ==========================================
+// INICIAR - Solo cuando la página esté lista
+// ==========================================
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
         inicializarRegistroEquipo();
-    }
-}, { once: true });
+    });
+} else {
+    inicializarRegistroEquipo();
+}
