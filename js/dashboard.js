@@ -36,11 +36,22 @@ function ocultarBienvenida() {
 
 async function cargarDatosUsuario(email) {
     try {
-        const { data, error } = await supabaseClient
-            .from('usuarios')
-            .select('*')
-            .eq('email', email)
-            .single();
+      const { data, error } = await supabaseClient
+  .from('equipos')
+  .select('*')
+  .eq('codigo_barras', codigoBuscado)
+  .maybeSingle(); // ← Usa maybeSingle() en lugar de single()
+
+if (error) {
+  console.error('Error al buscar:', error);
+} else if (!data) {
+  // No se encontró el equipo, manejar este caso
+  console.log('Equipo no encontrado');
+  mostrarMensaje('⚠️ El equipo no existe en el inventario', 'error');
+} else {
+  // Equipo encontrado, continuar con la lógica
+  console.log('Equipo encontrado:', data);
+}
         
         document.getElementById('usuarioCorreo').textContent = email;
         
