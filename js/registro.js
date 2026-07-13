@@ -458,8 +458,11 @@ window.cerrarSelectorFoto = function() {
   fotoSeleccionadaActual = null;
 };
 
+// ==========================================
+// SELECCIONAR ARCHIVO (AGREGAR DESPUÉS DE cerrarSelectorFoto)
+// ==========================================
 window.seleccionarArchivo = function() {
-  const numero = fotoSeleccionadaActual; // ← Guardar ANTES de cerrar
+  const numero = fotoSeleccionadaActual; // Guardar ANTES de cerrar
   cerrarSelectorFoto();
   if (numero) {
     const input = document.getElementById(`foto${numero}`);
@@ -469,6 +472,18 @@ window.seleccionarArchivo = function() {
     } else {
       console.error('❌ Input de foto no encontrado:', `foto${numero}`);
     }
+  }
+};
+
+// ==========================================
+// SELECCIONAR CÁMARA (AGREGAR DESPUÉS DE seleccionarArchivo)
+// ==========================================
+window.seleccionarCamara = function() {
+  const numero = fotoSeleccionadaActual; // Guardar ANTES de cerrar
+  cerrarSelectorFoto();
+  if (numero) {
+    console.log('📷 Abriendo cámara para foto:', numero);
+    abrirCamara(numero);
   }
 };
 // ==========================================
