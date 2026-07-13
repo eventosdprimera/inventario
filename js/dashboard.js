@@ -203,42 +203,39 @@ async function cargarContenido(action) {
   // ============================================
   // CASO ESPECIAL: INVENTARIO → REGISTRAR (usa registro.html)
   // ============================================
-  if (modulo === 'inventario' && operacion === 'registrar') {
-    try {
-      if (typeof JsBarcode === 'undefined') {
-        await cargarScript('https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js');
-      }
-      if (typeof inicializarRegistroEquipo === 'undefined') {
-        await cargarScript('js/registro.js');
-      }
-      const response = await fetch('html/registro.html');
-      if (!response.ok) throw new Error('No se pudo cargar');
-      const htmlText = await response.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(htmlText, 'text/html');
-      const bodyContent = doc.querySelector('.container').innerHTML;
-      const modalSelector = doc.querySelector('#modalSelector');
-      const modalCamara = doc.querySelector('#modalCamara');
-
-      contenidoDiv.innerHTML = bodyContent;
-      if (modalSelector && !document.getElementById('modalSelector')) {
-        document.body.appendChild(modalSelector.cloneNode(true));
-      }
-      if (modalCamara && !document.getElementById('modalCamara')) {
-        document.body.appendChild(modalCamara.cloneNode(true));
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 300));
-      if (typeof inicializarRegistroEquipo === 'function') {
-        await inicializarRegistroEquipo();
-      }
-    } catch (err) {
-      console.error('Error:', err);
-      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+ // Caso: Inventario → Registrar
+if (modulo === 'inventario' && operacion === 'registrar') {
+  try {
+    if (typeof JsBarcode === 'undefined') {
+      await cargarScript('https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js');
     }
-    return;
-  }
+    if (typeof inicializarRegistroEquipo === 'undefined') {
+      await cargarScript('js/registro.js');
+    }
 
+    const response = await fetch('html/registro.html');
+    if (!response.ok) throw new Error('No se pudo cargar');
+    const htmlText = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+
+    // ✅ SOLO extraer el contenido del .container (sin modales)
+    const container = doc.querySelector('.container');
+    if (!container) throw new Error('No se encontró .container');
+    contenidoDiv.innerHTML = container.innerHTML;
+
+    // ✅ NO clonar modales - registro.js los crea dinámicamente
+
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (typeof inicializarRegistroEquipo === 'function') {
+      await inicializarRegistroEquipo();
+    }
+  } catch (err) {
+    console.error('Error:', err);
+    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>${err.message}</p></fieldset>`;
+  }
+  return;
+}
   // ============================================
   // OTROS MÓDULOS (placeholders)
   // ============================================
