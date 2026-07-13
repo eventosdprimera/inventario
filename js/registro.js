@@ -836,50 +836,205 @@ window.guardarEquipo = async function() {
 };
 
 // ==========================================
-// IMPRIMIR STICKER
+// IMPRIMIR STICKER (MEJORADA)
 // ==========================================
 window.imprimirSticker = function() {
-  if (!codigoBarrasActual) return;
+  console.log('🖨️ Iniciando impresión de sticker...');
+  
+  if (!codigoBarrasActual) {
+    console.error('❌ No hay código de barras');
+    mostrarMensajeRegistro('No hay código de barras para imprimir', 'error');
+    return;
+  }
 
   const nombre = document.getElementById('nombreEquipo')?.value.trim() || '';
   const marca = document.getElementById('marcaEquipo')?.value.trim() || '';
   const modelo = document.getElementById('modeloEquipo')?.value.trim() || '';
   const serial = document.getElementById('serialEquipo')?.value.trim() || '';
 
-  const temp = document.createElement('div');
-  temp.innerHTML = '<svg id="stickerBC"></svg>';
-  document.body.appendChild(temp);
+  console.log('📋 Datos del sticker:', { codigoBarrasActual, nombre, marca, modelo, serial });
+
+  // Crear un contenedor temporal para generar el SVG del código de barras
+  const tempDiv = document.createElement('div');
+  tempDiv.style.position = 'absolute';
+  tempDiv.style.left = '-9999px';
+  tempDiv.innerHTML = '<svg id="stickerBarcode"></svg>';
+  document.body.appendChild(tempDiv);
 
   try {
-    JsBarcode("#stickerBC", codigoBarrasActual, {
-      format: "CODE128", width: 1.5, height: 40,
-      displayValue: true, fontSize: 12, margin: 2, font: "Courier New"
+    // Generar el código de barras
+    JsBarcode("#stickerBarcode", codigoBarrasActual, {
+      format: "CODE128",
+      width: 1.5,
+      height: 40,
+      displayValue: true,
+      fontSize: 12,
+      margin: 2,
+      font: "Courier New"
     });
-    const svg = temp.querySelector('svg').outerHTML;
-    document.body.removeChild(temp);
 
-    const v = window.open('', '_blank', 'width=600,height=500');
-    if (!v) { mostrarMensajeRegistro('Permite ventanas emergentes', 'error'); return; }
+    const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
+    document.body.removeChild(tempDiv);
+    console.log('✅ Código de barras SVG generado');
 
-    v.document.write(`<!DOCTYPE html><html><head><style>
-@page{size:4in 2.5in;margin:.1in}*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:Arial,sans-serif;padding:5px}
-.s{border:2px solid #000;padding:8px;text-align:center}
-.e{font-size:10px;font-weight:bold;color:#1e3a8a;margin-bottom:4px}
-.n{font-size:11px;font-weight:bold;margin:4px 0}
-.b{margin:6px 0}.b svg{max-width:100%;height:auto}
-.i{font-size:8px;color:#333;margin-top:4px}
-.c{font-size:10px;font-weight:bold;margin-top:4px;font-family:monospace}
-</style></head><body><div class="s">
-<div class="e">Eventos D' Primera</div>
-${nombre?`<div class="n">${nombre}</div>`:''}
-<div class="b">${svg}</div><div class="c">${codigoBarrasActual}</div>
-<div class="i">${marca}${modelo?' - '+modelo:''}<br>${serial?'S/N: '+serial:''}</div>
-</div><script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>`);
-    v.document.close();
+    // Crear el HTML del sticker
+    const htmlSticker = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sticker - ${codigoBarrasActual}</title>
+  <style>
+    @page { size: 4in 2.5in; margin: 0.1in; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: Arial, sans-serif; 
+      padding: 5px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .sticker { 
+      border: 2px solid #000; 
+      padding: 8px; 
+      text-align: center; 
+      width: 100%;
+      max-width: 380px;
+    }
+    .empresa { 
+      font-size: 10px; 
+      font-weight: bold; 
+      color: #1e3a8a; 
+      margin-bottom: 4px; 
+    }
+    .nombre { 
+      font-size: 11px; 
+      font-weight: bold; 
+      margin: 4px 0; 
+    }
+    .barcode { 
+      margin: 6px 0; 
+    }
+    .barcode svg { 
+      max-width: 100%; 
+      height: auto; 
+    }
+    .info { 
+      font-size: 8px; 
+      color: #333; 
+      margin-top: 4px; 
+    }
+    .codigo { 
+      font-size: 10px; 
+      font-weight: bold; 
+      margin-top: 4px; 
+      font-family: monospace; 
+    }
+    .btn-no-print {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      background: #1e3a8a;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn-no-print:hover { background: #3b82f6; }
+    @media print {
+      .btn-no-print { display: none; }
+      body { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <div class="sticker">
+      <div class="empresa">Eventos D' Primera</div>
+      ${nombre ? `<div class="nombre">${nombre}</div>` : ''}
+      <div class="barcode">${barcodeSVG}</div>
+      <div class="codigo">${codigoBarrasActual}</div>
+      <div class="info">
+        ${marca}${modelo ? ' - ' + modelo : ''}<br>
+        ${serial ? 'S/N: ' + serial : ''}
+      </div>
+    </div>
+    <button class="btn-no-print" onclick="window.print()">🖨️ Imprimir Sticker</button>
+  </div>
+  <script>
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        window.print();
+      }, 500);
+    });
+  <\/script>
+</body>
+</html>
+    `;
+
+    // MÉTODO 1: Intentar abrir ventana nueva
+    const ventana = window.open('', '_blank', 'width=600,height=500,scrollbars=yes,resizable=yes');
+    
+    if (ventana && !ventana.closed) {
+      console.log('✅ Ventana emergente abierta');
+      ventana.document.open();
+      ventana.document.write(htmlSticker);
+      ventana.document.close();
+      
+      // Registrar en logs
+      if (typeof registrarLog === 'function') {
+        registrarLog('inventario', 'imprimir_sticker', `Imprimió sticker para ${codigoBarrasActual}`);
+      }
+    } else {
+      // MÉTODO 2: Si el navegador bloqueó la ventana, usar iframe
+      console.warn('⚠️ Ventana emergente bloqueada, usando método alternativo...');
+      mostrarMensajeRegistro('⚠️ El navegador bloqueó la ventana emergente. Usando método alternativo...', 'error');
+      
+      // Crear iframe oculto
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '600px';
+      iframe.style.height = '500px';
+      iframe.style.border = '2px solid #1e3a8a';
+      iframe.style.zIndex = '999999';
+      iframe.style.background = 'white';
+      iframe.style.borderRadius = '10px';
+      iframe.style.boxShadow = '0 10px 40px rgba(0,0,0,0.3)';
+      
+      document.body.appendChild(iframe);
+      iframe.contentDocument.open();
+      iframe.contentDocument.write(htmlSticker);
+      iframe.contentDocument.close();
+      
+      // Agregar botón para cerrar el iframe
+      const btnCerrar = document.createElement('button');
+      btnCerrar.textContent = '✕ Cerrar';
+      btnCerrar.style.position = 'absolute';
+      btnCerrar.style.top = '5px';
+      btnCerrar.style.right = '5px';
+      btnCerrar.style.background = '#dc2626';
+      btnCerrar.style.color = 'white';
+      btnCerrar.style.border = 'none';
+      btnCerrar.style.borderRadius = '50%';
+      btnCerrar.style.width = '30px';
+      btnCerrar.style.height = '30px';
+      btnCerrar.style.cursor = 'pointer';
+      btnCerrar.style.zIndex = '1000000';
+      btnCerrar.onclick = function() {
+        document.body.removeChild(iframe);
+      };
+      iframe.contentDocument.body.appendChild(btnCerrar);
+    }
+
   } catch (err) {
-    console.error('❌ Error sticker:', err);
-    if (document.body.contains(temp)) document.body.removeChild(temp);
+    console.error('❌ Error al generar sticker:', err);
+    mostrarMensajeRegistro('Error al generar el sticker: ' + err.message, 'error');
+    if (document.body.contains(tempDiv)) {
+      document.body.removeChild(tempDiv);
+    }
   }
 };
 
