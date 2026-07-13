@@ -1,6 +1,3 @@
-// js/dashboard.js
-// NO declarar supabaseClient aquí - ya viene de config.js
-
 let heartbeatInterval = null;
 let currentUserRol = 'consultor';
 let currentUserData = null;
