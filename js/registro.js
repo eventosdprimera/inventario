@@ -617,64 +617,85 @@ window.cerrarCamara = function() {
 // ==========================================
 // CAPTURAR FOTO (usando nuevos IDs)
 // ==========================================
+// ==========================================
+// CAPTURAR FOTO (CORREGIDA)
+// ==========================================
 window.capturarFoto = function() {
-  const video = document.getElementById('videoCamaraRegistro');
-  const canvas = document.getElementById('canvasCamaraRegistro');
-
+  const video = document.getElementById('videoCamara');
+  const canvas = document.getElementById('canvasCamara');
+  
   if (!video || !canvas) {
     console.error('❌ Video o canvas no encontrado');
     return;
   }
-
+  
   if (!video.videoWidth || !video.videoHeight) {
     console.error('❌ Video no está listo');
-    mostrarMensajeRegistro('La cámara aún no está lista. Espera un momento.', 'error');
+    alert('La cámara aún no está lista. Espera un momento.');
     return;
   }
-
+  
   console.log('📸 Capturando foto...');
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-
+  
+  // ✅ GUARDAR el número ANTES de cualquier operación asíncrona
+  const numeroFoto = fotoSeleccionadaActual;
+  
   canvas.toBlob(function(blob) {
     if (!blob) {
-      console.error('❌ No se pudo crear el blob de la imagen');
-      mostrarMensajeRegistro('Error al capturar la foto', 'error');
+      console.error('❌ No se pudo crear el blob');
+      alert('Error al capturar la foto');
       return;
     }
-
-    const file = new File([blob], `foto_${fotoSeleccionadaActual}_${Date.now()}.jpg`, { 
-      type: 'image/jpeg' 
+    
+    const file = new File([blob], `foto_${numeroFoto}_${Date.now()}.jpg`, {
+      type: 'image/jpeg'
     });
     
     console.log('✅ Foto capturada, tamaño:', file.size, 'bytes');
+    console.log('📝 Guardando en posición:', numeroFoto - 1);
     
-    fotosSeleccionadas[fotoSeleccionadaActual - 1] = file;
-
+    // Guardar en el array
+    fotosSeleccionadas[numeroFoto - 1] = file;
+    
+    // Previsualizar la foto
     const reader = new FileReader();
     reader.onload = function(e) {
-      const numero = fotoSeleccionadaActual;
-      const preview = document.getElementById(`preview${numero}`);
-      const placeholder = document.getElementById(`preview${numero}-placeholder`);
-      const removeBtn = document.getElementById(`remove${numero}`);
-      const previewBox = document.getElementById(`previewBox${numero}`);
-
-      if (preview) { 
-        preview.src = e.target.result; 
-        preview.style.display = 'block'; 
-        console.log('✅ Preview actualizado para foto:', numero);
+      console.log('🖼️ Actualizando preview de foto:', numeroFoto);
+      
+      const preview = document.getElementById(`preview${numeroFoto}`);
+      const placeholder = document.getElementById(`preview${numeroFoto}-placeholder`);
+      const removeBtn = document.getElementById(`remove${numeroFoto}`);
+      const previewBox = document.getElementById(`previewBox${numeroFoto}`);
+      
+      if (preview) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        console.log('✅ Preview actualizado para foto:', numeroFoto);
+      } else {
+        console.error('❌ Elemento preview no encontrado:', `preview${numeroFoto}`);
       }
+      
       if (placeholder) placeholder.style.display = 'none';
       if (removeBtn) removeBtn.style.display = 'flex';
-      if (previewBox) { 
-        previewBox.onclick = null; 
-        previewBox.style.cursor = 'default'; 
+      if (previewBox) {
+        previewBox.onclick = null;
+        previewBox.style.cursor = 'default';
       }
     };
+    
+    reader.onerror = function() {
+      console.error('❌ Error al leer el archivo');
+      alert('Error al procesar la foto capturada');
+    };
+    
     reader.readAsDataURL(file);
     
+    // Cerrar la cámara DESPUÉS de iniciar la lectura
     cerrarCamara();
+    
   }, 'image/jpeg', 0.9);
 };
 
