@@ -459,19 +459,18 @@ window.cerrarSelectorFoto = function() {
 };
 
 window.seleccionarArchivo = function() {
+  const numero = fotoSeleccionadaActual; // ← Guardar ANTES de cerrar
   cerrarSelectorFoto();
-  if (fotoSeleccionadaActual) {
-    const input = document.getElementById(`foto${fotoSeleccionadaActual}`);
-    if (input) input.click();
+  if (numero) {
+    const input = document.getElementById(`foto${numero}`);
+    if (input) {
+      console.log('📁 Abriendo selector de archivos para foto:', numero);
+      input.click();
+    } else {
+      console.error('❌ Input de foto no encontrado:', `foto${numero}`);
+    }
   }
 };
-
-window.seleccionarCamara = function() {
-  const numero = fotoSeleccionadaActual;
-  cerrarSelectorFoto();
-  if (numero) abrirCamara(numero);
-};
-
 // ==========================================
 // PREVISUALIZAR FOTO
 // ==========================================
@@ -530,29 +529,58 @@ window.removerFoto = function(numero) {
 // ABRIR CÁMARA (usando nuevos IDs)
 // ==========================================
 window.abrirCamara = async function(numero) {
+  console.log('📷 Abriendo cámara para foto:', numero);
   fotoSeleccionadaActual = numero;
-
-  if (!document.getElementById('modalCamaraRegistro')) {
-    crearModalesYEstilos();
-  }
 
   const modal = document.getElementById('modalCamaraRegistro');
   const video = document.getElementById('videoCamaraRegistro');
 
-  if (!modal || !video) {
+  if (!modal) {
+    console.error('❌ Modal de cámara no encontrado');
     mostrarMensajeRegistro('Error: Modal de cámara no encontrado', 'error');
     return;
   }
 
+  if (!video) {
+    console.error('❌ Elemento video no encontrado');
+    mostrarMensajeRegistro('Error: Elemento de video no encontrado', 'error');
+    return;
+  }
+
   try {
+    console.log('⏳ Solicitando acceso a la cámara...');
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment' }
+      video: { 
+        facingMode: 'environment',
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      }
     });
+    
+    console.log('✅ Cámara accesible, configurando video...');
     video.srcObject = stream;
-    modal.classList.add('visible');
+    
+    // Esperar a que el video esté listo
+    video.onloadedmetadata = () => {
+      console.log('✅ Video cargado, dimensiones:', video.videoWidth, 'x', video.videoHeight);
+      video.play().then(() => {
+        console.log('✅ Video reproduciéndose');
+        modal.classList.add('visible');
+      }).catch(err => {
+        console.error('❌ Error al reproducir video:', err);
+        mostrarMensajeRegistro('Error al iniciar la cámara', 'error');
+      });
+    };
+    
   } catch (err) {
-    console.error('❌ Error cámara:', err);
-    mostrarMensajeRegistro('No se pudo acceder a la cámara', 'error');
+    console.error('❌ Error al acceder a la cámara:', err);
+    if (err.name === 'NotAllowedError') {
+      mostrarMensajeRegistro('⚠️ Permiso de cámara denegado. Permite el acceso en la configuración del navegador.', 'error');
+    } else if (err.name === 'NotFoundError') {
+      mostrarMensajeRegistro('⚠️ No se encontró ninguna cámara en el dispositivo.', 'error');
+    } else {
+      mostrarMensajeRegistro('Error al acceder a la cámara: ' + err.message, 'error');
+    }
   }
 };
 
@@ -577,31 +605,60 @@ window.cerrarCamara = function() {
 window.capturarFoto = function() {
   const video = document.getElementById('videoCamaraRegistro');
   const canvas = document.getElementById('canvasCamaraRegistro');
-  if (!video || !canvas) return;
 
+  if (!video || !canvas) {
+    console.error('❌ Video o canvas no encontrado');
+    return;
+  }
+
+  if (!video.videoWidth || !video.videoHeight) {
+    console.error('❌ Video no está listo');
+    mostrarMensajeRegistro('La cámara aún no está lista. Espera un momento.', 'error');
+    return;
+  }
+
+  console.log('📸 Capturando foto...');
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0);
+  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
 
   canvas.toBlob(function(blob) {
-    const file = new File([blob], `foto_${fotoSeleccionadaActual}_${Date.now()}.jpg`, { type: 'image/jpeg' });
+    if (!blob) {
+      console.error('❌ No se pudo crear el blob de la imagen');
+      mostrarMensajeRegistro('Error al capturar la foto', 'error');
+      return;
+    }
+
+    const file = new File([blob], `foto_${fotoSeleccionadaActual}_${Date.now()}.jpg`, { 
+      type: 'image/jpeg' 
+    });
+    
+    console.log('✅ Foto capturada, tamaño:', file.size, 'bytes');
+    
     fotosSeleccionadas[fotoSeleccionadaActual - 1] = file;
-    if (!equipoGuardadoExitosamente) formularioModificado = true;
 
     const reader = new FileReader();
     reader.onload = function(e) {
-      const num = fotoSeleccionadaActual;
-      const preview = document.getElementById(`preview${num}`);
-      const placeholder = document.getElementById(`preview${num}-placeholder`);
-      const removeBtn = document.getElementById(`remove${num}`);
-      const previewBox = document.getElementById(`previewBox${num}`);
+      const numero = fotoSeleccionadaActual;
+      const preview = document.getElementById(`preview${numero}`);
+      const placeholder = document.getElementById(`preview${numero}-placeholder`);
+      const removeBtn = document.getElementById(`remove${numero}`);
+      const previewBox = document.getElementById(`previewBox${numero}`);
 
-      if (preview) { preview.src = e.target.result; preview.style.display = 'block'; }
+      if (preview) { 
+        preview.src = e.target.result; 
+        preview.style.display = 'block'; 
+        console.log('✅ Preview actualizado para foto:', numero);
+      }
       if (placeholder) placeholder.style.display = 'none';
       if (removeBtn) removeBtn.style.display = 'flex';
-      if (previewBox) { previewBox.onclick = null; previewBox.style.cursor = 'default'; }
+      if (previewBox) { 
+        previewBox.onclick = null; 
+        previewBox.style.cursor = 'default'; 
+      }
     };
     reader.readAsDataURL(file);
+    
     cerrarCamara();
   }, 'image/jpeg', 0.9);
 };
