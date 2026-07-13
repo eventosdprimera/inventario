@@ -680,54 +680,55 @@ border-top: 1px solid #e5e7eb;
 </div>
 
 <!-- ============================================ -->
-<!-- MODAL SELECTOR DE FOTO - ¡IMPORTANTE! -->
+<!-- MODAL SELECTOR DE FOTO - MOVER AQUÍ -->
 <!-- ============================================ -->
 <div id="modalSelector" class="modal-selector">
-<div class="modal-selector-content">
-<div class="modal-selector-header">
-<div class="modal-selector-title">📸 Seleccionar método</div>
-<div class="modal-selector-subtitle">¿Cómo deseas agregar la foto?</div>
-</div>
-<div class="modal-selector-options">
-<button type="button" class="modal-selector-btn archivo" onclick="seleccionarArchivo()">
-<span class="modal-selector-btn-icon">📁</span>
-<span>Subir archivo</span>
-</button>
-<button type="button" class="modal-selector-btn camara" onclick="seleccionarCamara()">
-<span class="modal-selector-btn-icon">📷</span>
-<span>Tomar foto con cámara</span>
-</button>
-<button type="button" class="modal-selector-btn cancelar" onclick="cerrarSelectorFoto()">
-<span>❌ Cancelar</span>
-</button>
-</div>
-</div>
+    <div class="modal-selector-content">
+        <div class="modal-selector-header">
+            <div class="modal-selector-title">📸 Seleccionar método</div>
+            <div class="modal-selector-subtitle">¿Cómo deseas agregar la foto?</div>
+        </div>
+        <div class="modal-selector-options">
+            <button type="button" class="modal-selector-btn archivo" onclick="seleccionarArchivo()">
+                <span class="modal-selector-btn-icon">📁</span>
+                <span>Subir archivo</span>
+            </button>
+            <button type="button" class="modal-selector-btn camara" onclick="seleccionarCamara()">
+                <span class="modal-selector-btn-icon">📷</span>
+                <span>Tomar foto con cámara</span>
+            </button>
+            <button type="button" class="modal-selector-btn cancelar" onclick="cerrarSelectorFoto()">
+                <span>❌ Cancelar</span>
+            </button>
+        </div>
+    </div>
 </div>
 
 <!-- ============================================ -->
-<!-- MODAL CÁMARA - ¡IMPORNTE! -->
+<!-- MODAL CÁMARA - MOVER AQUÍ -->
 <!-- ============================================ -->
 <div id="modalCamara" class="modal-camara">
-<div class="modal-camara-content">
-<div class="modal-camara-header">
-<div class="modal-camara-title">📷 Capturar Foto</div>
-<button class="modal-camara-close" onclick="cerrarCamara()">×</button>
-</div>
-<div id="modalCamaraBody">
-<video id="videoCamara" class="modal-camara-video" autoplay playsinline></video>
-<canvas id="canvasCamara" class="modal-camara-canvas"></canvas>
-</div>
-<div class="modal-camara-actions">
-<button type="button" class="modal-camara-btn cancelar" onclick="cerrarCamara()">❌ Cancelar</button>
-<button type="button" class="modal-camara-btn capturar" id="btnCapturar" onclick="capturarFoto()">📸 Capturar Foto</button>
-</div>
-</div>
+    <div class="modal-camara-content">
+        <div class="modal-camara-header">
+            <div class="modal-camara-title">📷 Capturar Foto</div>
+            <button class="modal-camara-close" onclick="cerrarCamara()">×</button>
+        </div>
+        <div id="modalCamaraBody">
+            <video id="videoCamara" class="modal-camara-video" autoplay playsinline></video>
+            <canvas id="canvasCamara" class="modal-camara-canvas"></canvas>
+        </div>
+        <div class="modal-camara-actions">
+            <button type="button" class="modal-camara-btn cancelar" onclick="cerrarCamara()">❌ Cancelar</button>
+            <button type="button" class="modal-camara-btn capturar" id="btnCapturar" onclick="capturarFoto()">📸 Capturar Foto</button>
+        </div>
+    </div>
 </div>
 
 <div class="copyright">
-<strong>©copyright Eventos de Primera</strong><br>
-2026-2027 | Versión 0.1
+    <strong>©copyright Eventos de Primera</strong><br>
+    2026-2027 | Versión 0.1
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
 <script src="../js/registro.js"></script>
