@@ -8,6 +8,7 @@ let usuarioActual = null;
 let fotoSeleccionadaActual = null;
 let formularioModificado = false;
 let equipoGuardadoExitosamente = false;
+let modalesInyectados = false;
 
 // ==========================================
 // INICIALIZACIÓN
@@ -15,7 +16,7 @@ let equipoGuardadoExitosamente = false;
 async function inicializarRegistroEquipo() {
   console.log('🚀 === INICIANDO REGISTRO DE EQUIPO ===');
 
-  // Resetear estado (importante cuando se recarga el módulo dentro del dashboard)
+  // Resetear estado
   formularioModificado = false;
   equipoGuardadoExitosamente = false;
 
@@ -24,24 +25,22 @@ async function inicializarRegistroEquipo() {
   const btnGuardar = document.getElementById('btnGuardar');
   const modalSelector = document.getElementById('modalSelector');
   const modalCamara = document.getElementById('modalCamara');
-  const svgBarcode = document.getElementById('barcode');
 
   console.log('🔍 Verificando elementos del DOM:');
   console.log('  - formRegistro:', formRegistro ? '✅' : '❌');
   console.log('  - btnGuardar:', btnGuardar ? '✅' : '❌');
   console.log('  - modalSelector:', modalSelector ? '✅' : '❌');
   console.log('  - modalCamara:', modalCamara ? '✅' : '❌');
-  console.log('  - svgBarcode:', svgBarcode ? '✅' : '❌');
 
   if (!formRegistro || !btnGuardar) {
     console.log('ℹ️ No estamos en la página de registro');
     return;
   }
 
+  // Si los modales no están, inyectarlos en el body
   if (!modalSelector || !modalCamara) {
-    console.error('❌ ERROR: Faltan modales en el HTML');
-    mostrarMensajeRegistro('Error: Faltan elementos en la página. Recarga la página.', 'error');
-    return;
+    console.log('⚠️ Modales no encontrados, inyectando en el body...');
+    inyectarModalesEnBody();
   }
 
   // Esperar Supabase
@@ -89,6 +88,253 @@ async function inicializarRegistroEquipo() {
   }
 
   console.log('✅ === INICIALIZACIÓN COMPLETADA ===');
+}
+
+// ==========================================
+// INYECTAR MODALES EN EL BODY
+// ==========================================
+function inyectarModalesEnBody() {
+  if (modalesInyectados) return;
+
+  // Modal Selector
+  if (!document.getElementById('modalSelector')) {
+    const modalSelector = document.createElement('div');
+    modalSelector.id = 'modalSelector';
+    modalSelector.className = 'modal-selector';
+    modalSelector.innerHTML = `
+      <div class="modal-selector-content">
+        <div class="modal-selector-header">
+          <div class="modal-selector-title">📸 Seleccionar método</div>
+          <div class="modal-selector-subtitle">¿Cómo deseas agregar la foto?</div>
+        </div>
+        <div class="modal-selector-options">
+          <button type="button" class="modal-selector-btn archivo" onclick="seleccionarArchivo()">
+            <span class="modal-selector-btn-icon">📁</span>
+            <span>Subir archivo</span>
+          </button>
+          <button type="button" class="modal-selector-btn camara" onclick="seleccionarCamara()">
+            <span class="modal-selector-btn-icon">📷</span>
+            <span>Tomar foto con cámara</span>
+          </button>
+          <button type="button" class="modal-selector-btn cancelar" onclick="cerrarSelectorFoto()">
+            <span>❌ Cancelar</span>
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modalSelector);
+    console.log('✅ Modal selector inyectado en body');
+  }
+
+  // Modal Cámara
+  if (!document.getElementById('modalCamara')) {
+    const modalCamara = document.createElement('div');
+    modalCamara.id = 'modalCamara';
+    modalCamara.className = 'modal-camara';
+    modalCamara.innerHTML = `
+      <div class="modal-camara-content">
+        <div class="modal-camara-header">
+          <div class="modal-camara-title">📷 Capturar Foto</div>
+          <button class="modal-camara-close" onclick="cerrarCamara()">×</button>
+        </div>
+        <div id="modalCamaraBody">
+          <video id="videoCamara" class="modal-camara-video" autoplay playsinline></video>
+          <canvas id="canvasCamara" class="modal-camara-canvas"></canvas>
+        </div>
+        <div class="modal-camara-actions">
+          <button type="button" class="modal-camara-btn cancelar" onclick="cerrarCamara()">❌ Cancelar</button>
+          <button type="button" class="modal-camara-btn capturar" id="btnCapturar" onclick="capturarFoto()">📸 Capturar Foto</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modalCamara);
+    console.log('✅ Modal cámara inyectado en body');
+  }
+
+  // Inyectar estilos CSS si no existen
+  if (!document.getElementById('registro-modales-styles')) {
+    const style = document.createElement('style');
+    style.id = 'registro-modales-styles';
+    style.textContent = `
+      .modal-selector {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.75);
+        z-index: 99999;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(4px);
+      }
+      .modal-selector.activo { display: flex !important; }
+      .modal-selector-content {
+        background: white;
+        border-radius: 16px;
+        padding: 30px;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        animation: modalSlideIn 0.3s ease;
+        position: relative;
+        z-index: 100000;
+      }
+      .modal-selector-header {
+        text-align: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e5e7eb;
+      }
+      .modal-selector-title {
+        font-family: 'Libre Caslon Text', serif;
+        color: #1e3a8a;
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .modal-selector-subtitle {
+        color: #6b7280;
+        font-size: 13px;
+      }
+      .modal-selector-options {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .modal-selector-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 16px 20px;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        background: white;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 600;
+        font-family: 'Poppins', sans-serif;
+        transition: all 0.3s;
+        color: #374151;
+      }
+      .modal-selector-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+      }
+      .modal-selector-btn.archivo { border-color: #3b82f6; color: #1e3a8a; }
+      .modal-selector-btn.archivo:hover { background: #eff6ff; border-color: #1e3a8a; }
+      .modal-selector-btn.camara { border-color: #10b981; color: #065f46; }
+      .modal-selector-btn.camara:hover { background: #d1fae5; border-color: #059669; }
+      .modal-selector-btn.cancelar { border-color: #e5e7eb; color: #6b7280; background: #f9fafb; margin-top: 8px; }
+      .modal-selector-btn.cancelar:hover { background: #fee2e2; color: #dc2626; border-color: #dc2626; }
+      .modal-selector-btn-icon { font-size: 22px; }
+
+      .modal-camara {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.85);
+        z-index: 99999;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(4px);
+      }
+      .modal-camara.activo { display: flex !important; }
+      .modal-camara-content {
+        background: white;
+        border-radius: 16px;
+        padding: 25px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        position: relative;
+        z-index: 100000;
+      }
+      .modal-camara-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #e5e7eb;
+      }
+      .modal-camara-title {
+        font-family: 'Libre Caslon Text', serif;
+        color: #1e3a8a;
+        font-size: 18px;
+        font-weight: 700;
+      }
+      .modal-camara-close {
+        background: #fee2e2;
+        color: #dc2626;
+        border: none;
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+      }
+      .modal-camara-close:hover {
+        background: #dc2626;
+        color: white;
+        transform: rotate(90deg);
+      }
+      .modal-camara-video {
+        width: 100%;
+        background: #000;
+        border-radius: 10px;
+        max-height: 400px;
+        display: block;
+      }
+      .modal-camara-canvas { display: none; }
+      .modal-camara-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        justify-content: center;
+      }
+      .modal-camara-btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-family: 'Poppins', sans-serif;
+        font-size: 14px;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .modal-camara-btn.capturar {
+        background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        color: white;
+        box-shadow: 0 4px 10px rgba(220,38,38,0.3);
+      }
+      .modal-camara-btn.capturar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 14px rgba(220,38,38,0.4);
+      }
+      .modal-camara-btn.cancelar { background: #e5e7eb; color: #374151; }
+      .modal-camara-btn.cancelar:hover { background: #d1d5db; }
+
+      @keyframes modalSlideIn {
+        from { opacity: 0; transform: translateY(-30px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+    `;
+    document.head.appendChild(style);
+    console.log('✅ Estilos de modales inyectados');
+  }
+
+  modalesInyectados = true;
 }
 
 // ==========================================
@@ -153,7 +399,6 @@ async function generarCodigoBarras() {
       const randomParte = Math.floor(Math.random() * 999999).toString().padStart(6, '0');
       nuevoCodigo = `EP-${fechaParte}-${horaParte}-${randomParte}`;
 
-      // ✅ CORREGIDO: usar maybeSingle() en lugar de single()
       const { data, error } = await supabaseClient
         .from('equipos')
         .select('codigo_barras')
@@ -162,9 +407,9 @@ async function generarCodigoBarras() {
 
       if (error) {
         console.warn('⚠️ Error al verificar código:', error.message);
-        existe = false; // Asumir que no existe si hay error
+        existe = false;
       } else if (!data) {
-        existe = false; // No existe, podemos usarlo
+        existe = false;
       } else {
         intentos++;
         console.log(`⚠️ Código duplicado, intento ${intentos}`);
@@ -210,6 +455,12 @@ async function generarCodigoBarras() {
 // ==========================================
 window.abrirSelectorFoto = function(numero) {
   console.log('📸 Abriendo selector para foto:', numero);
+
+  // Asegurar que los modales existan
+  if (!document.getElementById('modalSelector')) {
+    inyectarModalesEnBody();
+  }
+
   const modal = document.getElementById('modalSelector');
   if (!modal) {
     console.error('❌ Modal selector NO encontrado');
@@ -218,19 +469,17 @@ window.abrirSelectorFoto = function(numero) {
   }
   fotoSeleccionadaActual = numero;
   modal.classList.add('activo');
-  modal.style.display = 'flex';
+  console.log('✅ Modal abierto');
 };
 
 window.cerrarSelectorFoto = function() {
   const modal = document.getElementById('modalSelector');
   if (modal) {
     modal.classList.remove('activo');
-    modal.style.display = 'none';
   }
   fotoSeleccionadaActual = null;
 };
 
-// Funciones del selector: archivo y cámara
 window.seleccionarArchivo = function() {
   cerrarSelectorFoto();
   if (fotoSeleccionadaActual) {
@@ -316,6 +565,12 @@ window.removerFoto = function(numero) {
 // ==========================================
 window.abrirCamara = async function(numero) {
   fotoSeleccionadaActual = numero;
+
+  // Asegurar que los modales existan
+  if (!document.getElementById('modalCamara')) {
+    inyectarModalesEnBody();
+  }
+
   const modal = document.getElementById('modalCamara');
   const video = document.getElementById('videoCamara');
 
@@ -330,7 +585,6 @@ window.abrirCamara = async function(numero) {
     });
     video.srcObject = stream;
     modal.classList.add('activo');
-    modal.style.display = 'flex';
   } catch (err) {
     console.error('❌ Error al acceder a la cámara:', err);
     mostrarMensajeRegistro('No se pudo acceder a la cámara. Verifica los permisos.', 'error');
@@ -350,7 +604,6 @@ window.cerrarCamara = function() {
   }
   if (modal) {
     modal.classList.remove('activo');
-    modal.style.display = 'none';
   }
   fotoSeleccionadaActual = null;
 };
@@ -398,7 +651,6 @@ window.capturarFoto = function() {
 // ==========================================
 async function verificarSerial(serial) {
   try {
-    // ✅ CORREGIDO: usar maybeSingle() para evitar error 406
     const { data, error } = await supabaseClient
       .from('equipos')
       .select('serial')
@@ -431,7 +683,6 @@ function validarCosto(valor) {
 window.guardarEquipo = async function() {
   console.log('💾 Guardando equipo...');
 
-  // Obtener valores
   const nombre = document.getElementById('nombreEquipo').value.trim();
   const marca = document.getElementById('marcaEquipo').value.trim();
   const modelo = document.getElementById('modeloEquipo').value.trim();
@@ -442,7 +693,6 @@ window.guardarEquipo = async function() {
   const observacion = document.getElementById('observacionEquipo').value.trim();
   const estatus = document.getElementById('estatusEquipo').value;
 
-  // Validaciones
   if (!nombre || !marca || !serial || !estatus) {
     mostrarMensajeRegistro('Por favor completa todos los campos obligatorios (*)', 'error');
     return;
@@ -463,13 +713,11 @@ window.guardarEquipo = async function() {
     return;
   }
 
-  // Validar longitud del serial
   if (serial.length > 100) {
     mostrarMensajeRegistro('El serial es demasiado largo (máximo 100 caracteres)', 'error');
     return;
   }
 
-  // Verificar serial duplicado
   const serialExiste = await verificarSerial(serial);
   if (serialExiste) {
     mostrarMensajeRegistro('⚠️ El serial "' + serial + '" ya está registrado en otro equipo', 'error');
@@ -481,7 +729,6 @@ window.guardarEquipo = async function() {
   btnGuardar.textContent = '💾 Guardando...';
 
   try {
-    // Subir fotos al storage
     let fotoUrls = [null, null, null, null];
     for (let i = 0; i < 4; i++) {
       if (fotosSeleccionadas[i]) {
@@ -509,7 +756,6 @@ window.guardarEquipo = async function() {
       }
     }
 
-    // Guardar en base de datos
     console.log('📝 Guardando en base de datos...');
     const { data, error } = await supabaseClient
       .from('equipos')
@@ -547,7 +793,6 @@ window.guardarEquipo = async function() {
 
     mostrarMensajeRegistro(`✅ Equipo registrado exitosamente con código: ${codigoBarrasActual}`, 'exito');
 
-    // Registrar en logs
     if (typeof registrarLog === 'function') {
       await registrarLog(
         'inventario',
@@ -557,7 +802,6 @@ window.guardarEquipo = async function() {
       );
     }
 
-    // Guardar datos para posible impresión
     window.equipoRegistrado = {
       codigo_barras: codigoBarrasActual,
       nombre_equipo: nombre,
@@ -570,11 +814,9 @@ window.guardarEquipo = async function() {
 
     btnGuardar.textContent = '✅ Guardado';
 
-    // Habilitar botón de imprimir
     const btnImprimir = document.getElementById('btnImprimir');
     if (btnImprimir) btnImprimir.disabled = false;
 
-    // Preguntar si desea imprimir sticker
     setTimeout(() => {
       if (confirm('✅ Equipo guardado.\n\n¿Deseas imprimir el sticker del código de barras ahora?')) {
         imprimirSticker();
@@ -587,7 +829,6 @@ window.guardarEquipo = async function() {
     btnGuardar.disabled = false;
     btnGuardar.textContent = '💾 Guardar Equipo';
 
-    // Registrar error en logs
     if (typeof registrarLog === 'function') {
       await registrarLog(
         'inventario',
@@ -674,7 +915,6 @@ window.onload = function() { setTimeout(function() { window.print(); }, 300); };
     `);
     ventana.document.close();
 
-    // Registrar en logs
     if (typeof registrarLog === 'function') {
       registrarLog('inventario', 'imprimir_sticker', `Imprimió sticker para código ${codigoBarrasActual}`);
     }
@@ -705,61 +945,4 @@ window.limpiarFormulario = function() {
     const input = document.getElementById(`foto${i}`);
     const previewBox = document.getElementById(`previewBox${i}`);
 
-    if (preview) { preview.style.display = 'none'; preview.src = ''; }
-    if (placeholder) placeholder.style.display = 'block';
-    if (removeBtn) removeBtn.style.display = 'none';
-    if (input) input.value = '';
-    if (previewBox) {
-      previewBox.onclick = function() { abrirSelectorFoto(i); };
-      previewBox.style.cursor = 'pointer';
-    }
-  }
-
-  window.equipoRegistrado = null;
-  formularioModificado = false;
-  equipoGuardadoExitosamente = false;
-
-  const mensajeDiv = document.getElementById('mensaje');
-  if (mensajeDiv) mensajeDiv.className = 'mensaje';
-
-  const btnGuardar = document.getElementById('btnGuardar');
-  if (btnGuardar) {
-    btnGuardar.disabled = false;
-    btnGuardar.textContent = '💾 Guardar Equipo';
-  }
-
-  // Generar nuevo código de barras
-  generarCodigoBarras();
-}
-
-// ==========================================
-// MOSTRAR MENSAJE
-// ==========================================
-function mostrarMensajeRegistro(texto, tipo) {
-  const mensajeDiv = document.getElementById('mensaje');
-  if (mensajeDiv) {
-    mensajeDiv.textContent = texto;
-    mensajeDiv.className = `mensaje ${tipo}`;
-    mensajeDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-    // Auto-ocultar mensajes de éxito después de 8 segundos
-    if (tipo === 'exito') {
-      setTimeout(() => {
-        if (mensajeDiv.classList.contains('exito')) {
-          mensajeDiv.className = 'mensaje';
-        }
-      }, 8000);
-    }
-  }
-}
-
-// ==========================================
-// CONFIRMACIÓN AL SALIR CON DATOS SIN GUARDAR
-// ==========================================
-window.addEventListener('beforeunload', function(e) {
-  if (formularioModificado && !equipoGuardadoExitosamente) {
-    e.preventDefault();
-    e.returnValue = 'Tienes cambios sin guardar. ¿Seguro que deseas salir?';
-    return e.returnValue;
-  }
-});
+    if (preview) { preview.style.display = '
