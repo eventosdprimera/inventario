@@ -1,4 +1,5 @@
 // js/dashboard.js
+// NO declarar supabaseClient aquí - ya viene de config.js
 let heartbeatInterval = null;
 let currentUserRol = 'consultor';
 let currentUserData = null;
@@ -162,18 +163,46 @@ function configurarMenu() {
   });
 }
 
-// ============================================
-// CARGAR CONTENIDO DINÁMICO
-// ============================================
 async function cargarContenido(action) {
   const [modulo, operacion] = action.split('-');
   const contenidoDiv = document.getElementById('contenidoDinamico');
   ocultarBienvenida();
 
-  // Registrar la actividad en logs
-  registrarLog(modulo, operacion);
+  // 📝 REGISTRAR LA ACTIVIDAD EN LOGS (automático para todos los módulos)
+  await registrarLog(modulo, operacion, `Acción '${operacion}' en módulo '${modulo}'`);
 
-  // Caso especial: Inventario → Registrar (usa registro.html)
+  // ============================================
+  // CASO ESPECIAL: MÓDULO LOGS (carga archivos separados)
+  // ============================================
+  if (modulo === 'logs') {
+    try {
+      // Cargar logs.js si no está disponible
+      if (typeof inicializarModuloLogs === 'undefined') {
+        await cargarScript('js/logs.js');
+      }
+      // Cargar el HTML del módulo
+      const response = await fetch('html/logs.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/logs.html');
+      const htmlText = await response.text();
+      contenidoDiv.innerHTML = htmlText;
+
+      // Esperar a que el DOM esté listo e inicializar
+      await new Promise(resolve => setTimeout(resolve, 200));
+      if (typeof inicializarModuloLogs === 'function') {
+        await inicializarModuloLogs();
+      }
+    } catch (err) {
+      console.error('Error al cargar módulo de logs:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend>
+        <p>No se pudo cargar el módulo de logs: ${err.message}</p>
+      </fieldset>`;
+    }
+    return;
+  }
+
+  // ============================================
+  // CASO ESPECIAL: INVENTARIO → REGISTRAR (usa registro.html)
+  // ============================================
   if (modulo === 'inventario' && operacion === 'registrar') {
     try {
       if (typeof JsBarcode === 'undefined') {
@@ -205,12 +234,14 @@ async function cargarContenido(action) {
       }
     } catch (err) {
       console.error('Error:', err);
-      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el formulario: ${err.message}</p></fieldset>`;
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
     }
     return;
   }
 
-  // Resto de módulos
+  // ============================================
+  // OTROS MÓDULOS (placeholders)
+  // ============================================
   let html = '';
   switch (modulo) {
     case 'consulta':    html = generarFormularioConsulta(operacion); break;
@@ -220,8 +251,7 @@ async function cargarContenido(action) {
     case 'ventas':      html = generarFormularioVentas(operacion); break;
     case 'reportes':    html = generarFormularioReportes(operacion); break;
     case 'usuarios':    html = generarFormularioUsuarios(operacion); break;
-    case 'logs':        html = generarFormularioLogs(operacion); break;
-    default:            html = '<fieldset><legend>Módulo no disponible</legend><p>Este módulo aún no está implementado.</p></fieldset>';
+    default:            html = '<fieldset><legend>Módulo no disponible</legend><p>Próximamente.</p></fieldset>';
   }
   contenidoDiv.innerHTML = html;
 }
@@ -624,3 +654,23 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('📄 Dashboard DOM cargado');
   iniciarDashboard();
 });
+async function iniciarDashboard() {
+  console.log('🚀 Iniciando dashboard...');
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session) {
+    window.location.href = 'index.html';
+    return;
+  }
+  currentUserEmail = session.user.email;
+  await cargarDatosUsuario(session.user.email);
+  iniciarHeartbeat(session.user.email);
+  configurarMenu();
+  aplicarPermisosPorRol();
+  iniciarReloj();
+  mostrarBienvenida();
+  
+  // 📝 Registrar que el usuario entró al dashboard
+  await registrarLog('auth', 'login_dashboard', 'Usuario accedió al dashboard');
+  
+  console.log('✅ Dashboard iniciado correctamente');
+}
