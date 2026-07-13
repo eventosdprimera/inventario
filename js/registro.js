@@ -836,7 +836,7 @@ window.guardarEquipo = async function() {
 };
 
 // ==========================================
-// IMPRIMIR STICKER (MEJORADA)
+// IMPRIMIR STICKER (TAMAÑO ETIQUETA PEQUEÑA)
 // ==========================================
 window.imprimirSticker = function() {
   console.log('🖨️ Iniciando impresión de sticker...');
@@ -852,9 +852,7 @@ window.imprimirSticker = function() {
   const modelo = document.getElementById('modeloEquipo')?.value.trim() || '';
   const serial = document.getElementById('serialEquipo')?.value.trim() || '';
 
-  console.log('📋 Datos del sticker:', { codigoBarrasActual, nombre, marca, modelo, serial });
-
-  // Crear un contenedor temporal para generar el SVG del código de barras
+  // Crear contenedor temporal para generar el SVG
   const tempDiv = document.createElement('div');
   tempDiv.style.position = 'absolute';
   tempDiv.style.left = '-9999px';
@@ -862,119 +860,123 @@ window.imprimirSticker = function() {
   document.body.appendChild(tempDiv);
 
   try {
-    // Generar el código de barras
+    // Generar código de barras compacto
     JsBarcode("#stickerBarcode", codigoBarrasActual, {
       format: "CODE128",
-      width: 1.5,
-      height: 40,
+      width: 1.2,
+      height: 35,
       displayValue: true,
-      fontSize: 12,
-      margin: 2,
-      font: "Courier New"
+      fontSize: 9,
+      margin: 1,
+      font: "Courier New",
+      fontOptions: "bold"
     });
 
     const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
     document.body.removeChild(tempDiv);
     console.log('✅ Código de barras SVG generado');
 
-    // Crear el HTML del sticker
+    // ✅ HTML del sticker - TAMAÑO ETIQUETA PEQUEÑA (70mm x 35mm)
+    // SIN botón de imprimir visible
     const htmlSticker = `
 <!DOCTYPE html>
 <html>
 <head>
   <title>Sticker - ${codigoBarrasActual}</title>
   <style>
-    @page { size: 4in 2.5in; margin: 0.1in; }
+    /* Tamaño etiqueta pequeña tipo sticker */
+    @page { 
+      size: 70mm 35mm; 
+      margin: 0; 
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { 
+      width: 70mm; 
+      height: 35mm;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
     body { 
-      font-family: Arial, sans-serif; 
-      padding: 5px;
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
+      padding: 1mm;
     }
     .sticker { 
-      border: 2px solid #000; 
-      padding: 8px; 
-      text-align: center; 
       width: 100%;
-      max-width: 380px;
+      height: 100%;
+      border: 0.5mm solid #000; 
+      padding: 1.5mm 2mm; 
+      text-align: center; 
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
     .empresa { 
-      font-size: 10px; 
+      font-size: 6pt; 
       font-weight: bold; 
       color: #1e3a8a; 
-      margin-bottom: 4px; 
+      line-height: 1;
+      margin-bottom: 0.5mm;
     }
     .nombre { 
-      font-size: 11px; 
+      font-size: 6pt; 
       font-weight: bold; 
-      margin: 4px 0; 
+      line-height: 1.1;
+      margin-bottom: 0.5mm;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .barcode { 
-      margin: 6px 0; 
+      margin: 0.5mm 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
     .barcode svg { 
       max-width: 100%; 
-      height: auto; 
-    }
-    .info { 
-      font-size: 8px; 
-      color: #333; 
-      margin-top: 4px; 
+      height: auto;
+      max-height: 12mm;
     }
     .codigo { 
-      font-size: 10px; 
+      font-size: 7pt; 
       font-weight: bold; 
-      margin-top: 4px; 
-      font-family: monospace; 
+      font-family: 'Courier New', monospace; 
+      letter-spacing: 0.3mm;
+      line-height: 1;
     }
-    .btn-no-print {
-      display: block;
-      margin: 20px auto;
-      padding: 10px 20px;
-      background: #1e3a8a;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 14px;
+    .info { 
+      font-size: 5pt; 
+      color: #333; 
+      line-height: 1.1;
+      margin-top: 0.3mm;
     }
-    .btn-no-print:hover { background: #3b82f6; }
     @media print {
-      .btn-no-print { display: none; }
       body { padding: 0; }
+      .sticker { border: 0.3mm solid #000; }
     }
   </style>
 </head>
 <body>
-  <div>
-    <div class="sticker">
-      <div class="empresa">Eventos D' Primera</div>
-      ${nombre ? `<div class="nombre">${nombre}</div>` : ''}
-      <div class="barcode">${barcodeSVG}</div>
-      <div class="codigo">${codigoBarrasActual}</div>
-      <div class="info">
-        ${marca}${modelo ? ' - ' + modelo : ''}<br>
-        ${serial ? 'S/N: ' + serial : ''}
-      </div>
-    </div>
-    <button class="btn-no-print" onclick="window.print()">🖨️ Imprimir Sticker</button>
+  <div class="sticker">
+    <div class="empresa">EVENTOS D' PRIMERA</div>
+    ${nombre ? `<div class="nombre">${nombre.substring(0, 40)}</div>` : ''}
+    <div class="barcode">${barcodeSVG}</div>
+    <div class="codigo">${codigoBarrasActual}</div>
+    ${marca || serial ? `<div class="info">${marca}${modelo ? ' ' + modelo : ''}${serial ? ' | S/N:' + serial : ''}</div>` : ''}
   </div>
   <script>
     window.addEventListener('load', function() {
-      setTimeout(function() {
-        window.print();
-      }, 500);
+      setTimeout(function() { window.print(); }, 400);
     });
   <\/script>
 </body>
 </html>
     `;
 
-    // MÉTODO 1: Intentar abrir ventana nueva
-    const ventana = window.open('', '_blank', 'width=600,height=500,scrollbars=yes,resizable=yes');
+    // Intentar abrir ventana nueva
+    const ventana = window.open('', '_blank', 'width=400,height=300');
     
     if (ventana && !ventana.closed) {
       console.log('✅ Ventana emergente abierta');
@@ -982,36 +984,33 @@ window.imprimirSticker = function() {
       ventana.document.write(htmlSticker);
       ventana.document.close();
       
-      // Registrar en logs
       if (typeof registrarLog === 'function') {
         registrarLog('inventario', 'imprimir_sticker', `Imprimió sticker para ${codigoBarrasActual}`);
       }
     } else {
-      // MÉTODO 2: Si el navegador bloqueó la ventana, usar iframe
-      console.warn('⚠️ Ventana emergente bloqueada, usando método alternativo...');
-      mostrarMensajeRegistro('⚠️ El navegador bloqueó la ventana emergente. Usando método alternativo...', 'error');
+      // Método alternativo: iframe
+      console.warn('⚠️ Ventana bloqueada, usando iframe...');
       
-      // Crear iframe oculto
       const iframe = document.createElement('iframe');
       iframe.style.position = 'fixed';
-      iframe.style.right = '0';
-      iframe.style.bottom = '0';
-      iframe.style.width = '600px';
-      iframe.style.height = '500px';
+      iframe.style.right = '20px';
+      iframe.style.bottom = '20px';
+      iframe.style.width = '300px';
+      iframe.style.height = '180px';
       iframe.style.border = '2px solid #1e3a8a';
       iframe.style.zIndex = '999999';
       iframe.style.background = 'white';
-      iframe.style.borderRadius = '10px';
-      iframe.style.boxShadow = '0 10px 40px rgba(0,0,0,0.3)';
+      iframe.style.borderRadius = '8px';
+      iframe.style.boxShadow = '0 10px 30px rgba(0,0,0,0.3)';
       
       document.body.appendChild(iframe);
       iframe.contentDocument.open();
       iframe.contentDocument.write(htmlSticker);
       iframe.contentDocument.close();
       
-      // Agregar botón para cerrar el iframe
+      // Botón cerrar
       const btnCerrar = document.createElement('button');
-      btnCerrar.textContent = '✕ Cerrar';
+      btnCerrar.textContent = '✕';
       btnCerrar.style.position = 'absolute';
       btnCerrar.style.top = '5px';
       btnCerrar.style.right = '5px';
@@ -1019,10 +1018,12 @@ window.imprimirSticker = function() {
       btnCerrar.style.color = 'white';
       btnCerrar.style.border = 'none';
       btnCerrar.style.borderRadius = '50%';
-      btnCerrar.style.width = '30px';
-      btnCerrar.style.height = '30px';
+      btnCerrar.style.width = '25px';
+      btnCerrar.style.height = '25px';
       btnCerrar.style.cursor = 'pointer';
       btnCerrar.style.zIndex = '1000000';
+      btnCerrar.style.fontSize = '14px';
+      btnCerrar.style.fontWeight = 'bold';
       btnCerrar.onclick = function() {
         document.body.removeChild(iframe);
       };
