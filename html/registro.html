@@ -333,115 +333,68 @@ display: block;
 
 /* ============ MODAL SELECTOR DE FOTO ============ */
 .modal-selector {
-display: none;
-position: fixed;
-top: 0; left: 0;
-width: 100%; height: 100%;
-background: rgba(0,0,0,0.75);
-z-index: 9998;
-justify-content: center;
-align-items: center;
-backdrop-filter: blur(4px);
+    display: none !important;
+    position: fixed;
+    top: 0; 
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.75);
+    z-index: 9998;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(4px);
+    overflow-y: auto;
 }
-.modal-selector.activo { display: flex; }
+
+.modal-selector.activo { 
+    display: flex !important;
+}
+
 .modal-selector-content {
-background: white;
-border-radius: 16px;
-padding: 30px;
-max-width: 400px;
-width: 90%;
-box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-animation: modalSlideIn 0.3s ease;
-}
-@keyframes modalSlideIn {
-from { transform: translateY(-50px); opacity: 0; }
-to { transform: translateY(0); opacity: 1; }
-}
-.modal-selector-header {
-text-align: center;
-margin-bottom: 25px;
-}
-.modal-selector-title {
-font-family: 'Libre Caslon Text', serif;
-color: #1e3a8a;
-font-size: 20px;
-font-weight: 700;
-margin-bottom: 8px;
-}
-.modal-selector-subtitle {
-color: #6b7280;
-font-size: 13px;
-}
-.modal-selector-options {
-display: flex;
-flex-direction: column;
-gap: 12px;
-}
-.modal-selector-btn {
-padding: 18px 24px;
-border: 2px solid #e5e7eb;
-border-radius: 12px;
-cursor: pointer;
-font-weight: 600;
-font-family: 'Poppins', sans-serif;
-font-size: 15px;
-transition: all 0.3s;
-display: flex;
-align-items: center;
-gap: 12px;
-background: white;
-}
-.modal-selector-btn:hover {
-transform: translateY(-2px);
-box-shadow: 0 6px 16px rgba(0,0,0,0.1);
-}
-.modal-selector-btn.archivo {
-color: #f59e0b;
-border-color: #f59e0b;
-}
-.modal-selector-btn.archivo:hover {
-background: #fffbeb;
-border-color: #d97706;
-}
-.modal-selector-btn.camara {
-color: #1e3a8a;
-border-color: #1e3a8a;
-}
-.modal-selector-btn.camara:hover {
-background: #eff6ff;
-border-color: #1e40af;
-}
-.modal-selector-btn.cancelar {
-color: #6b7280;
-border-color: #e5e7eb;
-justify-content: center;
-margin-top: 8px;
-}
-.modal-selector-btn.cancelar:hover {
-background: #f3f4f6;
-}
-.modal-selector-btn-icon {
-font-size: 24px;
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: modalSlideIn 0.3s ease;
+    position: relative;
+    z-index: 10000;
 }
 
 /* ============ MODAL CÁMARA ============ */
 .modal-camara {
-    display: none;
+    display: none !important;
     position: fixed;
     top: 0; 
     left: 0;
-    width: 100%; 
-    height: 100vh;  /* CAMBIO: usa 100vh en lugar de 100% */
+    width: 100vw;
+    height: 100vh;
     background: rgba(0,0,0,0.75);
     z-index: 9999;
     justify-content: center;
     align-items: center;
     backdrop-filter: blur(4px);
-    overflow-y: auto;  /* AGREGAR: por si el contenido es muy alto */
+    overflow-y: auto;
 }
 
 .modal-camara.activo { 
-    display: flex; 
+    display: flex !important;
+}
+
+.modal-camara-content {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    position: relative;
+    z-index: 10001;
+    margin: auto;
 }
 
 /* AGREGAR: Asegurar que el contenido no exceda la pantalla */
