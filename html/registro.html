@@ -340,7 +340,7 @@ legend {
 }
 .copyright strong { color: #6b7280; font-weight: 600; }
 
-/* Campo medida compuesta */
+/* Campo medida compuesta - CORREGIDO */
 .medida-compuesta {
   display: flex;
   gap: 8px;
@@ -480,6 +480,7 @@ legend {
         </div>
       </div>
 
+      <!-- ✅ CAMPO MEDIDA | COSTO CORREGIDO (sin duplicados) -->
       <div class="form-row">
         <div class="form-grid-2">
           <div class="form-group">
@@ -487,10 +488,9 @@ legend {
             <div class="medida-compuesta">
               <input type="number" id="medidaValor" step="0.01" min="0" placeholder="0.00">
               <select id="medidaUnidad">
-              <select id="medidaUnidad">
-  <option value="m">metros (m)</option>
-  <option value="cm">centímetros (cm)</option>
-</select>
+                <option value="m">metros (m)</option>
+                <option value="cm">centímetros (cm)</option>
+              </select>
               <input type="number" id="costoEquipo" step="0.01" min="0" placeholder="$ 0.00" class="costo-input" required>
             </div>
           </div>
@@ -525,8 +525,6 @@ legend {
   <strong>©copyright Eventos de Primera</strong><br>
   2026-2027 | Versión 0.1
 </div>
-
-<!-- ⚠️ NO HAY MODALES AQUÍ - registro.js los crea dinámicamente -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
