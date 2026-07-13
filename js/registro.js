@@ -240,30 +240,18 @@ window.abrirSelectorFoto = function(numero) {
     
     fotoSeleccionadaActual = numero;
     modal.classList.add('activo');
+    modal.style.display = 'flex';  // ← AGREGAR ESTA LÍNEA
     console.log('✅ Modal abierto');
 };
 
 window.cerrarSelectorFoto = function() {
     const modal = document.getElementById('modalSelector');
-    if (modal) modal.classList.remove('activo');
+    if (modal) {
+        modal.classList.remove('activo');
+        modal.style.display = 'none';  // ← AGREGAR ESTA LÍNEA
+    }
     fotoSeleccionadaActual = null;
 };
-
-window.seleccionarArchivo = function() {
-    if (fotoSeleccionadaActual) {
-        const input = document.getElementById(`foto${fotoSeleccionadaActual}`);
-        if (input) input.click();
-        cerrarSelectorFoto();
-    }
-};
-
-window.seleccionarCamara = function() {
-    if (fotoSeleccionadaActual) {
-        cerrarSelectorFoto();
-        abrirCamara(fotoSeleccionadaActual);
-    }
-};
-
 // ==========================================
 // PREVISUALIZAR FOTO
 // ==========================================
@@ -347,6 +335,7 @@ window.abrirCamara = async function(numero) {
         });
         video.srcObject = stream;
         modal.classList.add('activo');
+        modal.style.display = 'flex';  // ← AGREGAR ESTA LÍNEA
     } catch (err) {
         console.error('❌ Error al acceder a la cámara:', err);
         alert('No se pudo acceder a la cámara. Verifica los permisos.');
@@ -364,10 +353,12 @@ window.cerrarCamara = function() {
         video.srcObject.getTracks().forEach(track => track.stop());
         video.srcObject = null;
     }
-    if (modal) modal.classList.remove('activo');
+    if (modal) {
+        modal.classList.remove('activo');
+        modal.style.display = 'none';  // ← AGREGAR ESTA LÍNEA
+    }
     fotoSeleccionadaActual = null;
 };
-
 // ==========================================
 // CAPTURAR FOTO
 // ==========================================
