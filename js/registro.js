@@ -615,61 +615,63 @@ window.cerrarCamara = function() {
 };
 
 // ==========================================
-// CAPTURAR FOTO (usando nuevos IDs)
-// ==========================================
-// ==========================================
-// CAPTURAR FOTO (CORREGIDA)
+// CAPTURAR FOTO (CORREGIDA - IDs correctos)
 // ==========================================
 window.capturarFoto = function() {
-  const video = document.getElementById('videoCamara');
-  const canvas = document.getElementById('canvasCamara');
-  
+  // ✅ USAR LOS IDs CORRECTOS (con sufijo "Registro")
+  const video = document.getElementById('videoCamaraRegistro');
+  const canvas = document.getElementById('canvasCamaraRegistro');
+
+  console.log('📸 Capturando foto...');
+  console.log('  - video:', video ? '✅' : '❌');
+  console.log('  - canvas:', canvas ? '✅' : '❌');
+
   if (!video || !canvas) {
     console.error('❌ Video o canvas no encontrado');
+    mostrarMensajeRegistro('Error: Elementos de cámara no disponibles', 'error');
     return;
   }
-  
+
   if (!video.videoWidth || !video.videoHeight) {
     console.error('❌ Video no está listo');
-    alert('La cámara aún no está lista. Espera un momento.');
+    mostrarMensajeRegistro('La cámara aún no está lista. Espera un momento.', 'error');
     return;
   }
-  
-  console.log('📸 Capturando foto...');
+
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-  
+
   // ✅ GUARDAR el número ANTES de cualquier operación asíncrona
   const numeroFoto = fotoSeleccionadaActual;
-  
+
   canvas.toBlob(function(blob) {
     if (!blob) {
       console.error('❌ No se pudo crear el blob');
-      alert('Error al capturar la foto');
+      mostrarMensajeRegistro('Error al capturar la foto', 'error');
       return;
     }
-    
+
     const file = new File([blob], `foto_${numeroFoto}_${Date.now()}.jpg`, {
       type: 'image/jpeg'
     });
-    
+
     console.log('✅ Foto capturada, tamaño:', file.size, 'bytes');
     console.log('📝 Guardando en posición:', numeroFoto - 1);
-    
+
     // Guardar en el array
     fotosSeleccionadas[numeroFoto - 1] = file;
-    
+
     // Previsualizar la foto
     const reader = new FileReader();
     reader.onload = function(e) {
       console.log('🖼️ Actualizando preview de foto:', numeroFoto);
-      
+
       const preview = document.getElementById(`preview${numeroFoto}`);
       const placeholder = document.getElementById(`preview${numeroFoto}-placeholder`);
       const removeBtn = document.getElementById(`remove${numeroFoto}`);
       const previewBox = document.getElementById(`previewBox${numeroFoto}`);
-      
+
       if (preview) {
         preview.src = e.target.result;
         preview.style.display = 'block';
@@ -677,7 +679,7 @@ window.capturarFoto = function() {
       } else {
         console.error('❌ Elemento preview no encontrado:', `preview${numeroFoto}`);
       }
-      
+
       if (placeholder) placeholder.style.display = 'none';
       if (removeBtn) removeBtn.style.display = 'flex';
       if (previewBox) {
@@ -685,17 +687,17 @@ window.capturarFoto = function() {
         previewBox.style.cursor = 'default';
       }
     };
-    
+
     reader.onerror = function() {
       console.error('❌ Error al leer el archivo');
-      alert('Error al procesar la foto capturada');
+      mostrarMensajeRegistro('Error al procesar la foto capturada', 'error');
     };
-    
+
     reader.readAsDataURL(file);
-    
+
     // Cerrar la cámara DESPUÉS de iniciar la lectura
     cerrarCamara();
-    
+
   }, 'image/jpeg', 0.9);
 };
 
