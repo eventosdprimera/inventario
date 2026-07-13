@@ -10,29 +10,39 @@ let formularioModificado = false;
 let equipoGuardadoExitosamente = false;
 let modalesCreados = false;
 
-// ==========================================
-// INICIALIZACIÓN
-// ==========================================
 async function inicializarRegistroEquipo() {
   console.log('🚀 === INICIANDO REGISTRO DE EQUIPO ===');
 
-  formularioModificado = false;
-  equipoGuardadoExitosamente = false;
+  if (yaInicializado) {
+    console.log('⏭️ Ya inicializado, saltando...');
+    return;
+  }
 
   const formRegistro = document.getElementById('formRegistro');
   const btnGuardar = document.getElementById('btnGuardar');
+  const modalSelector = document.getElementById('modalSelector');
+  const modalCamara = document.getElementById('modalCamara');
+  const svgBarcode = document.getElementById('barcode');
 
   console.log('🔍 Verificando elementos del DOM:');
   console.log('  - formRegistro:', formRegistro ? '✅' : '❌');
   console.log('  - btnGuardar:', btnGuardar ? '✅' : '❌');
+  console.log('  - modalSelector:', modalSelector ? '✅' : '❌');
+  console.log('  - modalCamara:', modalCamara ? '✅' : '❌');
 
   if (!formRegistro || !btnGuardar) {
     console.log('ℹ️ No estamos en la página de registro');
     return;
   }
 
-  // ✅ CREAR MODALES DINÁMICAMENTE
-  crearModalesYEstilos();
+  if (!modalSelector || !modalCamara) {
+    console.error('❌ ERROR: Faltan modales en el HTML');
+    alert('Error: Faltan elementos en la página. Recarga la página.');
+    return;
+  }
+
+  yaInicializado = true;
+  console.log('✅ Elementos verificados');
 
   // Esperar Supabase
   console.log('⏳ Esperando Supabase...');
@@ -43,14 +53,14 @@ async function inicializarRegistroEquipo() {
   }
 
   if (typeof supabaseClient === 'undefined') {
-    mostrarMensajeRegistro('Error: Supabase no está disponible', 'error');
-    return;
+    console.warn('⚠️ Supabase no disponible');
+  } else {
+    console.log('✅ Supabase disponible');
+    await cargarUsuario();
   }
-  console.log('✅ Supabase disponible');
-
-  await cargarUsuario();
 
   // Esperar JsBarcode
+  console.log('⏳ Esperando JsBarcode...');
   let intentosJsBarcode = 0;
   while (typeof JsBarcode === 'undefined' && intentosJsBarcode < 50) {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -58,18 +68,15 @@ async function inicializarRegistroEquipo() {
   }
 
   if (typeof JsBarcode === 'undefined') {
-    mostrarMensajeRegistro('Error: No se pudo cargar JsBarcode', 'error');
+    console.error('❌ JsBarcode no disponible');
+    alert('Error: No se pudo cargar el generador de códigos');
     return;
   }
   console.log('✅ JsBarcode disponible');
 
-  configurarDeteccionCambios();
+  // ✅ VERIFICAR SI HAY CÓDIGO GUARDADO EN localStorage
   await generarCodigoBarras();
-
-  if (typeof registrarLog === 'function') {
-    await registrarLog('inventario', 'abrir_formulario_registro', 'Abrió formulario de registro de equipo');
-  }
-
+  
   console.log('✅ === INICIALIZACIÓN COMPLETADA ===');
 }
 
@@ -385,56 +392,112 @@ async function cargarUsuario() {
   }
 }
 
-// ==========================================
-// GENERAR CÓDIGO DE BARRAS
-// ==========================================
 async function generarCodigoBarras() {
   try {
     console.log('🔖 Generando código de barras...');
-    let nuevoCodigo, existe = true, intentos = 0;
+
+    // ✅ VERIFICAR SI HAY UN CÓDIGO GUARDADO EN localStorage
+    const codigoGuardado = localStorage.getItem('codigoBarrasPendiente');
+    
+    if (codigoGuardado) {
+      console.log('📋 Usando código guardado:', codigoGuardado);
+      codigoBarrasActual = codigoGuardado;
+      
+      const elementoCodigo = document.getElementById('codigoBarrasValor');
+      if (elementoCodigo) elementoCodigo.textContent = codigoBarrasActual;
+
+      try {
+        JsBarcode("#barcode", codigoBarrasActual, {
+          format: "CODE128",
+          width: 2,
+          height: 60,
+          displayValue: true,
+          fontSize: 14,
+          margin: 5,
+          font: "Courier New",
+          fontOptions: "bold"
+        });
+        console.log('✅ Código de barras renderizado');
+      } catch (e) {
+        console.error('❌ Error al renderizar código:', e);
+      }
+
+      const btnImprimir = document.getElementById('btnImprimir');
+      if (btnImprimir) btnImprimir.disabled = false;
+      return;
+    }
+
+    // ✅ NO HAY CÓDIGO GUARDADO - GENERAR NUEVO
+    let nuevoCodigo;
+    let existe = true;
+    let intentos = 0;
 
     while (existe && intentos < 10) {
       const ahora = new Date();
-      const fecha = ahora.toISOString().slice(0, 10).replace(/-/g, '');
-      const hora = ahora.toTimeString().slice(0, 8).replace(/:/g, '');
-      const rand = Math.floor(Math.random() * 999999).toString().padStart(6, '0');
-      nuevoCodigo = `EP-${fecha}-${hora}-${rand}`;
+      const fechaParte = ahora.toISOString().slice(0, 10).replace(/-/g, '');
+      const horaParte = ahora.toTimeString().slice(0, 8).replace(/:/g, '');
+      const randomParte = Math.floor(Math.random() * 999999).toString().padStart(6, '0');
+      nuevoCodigo = `EP-${fechaParte}-${horaParte}-${randomParte}`;
 
-      const { data, error } = await supabaseClient
-        .from('equipos')
-        .select('codigo_barras')
-        .eq('codigo_barras', nuevoCodigo)
-        .maybeSingle();
+      if (typeof supabaseClient !== 'undefined') {
+        try {
+          const { data, error } = await supabaseClient
+            .from('equipos')
+            .select('codigo_barras')
+            .eq('codigo_barras', nuevoCodigo)
+            .maybeSingle();
 
-      if (error || !data) existe = false;
-      else intentos++;
+          if (error || !data) {
+            existe = false;
+          } else {
+            intentos++;
+          }
+        } catch (err) {
+          existe = false;
+        }
+      } else {
+        existe = false;
+      }
     }
 
-    if (existe) throw new Error('No se pudo generar código único');
+    if (existe) {
+      throw new Error('No se pudo generar un código único después de 10 intentos');
+    }
 
     codigoBarrasActual = nuevoCodigo;
-    const el = document.getElementById('codigoBarrasValor');
-    if (el) el.textContent = codigoBarrasActual;
+    
+    // ✅ GUARDAR EN localStorage (persiste entre sesiones)
+    localStorage.setItem('codigoBarrasPendiente', codigoBarrasActual);
+    
+    const elementoCodigo = document.getElementById('codigoBarrasValor');
+    if (elementoCodigo) elementoCodigo.textContent = codigoBarrasActual;
 
     try {
       JsBarcode("#barcode", codigoBarrasActual, {
-        format: "CODE128", width: 2, height: 60,
-        displayValue: true, fontSize: 14, margin: 5,
-        font: "Courier New", fontOptions: "bold"
+        format: "CODE128",
+        width: 2,
+        height: 60,
+        displayValue: true,
+        fontSize: 14,
+        margin: 5,
+        font: "Courier New",
+        fontOptions: "bold"
       });
-    } catch (e) { console.error('❌ Error renderizando código:', e); }
+      console.log('✅ Código generado y guardado:', codigoBarrasActual);
+    } catch (e) {
+      console.error('❌ Error al renderizar código:', e);
+    }
 
-    const btn = document.getElementById('btnImprimir');
-    if (btn) btn.disabled = false;
-    console.log('✅ Código generado:', codigoBarrasActual);
+    const btnImprimir = document.getElementById('btnImprimir');
+    if (btnImprimir) btnImprimir.disabled = false;
+
   } catch (err) {
-    console.error('❌ Error:', err);
-    const el = document.getElementById('codigoBarrasValor');
-    if (el) el.textContent = 'Error';
-    mostrarMensajeRegistro('Error al generar código: ' + err.message, 'error');
+    console.error('❌ Error al generar código:', err);
+    const elementoCodigo = document.getElementById('codigoBarrasValor');
+    if (elementoCodigo) elementoCodigo.textContent = 'Error al generar';
+    mostrarMensajeRegistro('Error al generar el código: ' + err.message, 'error');
   }
 }
-
 // ==========================================
 // SELECTOR DE FOTO (usando nuevos IDs)
 // ==========================================
@@ -870,32 +933,44 @@ ${nombre?`<div class="n">${nombre}</div>`:''}
 // LIMPIAR FORMULARIO
 // ==========================================
 window.limpiarFormulario = function() {
-  if (formularioModificado && !equipoGuardadoExitosamente) {
-    if (!confirm('⚠️ Hay datos sin guardar. ¿Limpiar?')) return;
-  }
-
+  if (!confirm('⚠️ ¿Limpiar el formulario?\n\nEl código de barras se mantendrá para el próximo registro.')) return;
+  
   document.getElementById('formRegistro').reset();
+
+  // Limpiar fotos
   for (let i = 1; i <= 4; i++) {
-    fotosSeleccionadas[i-1] = null;
-    const p = document.getElementById(`preview${i}`);
-    const ph = document.getElementById(`preview${i}-placeholder`);
-    const r = document.getElementById(`remove${i}`);
-    const inp = document.getElementById(`foto${i}`);
-    const box = document.getElementById(`previewBox${i}`);
-    if (p) { p.style.display = 'none'; p.src = ''; }
-    if (ph) ph.style.display = 'block';
-    if (r) r.style.display = 'none';
-    if (inp) inp.value = '';
-    if (box) { box.onclick = function(){ abrirSelectorFoto(i); }; box.style.cursor = 'pointer'; }
+    fotosSeleccionadas[i - 1] = null;
+    const preview = document.getElementById(`preview${i}`);
+    const placeholder = document.getElementById(`preview${i}-placeholder`);
+    const removeBtn = document.getElementById(`remove${i}`);
+    const input = document.getElementById(`foto${i}`);
+    const previewBox = document.getElementById(`previewBox${i}`);
+
+    if (preview) { preview.style.display = 'none'; preview.src = ''; }
+    if (placeholder) placeholder.style.display = 'block';
+    if (removeBtn) removeBtn.style.display = 'none';
+    if (input) input.value = '';
+    if (previewBox) {
+      previewBox.onclick = function() { abrirSelectorFoto(i); };
+      previewBox.style.cursor = 'pointer';
+    }
   }
 
-  formularioModificado = false;
-  equipoGuardadoExitosamente = false;
-  const msg = document.getElementById('mensaje');
-  if (msg) msg.className = 'mensaje';
-  const btn = document.getElementById('btnGuardar');
-  if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar Equipo'; }
-  generarCodigoBarras();
+  window.equipoRegistrado = null;
+  
+  const mensajeDiv = document.getElementById('mensaje');
+  if (mensajeDiv) mensajeDiv.className = 'mensaje';
+  
+  const btnGuardar = document.getElementById('btnGuardar');
+  if (btnGuardar) {
+    btnGuardar.disabled = false;
+    btnGuardar.textContent = '💾 Guardar Equipo';
+  }
+
+  // ✅ NO REGENERAR EL CÓDIGO - MANTENER EL ACTUAL
+  // El código de barras se mantiene hasta que se registre el equipo
+  
+  console.log('✅ Formulario limpiado, código de barras mantenido:', codigoBarrasActual);
 };
 
 // ==========================================
