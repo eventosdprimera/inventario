@@ -363,6 +363,26 @@ display: block;
     z-index: 10000;
 }
 
+/* ============ MODAL SELECTOR DE FOTO ============ */
+.modal-selector {
+    display: none;
+    position: fixed;
+    top: 0; 
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.75);
+    z-index: 9998;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(4px);
+    overflow-y: auto;
+}
+
+.modal-selector.activo { 
+    display: flex;
+}
+
 /* ============ MODAL CÁMARA ============ */
 .modal-camara {
     display: none;
@@ -380,21 +400,7 @@ display: block;
 }
 
 .modal-camara.activo { 
-    display: flex !important;
-}
-
-.modal-camara-content {
-    background: white;
-    border-radius: 16px;
-    padding: 25px;
-    max-width: 600px;
-    width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    position: relative;
-    z-index: 10001;
-    margin: auto;
+    display: flex;
 }
 
 /* AGREGAR: Asegurar que el contenido no exceda la pantalla */
