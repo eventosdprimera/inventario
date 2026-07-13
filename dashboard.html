@@ -813,93 +813,128 @@
     <!-- CONTENEDOR PRINCIPAL -->
     <div class="main-container">
         <!-- SIDEBAR -->
-        <aside class="sidebar">
-            <!-- PERFIL DE USUARIO -->
-            <div class="perfil-usuario">
-                <div class="perfil-foto" id="perfilFoto">EP</div>
-                <div class="perfil-nombre" id="perfilNombre">EVENTOS DE PRIMERA</div>
-                <div class="perfil-rol" id="perfilRol">ADMINISTRADOR</div>
-            </div>
+      <aside class="sidebar">
+  <!-- PERFIL DE USUARIO -->
+  <div class="perfil-usuario">
+    <div class="perfil-foto" id="perfilFoto">EP</div>
+    <div class="perfil-nombre" id="perfilNombre">EVENTOS DE PRIMERA</div>
+    <div class="perfil-rol" id="perfilRol">ADMINISTRADOR</div>
+  </div>
 
-            <!-- MENÚ -->
-            <div class="sidebar-menu">
-                <div class="sidebar-titulo">Menú Principal</div>
-                
-                <!-- 1. CONSULTA -->
-                <div class="menu-item">
-                    <button class="menu-btn" data-menu="consulta">
-                        <span><span class="menu-btn-icon">🔍</span>Consulta</span>
-                        <span class="menu-btn-arrow">▼</span>
-                    </button>
-                    <div class="submenu" id="submenu-consulta">
-                        <button class="submenu-btn" data-action="consulta-registrar">Registrar</button>
-                        <button class="submenu-btn" data-action="consulta-modificar">Modificar</button>
-                        <button class="submenu-btn" data-action="consulta-eliminar">Eliminar</button>
-                    </div>
-                </div>
+  <!-- MENÚ -->
+  <div class="sidebar-menu">
+    <div class="sidebar-titulo">Menú Principal</div>
 
-                <!-- 2. PRODUCTOS -->
-                <div class="menu-item">
-                    <button class="menu-btn" data-menu="productos">
-                        <span><span class="menu-btn-icon">📦</span>Inventario</span>
-                        <span class="menu-btn-arrow">▼</span>
-                    </button>
-                    <div class="submenu" id="submenu-productos">
-                        <button class="submenu-btn" data-action="productos-registrar">Registrar</button>
-                        <button class="submenu-btn" data-action="productos-modificar">Modificar</button>
-                        <button class="submenu-btn" data-action="productos-eliminar">Eliminar</button>
-                    </div>
-                </div>
+    <!-- 1. CONSULTA (visible para todos) -->
+    <div class="menu-item" data-menu="consulta">
+      <button class="menu-btn" data-menu="consulta">
+        <span><span class="menu-btn-icon">🔍</span>Consulta</span>
+        <span class="menu-btn-arrow">▼</span>
+      </button>
+      <div class="submenu" id="submenu-consulta">
+        <button class="submenu-btn" data-action="consulta-ver">Ver Inventario</button>
+      </div>
+    </div>
 
-                <!-- 3. EVENTOS -->
-                <div class="menu-item">
-                    <button class="menu-btn" data-menu="eventos">
-                        <span><span class="menu-btn-icon">🎉</span>Eventos</span>
-                        <span class="menu-btn-arrow">▼</span>
-                    </button>
-                    <div class="submenu" id="submenu-eventos">
-                        <button class="submenu-btn" data-action="eventos-registrar">Registrar</button>
-                        <button class="submenu-btn" data-action="eventos-modificar">Modificar</button>
-                        <button class="submenu-btn" data-action="eventos-eliminar">Eliminar</button>
-                    </div>
-                </div>
+    <!-- 2. INVENTARIO -->
+    <div class="menu-item" data-menu="inventario">
+      <button class="menu-btn" data-menu="inventario">
+        <span><span class="menu-btn-icon">📦</span>Inventario</span>
+        <span class="menu-btn-arrow">▼</span>
+      </button>
+      <div class="submenu" id="submenu-inventario">
+        <button class="submenu-btn" data-action="inventario-registrar">Registrar Equipo</button>
+        <button class="submenu-btn" data-action="inventario-modificar">Modificar Equipo</button>
+        <button class="submenu-btn" data-action="inventario-eliminar">Eliminar Equipo</button>
+      </div>
+    </div>
 
-                <!-- 4. USUARIOS -->
-                <div class="menu-item">
-                    <button class="menu-btn" data-menu="usuarios">
-                        <span><span class="menu-btn-icon">👥</span>Usuarios</span>
-                        <span class="menu-btn-arrow">▼</span>
-                    </button>
-                    <div class="submenu" id="submenu-usuarios">
-                        <button class="submenu-btn" data-action="usuarios-registrar">Registrar</button>
-                        <button class="submenu-btn" data-action="usuarios-modificar">Modificar</button>
-                        <button class="submenu-btn" data-action="usuarios-eliminar">Eliminar</button>
-                    </div>
-                </div>
+    <!-- 3. RENTAR -->
+    <div class="menu-item" data-menu="rentar">
+      <button class="menu-btn" data-menu="rentar">
+        <span><span class="menu-btn-icon">🤝</span>Rentar</span>
+        <span class="menu-btn-arrow">▼</span>
+      </button>
+      <div class="submenu" id="submenu-rentar">
+        <button class="submenu-btn" data-action="rentar-crear">Crear Nueva Renta</button>
+        <button class="submenu-btn" data-action="rentar-modificar">Modificar Renta</button>
+        <button class="submenu-btn" data-action="rentar-eliminar">Eliminar Renta</button>
+        <button class="submenu-btn" data-action="rentar-vencidas">Rentas Vencidas</button>
+        <button class="submenu-btn" data-action="rentar-historial">Historial</button>
+      </div>
+    </div>
 
-                <!-- 5. REPORTES -->
-                <div class="menu-item">
-                    <button class="menu-btn" data-menu="reportes">
-                        <span><span class="menu-btn-icon">📊</span>Reportes</span>
-                        <span class="menu-btn-arrow">▼</span>
-                    </button>
-                    <div class="submenu" id="submenu-reportes">
-                        <button class="submenu-btn" data-action="reportes-registrar">Registrar</button>
-                        <button class="submenu-btn" data-action="reportes-modificar">Modificar</button>
-                        <button class="submenu-btn" data-action="reportes-eliminar">Eliminar</button>
-                    </div>
-                </div>
-            </div>
+    <!-- 4. AVERÍAS -->
+    <div class="menu-item" data-menu="averias">
+      <button class="menu-btn" data-menu="averias">
+        <span><span class="menu-btn-icon">🔧</span>Averías</span>
+        <span class="menu-btn-arrow">▼</span>
+      </button>
+      <div class="submenu" id="submenu-averias">
+        <button class="submenu-btn" data-action="averias-registrar">Registrar Avería</button>
+        <button class="submenu-btn" data-action="averias-modificar">Modificar Avería</button>
+        <button class="submenu-btn" data-action="averias-reintegrar">Reintegrar Equipo</button>
+      </div>
+    </div>
 
-            <!-- FECHA Y HORA AL FINAL DEL SIDEBAR -->
-            <div class="sidebar-footer">
-                <div class="fecha-hora">
-                    <div class="fecha-hora-label">📅 Fecha y Hora</div>
-                    <div class="fecha" id="fechaActual">Cargando...</div>
-                    <div class="hora" id="horaActual">00:00:00</div>
-                </div>
-            </div>
-        </aside>
+    <!-- 5. VENTAS (solo admin) -->
+    <div class="menu-item" data-menu="ventas">
+      <button class="menu-btn" data-menu="ventas">
+        <span><span class="menu-btn-icon">💰</span>Ventas</span>
+        <span class="menu-btn-arrow">▼</span>
+      </button>
+      <div class="submenu" id="submenu-ventas">
+        <button class="submenu-btn" data-action="ventas-crear">Crear Venta</button>
+        <button class="submenu-btn" data-action="ventas-modificar">Modificar Venta</button>
+        <button class="submenu-btn" data-action="ventas-eliminar">Eliminar Venta</button>
+      </div>
+    </div>
+
+    <!-- 6. REPORTES (solo admin) -->
+    <div class="menu-item" data-menu="reportes">
+      <button class="menu-btn" data-menu="reportes">
+        <span><span class="menu-btn-icon">📊</span>Reportes</span>
+        <span class="menu-btn-arrow">▼</span>
+      </button>
+      <div class="submenu" id="submenu-reportes">
+        <button class="submenu-btn" data-action="reportes-ver">Ver Reportes</button>
+      </div>
+    </div>
+
+    <!-- 7. GESTIÓN DE USUARIOS (solo admin) -->
+    <div class="menu-item" data-menu="usuarios">
+      <button class="menu-btn" data-menu="usuarios">
+        <span><span class="menu-btn-icon">👥</span>Gestión de Usuarios</span>
+        <span class="menu-btn-arrow">▼</span>
+      </button>
+      <div class="submenu" id="submenu-usuarios">
+        <button class="submenu-btn" data-action="usuarios-crear">Crear Usuario</button>
+        <button class="submenu-btn" data-action="usuarios-modificar">Modificar Usuario</button>
+        <button class="submenu-btn" data-action="usuarios-eliminar">Eliminar Usuario</button>
+      </div>
+    </div>
+
+    <!-- 8. LOGS (solo admin) -->
+    <div class="menu-item" data-menu="logs">
+      <button class="menu-btn" data-menu="logs">
+        <span><span class="menu-btn-icon">📜</span>Logs</span>
+        <span class="menu-btn-arrow">▼</span>
+      </button>
+      <div class="submenu" id="submenu-logs">
+        <button class="submenu-btn" data-action="logs-ver">Ver Logs del Sistema</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FECHA Y HORA AL FINAL DEL SIDEBAR -->
+  <div class="sidebar-footer">
+    <div class="fecha-hora">
+      <div class="fecha-hora-label">📅 Fecha y Hora</div>
+      <div class="fecha" id="fechaActual">Cargando...</div>
+      <div class="hora" id="horaActual">00:00:00</div>
+    </div>
+  </div>
+</aside>
 
         <!-- CONTENIDO -->
         <main class="content">
