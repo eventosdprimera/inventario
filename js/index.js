@@ -1,6 +1,4 @@
 // Inicializar Supabase usando las credenciales de config.js
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 let heartbeatInterval = null;
 
 // Manejar el envío del formulario
