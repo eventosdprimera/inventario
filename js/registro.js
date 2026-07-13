@@ -1,4 +1,3 @@
-// js/registro.js - Módulo de Registro de Equipos
 // ==========================================
 // VARIABLES GLOBALES
 // ==========================================
@@ -6,43 +5,34 @@ let codigoBarrasActual = null;
 let fotosSeleccionadas = [null, null, null, null];
 let usuarioActual = null;
 let fotoSeleccionadaActual = null;
+let yaInicializado = false;  // ← ESTA VARIABLE FALTABA
 let formularioModificado = false;
 let equipoGuardadoExitosamente = false;
-let modalesCreados = false;
 
+// ==========================================
+// INICIALIZACIÓN
+// ==========================================
 async function inicializarRegistroEquipo() {
   console.log('🚀 === INICIANDO REGISTRO DE EQUIPO ===');
 
-  if (yaInicializado) {
-    console.log('⏭️ Ya inicializado, saltando...');
-    return;
-  }
+  // Resetear estado
+  formularioModificado = false;
+  equipoGuardadoExitosamente = false;
 
   const formRegistro = document.getElementById('formRegistro');
   const btnGuardar = document.getElementById('btnGuardar');
-  const modalSelector = document.getElementById('modalSelector');
-  const modalCamara = document.getElementById('modalCamara');
-  const svgBarcode = document.getElementById('barcode');
 
   console.log('🔍 Verificando elementos del DOM:');
   console.log('  - formRegistro:', formRegistro ? '✅' : '❌');
   console.log('  - btnGuardar:', btnGuardar ? '✅' : '❌');
-  console.log('  - modalSelector:', modalSelector ? '✅' : '❌');
-  console.log('  - modalCamara:', modalCamara ? '✅' : '❌');
 
   if (!formRegistro || !btnGuardar) {
     console.log('ℹ️ No estamos en la página de registro');
     return;
   }
 
-  if (!modalSelector || !modalCamara) {
-    console.error('❌ ERROR: Faltan modales en el HTML');
-    alert('Error: Faltan elementos en la página. Recarga la página.');
-    return;
-  }
-
-  yaInicializado = true;
-  console.log('✅ Elementos verificados');
+  // Crear modales dinámicamente
+  crearModalesYEstilos();
 
   // Esperar Supabase
   console.log('⏳ Esperando Supabase...');
@@ -53,14 +43,14 @@ async function inicializarRegistroEquipo() {
   }
 
   if (typeof supabaseClient === 'undefined') {
-    console.warn('⚠️ Supabase no disponible');
-  } else {
-    console.log('✅ Supabase disponible');
-    await cargarUsuario();
+    mostrarMensajeRegistro('Error: Supabase no está disponible', 'error');
+    return;
   }
+  console.log('✅ Supabase disponible');
+
+  await cargarUsuario();
 
   // Esperar JsBarcode
-  console.log('⏳ Esperando JsBarcode...');
   let intentosJsBarcode = 0;
   while (typeof JsBarcode === 'undefined' && intentosJsBarcode < 50) {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -68,37 +58,37 @@ async function inicializarRegistroEquipo() {
   }
 
   if (typeof JsBarcode === 'undefined') {
-    console.error('❌ JsBarcode no disponible');
-    alert('Error: No se pudo cargar el generador de códigos');
+    mostrarMensajeRegistro('Error: No se pudo cargar JsBarcode', 'error');
     return;
   }
   console.log('✅ JsBarcode disponible');
 
-  // ✅ VERIFICAR SI HAY CÓDIGO GUARDADO EN localStorage
+  configurarDeteccionCambios();
   await generarCodigoBarras();
-  
+
+  if (typeof registrarLog === 'function') {
+    await registrarLog('inventario', 'abrir_formulario_registro', 'Abrió formulario de registro de equipo');
+  }
+
   console.log('✅ === INICIALIZACIÓN COMPLETADA ===');
 }
 
 // ==========================================
-// ✅ CREAR MODALES Y ESTILOS DINÁMICAMENTE
+// CREAR MODALES Y ESTILOS DINÁMICAMENTE
 // ==========================================
 function crearModalesYEstilos() {
-  if (modalesCreados) return;
+  if (yaInicializado) return;
 
-  // 1. Inyectar estilos CSS de los modales en el <head>
+  // Inyectar estilos CSS de los modales
   if (!document.getElementById('estilos-modales-registro')) {
     const style = document.createElement('style');
     style.id = 'estilos-modales-registro';
     style.textContent = `
-      /* ====== OVERLAY MODAL ====== */
       .modal-overlay-registro {
         display: none;
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
         background: rgba(0, 0, 0, 0.7);
         z-index: 999999;
         justify-content: center;
@@ -108,8 +98,6 @@ function crearModalesYEstilos() {
       .modal-overlay-registro.visible {
         display: flex !important;
       }
-
-      /* ====== TARJETA MODAL ====== */
       .modal-tarjeta {
         background: white;
         border-radius: 16px;
@@ -125,13 +113,10 @@ function crearModalesYEstilos() {
         max-height: 90vh;
         overflow-y: auto;
       }
-
       @keyframes modalAparecer {
         from { opacity: 0; transform: translateY(-30px) scale(0.95); }
         to { opacity: 1; transform: translateY(0) scale(1); }
       }
-
-      /* ====== HEADER MODAL ====== */
       .modal-header-registro {
         text-align: center;
         margin-bottom: 20px;
@@ -163,14 +148,11 @@ function crearModalesYEstilos() {
         font-size: 18px;
         margin: 0;
       }
-
-      /* ====== BOTÓN CERRAR X ====== */
       .modal-cerrar-x {
         background: #fee2e2;
         color: #dc2626;
         border: none;
-        width: 32px;
-        height: 32px;
+        width: 32px; height: 32px;
         border-radius: 50%;
         cursor: pointer;
         font-size: 18px;
@@ -185,8 +167,6 @@ function crearModalesYEstilos() {
         color: white;
         transform: rotate(90deg);
       }
-
-      /* ====== BOTONES DEL SELECTOR ====== */
       .modal-opciones {
         display: flex;
         flex-direction: column;
@@ -242,8 +222,6 @@ function crearModalesYEstilos() {
       .modal-opcion-icono {
         font-size: 22px;
       }
-
-      /* ====== VIDEO CÁMARA ====== */
       .modal-video {
         width: 100%;
         background: #000;
@@ -254,8 +232,6 @@ function crearModalesYEstilos() {
       .modal-canvas-oculto {
         display: none;
       }
-
-      /* ====== BOTONES ACCIÓN CÁMARA ====== */
       .modal-acciones {
         display: flex;
         gap: 10px;
@@ -296,7 +272,7 @@ function crearModalesYEstilos() {
     console.log('✅ Estilos de modales inyectados');
   }
 
-  // 2. Crear Modal Selector de Foto
+  // Crear Modal Selector
   if (!document.getElementById('modalSelectorRegistro')) {
     const modal = document.createElement('div');
     modal.id = 'modalSelectorRegistro';
@@ -326,7 +302,7 @@ function crearModalesYEstilos() {
     console.log('✅ Modal selector creado');
   }
 
-  // 3. Crear Modal Cámara
+  // Crear Modal Cámara
   if (!document.getElementById('modalCamaraRegistro')) {
     const modal = document.createElement('div');
     modal.id = 'modalCamaraRegistro';
@@ -349,7 +325,7 @@ function crearModalesYEstilos() {
     console.log('✅ Modal cámara creado');
   }
 
-  modalesCreados = true;
+  yaInicializado = true;
 }
 
 // ==========================================
@@ -392,11 +368,14 @@ async function cargarUsuario() {
   }
 }
 
+// ==========================================
+// GENERAR CÓDIGO DE BARRAS (USA localStorage)
+// ==========================================
 async function generarCodigoBarras() {
   try {
     console.log('🔖 Generando código de barras...');
 
-    // ✅ VERIFICAR SI HAY UN CÓDIGO GUARDADO EN localStorage
+    // VERIFICAR SI HAY UN CÓDIGO GUARDADO EN localStorage
     const codigoGuardado = localStorage.getItem('codigoBarrasPendiente');
     
     if (codigoGuardado) {
@@ -427,7 +406,7 @@ async function generarCodigoBarras() {
       return;
     }
 
-    // ✅ NO HAY CÓDIGO GUARDADO - GENERAR NUEVO
+    // NO HAY CÓDIGO GUARDADO - GENERAR NUEVO
     let nuevoCodigo;
     let existe = true;
     let intentos = 0;
@@ -466,7 +445,7 @@ async function generarCodigoBarras() {
 
     codigoBarrasActual = nuevoCodigo;
     
-    // ✅ GUARDAR EN localStorage (persiste entre sesiones)
+    // GUARDAR EN localStorage
     localStorage.setItem('codigoBarrasPendiente', codigoBarrasActual);
     
     const elementoCodigo = document.getElementById('codigoBarrasValor');
@@ -498,8 +477,9 @@ async function generarCodigoBarras() {
     mostrarMensajeRegistro('Error al generar el código: ' + err.message, 'error');
   }
 }
+
 // ==========================================
-// SELECTOR DE FOTO (usando nuevos IDs)
+// SELECTOR DE FOTO
 // ==========================================
 window.abrirSelectorFoto = function(numero) {
   console.log('📸 Abriendo selector para foto:', numero);
@@ -521,34 +501,27 @@ window.cerrarSelectorFoto = function() {
   fotoSeleccionadaActual = null;
 };
 
-// ==========================================
-// SELECCIONAR ARCHIVO (AGREGAR DESPUÉS DE cerrarSelectorFoto)
-// ==========================================
 window.seleccionarArchivo = function() {
-  const numero = fotoSeleccionadaActual; // Guardar ANTES de cerrar
+  const numero = fotoSeleccionadaActual;
   cerrarSelectorFoto();
   if (numero) {
     const input = document.getElementById(`foto${numero}`);
     if (input) {
       console.log('📁 Abriendo selector de archivos para foto:', numero);
       input.click();
-    } else {
-      console.error('❌ Input de foto no encontrado:', `foto${numero}`);
     }
   }
 };
 
-// ==========================================
-// SELECCIONAR CÁMARA (AGREGAR DESPUÉS DE seleccionarArchivo)
-// ==========================================
 window.seleccionarCamara = function() {
-  const numero = fotoSeleccionadaActual; // Guardar ANTES de cerrar
+  const numero = fotoSeleccionadaActual;
   cerrarSelectorFoto();
   if (numero) {
     console.log('📷 Abriendo cámara para foto:', numero);
     abrirCamara(numero);
   }
 };
+
 // ==========================================
 // PREVISUALIZAR FOTO
 // ==========================================
@@ -604,7 +577,7 @@ window.removerFoto = function(numero) {
 };
 
 // ==========================================
-// ABRIR CÁMARA (usando nuevos IDs)
+// ABRIR CÁMARA
 // ==========================================
 window.abrirCamara = async function(numero) {
   console.log('📷 Abriendo cámara para foto:', numero);
@@ -613,15 +586,8 @@ window.abrirCamara = async function(numero) {
   const modal = document.getElementById('modalCamaraRegistro');
   const video = document.getElementById('videoCamaraRegistro');
 
-  if (!modal) {
-    console.error('❌ Modal de cámara no encontrado');
+  if (!modal || !video) {
     mostrarMensajeRegistro('Error: Modal de cámara no encontrado', 'error');
-    return;
-  }
-
-  if (!video) {
-    console.error('❌ Elemento video no encontrado');
-    mostrarMensajeRegistro('Error: Elemento de video no encontrado', 'error');
     return;
   }
 
@@ -638,7 +604,6 @@ window.abrirCamara = async function(numero) {
     console.log('✅ Cámara accesible, configurando video...');
     video.srcObject = stream;
     
-    // Esperar a que el video esté listo
     video.onloadedmetadata = () => {
       console.log('✅ Video cargado, dimensiones:', video.videoWidth, 'x', video.videoHeight);
       video.play().then(() => {
@@ -653,9 +618,9 @@ window.abrirCamara = async function(numero) {
   } catch (err) {
     console.error('❌ Error al acceder a la cámara:', err);
     if (err.name === 'NotAllowedError') {
-      mostrarMensajeRegistro('⚠️ Permiso de cámara denegado. Permite el acceso en la configuración del navegador.', 'error');
+      mostrarMensajeRegistro('⚠️ Permiso de cámara denegado', 'error');
     } else if (err.name === 'NotFoundError') {
-      mostrarMensajeRegistro('⚠️ No se encontró ninguna cámara en el dispositivo.', 'error');
+      mostrarMensajeRegistro('⚠️ No se encontró cámara', 'error');
     } else {
       mostrarMensajeRegistro('Error al acceder a la cámara: ' + err.message, 'error');
     }
@@ -678,10 +643,9 @@ window.cerrarCamara = function() {
 };
 
 // ==========================================
-// CAPTURAR FOTO (CORREGIDA - IDs correctos)
+// CAPTURAR FOTO (CORREGIDA)
 // ==========================================
 window.capturarFoto = function() {
-  // ✅ USAR LOS IDs CORRECTOS (con sufijo "Registro")
   const video = document.getElementById('videoCamaraRegistro');
   const canvas = document.getElementById('canvasCamaraRegistro');
 
@@ -697,7 +661,7 @@ window.capturarFoto = function() {
 
   if (!video.videoWidth || !video.videoHeight) {
     console.error('❌ Video no está listo');
-    mostrarMensajeRegistro('La cámara aún no está lista. Espera un momento.', 'error');
+    mostrarMensajeRegistro('La cámara aún no está lista', 'error');
     return;
   }
 
@@ -705,7 +669,6 @@ window.capturarFoto = function() {
   canvas.height = video.videoHeight;
   canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  // ✅ GUARDAR el número ANTES de cualquier operación asíncrona
   const numeroFoto = fotoSeleccionadaActual;
 
   canvas.toBlob(function(blob) {
@@ -720,12 +683,8 @@ window.capturarFoto = function() {
     });
 
     console.log('✅ Foto capturada, tamaño:', file.size, 'bytes');
-    console.log('📝 Guardando en posición:', numeroFoto - 1);
-
-    // Guardar en el array
     fotosSeleccionadas[numeroFoto - 1] = file;
 
-    // Previsualizar la foto
     const reader = new FileReader();
     reader.onload = function(e) {
       console.log('🖼️ Actualizando preview de foto:', numeroFoto);
@@ -739,8 +698,6 @@ window.capturarFoto = function() {
         preview.src = e.target.result;
         preview.style.display = 'block';
         console.log('✅ Preview actualizado para foto:', numeroFoto);
-      } else {
-        console.error('❌ Elemento preview no encontrado:', `preview${numeroFoto}`);
       }
 
       if (placeholder) placeholder.style.display = 'none';
@@ -751,14 +708,7 @@ window.capturarFoto = function() {
       }
     };
 
-    reader.onerror = function() {
-      console.error('❌ Error al leer el archivo');
-      mostrarMensajeRegistro('Error al procesar la foto capturada', 'error');
-    };
-
     reader.readAsDataURL(file);
-
-    // Cerrar la cámara DESPUÉS de iniciar la lectura
     cerrarCamara();
 
   }, 'image/jpeg', 0.9);
@@ -862,6 +812,10 @@ window.guardarEquipo = async function() {
       await registrarLog('inventario', 'registrar_equipo', `Registró "${nombre}" - ${codigoBarrasActual}`, 'success');
     }
 
+    // LIMPIAR EL CÓDIGO GUARDADO
+    localStorage.removeItem('codigoBarrasPendiente');
+    codigoBarrasActual = null;
+
     btnGuardar.textContent = '✅ Guardado';
     const btnImp = document.getElementById('btnImprimir');
     if (btnImp) btnImp.disabled = false;
@@ -930,47 +884,37 @@ ${nombre?`<div class="n">${nombre}</div>`:''}
 };
 
 // ==========================================
-// LIMPIAR FORMULARIO
+// LIMPIAR FORMULARIO (MANTIENE EL CÓDIGO)
 // ==========================================
 window.limpiarFormulario = function() {
-  if (!confirm('⚠️ ¿Limpiar el formulario?\n\nEl código de barras se mantendrá para el próximo registro.')) return;
-  
+  if (formularioModificado && !equipoGuardadoExitosamente) {
+    if (!confirm('⚠️ Hay datos sin guardar. ¿Limpiar?')) return;
+  }
+
   document.getElementById('formRegistro').reset();
-
-  // Limpiar fotos
   for (let i = 1; i <= 4; i++) {
-    fotosSeleccionadas[i - 1] = null;
-    const preview = document.getElementById(`preview${i}`);
-    const placeholder = document.getElementById(`preview${i}-placeholder`);
-    const removeBtn = document.getElementById(`remove${i}`);
-    const input = document.getElementById(`foto${i}`);
-    const previewBox = document.getElementById(`previewBox${i}`);
-
-    if (preview) { preview.style.display = 'none'; preview.src = ''; }
-    if (placeholder) placeholder.style.display = 'block';
-    if (removeBtn) removeBtn.style.display = 'none';
-    if (input) input.value = '';
-    if (previewBox) {
-      previewBox.onclick = function() { abrirSelectorFoto(i); };
-      previewBox.style.cursor = 'pointer';
-    }
+    fotosSeleccionadas[i-1] = null;
+    const p = document.getElementById(`preview${i}`);
+    const ph = document.getElementById(`preview${i}-placeholder`);
+    const r = document.getElementById(`remove${i}`);
+    const inp = document.getElementById(`foto${i}`);
+    const box = document.getElementById(`previewBox${i}`);
+    if (p) { p.style.display = 'none'; p.src = ''; }
+    if (ph) ph.style.display = 'block';
+    if (r) r.style.display = 'none';
+    if (inp) inp.value = '';
+    if (box) { box.onclick = function(){ abrirSelectorFoto(i); }; box.style.cursor = 'pointer'; }
   }
 
-  window.equipoRegistrado = null;
+  formularioModificado = false;
+  equipoGuardadoExitosamente = false;
+  const msg = document.getElementById('mensaje');
+  if (msg) msg.className = 'mensaje';
+  const btn = document.getElementById('btnGuardar');
+  if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar Equipo'; }
   
-  const mensajeDiv = document.getElementById('mensaje');
-  if (mensajeDiv) mensajeDiv.className = 'mensaje';
-  
-  const btnGuardar = document.getElementById('btnGuardar');
-  if (btnGuardar) {
-    btnGuardar.disabled = false;
-    btnGuardar.textContent = '💾 Guardar Equipo';
-  }
-
-  // ✅ NO REGENERAR EL CÓDIGO - MANTENER EL ACTUAL
-  // El código de barras se mantiene hasta que se registre el equipo
-  
-  console.log('✅ Formulario limpiado, código de barras mantenido:', codigoBarrasActual);
+  // NO REGENERAR EL CÓDIGO - MANTENER EL ACTUAL
+  console.log('✅ Formulario limpiado, código mantenido:', codigoBarrasActual);
 };
 
 // ==========================================
