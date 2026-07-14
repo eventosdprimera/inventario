@@ -26,7 +26,6 @@ async function inicializarNuevaRenta() {
   await cargarUsuario();
   await generarNumeroRenta();
   
-  // Fechas por defecto
   const hoy = new Date();
   document.getElementById('fechaRenta').value = hoy.toISOString().split('T')[0];
   
@@ -34,19 +33,19 @@ async function inicializarNuevaRenta() {
   fechaDev.setDate(fechaDev.getDate() + 7);
   document.getElementById('fechaDevolucion').value = fechaDev.toISOString().split('T')[0];
   
-  // Fecha de emisión
   document.getElementById('fechaEmision').textContent = hoy.toLocaleDateString('es-ES', {
     day: '2-digit', month: 'long', year: 'numeric'
   });
 
-  // Enter en búsqueda
   const inputBusqueda = document.getElementById('buscarEquipoInput');
-  inputBusqueda.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      agregarEquipo();
-    }
-  });
+  if (inputBusqueda) {
+    inputBusqueda.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        agregarEquipo();
+      }
+    });
+  }
 
   actualizarVistaPrevia();
   console.log('✅ === NUEVA RENTA INICIALIZADA ===');
@@ -100,12 +99,15 @@ async function generarNumeroRenta() {
 
     numeroRentaActual = `${serie}-${año}-${String(siguienteNumero).padStart(4, '0')}`;
     
-    document.getElementById('numeroRenta').textContent = numeroRentaActual;
-    document.getElementById('facturaNumero').textContent = numeroRentaActual;
+    const elNumero = document.getElementById('numeroRenta');
+    const elFactura = document.getElementById('facturaNumero');
+    if (elNumero) elNumero.textContent = numeroRentaActual;
+    if (elFactura) elFactura.textContent = numeroRentaActual;
     
   } catch (err) {
     console.error('Error al generar número:', err);
-    document.getElementById('numeroRenta').textContent = 'Error';
+    const elNumero = document.getElementById('numeroRenta');
+    if (elNumero) elNumero.textContent = 'Error';
   }
 }
 
@@ -113,7 +115,10 @@ async function generarNumeroRenta() {
 // AGREGAR EQUIPO
 // ==========================================
 async function agregarEquipo() {
-  const codigo = document.getElementById('buscarEquipoInput').value.trim();
+  const input = document.getElementById('buscarEquipoInput');
+  if (!input) return;
+  
+  const codigo = input.value.trim();
   
   if (!codigo) {
     mostrarMensaje('Por favor ingrese un código de barras o serial', 'error');
@@ -151,8 +156,8 @@ async function agregarEquipo() {
       subtotal: precioUnitario
     });
 
-    document.getElementById('buscarEquipoInput').value = '';
-    document.getElementById('buscarEquipoInput').focus();
+    input.value = '';
+    input.focus();
 
     renderizarTablaItems();
     calcularTotales();
@@ -171,11 +176,12 @@ async function agregarEquipo() {
 // ==========================================
 function renderizarTablaItems() {
   const tbody = document.getElementById('tbodyItems');
+  if (!tbody) return;
   
   if (itemsRenta.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="8" style="text-align: center; padding: 40px; color: #9ca3af;">
+        <td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8;">
           <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
           <div>No hay equipos agregados. Escanee o busque un equipo para comenzar.</div>
         </td>
@@ -234,11 +240,14 @@ function eliminarItem(index) {
 // ==========================================
 function calcularTotales() {
   const subtotal = itemsRenta.reduce((sum, item) => sum + item.subtotal, 0);
-  const descuento = parseFloat(document.getElementById('descuento').value) || 0;
+  const descuentoInput = document.getElementById('descuento');
+  const descuento = descuentoInput ? (parseFloat(descuentoInput.value) || 0) : 0;
   const total = subtotal - descuento;
 
-  document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
-  document.getElementById('total').textContent = `$${total.toFixed(2)}`;
+  const elSubtotal = document.getElementById('subtotal');
+  const elTotal = document.getElementById('total');
+  if (elSubtotal) elSubtotal.textContent = `$${subtotal.toFixed(2)}`;
+  if (elTotal) elTotal.textContent = `$${total.toFixed(2)}`;
   
   actualizarVistaPrevia();
 }
@@ -247,91 +256,100 @@ function calcularTotales() {
 // ACTUALIZAR VISTA PREVIA
 // ==========================================
 function actualizarVistaPrevia() {
-  // Número de factura
-  document.getElementById('facturaNumero').textContent = numeroRentaActual || '---';
+  const elFacturaNumero = document.getElementById('facturaNumero');
+  if (elFacturaNumero) elFacturaNumero.textContent = numeroRentaActual || '---';
   
-  // Cliente
-  const clienteNombre = document.getElementById('clienteNombre').value.trim();
-  const clienteTel = document.getElementById('clienteTelefono').value.trim();
-  const clienteEmail = document.getElementById('clienteEmail').value.trim();
+  const clienteNombre = document.getElementById('clienteNombre')?.value.trim() || '';
+  const clienteTel = document.getElementById('clienteTelefono')?.value.trim() || '';
+  const clienteEmail = document.getElementById('clienteEmail')?.value.trim() || '';
+  
+  const elFacturaCliente = document.getElementById('facturaCliente');
+  const elFacturaClienteTel = document.getElementById('facturaClienteTel');
+  const elFacturaFirmaCliente = document.getElementById('facturaFirmaCliente');
   
   if (clienteNombre) {
-    document.getElementById('facturaCliente').innerHTML = `<strong>${clienteNombre}</strong>`;
-    document.getElementById('facturaClienteTel').textContent = 
-      `${clienteTel}${clienteEmail ? ' | ' + clienteEmail : ''}`;
-    document.getElementById('facturaFirmaCliente').innerHTML = `<strong>${clienteNombre}</strong>`;
+    if (elFacturaCliente) elFacturaCliente.innerHTML = `<strong>${clienteNombre}</strong>`;
+    if (elFacturaClienteTel) elFacturaClienteTel.textContent = `${clienteTel}${clienteEmail ? ' | ' + clienteEmail : ''}`;
+    if (elFacturaFirmaCliente) elFacturaFirmaCliente.innerHTML = `<strong>${clienteNombre}</strong>`;
   } else {
-    document.getElementById('facturaCliente').innerHTML = '<em>Sin información</em>';
-    document.getElementById('facturaClienteTel').textContent = '';
-    document.getElementById('facturaFirmaCliente').innerHTML = '<strong>Cliente</strong>';
+    if (elFacturaCliente) elFacturaCliente.innerHTML = '<em>Sin información</em>';
+    if (elFacturaClienteTel) elFacturaClienteTel.textContent = '';
+    if (elFacturaFirmaCliente) elFacturaFirmaCliente.innerHTML = '<strong>Cliente</strong>';
   }
   
-  // Fechas
-  const fechaRenta = document.getElementById('fechaRenta').value;
-  const fechaDevolucion = document.getElementById('fechaDevolucion').value;
+  const fechaRenta = document.getElementById('fechaRenta')?.value || '';
+  const fechaDevolucion = document.getElementById('fechaDevolucion')?.value || '';
+  const elFacturaFechas = document.getElementById('facturaFechas');
   
   if (fechaRenta && fechaDevolucion) {
-    document.getElementById('facturaFechas').innerHTML = `
-      <strong>Desde:</strong> ${new Date(fechaRenta).toLocaleDateString()}<br>
-      <strong>Hasta:</strong> ${new Date(fechaDevolucion).toLocaleDateString()}
-    `;
+    if (elFacturaFechas) {
+      elFacturaFechas.innerHTML = `
+        <strong>Desde:</strong> ${new Date(fechaRenta).toLocaleDateString()}<br>
+        <strong>Hasta:</strong> ${new Date(fechaDevolucion).toLocaleDateString()}
+      `;
+    }
   } else {
-    document.getElementById('facturaFechas').innerHTML = '<em>Sin fechas</em>';
+    if (elFacturaFechas) elFacturaFechas.innerHTML = '<em>Sin fechas</em>';
   }
   
-  // Ingeniero
-  const ingenieroNombre = document.getElementById('ingenieroNombre').value.trim();
-  const ingenieroContacto = document.getElementById('ingenieroContacto').value.trim();
+  const ingenieroNombre = document.getElementById('ingenieroNombre')?.value.trim() || '';
+  const ingenieroContacto = document.getElementById('ingenieroContacto')?.value.trim() || '';
+  const elFacturaIngeniero = document.getElementById('facturaIngeniero');
   
   if (ingenieroNombre) {
-    document.getElementById('facturaIngeniero').innerHTML = `
-      <strong>Ing.:</strong> ${ingenieroNombre}${ingenieroContacto ? ' | ' + ingenieroContacto : ''}
-    `;
+    if (elFacturaIngeniero) {
+      elFacturaIngeniero.innerHTML = `<strong>Ing.:</strong> ${ingenieroNombre}${ingenieroContacto ? ' | ' + ingenieroContacto : ''}`;
+    }
   } else {
-    document.getElementById('facturaIngeniero').textContent = '';
+    if (elFacturaIngeniero) elFacturaIngeniero.textContent = '';
   }
   
-  // Items en factura
   const tbodyFactura = document.getElementById('facturaItems');
-  if (itemsRenta.length === 0) {
-    tbodyFactura.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align: center; padding: 30px; color: #9ca3af;">
-          Sin equipos agregados
-        </td>
-      </tr>
-    `;
-  } else {
-    tbodyFactura.innerHTML = itemsRenta.map((item, i) => `
-      <tr>
-        <td>${i + 1}</td>
-        <td style="font-family: monospace; font-size: 10px;">${item.codigo_barras}</td>
-        <td><strong>${item.nombre_equipo}</strong></td>
-        <td>${item.serial || '-'}</td>
-        <td style="text-align: right;">$${item.precio_unitario.toFixed(2)}</td>
-        <td style="text-align: center;">${item.cantidad}</td>
-        <td style="text-align: right;"><strong>$${item.subtotal.toFixed(2)}</strong></td>
-      </tr>
-    `).join('');
+  if (tbodyFactura) {
+    if (itemsRenta.length === 0) {
+      tbodyFactura.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 30px; color: #94a3b8;">
+            Sin equipos agregados
+          </td>
+        </tr>
+      `;
+    } else {
+      tbodyFactura.innerHTML = itemsRenta.map((item, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td style="font-family: monospace; font-size: 10px;">${item.codigo_barras}</td>
+          <td><strong>${item.nombre_equipo}</strong></td>
+          <td>${item.serial || '-'}</td>
+          <td style="text-align: right;">$${item.precio_unitario.toFixed(2)}</td>
+          <td style="text-align: center;">${item.cantidad}</td>
+          <td style="text-align: right;"><strong>$${item.subtotal.toFixed(2)}</strong></td>
+        </tr>
+      `).join('');
+    }
   }
   
-  // Totales en factura
   const subtotal = itemsRenta.reduce((sum, item) => sum + item.subtotal, 0);
-  const descuento = parseFloat(document.getElementById('descuento').value) || 0;
+  const descuentoInput = document.getElementById('descuento');
+  const descuento = descuentoInput ? (parseFloat(descuentoInput.value) || 0) : 0;
   const total = subtotal - descuento;
   
-  document.getElementById('facturaSubtotal').textContent = `$${subtotal.toFixed(2)}`;
-  document.getElementById('facturaDescuento').textContent = `$${descuento.toFixed(2)}`;
-  document.getElementById('facturaTotal').textContent = `$${total.toFixed(2)}`;
+  const elFacturaSubtotal = document.getElementById('facturaSubtotal');
+  const elFacturaDescuento = document.getElementById('facturaDescuento');
+  const elFacturaTotal = document.getElementById('facturaTotal');
+  
+  if (elFacturaSubtotal) elFacturaSubtotal.textContent = `$${subtotal.toFixed(2)}`;
+  if (elFacturaDescuento) elFacturaDescuento.textContent = `$${descuento.toFixed(2)}`;
+  if (elFacturaTotal) elFacturaTotal.textContent = `$${total.toFixed(2)}`;
 }
 
 // ==========================================
 // GUARDAR RENTA
 // ==========================================
 async function guardarRenta() {
-  const clienteNombre = document.getElementById('clienteNombre').value.trim();
-  const fechaRenta = document.getElementById('fechaRenta').value;
-  const fechaDevolucion = document.getElementById('fechaDevolucion').value;
+  const clienteNombre = document.getElementById('clienteNombre')?.value.trim() || '';
+  const fechaRenta = document.getElementById('fechaRenta')?.value || '';
+  const fechaDevolucion = document.getElementById('fechaDevolucion')?.value || '';
   
   if (!clienteNombre) {
     mostrarMensaje('Por favor ingrese el nombre del cliente/responsable', 'error');
@@ -349,12 +367,15 @@ async function guardarRenta() {
   }
 
   const btnGuardar = document.getElementById('btnGuardar');
-  btnGuardar.disabled = true;
-  btnGuardar.textContent = ' Guardando...';
+  if (btnGuardar) {
+    btnGuardar.disabled = true;
+    btnGuardar.textContent = '⏳ Guardando...';
+  }
 
   try {
     const subtotal = itemsRenta.reduce((sum, item) => sum + item.subtotal, 0);
-    const descuento = parseFloat(document.getElementById('descuento').value) || 0;
+    const descuentoInput = document.getElementById('descuento');
+    const descuento = descuentoInput ? (parseFloat(descuentoInput.value) || 0) : 0;
     const total = subtotal - descuento;
 
     const { data: rentaData, error: rentaError } = await supabaseClient
@@ -366,19 +387,19 @@ async function guardarRenta() {
         fecha_devolucion: fechaDevolucion,
         
         cliente_nombre: clienteNombre,
-        cliente_telefono: document.getElementById('clienteTelefono').value.trim(),
-        cliente_email: document.getElementById('clienteEmail').value.trim(),
-        cliente_direccion: document.getElementById('clienteDireccion').value.trim(),
+        cliente_telefono: document.getElementById('clienteTelefono')?.value.trim() || '',
+        cliente_email: document.getElementById('clienteEmail')?.value.trim() || '',
+        cliente_direccion: document.getElementById('clienteDireccion')?.value.trim() || '',
         
-        ingeniero_nombre: document.getElementById('ingenieroNombre').value.trim(),
-        ingeniero_contacto: document.getElementById('ingenieroContacto').value.trim(),
+        ingeniero_nombre: document.getElementById('ingenieroNombre')?.value.trim() || '',
+        ingeniero_contacto: document.getElementById('ingenieroContacto')?.value.trim() || '',
         
         subtotal: subtotal,
         descuento: descuento,
         total: total,
         
         estado: 'activa',
-        observaciones: document.getElementById('observaciones').value.trim(),
+        observaciones: document.getElementById('observaciones')?.value.trim() || '',
         
         usuario_registro: usuarioActualRenta?.email || 'unknown',
         usuario_registro_id: usuarioActualRenta?.id || null
@@ -416,19 +437,22 @@ async function guardarRenta() {
 
     mostrarMensaje(`✅ Renta #${numeroRentaActual} guardada exitosamente`, 'exito');
     
-    document.getElementById('btnImprimir').style.display = 'inline-flex';
+    const btnImprimir = document.getElementById('btnImprimir');
+    if (btnImprimir) btnImprimir.style.display = 'inline-flex';
     
-    btnGuardar.textContent = '✅ Guardada';
+    if (btnGuardar) btnGuardar.textContent = '✅ Guardada';
     
     setTimeout(() => {
-      document.getElementById('btnImprimir').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (btnImprimir) btnImprimir.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 500);
 
   } catch (err) {
     console.error('❌ Error al guardar renta:', err);
     mostrarMensaje('Error al guardar: ' + err.message, 'error');
-    btnGuardar.disabled = false;
-    btnGuardar.textContent = '💾 Guardar Renta';
+    if (btnGuardar) {
+      btnGuardar.disabled = false;
+      btnGuardar.textContent = ' Guardar Renta';
+    }
   }
 }
 
@@ -441,18 +465,19 @@ function imprimirComprobante() {
     return;
   }
 
-  const clienteNombre = document.getElementById('clienteNombre').value;
-  const clienteTel = document.getElementById('clienteTelefono').value;
-  const clienteEmail = document.getElementById('clienteEmail').value;
-  const clienteDir = document.getElementById('clienteDireccion').value;
-  const fechaRenta = document.getElementById('fechaRenta').value;
-  const fechaDevolucion = document.getElementById('fechaDevolucion').value;
-  const ingenieroNombre = document.getElementById('ingenieroNombre').value;
-  const ingenieroContacto = document.getElementById('ingenieroContacto').value;
-  const observaciones = document.getElementById('observaciones').value;
-  const subtotal = document.getElementById('subtotal').textContent;
-  const descuento = document.getElementById('descuento').value;
-  const total = document.getElementById('total').textContent;
+  const clienteNombre = document.getElementById('clienteNombre')?.value || '';
+  const clienteTel = document.getElementById('clienteTelefono')?.value || '';
+  const clienteEmail = document.getElementById('clienteEmail')?.value || '';
+  const clienteDir = document.getElementById('clienteDireccion')?.value || '';
+  const fechaRenta = document.getElementById('fechaRenta')?.value || '';
+  const fechaDevolucion = document.getElementById('fechaDevolucion')?.value || '';
+  const ingenieroNombre = document.getElementById('ingenieroNombre')?.value || '';
+  const ingenieroContacto = document.getElementById('ingenieroContacto')?.value || '';
+  const observaciones = document.getElementById('observaciones')?.value || '';
+  const subtotal = document.getElementById('subtotal')?.textContent || '$0.00';
+  const descuentoInput = document.getElementById('descuento');
+  const descuento = descuentoInput ? descuentoInput.value : '0';
+  const total = document.getElementById('total')?.textContent || '$0.00';
 
   const itemsHTML = itemsRenta.map((item, i) => `
     <tr>
@@ -478,14 +503,14 @@ function imprimirComprobante() {
     body { font-family: Arial, sans-serif; font-size: 12px; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; }
     .logo { display: flex; align-items: center; gap: 15px; }
-    .logo-icon { width: 60px; height: 60px; background: linear-gradient(135deg, #1e3a8a, #3b82f6); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 700; font-family: serif; }
+    .logo-icon { width: 60px; height: 60px; background: linear-gradient(135deg, #1e3a8a, #2563eb); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 700; font-family: serif; }
     .logo-text h1 { color: #1e3a8a; margin: 0; font-size: 22px; font-family: serif; }
     .logo-text p { margin: 3px 0 0 0; color: #666; font-size: 11px; }
     .numero-renta { text-align: right; }
     .numero-renta .label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
     .numero-renta .valor { font-size: 20px; font-weight: 700; color: #1e3a8a; font-family: monospace; margin-top: 5px; }
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-    .info-box { background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; }
+    .info-box { background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #2563eb; }
     .info-box h3 { margin: 0 0 10px 0; color: #1e3a8a; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
     .info-box p { margin: 5px 0; font-size: 12px; }
     table { width: 100%; border-collapse: collapse; margin: 20px 0; }
@@ -493,7 +518,7 @@ function imprimirComprobante() {
     td { padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 11px; }
     .totales { text-align: right; margin-top: 20px; padding: 15px; background: #eff6ff; border-radius: 8px; }
     .totales p { margin: 5px 0; font-size: 13px; }
-    .totales .total { font-size: 18px; font-weight: bold; color: #1e3a8a; border-top: 2px solid #3b82f6; padding-top: 10px; margin-top: 10px; }
+    .totales .total { font-size: 18px; font-weight: bold; color: #1e3a8a; border-top: 2px solid #1e3a8a; padding-top: 10px; margin-top: 10px; }
     .observaciones { margin-top: 20px; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; }
     .observaciones h4 { margin: 0 0 5px 0; color: #92400e; font-size: 12px; }
     .observaciones p { margin: 0; font-size: 12px; }
@@ -565,7 +590,7 @@ function imprimirComprobante() {
 
   ${observaciones ? `
   <div class="observaciones">
-    <h4>📝 Observaciones</h4>
+    <h4> Observaciones</h4>
     <p>${observaciones}</p>
   </div>
   ` : ''}
@@ -593,9 +618,9 @@ function imprimirComprobante() {
 
   <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
     <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">
-      🖨️ Imprimir Comprobante
+      ️ Imprimir Comprobante
     </button>
-    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+    <button onclick="window.close()" style="padding: 12px 30px; background: #64748b; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
        Cerrar
     </button>
   </div>
@@ -618,29 +643,36 @@ function limpiarFormulario() {
   itemsRenta = [];
   rentaGuardadaId = null;
   
-  document.getElementById('clienteNombre').value = '';
-  document.getElementById('clienteTelefono').value = '';
-  document.getElementById('clienteEmail').value = '';
-  document.getElementById('clienteDireccion').value = '';
-  document.getElementById('ingenieroNombre').value = '';
-  document.getElementById('ingenieroContacto').value = '';
-  document.getElementById('observaciones').value = '';
-  document.getElementById('descuento').value = '0';
+  const campos = ['clienteNombre', 'clienteTelefono', 'clienteEmail', 'clienteDireccion', 
+                  'ingenieroNombre', 'ingenieroContacto', 'observaciones'];
+  campos.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
   
-  document.getElementById('btnImprimir').style.display = 'none';
+  const descuentoEl = document.getElementById('descuento');
+  if (descuentoEl) descuentoEl.value = '0';
+  
+  const btnImprimir = document.getElementById('btnImprimir');
+  if (btnImprimir) btnImprimir.style.display = 'none';
   
   const btnGuardar = document.getElementById('btnGuardar');
-  btnGuardar.disabled = false;
-  btnGuardar.textContent = '💾 Guardar Renta';
+  if (btnGuardar) {
+    btnGuardar.disabled = false;
+    btnGuardar.textContent = '💾 Guardar Renta';
+  }
   
   renderizarTablaItems();
   calcularTotales();
   generarNumeroRenta();
   
   const hoy = new Date();
-  document.getElementById('fechaEmision').textContent = hoy.toLocaleDateString('es-ES', {
-    day: '2-digit', month: 'long', year: 'numeric'
-  });
+  const fechaEmision = document.getElementById('fechaEmision');
+  if (fechaEmision) {
+    fechaEmision.textContent = hoy.toLocaleDateString('es-ES', {
+      day: '2-digit', month: 'long', year: 'numeric'
+    });
+  }
   
   actualizarVistaPrevia();
   
@@ -669,6 +701,6 @@ function mostrarMensaje(texto, tipo) {
 // INICIALIZAR
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
-  console.log(' Nueva Renta DOM cargado');
+  console.log('📄 Nueva Renta DOM cargado');
   inicializarNuevaRenta();
 });
