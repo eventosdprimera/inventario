@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nueva Renta - Eventos D' Primera</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231e3a8a'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-size='48' font-weight='bold' text-anchor='middle' fill='white'%3EEP%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -46,25 +45,25 @@ body {
 .container {
   flex: 1;
   padding: 30px;
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   width: 100%;
 }
+.page-header { margin-bottom: 25px; }
 .page-title {
   font-family: 'Libre Caslon Text', serif;
   color: #1e3a8a;
-  font-size: 26px;
-  margin-bottom: 8px;
+  font-size: 28px;
+  margin-bottom: 5px;
 }
 .page-subtitle {
   color: #6b7280;
   font-size: 14px;
-  margin-bottom: 25px;
 }
 
 /* === NÚMERO DE RENTA DESTACADO === */
 .numero-renta-banner {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #1e3a8a 100%);
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
   color: white;
   padding: 25px 30px;
   border-radius: 16px;
@@ -84,16 +83,6 @@ body {
   width: 200px;
   height: 200px;
   background: rgba(255,255,255,0.1);
-  border-radius: 50%;
-}
-.numero-renta-banner::after {
-  content: '';
-  position: absolute;
-  bottom: -30%;
-  left: 20%;
-  width: 150px;
-  height: 150px;
-  background: rgba(255,255,255,0.05);
   border-radius: 50%;
 }
 .numero-renta-info { position: relative; z-index: 1; }
@@ -134,9 +123,6 @@ body {
   gap: 25px;
   margin-bottom: 25px;
 }
-.renta-layout.full {
-  grid-template-columns: 1fr;
-}
 
 fieldset {
   background-color: white;
@@ -144,6 +130,7 @@ fieldset {
   border-radius: 12px;
   padding: 25px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+  margin-bottom: 20px;
 }
 legend {
   background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
@@ -154,7 +141,7 @@ legend {
   font-weight: 600;
 }
 
-/* === BARRA DE BÚSQUEDA ESTILIZADA === */
+/* === BARRA DE BÚSQUEDA === */
 .busqueda-container {
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   padding: 20px;
@@ -192,9 +179,6 @@ legend {
   border-color: #1e3a8a;
   box-shadow: 0 0 0 4px rgba(30,58,138,0.1);
 }
-.busqueda-input::placeholder {
-  color: #9ca3af;
-}
 .btn-agregar {
   padding: 14px 28px;
   background: linear-gradient(135deg, #059669 0%, #10b981 100%);
@@ -217,127 +201,6 @@ legend {
   box-shadow: 0 6px 15px rgba(5,150,105,0.4);
 }
 
-/* === TABLA DE ITEMS === */
-.tabla-items-container {
-  overflow-x: auto;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-}
-.tabla-items {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-}
-.tabla-items th {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-  color: white;
-  padding: 14px 12px;
-  text-align: left;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-.tabla-items td {
-  padding: 12px;
-  border-bottom: 1px solid #f3f4f6;
-  font-size: 13px;
-  color: #374151;
-}
-.tabla-items tr:hover {
-  background-color: #f9fafb;
-}
-.tabla-items .precio { text-align: right; font-weight: 600; }
-.tabla-items .cantidad-input {
-  width: 60px;
-  padding: 6px 8px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  text-align: center;
-  font-family: 'Poppins', sans-serif;
-}
-.btn-eliminar-item {
-  background: #fee2e2;
-  color: #dc2626;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.3s;
-}
-.btn-eliminar-item:hover {
-  background: #dc2626;
-  color: white;
-}
-
-/* === TOTALES === */
-.totales-box {
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  padding: 20px;
-  border-radius: 12px;
-  margin-top: 20px;
-  border-left: 4px solid #1e3a8a;
-}
-.total-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  font-size: 14px;
-}
-.total-row.gran-total {
-  border-top: 2px solid #3b82f6;
-  margin-top: 10px;
-  padding-top: 15px;
-  font-size: 22px;
-  font-weight: 700;
-  color: #1e3a8a;
-}
-.total-input {
-  width: 120px;
-  padding: 8px 12px;
-  border: 2px solid #bfdbfe;
-  border-radius: 8px;
-  text-align: right;
-  font-size: 14px;
-  font-family: 'Poppins', sans-serif;
-}
-
-/* === FORMULARIOS === */
-.form-group { margin-bottom: 18px; }
-.form-group label {
-  display: block;
-  color: #374151;
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 12px 14px;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: 'Poppins', sans-serif;
-  transition: all 0.3s;
-  background: #fafafa;
-}
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #1e3a8a;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(30,58,138,0.1);
-}
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-}
-
 /* === VISTA PREVIA FACTURA === */
 .factura-preview {
   background: white;
@@ -346,17 +209,6 @@ legend {
   padding: 30px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.08);
   min-height: 600px;
-  position: relative;
-}
-.factura-preview::before {
-  content: 'VISTA PREVIA';
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  font-size: 10px;
-  color: #9ca3af;
-  letter-spacing: 1px;
-  font-weight: 600;
 }
 .factura-header {
   display: flex;
@@ -447,6 +299,7 @@ legend {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  text-align: left;
 }
 .factura-tabla td {
   padding: 10px;
@@ -485,6 +338,41 @@ legend {
   font-size: 12px;
   color: #374151;
   margin: 2px 0;
+}
+
+/* === FORMULARIOS === */
+.form-group { margin-bottom: 18px; }
+.form-group label {
+  display: block;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Poppins', sans-serif;
+  transition: all 0.3s;
+  background: #fafafa;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #1e3a8a;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(30,58,138,0.1);
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
 }
 
 /* === BOTONES DE ACCIÓN === */
@@ -599,8 +487,10 @@ legend {
 </header>
 
 <div class="container">
-  <h1 class="page-title">🤝 Nueva Renta de Equipos</h1>
-  <p class="page-subtitle">Complete la información y agregue los equipos a rentar</p>
+  <div class="page-header">
+    <h1 class="page-title">🤝 Nueva Renta de Equipos</h1>
+    <p class="page-subtitle">Complete la información y agregue los equipos a rentar</p>
+  </div>
 
   <div id="mensaje" class="mensaje"></div>
 
@@ -632,50 +522,62 @@ legend {
         </button>
       </div>
     </div>
-
-    <div class="tabla-items-container">
-      <table class="tabla-items">
-        <thead>
-          <tr>
-            <th style="width: 40px;">#</th>
-            <th>Código</th>
-            <th>Equipo</th>
-            <th>Serial</th>
-            <th style="width: 110px; text-align: right;">Precio/Día</th>
-            <th style="width: 80px; text-align: center;">Cant.</th>
-            <th style="width: 120px; text-align: right;">Subtotal</th>
-            <th style="width: 50px;"></th>
-          </tr>
-        </thead>
-        <tbody id="tbodyItems">
-          <tr>
-            <td colspan="8" style="text-align: center; padding: 40px; color: #9ca3af;">
-              <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
-              <div>No hay equipos agregados. Escanee o busque un equipo para comenzar.</div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="totales-box">
-      <div class="total-row">
-        <span>Subtotal:</span>
-        <span id="subtotal" style="font-weight: 600;">$0.00</span>
-      </div>
-      <div class="total-row">
-        <span>Descuento:</span>
-        <input type="number" id="descuento" class="total-input" value="0" min="0" step="0.01" 
-               onchange="calcularTotales()">
-      </div>
-      <div class="total-row gran-total">
-        <span>TOTAL:</span>
-        <span id="total">$0.00</span>
-      </div>
-    </div>
   </fieldset>
 
-  <!-- SECCIÓN 2: VISTA PREVIA DE FACTURA -->
+  <!-- SECCIÓN 2: INFORMACIÓN DEL CLIENTE E INGENIERO -->
+  <div class="renta-layout">
+    <fieldset>
+      <legend>👤 Información del Cliente/Responsable</legend>
+      <div class="form-group">
+        <label>Nombre Completo <span style="color: #dc2626;">*</span></label>
+        <input type="text" id="clienteNombre" placeholder="Nombre del responsable del evento" 
+               oninput="actualizarVistaPrevia()">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="tel" id="clienteTelefono" placeholder="Teléfono de contacto"
+                 oninput="actualizarVistaPrevia()">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="clienteEmail" placeholder="correo@ejemplo.com"
+                 oninput="actualizarVistaPrevia()">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Dirección del Evento</label>
+        <textarea id="clienteDireccion" rows="2" placeholder="Dirección del evento"
+                  oninput="actualizarVistaPrevia()"></textarea>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>🔧 Información del Ingeniero</legend>
+      <div class="form-group">
+        <label>Nombre del Ingeniero</label>
+        <input type="text" id="ingenieroNombre" placeholder="Nombre del ingeniero asignado"
+               oninput="actualizarVistaPrevia()">
+      </div>
+      <div class="form-group">
+        <label>Contacto</label>
+        <input type="text" id="ingenieroContacto" placeholder="Teléfono o email"
+               oninput="actualizarVistaPrevia()">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fecha de Renta <span style="color: #dc2626;">*</span></label>
+          <input type="date" id="fechaRenta" onchange="actualizarVistaPrevia()">
+        </div>
+        <div class="form-group">
+          <label>Fecha Devolución <span style="color: #dc2626;">*</span></label>
+          <input type="date" id="fechaDevolucion" onchange="actualizarVistaPrevia()">
+        </div>
+      </div>
+    </fieldset>
+  </div>
+
+  <!-- SECCIÓN 3: VISTA PREVIA DE FACTURA -->
   <fieldset>
     <legend>📄 Vista Previa de Factura</legend>
     <div class="factura-preview" id="facturaPreview">
@@ -750,59 +652,6 @@ legend {
     </div>
   </fieldset>
 
-  <!-- SECCIÓN 3: INFORMACIÓN DEL CLIENTE E INGENIERO -->
-  <div class="renta-layout">
-    <fieldset>
-      <legend>👤 Información del Cliente/Responsable</legend>
-      <div class="form-group">
-        <label>Nombre Completo <span style="color: #dc2626;">*</span></label>
-        <input type="text" id="clienteNombre" placeholder="Nombre del responsable del evento" 
-               oninput="actualizarVistaPrevia()">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Teléfono</label>
-          <input type="tel" id="clienteTelefono" placeholder="Teléfono de contacto"
-                 oninput="actualizarVistaPrevia()">
-        </div>
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="clienteEmail" placeholder="correo@ejemplo.com"
-                 oninput="actualizarVistaPrevia()">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Dirección del Evento</label>
-        <textarea id="clienteDireccion" rows="2" placeholder="Dirección del evento"
-                  oninput="actualizarVistaPrevia()"></textarea>
-      </div>
-    </fieldset>
-
-    <fieldset>
-      <legend>🔧 Información del Ingeniero</legend>
-      <div class="form-group">
-        <label>Nombre del Ingeniero</label>
-        <input type="text" id="ingenieroNombre" placeholder="Nombre del ingeniero asignado"
-               oninput="actualizarVistaPrevia()">
-      </div>
-      <div class="form-group">
-        <label>Contacto</label>
-        <input type="text" id="ingenieroContacto" placeholder="Teléfono o email"
-               oninput="actualizarVistaPrevia()">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Fecha de Renta <span style="color: #dc2626;">*</span></label>
-          <input type="date" id="fechaRenta" onchange="actualizarVistaPrevia()">
-        </div>
-        <div class="form-group">
-          <label>Fecha Devolución <span style="color: #dc2626;">*</span></label>
-          <input type="date" id="fechaDevolucion" onchange="actualizarVistaPrevia()">
-        </div>
-      </div>
-    </fieldset>
-  </div>
-
   <!-- OBSERVACIONES -->
   <fieldset>
     <legend>📝 Observaciones</legend>
@@ -814,10 +663,10 @@ legend {
   <!-- BOTONES DE ACCIÓN -->
   <div class="botones-accion">
     <button type="button" class="btn-action btn-success" onclick="guardarRenta()" id="btnGuardar">
-       Guardar Renta
+      💾 Guardar Renta
     </button>
     <button type="button" class="btn-action btn-primary" onclick="imprimirComprobante()" id="btnImprimir" style="display: none;">
-      ️ Imprimir Comprobante
+      🖨️ Imprimir Comprobante
     </button>
     <button type="button" class="btn-action btn-secondary" onclick="limpiarFormulario()">
        Nueva Renta
