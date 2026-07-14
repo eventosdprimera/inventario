@@ -168,74 +168,75 @@ async function cargarContenido(action) {
   const contenidoDiv = document.getElementById('contenidoDinamico');
   ocultarBienvenida();
 
-
   // ============================================
-  // CASO ESPECIAL: MÓDULO LOGS (carga archivos separados)
+  // CASO ESPECIAL: INVENTARIO → REGISTRAR
   // ============================================
-  if (modulo === 'logs') {
+  if (modulo === 'inventario' && operacion === 'registrar') {
     try {
-      // Cargar logs.js si no está disponible
-      if (typeof inicializarModuloLogs === 'undefined') {
-        await cargarScript('js/logs.js');
+      if (typeof JsBarcode === 'undefined') {
+        await cargarScript('https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js');
       }
-      // Cargar el HTML del módulo
-      const response = await fetch('html/logs.html');
-      if (!response.ok) throw new Error('No se pudo cargar html/logs.html');
-      const htmlText = await response.text();
-      contenidoDiv.innerHTML = htmlText;
+      if (typeof inicializarRegistroEquipo === 'undefined') {
+        await cargarScript('js/registro.js');
+      }
 
-      // Esperar a que el DOM esté listo e inicializar
-      await new Promise(resolve => setTimeout(resolve, 200));
-      if (typeof inicializarModuloLogs === 'function') {
-        await inicializarModuloLogs();
+      const response = await fetch('html/registro.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/registro.html');
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+
+      const container = doc.querySelector('.container');
+      if (!container) throw new Error('No se encontró .container');
+      contenidoDiv.innerHTML = container.innerHTML;
+
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof inicializarRegistroEquipo === 'function') {
+        await inicializarRegistroEquipo();
       }
     } catch (err) {
-      console.error('Error al cargar módulo de logs:', err);
-      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend>
-        <p>No se pudo cargar el módulo de logs: ${err.message}</p>
-      </fieldset>`;
+      console.error('Error:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>${err.message}</p></fieldset>`;
     }
     return;
   }
 
   // ============================================
-  // CASO ESPECIAL: INVENTARIO → REGISTRAR (usa registro.html)
+  // ✅ NUEVO CASO: INVENTARIO → MODIFICAR
   // ============================================
- // Caso: Inventario → Registrar
-if (modulo === 'inventario' && operacion === 'registrar') {
-  try {
-    if (typeof JsBarcode === 'undefined') {
-      await cargarScript('https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js');
+  if (modulo === 'inventario' && operacion === 'modificar') {
+    try {
+      // 1. Cargar el archivo JS externo si no está disponible
+      if (typeof inicializarModificacion === 'undefined') {
+        await cargarScript('js/modificar.js');
+      }
+
+      // 2. Cargar el archivo HTML externo
+      const response = await fetch('html/modificar.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/modificar.html');
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+
+      // 3. Extraer solo el contenido del contenedor principal
+      const container = doc.querySelector('.container');
+      if (!container) throw new Error('No se encontró .container en modificar.html');
+      contenidoDiv.innerHTML = container.innerHTML;
+
+      // 4. Esperar a que el DOM esté listo e inicializar el módulo
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof inicializarModificacion === 'function') {
+        await inicializarModificacion();
+      }
+    } catch (err) {
+      console.error('Error cargando modificar:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el formulario de modificación: ${err.message}</p></fieldset>`;
     }
-    if (typeof inicializarRegistroEquipo === 'undefined') {
-      await cargarScript('js/registro.js');
-    }
-
-    const response = await fetch('html/registro.html');
-    if (!response.ok) throw new Error('No se pudo cargar');
-    const htmlText = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, 'text/html');
-
-    // ✅ SOLO extraer el contenido del .container (sin modales)
-    const container = doc.querySelector('.container');
-    if (!container) throw new Error('No se encontró .container');
-    contenidoDiv.innerHTML = container.innerHTML;
-
-    // ✅ NO clonar modales - registro.js los crea dinámicamente
-
-    await new Promise(resolve => setTimeout(resolve, 300));
-    if (typeof inicializarRegistroEquipo === 'function') {
-      await inicializarRegistroEquipo();
-    }
-  } catch (err) {
-    console.error('Error:', err);
-    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>${err.message}</p></fieldset>`;
+    return;
   }
-  return;
-}
+
   // ============================================
-  // OTROS MÓDULOS (placeholders)
+  // OTROS MÓDULOS (Placeholders)
   // ============================================
   let html = '';
   switch (modulo) {
