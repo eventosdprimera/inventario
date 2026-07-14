@@ -10,7 +10,7 @@ let formularioModificado = false;
 let equipoGuardadoExitosamente = false;
 
 // ==========================================
-// INICIALIZACIÓN
+// INICIALIZACIÓN (SIN LOGS AQUÍ)
 // ==========================================
 async function inicializarRegistroEquipo() {
   console.log('🚀 === INICIANDO REGISTRO DE EQUIPO ===');
@@ -58,8 +58,7 @@ async function inicializarRegistroEquipo() {
   configurarDeteccionCambios();
   await generarCodigoBarras();
 
-  // ✅ YA NO REGISTRAMOS LOG AL ABRIR, SOLO AL GUARDAR
-  
+  // ✅ AQUÍ NO HAY NINGÚN registrarLog, solo inicialización
   console.log('✅ === INICIALIZACIÓN COMPLETADA ===');
 }
 
@@ -483,7 +482,7 @@ function validarCosto(valor) {
 }
 
 // ==========================================
-// GUARDAR EQUIPO
+// GUARDAR EQUIPO (ÚNICO LUGAR DONDE SE GENERA EL LOG)
 // ==========================================
 window.guardarEquipo = async function() {
   console.log('💾 Guardando equipo...');
@@ -614,7 +613,7 @@ window.guardarEquipo = async function() {
 };
 
 // ==========================================
-// IMPRIMIR STICKER (RECIBE DATOS COMO PARÁMETRO)
+// IMPRIMIR STICKER
 // ==========================================
 window.imprimirSticker = function(datos) {
   const info = datos || window.equipoRegistrado || {};
@@ -689,10 +688,6 @@ window.imprimirSticker = function(datos) {
       ventana.document.open();
       ventana.document.write(htmlSticker);
       ventana.document.close();
-      
-      if (typeof registrarLog === 'function') {
-        registrarLog('inventario', 'Sticker impreso', `Imprimió sticker para: ${nombre || 'Desconocido'} (${codigoParaImprimir})`, 'info');
-      }
     } else {
       mostrarMensajeRegistro('⚠️ El navegador bloqueó la ventana emergente.', 'error');
     }
