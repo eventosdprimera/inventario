@@ -85,18 +85,26 @@ function configurarEventListeners() {
 // BUSCAR EQUIPO
 // ==========================================
 async function buscarEquipo() {
-  const codigo = document.getElementById('buscarEquipoInput').value.trim();
-  const msgDiv = document.getElementById('mensaje');
-
+  // 1. Obtener el valor y limpiar espacios
+  let codigo = document.getElementById('buscarEquipoInput').value.trim();
+  
   if (!codigo) {
     mostrarMensajeMod('Por favor ingresa un código de barras o serial.', 'error');
     return;
   }
 
+  // ✅ 2. SANITIZAR EL CÓDIGO: Reemplazar comillas simples, comillas dobles o puntos por guiones
+  // Esto corrige el problema del escáner que envía ' en lugar de -
+  codigo = codigo.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
+
+  // Actualizar el input con el código corregido (opcional, pero útil para que el usuario lo vea bien)
+  document.getElementById('buscarEquipoInput').value = codigo;
+
+  const msgDiv = document.getElementById('mensaje');
   mostrarMensajeMod('⏳ Buscando equipo...', 'info');
 
   try {
-    // Buscar por código de barras O serial
+    // 3. Buscar por código de barras O serial
     const { data, error } = await supabaseClient
       .from('equipos')
       .select('*')
@@ -113,7 +121,7 @@ async function buscarEquipo() {
       return;
     }
 
-    // Equipo encontrado
+    // 4. Equipo encontrado
     equipoEnModificacion = data;
     fotosModificacion = [null, null, null, null];
 
@@ -127,7 +135,7 @@ async function buscarEquipo() {
     `;
     document.getElementById('equipoEncontrado').classList.add('activo');
 
-    // Llenar el formulario
+    // 5. Llenar el formulario
     document.getElementById('mod_codigo_barras').value = data.codigo_barras;
     document.getElementById('mod_nombre').value = data.nombre_equipo || '';
     document.getElementById('mod_marca').value = data.marca || '';
@@ -139,7 +147,7 @@ async function buscarEquipo() {
     document.getElementById('mod_estatus').value = data.estatus || 'operativo';
     document.getElementById('mod_observacion').value = data.observacion || '';
 
-    // Mostrar fotos actuales
+    // 6. Mostrar fotos actuales
     for (let i = 1; i <= 4; i++) {
       const urlKey = i === 1 ? 'foto_url' : `foto${i}_url`;
       const url = data[urlKey];
@@ -160,7 +168,7 @@ async function buscarEquipo() {
       }
     }
 
-    // Mostrar formulario de modificación
+    // 7. Mostrar formulario de modificación
     document.getElementById('fieldsetModificacion').style.display = 'block';
     document.getElementById('buttonGroupModificacion').style.display = 'flex';
     formularioModModificado = false;
