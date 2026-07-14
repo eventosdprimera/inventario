@@ -223,35 +223,41 @@ async function cargarContenido(action) {
     return;
   }
 
-  // ==========================================
-  // 3. INVENTARIO → MODIFICAR
-  // ==========================================
-  if (modulo === 'inventario' && operacion === 'modificar') {
-    try {
-      if (typeof inicializarModificacion === 'undefined') {
-        await cargarScript('js/modificar.js');
-      }
-
-      const response = await fetch('html/modificar.html');
-      if (!response.ok) throw new Error('No se pudo cargar html/modificar.html');
-      const htmlText = await response.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(htmlText, 'text/html');
-
-      const container = doc.querySelector('.container');
-      if (!container) throw new Error('No se encontró .container');
-      contenidoDiv.innerHTML = container.innerHTML;
-
-      await new Promise(resolve => setTimeout(resolve, 300));
-      if (typeof inicializarModificacion === 'function') {
-        await inicializarModificacion();
-      }
-    } catch (err) {
-      console.error('Error:', err);
-      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>${err.message}</p></fieldset>`;
+// ==========================================
+// 3. INVENTARIO → MODIFICAR
+// ==========================================
+if (modulo === 'inventario' && operacion === 'modificar') {
+  try {
+    // ✅ CARGAR logs.js PRIMERO (para que registrarLog esté disponible)
+    if (typeof registrarLog === 'undefined') {
+      await cargarScript('js/logs.js');
     }
-    return;
+    
+    // Cargar modificar.js si no está disponible
+    if (typeof inicializarModificacion === 'undefined') {
+      await cargarScript('js/modificar.js');
+    }
+
+    const response = await fetch('html/modificar.html');
+    if (!response.ok) throw new Error('No se pudo cargar html/modificar.html');
+    const htmlText = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+
+    const container = doc.querySelector('.container');
+    if (!container) throw new Error('No se encontró .container en modificar.html');
+    contenidoDiv.innerHTML = container.innerHTML;
+
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (typeof inicializarModificacion === 'function') {
+      await inicializarModificacion();
+    }
+  } catch (err) {
+    console.error('Error cargando modificar:', err);
+    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el formulario de modificación: ${err.message}</p></fieldset>`;
   }
+  return;
+}
 
   // ==========================================
   // 4. OTROS MÓDULOS (Placeholders organizados)
