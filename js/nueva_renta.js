@@ -264,7 +264,7 @@ async function guardarRenta() {
         cliente_nombre: clienteNombre,
         cliente_telefono: document.getElementById('clienteTelefono')?.value.trim() || '',
         cliente_email: document.getElementById('clienteEmail')?.value.trim() || '',
-        cliente_direccion: '', // Se puede agregar si se desea
+        cliente_direccion: '',
         ingeniero_nombre: document.getElementById('ingenieroNombre')?.value.trim() || '',
         ingeniero_contacto: '',
         subtotal: subtotal, descuento: descuento, total: total, estado: 'activa',
