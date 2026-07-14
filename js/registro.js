@@ -5,7 +5,7 @@ let codigoBarrasActual = null;
 let fotosSeleccionadas = [null, null, null, null];
 let usuarioActual = null;
 let fotoSeleccionadaActual = null;
-let yaInicializado = false;  // ← ESTA VARIABLE FALTABA
+let yaInicializado = false;
 let formularioModificado = false;
 let equipoGuardadoExitosamente = false;
 
@@ -15,7 +15,6 @@ let equipoGuardadoExitosamente = false;
 async function inicializarRegistroEquipo() {
   console.log('🚀 === INICIANDO REGISTRO DE EQUIPO ===');
 
-  // Resetear estado
   formularioModificado = false;
   equipoGuardadoExitosamente = false;
 
@@ -31,10 +30,8 @@ async function inicializarRegistroEquipo() {
     return;
   }
 
-  // Crear modales dinámicamente
   crearModalesYEstilos();
 
-  // Esperar Supabase
   console.log('⏳ Esperando Supabase...');
   let intentosSupabase = 0;
   while (typeof supabaseClient === 'undefined' && intentosSupabase < 50) {
@@ -50,7 +47,6 @@ async function inicializarRegistroEquipo() {
 
   await cargarUsuario();
 
-  // Esperar JsBarcode
   let intentosJsBarcode = 0;
   while (typeof JsBarcode === 'undefined' && intentosJsBarcode < 50) {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -79,200 +75,86 @@ async function inicializarRegistroEquipo() {
 function crearModalesYEstilos() {
   if (yaInicializado) return;
 
-  // Inyectar estilos CSS de los modales
   if (!document.getElementById('estilos-modales-registro')) {
     const style = document.createElement('style');
     style.id = 'estilos-modales-registro';
     style.textContent = `
       .modal-overlay-registro {
-        display: none;
-        position: fixed;
-        top: 0; left: 0;
-        width: 100vw; height: 100vh;
-        background: rgba(0, 0, 0, 0.7);
-        z-index: 999999;
-        justify-content: center;
-        align-items: center;
+        display: none; position: fixed; top: 0; left: 0;
+        width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7);
+        z-index: 999999; justify-content: center; align-items: center;
         backdrop-filter: blur(4px);
       }
-      .modal-overlay-registro.visible {
-        display: flex !important;
-      }
+      .modal-overlay-registro.visible { display: flex !important; }
       .modal-tarjeta {
-        background: white;
-        border-radius: 16px;
-        padding: 30px;
-        max-width: 420px;
-        width: 90%;
-        box-shadow: 0 25px 60px rgba(0,0,0,0.4);
-        animation: modalAparecer 0.3s ease;
-        position: relative;
+        background: white; border-radius: 16px; padding: 30px;
+        max-width: 420px; width: 90%; box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+        animation: modalAparecer 0.3s ease; position: relative;
       }
-      .modal-tarjeta-camara {
-        max-width: 600px;
-        max-height: 90vh;
-        overflow-y: auto;
-      }
+      .modal-tarjeta-camara { max-width: 600px; max-height: 90vh; overflow-y: auto; }
       @keyframes modalAparecer {
         from { opacity: 0; transform: translateY(-30px) scale(0.95); }
         to { opacity: 1; transform: translateY(0) scale(1); }
       }
       .modal-header-registro {
-        text-align: center;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
+        text-align: center; margin-bottom: 20px; padding-bottom: 15px;
         border-bottom: 2px solid #e5e7eb;
       }
       .modal-header-registro h3 {
-        font-family: 'Libre Caslon Text', serif;
-        color: #1e3a8a;
-        font-size: 20px;
-        margin: 0 0 6px 0;
+        font-family: 'Libre Caslon Text', serif; color: #1e3a8a;
+        font-size: 20px; margin: 0 0 6px 0;
       }
-      .modal-header-registro p {
-        color: #6b7280;
-        font-size: 13px;
-        margin: 0;
-      }
+      .modal-header-registro p { color: #6b7280; font-size: 13px; margin: 0; }
       .modal-header-flex {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-        padding-bottom: 12px;
-        border-bottom: 2px solid #e5e7eb;
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 15px; padding-bottom: 12px; border-bottom: 2px solid #e5e7eb;
       }
       .modal-header-flex h3 {
-        font-family: 'Libre Caslon Text', serif;
-        color: #1e3a8a;
-        font-size: 18px;
-        margin: 0;
+        font-family: 'Libre Caslon Text', serif; color: #1e3a8a;
+        font-size: 18px; margin: 0;
       }
       .modal-cerrar-x {
-        background: #fee2e2;
-        color: #dc2626;
-        border: none;
-        width: 32px; height: 32px;
-        border-radius: 50%;
-        cursor: pointer;
-        font-size: 18px;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s;
+        background: #fee2e2; color: #dc2626; border: none;
+        width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+        font-size: 18px; font-weight: 700; display: flex;
+        align-items: center; justify-content: center; transition: all 0.3s;
       }
-      .modal-cerrar-x:hover {
-        background: #dc2626;
-        color: white;
-        transform: rotate(90deg);
-      }
-      .modal-opciones {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
+      .modal-cerrar-x:hover { background: #dc2626; color: white; transform: rotate(90deg); }
+      .modal-opciones { display: flex; flex-direction: column; gap: 12px; }
       .modal-opcion-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        padding: 16px 20px;
-        border: 2px solid #e5e7eb;
-        border-radius: 12px;
-        background: white;
-        cursor: pointer;
-        font-size: 15px;
-        font-weight: 600;
-        font-family: 'Poppins', sans-serif;
-        transition: all 0.3s;
-        color: #374151;
+        display: flex; align-items: center; justify-content: center; gap: 12px;
+        padding: 16px 20px; border: 2px solid #e5e7eb; border-radius: 12px;
+        background: white; cursor: pointer; font-size: 15px; font-weight: 600;
+        font-family: 'Poppins', sans-serif; transition: all 0.3s; color: #374151;
       }
-      .modal-opcion-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(0,0,0,0.1);
-      }
-      .modal-opcion-btn.opcion-archivo {
-        border-color: #3b82f6;
-        color: #1e3a8a;
-      }
-      .modal-opcion-btn.opcion-archivo:hover {
-        background: #eff6ff;
-        border-color: #1e3a8a;
-      }
-      .modal-opcion-btn.opcion-camara {
-        border-color: #10b981;
-        color: #065f46;
-      }
-      .modal-opcion-btn.opcion-camara:hover {
-        background: #d1fae5;
-        border-color: #059669;
-      }
-      .modal-opcion-btn.opcion-cancelar {
-        border-color: #e5e7eb;
-        color: #6b7280;
-        background: #f9fafb;
-        margin-top: 5px;
-      }
-      .modal-opcion-btn.opcion-cancelar:hover {
-        background: #fee2e2;
-        color: #dc2626;
-        border-color: #dc2626;
-      }
-      .modal-opcion-icono {
-        font-size: 22px;
-      }
-      .modal-video {
-        width: 100%;
-        background: #000;
-        border-radius: 10px;
-        max-height: 400px;
-        display: block;
-      }
-      .modal-canvas-oculto {
-        display: none;
-      }
-      .modal-acciones {
-        display: flex;
-        gap: 10px;
-        margin-top: 15px;
-        justify-content: center;
-      }
+      .modal-opcion-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
+      .modal-opcion-btn.opcion-archivo { border-color: #3b82f6; color: #1e3a8a; }
+      .modal-opcion-btn.opcion-archivo:hover { background: #eff6ff; border-color: #1e3a8a; }
+      .modal-opcion-btn.opcion-camara { border-color: #10b981; color: #065f46; }
+      .modal-opcion-btn.opcion-camara:hover { background: #d1fae5; border-color: #059669; }
+      .modal-opcion-btn.opcion-cancelar { border-color: #e5e7eb; color: #6b7280; background: #f9fafb; margin-top: 5px; }
+      .modal-opcion-btn.opcion-cancelar:hover { background: #fee2e2; color: #dc2626; border-color: #dc2626; }
+      .modal-opcion-icono { font-size: 22px; }
+      .modal-video { width: 100%; background: #000; border-radius: 10px; max-height: 400px; display: block; }
+      .modal-canvas-oculto { display: none; }
+      .modal-acciones { display: flex; gap: 10px; margin-top: 15px; justify-content: center; }
       .modal-accion-btn {
-        padding: 12px 24px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        font-family: 'Poppins', sans-serif;
-        font-size: 14px;
-        transition: all 0.3s;
-        display: flex;
-        align-items: center;
-        gap: 6px;
+        padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer;
+        font-weight: 600; font-family: 'Poppins', sans-serif; font-size: 14px;
+        transition: all 0.3s; display: flex; align-items: center; gap: 6px;
       }
       .modal-accion-btn.accion-capturar {
         background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
-        color: white;
-        box-shadow: 0 4px 10px rgba(220,38,38,0.3);
+        color: white; box-shadow: 0 4px 10px rgba(220,38,38,0.3);
       }
-      .modal-accion-btn.accion-capturar:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 14px rgba(220,38,38,0.4);
-      }
-      .modal-accion-btn.accion-cancelar {
-        background: #e5e7eb;
-        color: #374151;
-      }
-      .modal-accion-btn.accion-cancelar:hover {
-        background: #d1d5db;
-      }
+      .modal-accion-btn.accion-capturar:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(220,38,38,0.4); }
+      .modal-accion-btn.accion-cancelar { background: #e5e7eb; color: #374151; }
+      .modal-accion-btn.accion-cancelar:hover { background: #d1d5db; }
     `;
     document.head.appendChild(style);
     console.log('✅ Estilos de modales inyectados');
   }
 
-  // Crear Modal Selector
   if (!document.getElementById('modalSelectorRegistro')) {
     const modal = document.createElement('div');
     modal.id = 'modalSelectorRegistro';
@@ -285,12 +167,10 @@ function crearModalesYEstilos() {
         </div>
         <div class="modal-opciones">
           <button type="button" class="modal-opcion-btn opcion-archivo" onclick="seleccionarArchivo()">
-            <span class="modal-opcion-icono">📁</span>
-            <span>Subir archivo</span>
+            <span class="modal-opcion-icono">📁</span><span>Subir archivo</span>
           </button>
           <button type="button" class="modal-opcion-btn opcion-camara" onclick="seleccionarCamara()">
-            <span class="modal-opcion-icono">📷</span>
-            <span>Tomar foto con cámara</span>
+            <span class="modal-opcion-icono">📷</span><span>Tomar foto con cámara</span>
           </button>
           <button type="button" class="modal-opcion-btn opcion-cancelar" onclick="cerrarSelectorFoto()">
             <span>❌ Cancelar</span>
@@ -302,7 +182,6 @@ function crearModalesYEstilos() {
     console.log('✅ Modal selector creado');
   }
 
-  // Crear Modal Cámara
   if (!document.getElementById('modalCamaraRegistro')) {
     const modal = document.createElement('div');
     modal.id = 'modalCamaraRegistro';
@@ -334,12 +213,8 @@ function crearModalesYEstilos() {
 function configurarDeteccionCambios() {
   const campos = document.querySelectorAll('#formRegistro input, #formRegistro select, #formRegistro textarea');
   campos.forEach(campo => {
-    campo.addEventListener('input', () => {
-      if (!equipoGuardadoExitosamente) formularioModificado = true;
-    });
-    campo.addEventListener('change', () => {
-      if (!equipoGuardadoExitosamente) formularioModificado = true;
-    });
+    campo.addEventListener('input', () => { if (!equipoGuardadoExitosamente) formularioModificado = true; });
+    campo.addEventListener('change', () => { if (!equipoGuardadoExitosamente) formularioModificado = true; });
   });
 }
 
@@ -351,11 +226,7 @@ async function cargarUsuario() {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) return;
 
-    const { data, error } = await supabaseClient
-      .from('usuarios')
-      .select('*')
-      .eq('email', session.user.email)
-      .maybeSingle();
+    const { data, error } = await supabaseClient.from('usuarios').select('*').eq('email', session.user.email).maybeSingle();
 
     if (data && !error) {
       usuarioActual = data;
@@ -369,13 +240,11 @@ async function cargarUsuario() {
 }
 
 // ==========================================
-// GENERAR CÓDIGO DE BARRAS (USA localStorage)
+// GENERAR CÓDIGO DE BARRAS
 // ==========================================
 async function generarCodigoBarras() {
   try {
     console.log('🔖 Generando código de barras...');
-
-    // VERIFICAR SI HAY UN CÓDIGO GUARDADO EN localStorage
     const codigoGuardado = localStorage.getItem('codigoBarrasPendiente');
     
     if (codigoGuardado) {
@@ -387,14 +256,8 @@ async function generarCodigoBarras() {
 
       try {
         JsBarcode("#barcode", codigoBarrasActual, {
-          format: "CODE128",
-          width: 2,
-          height: 60,
-          displayValue: true,
-          fontSize: 14,
-          margin: 5,
-          font: "Courier New",
-          fontOptions: "bold"
+          format: "CODE128", width: 2, height: 60, displayValue: true,
+          fontSize: 14, margin: 5, font: "Courier New", fontOptions: "bold"
         });
         console.log('✅ Código de barras renderizado');
       } catch (e) {
@@ -406,7 +269,6 @@ async function generarCodigoBarras() {
       return;
     }
 
-    // NO HAY CÓDIGO GUARDADO - GENERAR NUEVO
     let nuevoCodigo;
     let existe = true;
     let intentos = 0;
@@ -420,32 +282,17 @@ async function generarCodigoBarras() {
 
       if (typeof supabaseClient !== 'undefined') {
         try {
-          const { data, error } = await supabaseClient
-            .from('equipos')
-            .select('codigo_barras')
-            .eq('codigo_barras', nuevoCodigo)
-            .maybeSingle();
-
-          if (error || !data) {
-            existe = false;
-          } else {
-            intentos++;
-          }
-        } catch (err) {
-          existe = false;
-        }
+          const { data, error } = await supabaseClient.from('equipos').select('codigo_barras').eq('codigo_barras', nuevoCodigo).maybeSingle();
+          if (error || !data) { existe = false; } else { intentos++; }
+        } catch (err) { existe = false; }
       } else {
         existe = false;
       }
     }
 
-    if (existe) {
-      throw new Error('No se pudo generar un código único después de 10 intentos');
-    }
+    if (existe) throw new Error('No se pudo generar un código único después de 10 intentos');
 
     codigoBarrasActual = nuevoCodigo;
-    
-    // GUARDAR EN localStorage
     localStorage.setItem('codigoBarrasPendiente', codigoBarrasActual);
     
     const elementoCodigo = document.getElementById('codigoBarrasValor');
@@ -453,14 +300,8 @@ async function generarCodigoBarras() {
 
     try {
       JsBarcode("#barcode", codigoBarrasActual, {
-        format: "CODE128",
-        width: 2,
-        height: 60,
-        displayValue: true,
-        fontSize: 14,
-        margin: 5,
-        font: "Courier New",
-        fontOptions: "bold"
+        format: "CODE128", width: 2, height: 60, displayValue: true,
+        fontSize: 14, margin: 5, font: "Courier New", fontOptions: "bold"
       });
       console.log('✅ Código generado y guardado:', codigoBarrasActual);
     } catch (e) {
@@ -594,11 +435,7 @@ window.abrirCamara = async function(numero) {
   try {
     console.log('⏳ Solicitando acceso a la cámara...');
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { 
-        facingMode: 'environment',
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-      }
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
     });
     
     console.log('✅ Cámara accesible, configurando video...');
@@ -614,7 +451,6 @@ window.abrirCamara = async function(numero) {
         mostrarMensajeRegistro('Error al iniciar la cámara', 'error');
       });
     };
-    
   } catch (err) {
     console.error('❌ Error al acceder a la cámara:', err);
     if (err.name === 'NotAllowedError') {
@@ -643,7 +479,7 @@ window.cerrarCamara = function() {
 };
 
 // ==========================================
-// CAPTURAR FOTO (CORREGIDA)
+// CAPTURAR FOTO
 // ==========================================
 window.capturarFoto = function() {
   const video = document.getElementById('videoCamaraRegistro');
@@ -678,10 +514,7 @@ window.capturarFoto = function() {
       return;
     }
 
-    const file = new File([blob], `foto_${numeroFoto}_${Date.now()}.jpg`, {
-      type: 'image/jpeg'
-    });
-
+    const file = new File([blob], `foto_${numeroFoto}_${Date.now()}.jpg`, { type: 'image/jpeg' });
     console.log('✅ Foto capturada, tamaño:', file.size, 'bytes');
     fotosSeleccionadas[numeroFoto - 1] = file;
 
@@ -699,18 +532,12 @@ window.capturarFoto = function() {
         preview.style.display = 'block';
         console.log('✅ Preview actualizado para foto:', numeroFoto);
       }
-
       if (placeholder) placeholder.style.display = 'none';
       if (removeBtn) removeBtn.style.display = 'flex';
-      if (previewBox) {
-        previewBox.onclick = null;
-        previewBox.style.cursor = 'default';
-      }
+      if (previewBox) { previewBox.onclick = null; previewBox.style.cursor = 'default'; }
     };
-
     reader.readAsDataURL(file);
     cerrarCamara();
-
   }, 'image/jpeg', 0.9);
 };
 
@@ -719,8 +546,7 @@ window.capturarFoto = function() {
 // ==========================================
 async function verificarSerial(serial) {
   try {
-    const { data, error } = await supabaseClient
-      .from('equipos').select('serial').eq('serial', serial).maybeSingle();
+    const { data, error } = await supabaseClient.from('equipos').select('serial').eq('serial', serial).maybeSingle();
     if (error) return false;
     return data !== null;
   } catch (err) { return false; }
@@ -782,10 +608,7 @@ window.guardarEquipo = async function() {
         const fileExt = fotosSeleccionadas[i].name.split('.').pop();
         const fileName = `${codigoBarrasActual}_foto${i + 1}_${Date.now()}.${fileExt}`;
         
-        const { error: uploadError } = await supabaseClient.storage
-          .from('equipos-fotos')
-          .upload(fileName, fotosSeleccionadas[i], { cacheControl: '3600', upsert: false });
-        
+        const { error: uploadError } = await supabaseClient.storage.from('equipos-fotos').upload(fileName, fotosSeleccionadas[i], { cacheControl: '3600', upsert: false });
         if (uploadError) throw new Error(`Error subiendo foto ${i + 1}: ${uploadError.message}`);
 
         const { data: urlData } = supabaseClient.storage.from('equipos-fotos').getPublicUrl(fileName);
@@ -820,7 +643,6 @@ window.guardarEquipo = async function() {
     console.log('✅ Equipo guardado exitosamente');
     mostrarMensajeRegistro('✅ Equipo registrado con código: ' + codigoBarrasActual, 'exito');
     
-    // ✅ GUARDAR LOS DATOS EN MEMORIA PARA LA IMPRESIÓN (aunque el formulario se limpie)
     window.equipoRegistrado = {
       codigo_barras: codigoBarrasActual,
       nombre_equipo: nombre,
@@ -831,10 +653,8 @@ window.guardarEquipo = async function() {
       fecha_registro: data.fecha_registro
     };
 
-    // ✅ LIMPIAR EL FORMULARIO Y GENERAR NUEVO CÓDIGO AUTOMÁTICAMENTE
     prepararNuevoRegistro();
 
-    // ✅ PREGUNTAR SI DESEA IMPRIMIR (usando los datos guardados en memoria)
     setTimeout(() => {
       if (confirm('✅ Equipo guardado exitosamente.\n\n¿Deseas imprimir el sticker del código de barras ahora?')) {
         imprimirSticker();
@@ -850,10 +670,9 @@ window.guardarEquipo = async function() {
 };
 
 // ==========================================
-// IMPRIMIR STICKER (TAMAÑO ETIQUETA PEQUEÑA)
+// IMPRIMIR STICKER
 // ==========================================
 window.imprimirSticker = function() {
-  // ✅ USAR EL CÓDIGO DEL EQUIPO RECIENTEMENTE GUARDADO, O EL ACTUAL
   const codigoParaImprimir = (window.equipoRegistrado && window.equipoRegistrado.codigo_barras) 
     ? window.equipoRegistrado.codigo_barras 
     : codigoBarrasActual;
@@ -863,7 +682,6 @@ window.imprimirSticker = function() {
     return;
   }
 
-  // ✅ USAR LOS DATOS GUARDADOS EN MEMORIA (aunque el formulario ya esté limpio)
   const nombre = window.equipoRegistrado ? window.equipoRegistrado.nombre_equipo : (document.getElementById('nombreEquipo')?.value.trim() || '');
   const marca = window.equipoRegistrado ? window.equipoRegistrado.marca : (document.getElementById('marcaEquipo')?.value.trim() || '');
   const modelo = window.equipoRegistrado ? window.equipoRegistrado.modelo : (document.getElementById('modeloEquipo')?.value.trim() || '');
@@ -879,14 +697,8 @@ window.imprimirSticker = function() {
 
   try {
     JsBarcode("#stickerBarcode", codigoParaImprimir, {
-      format: "CODE128",
-      width: 1.2,
-      height: 35,
-      displayValue: true,
-      fontSize: 9,
-      margin: 1,
-      font: "Courier New",
-      fontOptions: "bold"
+      format: "CODE128", width: 1.2, height: 35, displayValue: true,
+      fontSize: 9, margin: 1, font: "Courier New", fontOptions: "bold"
     });
 
     const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
@@ -945,20 +757,44 @@ window.imprimirSticker = function() {
 };
 
 // ==========================================
-// LIMPIAR FORMULARIO (MANTIENE EL CÓDIGO)
-// ==========================================
-// ==========================================
-// LIMPIAR FORMULARIO
-// ==========================================
-// ==========================================
-// LIMPIAR FORMULARIO (Manual con confirmación)
+// LIMPIAR FORMULARIO (Manual)
 // ==========================================
 window.limpiarFormulario = function() {
   if (!confirm('⚠️ ¿Limpiar el formulario?\n\nSe generará un nuevo código de barras.')) return;
   prepararNuevoRegistro();
 };
 
-  // ✅ LIMPIAR EL OBJETO DE EQUIPO REGISTRADO PARA LA PRÓXIMA VEZ
+// ==========================================
+// PREPARAR NUEVO REGISTRO
+// ==========================================
+function prepararNuevoRegistro() {
+  console.log('🧹 Preparando formulario para nuevo registro...');
+  
+  localStorage.removeItem('codigoBarrasPendiente');
+  sessionStorage.removeItem('codigoBarrasPendiente');
+  
+  document.getElementById('formRegistro').reset();
+  
+  for (let i = 1; i <= 4; i++) {
+    fotosSeleccionadas[i - 1] = null;
+    const preview = document.getElementById(`preview${i}`);
+    const placeholder = document.getElementById(`preview${i}-placeholder`);
+    const removeBtn = document.getElementById(`remove${i}`);
+    const input = document.getElementById(`foto${i}`);
+    const previewBox = document.getElementById(`previewBox${i}`);
+
+    if (preview) { preview.style.display = 'none'; preview.src = ''; }
+    if (placeholder) placeholder.style.display = 'block';
+    if (removeBtn) removeBtn.style.display = 'none';
+    if (input) input.value = '';
+    if (previewBox) {
+      previewBox.onclick = function() { abrirSelectorFoto(i); };
+      previewBox.style.cursor = 'pointer';
+    }
+  }
+
+  formularioModificado = false;
+  equipoGuardadoExitosamente = false;
   window.equipoRegistrado = null;
   
   const mensajeDiv = document.getElementById('mensaje');
@@ -970,8 +806,9 @@ window.limpiarFormulario = function() {
     btnGuardar.textContent = '💾 Guardar Equipo';
   }
 
-  console.log('✅ Formulario limpiado, código de barras mantenido:', codigoBarrasActual);
-};
+  generarCodigoBarras();
+}
+
 // ==========================================
 // MOSTRAR MENSAJE
 // ==========================================
@@ -997,52 +834,3 @@ window.addEventListener('beforeunload', function(e) {
     return e.returnValue;
   }
 });
-
-// ==========================================
-// PREPARAR NUEVO REGISTRO (Limpia y genera nuevo código)
-// ==========================================
-function prepararNuevoRegistro() {
-  console.log('🧹 Preparando formulario para nuevo registro...');
-  
-  // 1. Eliminar el código guardado para que se genere uno nuevo
-  localStorage.removeItem('codigoBarrasPendiente');
-  sessionStorage.removeItem('codigoBarrasPendiente');
-  
-  // 2. Limpiar campos de texto
-  document.getElementById('formRegistro').reset();
-  
-  // 3. Limpiar fotos
-  for (let i = 1; i <= 4; i++) {
-    fotosSeleccionadas[i - 1] = null;
-    const preview = document.getElementById(`preview${i}`);
-    const placeholder = document.getElementById(`preview${i}-placeholder`);
-    const removeBtn = document.getElementById(`remove${i}`);
-    const input = document.getElementById(`foto${i}`);
-    const previewBox = document.getElementById(`previewBox${i}`);
-
-    if (preview) { preview.style.display = 'none'; preview.src = ''; }
-    if (placeholder) placeholder.style.display = 'block';
-    if (removeBtn) removeBtn.style.display = 'none';
-    if (input) input.value = '';
-    if (previewBox) {
-      previewBox.onclick = function() { abrirSelectorFoto(i); };
-      previewBox.style.cursor = 'pointer';
-    }
-  }
-
-  // 4. Resetear estados
-  formularioModificado = false;
-  equipoGuardadoExitosamente = false;
-  
-  const mensajeDiv = document.getElementById('mensaje');
-  if (mensajeDiv) mensajeDiv.className = 'mensaje';
-  
-  const btnGuardar = document.getElementById('btnGuardar');
-  if (btnGuardar) {
-    btnGuardar.disabled = false;
-    btnGuardar.textContent = '💾 Guardar Equipo';
-  }
-
-  // 5. Generar nuevo código de barras
-  generarCodigoBarras();
-}
