@@ -258,7 +258,41 @@ if (modulo === 'inventario' && operacion === 'modificar') {
   }
   return;
 }
+// ==========================================
+// 4. INVENTARIO → ELIMINAR
+// ==========================================
+if (modulo === 'inventario' && operacion === 'eliminar') {
+  try {
+    // Cargar logs.js primero (para registrarLog)
+    if (typeof registrarLog === 'undefined') {
+      await cargarScript('js/logs.js');
+    }
+    
+    // Cargar eliminar.js
+    if (typeof inicializarEliminacion === 'undefined') {
+      await cargarScript('js/eliminar.js');
+    }
 
+    const response = await fetch('html/eliminar.html');
+    if (!response.ok) throw new Error('No se pudo cargar html/eliminar.html');
+    const htmlText = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+
+    const container = doc.querySelector('.container');
+    if (!container) throw new Error('No se encontró .container');
+    contenidoDiv.innerHTML = container.innerHTML;
+
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (typeof inicializarEliminacion === 'function') {
+      await inicializarEliminacion();
+    }
+  } catch (err) {
+    console.error('Error cargando eliminar:', err);
+    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+  }
+  return;
+}
   // ==========================================
   // 4. OTROS MÓDULOS (Placeholders organizados)
   // ==========================================
