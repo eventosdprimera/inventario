@@ -245,6 +245,9 @@ window.removerFotoModificacion = function(numero) {
 // ==========================================
 // CANCELAR MODIFICACIÓN
 // ==========================================
+// ==========================================
+// CANCELAR MODIFICACIÓN
+// ==========================================
 window.cancelarModificacion = function() {
   if (formularioModModificado) {
     if (!confirm('⚠️ Tienes cambios sin guardar.\n\n¿Seguro que deseas cancelar?')) return;
@@ -255,9 +258,15 @@ window.cancelarModificacion = function() {
   formularioModModificado = false;
 
   document.getElementById('buscarEquipoInput').value = '';
+  
+  // ✅ OCULTAR Y LIMPIAR EL CUADRO DE "EQUIPO ENCONTRADO"
+  const equipoEncontradoDiv = document.getElementById('equipoEncontrado');
+  equipoEncontradoDiv.classList.remove('activo');
+  document.getElementById('equipoEncontradoInfo').innerHTML = '';
+
   document.getElementById('fieldsetModificacion').style.display = 'none';
   document.getElementById('buttonGroupModificacion').style.display = 'none';
-  document.getElementById('equipoEncontrado').classList.remove('activo');
+  
   document.getElementById('mensaje').className = 'mensaje';
   document.getElementById('mensaje').textContent = '';
 
