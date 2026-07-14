@@ -111,18 +111,16 @@ function generarIniciales(nombre) {
 }
 
 // ============================================
-// APLICAR PERMISOS POR ROL (NUEVA LÓGICA)
+// APLICAR PERMISOS POR ROL
 // ============================================
 function aplicarPermisosPorRol() {
   const permitidos = PERMISOS_POR_ROL[currentUserRol] || [];
 
-  // Ocultar/mostrar cada submenú según permisos
   document.querySelectorAll('.submenu-btn').forEach(btn => {
     const action = btn.dataset.action;
     btn.style.display = permitidos.includes(action) ? 'block' : 'none';
   });
 
-  // Ocultar el menú completo si no tiene ningún submenú visible
   document.querySelectorAll('.menu-item').forEach(item => {
     const submenuBtns = item.querySelectorAll('.submenu-btn');
     const visibles = Array.from(submenuBtns).filter(btn => btn.style.display !== 'none');
@@ -131,10 +129,9 @@ function aplicarPermisosPorRol() {
 }
 
 // ============================================
-// CONFIGURAR MENÚ (eventos de clic)
+// CONFIGURAR MENÚ
 // ============================================
 function configurarMenu() {
-  // Toggle de menús principales
   document.querySelectorAll('.menu-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const menuName = btn.dataset.menu;
@@ -152,7 +149,6 @@ function configurarMenu() {
     });
   });
 
-  // Acciones de submenús
   document.querySelectorAll('.submenu-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.submenu-btn').forEach(b => b.classList.remove('active'));
@@ -163,12 +159,122 @@ function configurarMenu() {
   });
 }
 
+// ============================================
+// CARGAR CONTENIDO DINÁMICO (CORREGIDO Y COMPLETO)
+// ============================================
+async function cargarContenido(action) {
+  const [modulo, operacion] = action.split('-');
+  const contenidoDiv = document.getElementById('contenidoDinamico');
+  ocultarBienvenida();
+
+  // ==========================================
+  // 1. MÓDULO LOGS
+  // ==========================================
+  if (modulo === 'logs' && operacion === 'ver') {
+    try {
+      if (typeof inicializarModuloLogs === 'undefined') {
+        await cargarScript('js/logs.js');
+      }
+      const response = await fetch('html/logs.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/logs.html');
+      contenidoDiv.innerHTML = await response.text();
+
+      await new Promise(resolve => setTimeout(resolve, 200));
+      if (typeof inicializarModuloLogs === 'function') {
+        await inicializarModuloLogs();
+      }
+    } catch (err) {
+      console.error('Error al cargar logs:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el módulo de logs: ${err.message}</p></fieldset>`;
+    }
+    return;
+  }
+
+  // ==========================================
+  // 2. INVENTARIO → REGISTRAR
+  // ==========================================
+  if (modulo === 'inventario' && operacion === 'registrar') {
+    try {
+      if (typeof JsBarcode === 'undefined') {
+        await cargarScript('https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js');
+      }
+      if (typeof inicializarRegistroEquipo === 'undefined') {
+        await cargarScript('js/registro.js');
+      }
+
+      const response = await fetch('html/registro.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/registro.html');
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+
+      const container = doc.querySelector('.container');
+      if (!container) throw new Error('No se encontró .container');
+      contenidoDiv.innerHTML = container.innerHTML;
+
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof inicializarRegistroEquipo === 'function') {
+        await inicializarRegistroEquipo();
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>${err.message}</p></fieldset>`;
+    }
+    return;
+  }
+
+  // ==========================================
+  // 3. INVENTARIO → MODIFICAR
+  // ==========================================
+  if (modulo === 'inventario' && operacion === 'modificar') {
+    try {
+      if (typeof inicializarModificacion === 'undefined') {
+        await cargarScript('js/modificar.js');
+      }
+
+      const response = await fetch('html/modificar.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/modificar.html');
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+
+      const container = doc.querySelector('.container');
+      if (!container) throw new Error('No se encontró .container');
+      contenidoDiv.innerHTML = container.innerHTML;
+
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof inicializarModificacion === 'function') {
+        await inicializarModificacion();
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>${err.message}</p></fieldset>`;
+    }
+    return;
+  }
+
+  // ==========================================
+  // 4. OTROS MÓDULOS (Placeholders organizados)
+  // ==========================================
+  let html = '';
+  switch (modulo) {
+    case 'consulta':    html = generarFormularioConsulta(operacion); break;
+    case 'inventario':  html = generarFormularioInventario(operacion); break;
+    case 'rentar':      html = generarFormularioRentar(operacion); break;
+    case 'averias':     html = generarFormularioAverias(operacion); break;
+    case 'ventas':      html = generarFormularioVentas(operacion); break;
+    case 'reportes':    html = generarFormularioReportes(operacion); break;
+    case 'usuarios':    html = generarFormularioUsuarios(operacion); break;
+    default:            html = `<fieldset><legend>Módulo no disponible</legend><p>Próximamente: ${modulo} - ${operacion}</p></fieldset>`;
+  }
+  contenidoDiv.innerHTML = html;
+}
 
 function cargarScript(url) {
   return new Promise((resolve, reject) => {
     const scripts = document.querySelectorAll('script[src]');
     for (let script of scripts) {
-      if (script.src === url) { resolve(); return; }
+      if (script.src.includes(url)) { resolve(); return; }
     }
     const script = document.createElement('script');
     script.src = url;
@@ -179,314 +285,56 @@ function cargarScript(url) {
 }
 
 // ============================================
-// FORMULARIOS POR MÓDULO
+// GENERADORES DE FORMULARIOS (Placeholders)
 // ============================================
 function generarFormularioConsulta(operacion) {
   return `<fieldset><legend>🔍 Consulta de Inventario</legend>
     <div class="form-grid">
-      <div class="form-group">
-        <label>Buscar por</label>
-        <select>
-          <option>Código de Barras</option>
-          <option>Nombre del Equipo</option>
-          <option>Categoría</option>
-          <option>Estado</option>
-        </select>
+      <div class="form-group"><label>Buscar por</label>
+        <select><option>Código de Barras</option><option>Nombre del Equipo</option><option>Serial</option></select>
       </div>
-      <div class="form-group">
-        <label>Término de búsqueda</label>
-        <input type="text" placeholder="Ingrese el valor a buscar...">
-      </div>
+      <div class="form-group"><label>Término de búsqueda</label><input type="text" placeholder="Ingrese el valor..."></div>
     </div>
-    <br>
-    <button class="btn-action btn-primary">🔎 Buscar</button>
-    <button class="btn-action btn-secondary">Limpiar</button>
+    <br><button class="btn-action btn-primary">🔎 Buscar</button>
     <div class="table-container" style="margin-top:20px;">
-      <table>
-        <thead><tr><th>Código</th><th>Nombre</th><th>Categoría</th><th>Estado</th><th>Ubicación</th></tr></thead>
-        <tbody><tr><td colspan="5" style="text-align:center; color:#6b7280;">Realice una búsqueda para ver resultados</td></tr></tbody>
-      </table>
+      <table><thead><tr><th>Código</th><th>Nombre</th><th>Marca</th><th>Serial</th><th>Estado</th></tr></thead>
+      <tbody><tr><td colspan="5" style="text-align:center; color:#6b7280;">Realice una búsqueda para ver resultados</td></tr></tbody></table>
     </div>
   </fieldset>`;
 }
 
 function generarFormularioInventario(operacion) {
-  if (operacion === 'modificar') {
-    return `<fieldset><legend>📦 Modificar Equipo</legend>
-      <p>Próximamente: formulario de modificación de equipos.</p>
-    </fieldset>`;
-  } else if (operacion === 'eliminar') {
+  if (operacion === 'eliminar') {
     return `<fieldset><legend>📦 Eliminar Equipo</legend>
-      <div class="table-container">
-        <table>
-          <thead><tr><th>Código</th><th>Nombre</th><th>Marca</th><th>Serial</th><th>Estatus</th><th>Fecha</th><th>Acción</th></tr></thead>
-          <tbody><tr><td colspan="7" style="text-align:center;">Próximamente: listado de equipos</td></tr></tbody>
-        </table>
-      </div>
+      <div class="table-container"><table><thead><tr><th>Código</th><th>Nombre</th><th>Marca</th><th>Serial</th><th>Acción</th></tr></thead>
+      <tbody><tr><td colspan="5" style="text-align:center;">Próximamente: listado de equipos para eliminar</td></tr></tbody></table></div>
     </fieldset>`;
   }
-  return '';
+  return `<fieldset><legend>📦 Inventario</legend><p>Seleccione una opción del submenú.</p></fieldset>`;
 }
 
 function generarFormularioRentar(operacion) {
-  switch (operacion) {
-    case 'crear':
-      return `<fieldset><legend>🤝 Crear Nueva Renta</legend>
-        <div class="form-grid">
-          <div class="form-group"><label>Cliente</label><input type="text" placeholder="Nombre del cliente"></div>
-          <div class="form-group"><label>Teléfono</label><input type="tel" placeholder="Teléfono de contacto"></div>
-          <div class="form-group"><label>Fecha de Inicio</label><input type="date"></div>
-          <div class="form-group"><label>Fecha de Devolución</label><input type="date"></div>
-          <div class="form-group"><label>Equipo a Rentar</label><select><option>Seleccionar equipo...</option></select></div>
-          <div class="form-group"><label>Precio Total ($)</label><input type="number" placeholder="0.00"></div>
-        </div>
-        <div class="form-group" style="margin-top:15px;">
-          <label>Observaciones</label>
-          <textarea rows="3" placeholder="Detalles adicionales de la renta..."></textarea>
-        </div>
-        <br>
-        <button class="btn-action btn-primary">💾 Guardar Renta</button>
-        <button class="btn-action btn-secondary">Cancelar</button>
-      </fieldset>`;
-    case 'modificar':
-      return `<fieldset><legend>🤝 Modificar Renta</legend>
-        <div class="form-group"><label>Seleccionar Renta</label><select><option>Seleccionar renta...</option></select></div>
-        <p style="margin-top:15px; color:#6b7280;">Los datos de la renta se cargarán aquí para su edición.</p>
-      </fieldset>`;
-    case 'eliminar':
-      return `<fieldset><legend>🤝 Eliminar Renta</legend>
-        <div class="table-container">
-          <table>
-            <thead><tr><th>ID</th><th>Cliente</th><th>Equipo</th><th>Inicio</th><th>Devolución</th><th>Total</th><th>Acción</th></tr></thead>
-            <tbody><tr><td colspan="7" style="text-align:center;">Próximamente: listado de rentas</td></tr></tbody>
-          </table>
-        </div>
-      </fieldset>`;
-    case 'vencidas':
-      return `<fieldset><legend>⚠️ Rentas Vencidas</legend>
-        <div class="table-container">
-          <table>
-            <thead><tr><th>ID</th><th>Cliente</th><th>Equipo</th><th>Fecha Vencimiento</th><th>Días Vencida</th><th>Contacto</th><th>Acción</th></tr></thead>
-            <tbody><tr><td colspan="7" style="text-align:center;">No hay rentas vencidas actualmente</td></tr></tbody>
-          </table>
-        </div>
-      </fieldset>`;
-    case 'historial':
-      return `<fieldset><legend>📜 Historial de Rentas</legend>
-        <div class="form-grid">
-          <div class="form-group"><label>Desde</label><input type="date"></div>
-          <div class="form-group"><label>Hasta</label><input type="date"></div>
-        </div>
-        <br>
-        <button class="btn-action btn-primary">🔎 Filtrar</button>
-        <div class="table-container" style="margin-top:20px;">
-          <table>
-            <thead><tr><th>ID</th><th>Cliente</th><th>Equipo</th><th>Inicio</th><th>Devolución</th><th>Total</th><th>Estado</th></tr></thead>
-            <tbody><tr><td colspan="7" style="text-align:center;">Seleccione un rango de fechas</td></tr></tbody>
-          </table>
-        </div>
-      </fieldset>`;
-  }
-  return '';
+  return `<fieldset><legend>🤝 Módulo de Rentas</legend><p>Próximamente: Gestión de rentas (${operacion}).</p></fieldset>`;
 }
 
 function generarFormularioAverias(operacion) {
-  switch (operacion) {
-    case 'registrar':
-      return `<fieldset><legend>🔧 Registrar Avería</legend>
-        <div class="form-grid">
-          <div class="form-group"><label>Equipo Afectado</label><select><option>Seleccionar equipo...</option></select></div>
-          <div class="form-group"><label>Tipo de Avería</label>
-            <select>
-              <option>Daño físico</option>
-              <option>Falla eléctrica</option>
-              <option>Componente faltante</option>
-              <option>Otro</option>
-            </select>
-          </div>
-          <div class="form-group"><label>Fecha del Incidente</label><input type="date"></div>
-          <div class="form-group"><label>Gravedad</label>
-            <select>
-              <option>Leve</option>
-              <option>Moderada</option>
-              <option>Grave</option>
-              <option>Crítica</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group" style="margin-top:15px;">
-          <label>Descripción de la Avería</label>
-          <textarea rows="4" placeholder="Describa detalladamente la avería..."></textarea>
-        </div>
-        <br>
-        <button class="btn-action btn-primary">💾 Registrar Avería</button>
-        <button class="btn-action btn-secondary">Cancelar</button>
-      </fieldset>`;
-    case 'modificar':
-      return `<fieldset><legend>🔧 Modificar Avería</legend>
-        <div class="form-group"><label>Seleccionar Avería</label><select><option>Seleccionar avería...</option></select></div>
-        <p style="margin-top:15px; color:#6b7280;">Los datos de la avería se cargarán aquí para su edición.</p>
-      </fieldset>`;
-    case 'reintegrar':
-      return `<fieldset><legend>✅ Reintegrar Equipo</legend>
-        <div class="form-group"><label>Equipo en Reparación</label><select><option>Seleccionar equipo...</option></select></div>
-        <div class="form-group" style="margin-top:15px;">
-          <label>Estado Final</label>
-          <select>
-            <option>Operativo - Disponible</option>
-            <option>Operativo - En observación</option>
-            <option>No reparable - Dar de baja</option>
-          </select>
-        </div>
-        <div class="form-group" style="margin-top:15px;">
-          <label>Observaciones del Reintegro</label>
-          <textarea rows="3" placeholder="Detalles del reintegro..."></textarea>
-        </div>
-        <br>
-        <button class="btn-action btn-primary">✅ Reintegrar al Inventario</button>
-      </fieldset>`;
-  }
-  return '';
+  return `<fieldset><legend>🔧 Módulo de Averías</legend><p>Próximamente: Gestión de averías (${operacion}).</p></fieldset>`;
 }
 
 function generarFormularioVentas(operacion) {
-  switch (operacion) {
-    case 'crear':
-      return `<fieldset><legend>💰 Crear Venta</legend>
-        <div class="form-grid">
-          <div class="form-group"><label>Cliente</label><input type="text" placeholder="Nombre del cliente"></div>
-          <div class="form-group"><label>Fecha</label><input type="date"></div>
-          <div class="form-group"><label>Método de Pago</label>
-            <select><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option></select>
-          </div>
-          <div class="form-group"><label>Total ($)</label><input type="number" placeholder="0.00"></div>
-        </div>
-        <br>
-        <button class="btn-action btn-primary">💾 Registrar Venta</button>
-        <button class="btn-action btn-secondary">Cancelar</button>
-      </fieldset>`;
-    case 'modificar':
-      return `<fieldset><legend>💰 Modificar Venta</legend>
-        <div class="form-group"><label>Seleccionar Venta</label><select><option>Seleccionar venta...</option></select></div>
-      </fieldset>`;
-    case 'eliminar':
-      return `<fieldset><legend>💰 Eliminar Venta</legend>
-        <div class="table-container">
-          <table>
-            <thead><tr><th>ID</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Acción</th></tr></thead>
-            <tbody><tr><td colspan="5" style="text-align:center;">Próximamente</td></tr></tbody>
-          </table>
-        </div>
-      </fieldset>`;
-  }
-  return '';
+  return `<fieldset><legend>💰 Módulo de Ventas</legend><p>Próximamente: Gestión de ventas (${operacion}).</p></fieldset>`;
 }
 
 function generarFormularioReportes(operacion) {
-  return `<fieldset><legend>📊 Ver Reportes</legend>
-    <div class="form-grid">
-      <div class="form-group"><label>Tipo de Reporte</label>
-        <select>
-          <option>Inventario General</option>
-          <option>Rentas del Mes</option>
-          <option>Ventas</option>
-          <option>Averías</option>
-          <option>Actividad de Usuarios</option>
-        </select>
-      </div>
-      <div class="form-group"><label>Periodo</label><input type="month"></div>
-    </div>
-    <br>
-    <button class="btn-action btn-primary">📄 Generar Reporte</button>
-    <button class="btn-action btn-secondary">📥 Exportar PDF</button>
-  </fieldset>`;
+  return `<fieldset><legend>📊 Reportes</legend><p>Próximamente: Generación de reportes.</p></fieldset>`;
 }
 
 function generarFormularioUsuarios(operacion) {
-  switch (operacion) {
-    case 'crear':
-      return `<fieldset><legend>👥 Crear Usuario</legend>
-        <div class="form-grid">
-          <div class="form-group"><label>Nombre Completo</label><input type="text" placeholder="Nombre completo"></div>
-          <div class="form-group"><label>Email</label><input type="email" placeholder="correo@ejemplo.com"></div>
-          <div class="form-group"><label>Rol</label>
-            <select>
-              <option value="administrador">Administrador</option>
-              <option value="moderador">Moderador</option>
-              <option value="consultor" selected>Consultor</option>
-            </select>
-          </div>
-          <div class="form-group"><label>Contraseña</label><input type="password" placeholder="••••••••"></div>
-        </div>
-        <br>
-        <button class="btn-action btn-primary">💾 Crear Usuario</button>
-        <button class="btn-action btn-secondary">Cancelar</button>
-      </fieldset>`;
-    case 'modificar':
-      return `<fieldset><legend>👥 Modificar Usuario</legend>
-        <div class="form-group"><label>Seleccionar Usuario</label><select><option>Seleccionar usuario...</option></select></div>
-      </fieldset>`;
-    case 'eliminar':
-      return `<fieldset><legend>👥 Eliminar Usuario</legend>
-        <div class="table-container">
-          <table>
-            <thead><tr><th>ID</th><th>Nombre</th><th>Email</th><th>Rol</th><th>Acción</th></tr></thead>
-            <tbody><tr><td colspan="5" style="text-align:center;">Próximamente</td></tr></tbody>
-          </table>
-        </div>
-      </fieldset>`;
-  }
-  return '';
-}
-
-function generarFormularioLogs(operacion) {
-  return `<fieldset><legend>📜 Logs del Sistema</legend>
-    <div class="form-grid">
-      <div class="form-group"><label>Módulo</label>
-        <select>
-          <option value="">Todos</option>
-          <option value="inventario">Inventario</option>
-          <option value="rentar">Rentar</option>
-          <option value="averias">Averías</option>
-          <option value="ventas">Ventas</option>
-          <option value="usuarios">Usuarios</option>
-        </select>
-      </div>
-      <div class="form-group"><label>Usuario</label><input type="text" placeholder="Filtrar por email..."></div>
-      <div class="form-group"><label>Desde</label><input type="date"></div>
-      <div class="form-group"><label>Hasta</label><input type="date"></div>
-    </div>
-    <br>
-    <button class="btn-action btn-primary">🔎 Filtrar Logs</button>
-    <div class="table-container" style="margin-top:20px;">
-      <table>
-        <thead><tr><th>Fecha/Hora</th><th>Usuario</th><th>Módulo</th><th>Acción</th><th>Detalles</th></tr></thead>
-        <tbody><tr><td colspan="5" style="text-align:center;">Los registros de actividad aparecerán aquí</td></tr></tbody>
-      </table>
-    </div>
-  </fieldset>`;
+  return `<fieldset><legend>👥 Gestión de Usuarios</legend><p>Próximamente: Administración de usuarios (${operacion}).</p></fieldset>`;
 }
 
 // ============================================
-// REGISTRO DE LOGS (NUEVO)
-// ============================================
-async function registrarLog(modulo, operacion) {
-  try {
-    await supabaseClient.from('logs_actividad').insert({
-      usuario_email: currentUserEmail,
-      modulo: modulo,
-      accion: operacion,
-      fecha: new Date().toISOString(),
-      detalles: `Acción '${operacion}' en módulo '${modulo}'`
-    });
-  } catch (err) {
-    // Si la tabla no existe, solo lo mostramos en consola (no bloquea el sistema)
-    console.warn('⚠️ No se pudo registrar log (¿existe la tabla logs_actividad?):', err.message);
-  }
-}
-
-// ============================================
-// RELOJ
+// RELOJ Y HEARTBEAT
 // ============================================
 function iniciarReloj() {
   function actualizar() {
@@ -503,9 +351,6 @@ function iniciarReloj() {
   relojInterval = setInterval(actualizar, 1000);
 }
 
-// ============================================
-// HEARTBEAT
-// ============================================
 function iniciarHeartbeat(email) {
   if (heartbeatInterval) clearInterval(heartbeatInterval);
   heartbeatInterval = setInterval(async () => {
@@ -557,28 +402,10 @@ supabaseClient.auth.onAuthStateChange((event) => {
   if (event === 'SIGNED_OUT') window.location.href = 'index.html';
 });
 
-// Iniciar cuando el DOM esté listo
+// ============================================
+// INICIALIZACIÓN
+// ============================================
 document.addEventListener('DOMContentLoaded', function() {
   console.log('📄 Dashboard DOM cargado');
   iniciarDashboard();
 });
-async function iniciarDashboard() {
-  console.log('🚀 Iniciando dashboard...');
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if (!session) {
-    window.location.href = 'index.html';
-    return;
-  }
-  currentUserEmail = session.user.email;
-  await cargarDatosUsuario(session.user.email);
-  iniciarHeartbeat(session.user.email);
-  configurarMenu();
-  aplicarPermisosPorRol();
-  iniciarReloj();
-  mostrarBienvenida();
-  
-  // 📝 Registrar que el usuario entró al dashboard
-  await registrarLog('auth', 'login_dashboard', 'Usuario accedió al dashboard');
-  
-  console.log('✅ Dashboard iniciado correctamente');
-}
