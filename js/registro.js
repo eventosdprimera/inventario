@@ -488,6 +488,7 @@ function validarCosto(valor) {
 // GUARDAR EQUIPO
 // ==========================================
 window.guardarEquipo = async function() {
+  console.log('💾 Guardando equipo...');
   if (typeof supabaseClient === 'undefined') {
     mostrarMensajeRegistro('Error: Supabase no está configurado.', 'error');
     return;
@@ -565,10 +566,11 @@ window.guardarEquipo = async function() {
       throw error;
     }
 
+    console.log('✅ Equipo guardado exitosamente');
     mostrarMensajeRegistro('✅ Equipo registrado con código: ' + codigoBarrasActual, 'exito');
     
-    // ✅ GUARDAR LOS DATOS EN MEMORIA PARA LA IMPRESIÓN DEL STICKER
-    window.equipoRegistrado = {
+    // ✅ 1. GUARDAR LOS DATOS EN UNA VARIABLE LOCAL PARA LA IMPRESIÓN
+    const datosParaImprimir = {
       codigo_barras: codigoBarrasActual,
       nombre_equipo: nombre,
       marca: marca,
@@ -578,13 +580,13 @@ window.guardarEquipo = async function() {
       fecha_registro: data.fecha_registro
     };
 
-    // ✅ LIMPIAR EL FORMULARIO Y GENERAR NUEVO CÓDIGO AUTOMÁTICAMENTE
+    // ✅ 2. LIMPIAR EL FORMULARIO Y GENERAR NUEVO CÓDIGO AUTOMÁTICAMENTE
     prepararNuevoRegistro();
 
-    // ✅ PREGUNTAR SI DESEA IMPRIMIR EL STICKER (usando los datos guardados en memoria)
+    // ✅ 3. PREGUNTAR SI DESEA IMPRIMIR (usando la variable local, no la global)
     setTimeout(() => {
       if (confirm('✅ Equipo guardado exitosamente.\n\n¿Deseas imprimir el sticker del código de barras ahora?')) {
-        imprimirSticker();
+        imprimirSticker(datosParaImprimir);
       }
     }, 500);
 
@@ -597,16 +599,24 @@ window.guardarEquipo = async function() {
 };
 
 // ==========================================
-// IMPRIMIR STICKER (SOLO USA DATOS GUARDADOS)
+// IMPRIMIR STICKER (RECIBE DATOS COMO PARÁMETRO)
 // ==========================================
-window.imprimirSticker = function() {
-  // ✅ USAR EXCLUSIVAMENTE LOS DATOS DEL EQUIPO QUE SE ACABA DE GUARDAR
-  if (!window.equipoRegistrado || !window.equipoRegistrado.codigo_barras) {
+window.imprimirSticker = function(datos) {
+  // ✅ USAR LOS DATOS PASADOS, O FALLBACK A LO QUE HAYA DISPONIBLE
+  const info = datos || window.equipoRegistrado || {};
+  const codigoParaImprimir = info.codigo_barras || codigoBarrasActual;
+
+  if (!codigoParaImprimir) {
     mostrarMensajeRegistro('No hay datos de equipo para imprimir', 'error');
     return;
   }
 
-  const { codigo_barras, nombre_equipo, marca, modelo, serial } = window.equipoRegistrado;
+  const nombre = info.nombre_equipo || (document.getElementById('nombreEquipo')?.value.trim() || '');
+  const marca = info.marca || (document.getElementById('marcaEquipo')?.value.trim() || '');
+  const modelo = info.modelo || (document.getElementById('modeloEquipo')?.value.trim() || '');
+  const serial = info.serial || (document.getElementById('serialEquipo')?.value.trim() || '');
+
+  console.log('🖨️ Iniciando impresión de sticker para:', codigoParaImprimir);
 
   const tempDiv = document.createElement('div');
   tempDiv.style.position = 'absolute';
@@ -615,7 +625,7 @@ window.imprimirSticker = function() {
   document.body.appendChild(tempDiv);
 
   try {
-    JsBarcode("#stickerBarcode", codigo_barras, {
+    JsBarcode("#stickerBarcode", codigoParaImprimir, {
       format: "CODE128", width: 1.2, height: 35, displayValue: true,
       fontSize: 9, margin: 1, font: "Courier New", fontOptions: "bold"
     });
@@ -627,7 +637,7 @@ window.imprimirSticker = function() {
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Sticker - ${codigo_barras}</title>
+  <title>Sticker - ${codigoParaImprimir}</title>
   <style>
     @page { size: 70mm 35mm; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -646,9 +656,9 @@ window.imprimirSticker = function() {
 <body>
   <div class="sticker">
     <div class="empresa">EVENTOS D' PRIMERA</div>
-    ${nombre_equipo ? `<div class="nombre">${nombre_equipo.substring(0, 40)}</div>` : ''}
+    ${nombre ? `<div class="nombre">${nombre.substring(0, 40)}</div>` : ''}
     <div class="barcode">${barcodeSVG}</div>
-    <div class="codigo">${codigo_barras}</div>
+    <div class="codigo">${codigoParaImprimir}</div>
     ${marca || serial ? `<div class="info">${marca}${modelo ? ' ' + modelo : ''}${serial ? ' | S/N: ' + serial : ''}</div>` : ''}
   </div>
   <script>
