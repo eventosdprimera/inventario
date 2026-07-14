@@ -735,9 +735,6 @@ function validarCosto(valor) {
 // ==========================================
 // GUARDAR EQUIPO
 // ==========================================
-// ==========================================
-// GUARDAR EQUIPO
-// ==========================================
 window.guardarEquipo = async function() {
   console.log('💾 Guardando equipo...');
   if (typeof supabaseClient === 'undefined') {
@@ -782,7 +779,7 @@ window.guardarEquipo = async function() {
     let fotoUrls = [null, null, null, null];
     for (let i = 0; i < 4; i++) {
       if (fotosSeleccionadas[i]) {
-        const fileExt = fotosSeleccionadas[i].name.split('.').pop().toLowerCase();
+        const fileExt = fotosSeleccionadas[i].name.split('.').pop();
         const fileName = `${codigoBarrasActual}_foto${i + 1}_${Date.now()}.${fileExt}`;
         
         const { error: uploadError } = await supabaseClient.storage
@@ -823,7 +820,7 @@ window.guardarEquipo = async function() {
     console.log('✅ Equipo guardado exitosamente');
     mostrarMensajeRegistro('✅ Equipo registrado con código: ' + codigoBarrasActual, 'exito');
     
-    // ✅ GUARDAR LOS DATOS EN MEMORIA PARA LA IMPRESIÓN
+    // ✅ GUARDAR LOS DATOS EN MEMORIA PARA LA IMPRESIÓN (aunque el formulario se limpie)
     window.equipoRegistrado = {
       codigo_barras: codigoBarrasActual,
       nombre_equipo: nombre,
@@ -834,9 +831,10 @@ window.guardarEquipo = async function() {
       fecha_registro: data.fecha_registro
     };
 
-    btnGuardar.textContent = '✅ Guardado';
+    // ✅ LIMPIAR EL FORMULARIO Y GENERAR NUEVO CÓDIGO AUTOMÁTICAMENTE
+    prepararNuevoRegistro();
 
-    // ✅ PREGUNTAR SI DESEA IMPRIMIR (usando los datos recién guardados)
+    // ✅ PREGUNTAR SI DESEA IMPRIMIR (usando los datos guardados en memoria)
     setTimeout(() => {
       if (confirm('✅ Equipo guardado exitosamente.\n\n¿Deseas imprimir el sticker del código de barras ahora?')) {
         imprimirSticker();
@@ -854,9 +852,6 @@ window.guardarEquipo = async function() {
 // ==========================================
 // IMPRIMIR STICKER (TAMAÑO ETIQUETA PEQUEÑA)
 // ==========================================
-// ==========================================
-// IMPRIMIR STICKER (TAMAÑO ETIQUETA PEQUEÑA)
-// ==========================================
 window.imprimirSticker = function() {
   // ✅ USAR EL CÓDIGO DEL EQUIPO RECIENTEMENTE GUARDADO, O EL ACTUAL
   const codigoParaImprimir = (window.equipoRegistrado && window.equipoRegistrado.codigo_barras) 
@@ -868,7 +863,7 @@ window.imprimirSticker = function() {
     return;
   }
 
-  // ✅ USAR LOS DATOS GUARDADOS O LOS DEL FORMULARIO
+  // ✅ USAR LOS DATOS GUARDADOS EN MEMORIA (aunque el formulario ya esté limpio)
   const nombre = window.equipoRegistrado ? window.equipoRegistrado.nombre_equipo : (document.getElementById('nombreEquipo')?.value.trim() || '');
   const marca = window.equipoRegistrado ? window.equipoRegistrado.marca : (document.getElementById('marcaEquipo')?.value.trim() || '');
   const modelo = window.equipoRegistrado ? window.equipoRegistrado.modelo : (document.getElementById('modeloEquipo')?.value.trim() || '');
@@ -940,7 +935,7 @@ window.imprimirSticker = function() {
       ventana.document.write(htmlSticker);
       ventana.document.close();
     } else {
-      mostrarMensajeRegistro('⚠️ El navegador bloqueó la ventana emergente. Permite las ventanas emergentes para este sitio.', 'error');
+      mostrarMensajeRegistro('⚠️ El navegador bloqueó la ventana emergente.', 'error');
     }
   } catch (err) {
     console.error('❌ Error al generar sticker:', err);
@@ -955,28 +950,13 @@ window.imprimirSticker = function() {
 // ==========================================
 // LIMPIAR FORMULARIO
 // ==========================================
+// ==========================================
+// LIMPIAR FORMULARIO (Manual con confirmación)
+// ==========================================
 window.limpiarFormulario = function() {
-  if (!confirm('⚠️ ¿Limpiar el formulario?\n\nEl código de barras actual se mantendrá.')) return;
-  
-  document.getElementById('formRegistro').reset();
-  
-  for (let i = 1; i <= 4; i++) {
-    fotosSeleccionadas[i - 1] = null;
-    const preview = document.getElementById(`preview${i}`);
-    const placeholder = document.getElementById(`preview${i}-placeholder`);
-    const removeBtn = document.getElementById(`remove${i}`);
-    const input = document.getElementById(`foto${i}`);
-    const previewBox = document.getElementById(`previewBox${i}`);
-
-    if (preview) { preview.style.display = 'none'; preview.src = ''; }
-    if (placeholder) placeholder.style.display = 'block';
-    if (removeBtn) removeBtn.style.display = 'none';
-    if (input) input.value = '';
-    if (previewBox) {
-      previewBox.onclick = function() { abrirSelectorFoto(i); };
-      previewBox.style.cursor = 'pointer';
-    }
-  }
+  if (!confirm('⚠️ ¿Limpiar el formulario?\n\nSe generará un nuevo código de barras.')) return;
+  prepararNuevoRegistro();
+};
 
   // ✅ LIMPIAR EL OBJETO DE EQUIPO REGISTRADO PARA LA PRÓXIMA VEZ
   window.equipoRegistrado = null;
@@ -1017,3 +997,52 @@ window.addEventListener('beforeunload', function(e) {
     return e.returnValue;
   }
 });
+
+// ==========================================
+// PREPARAR NUEVO REGISTRO (Limpia y genera nuevo código)
+// ==========================================
+function prepararNuevoRegistro() {
+  console.log('🧹 Preparando formulario para nuevo registro...');
+  
+  // 1. Eliminar el código guardado para que se genere uno nuevo
+  localStorage.removeItem('codigoBarrasPendiente');
+  sessionStorage.removeItem('codigoBarrasPendiente');
+  
+  // 2. Limpiar campos de texto
+  document.getElementById('formRegistro').reset();
+  
+  // 3. Limpiar fotos
+  for (let i = 1; i <= 4; i++) {
+    fotosSeleccionadas[i - 1] = null;
+    const preview = document.getElementById(`preview${i}`);
+    const placeholder = document.getElementById(`preview${i}-placeholder`);
+    const removeBtn = document.getElementById(`remove${i}`);
+    const input = document.getElementById(`foto${i}`);
+    const previewBox = document.getElementById(`previewBox${i}`);
+
+    if (preview) { preview.style.display = 'none'; preview.src = ''; }
+    if (placeholder) placeholder.style.display = 'block';
+    if (removeBtn) removeBtn.style.display = 'none';
+    if (input) input.value = '';
+    if (previewBox) {
+      previewBox.onclick = function() { abrirSelectorFoto(i); };
+      previewBox.style.cursor = 'pointer';
+    }
+  }
+
+  // 4. Resetear estados
+  formularioModificado = false;
+  equipoGuardadoExitosamente = false;
+  
+  const mensajeDiv = document.getElementById('mensaje');
+  if (mensajeDiv) mensajeDiv.className = 'mensaje';
+  
+  const btnGuardar = document.getElementById('btnGuardar');
+  if (btnGuardar) {
+    btnGuardar.disabled = false;
+    btnGuardar.textContent = '💾 Guardar Equipo';
+  }
+
+  // 5. Generar nuevo código de barras
+  generarCodigoBarras();
+}
