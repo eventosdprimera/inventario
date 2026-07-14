@@ -183,15 +183,13 @@ legend {
   border-left-color: #3b82f6;
   display: block;
 }
-/* Búsqueda */
+/* Búsqueda - GAP AUMENTADO */
 .busqueda-container {
   display: flex;
-  gap: 20px; /* ← CAMBIADO: de 10px a 20px para más separación */
+  gap: 20px; /* ← AUMENTADO: de 10px a 20px */
   align-items: flex-end;
 }
-.busqueda-container .form-group { 
-  flex: 1; 
-}
+.busqueda-container .form-group { flex: 1; }
 /* Fotos */
 .fotos-section { margin-bottom: 30px; }
 .fotos-grid {
@@ -282,7 +280,7 @@ legend {
   border-radius: 10px;
   border-left: 4px solid #3b82f6;
   margin-bottom: 20px;
-  display: none;
+  display: none; /* ← ASEGURADO: oculto por defecto */
 }
 .equipo-encontrado.activo { display: block; }
 .equipo-encontrado-titulo {
@@ -346,8 +344,8 @@ legend {
     </div>
   </fieldset>
 
-  <!-- INFO DEL EQUIPO ENCONTRADO -->
-  <div id="equipoEncontrado" class="equipo-encontrado">
+  <!-- INFO DEL EQUIPO ENCONTRADO (OCULTO POR DEFECTO) -->
+  <div id="equipoEncontrado" class="equipo-encontrado" style="display: none;">
     <div class="equipo-encontrado-titulo">✅ Equipo encontrado</div>
     <div class="equipo-encontrado-info" id="equipoEncontradoInfo"></div>
   </div>
@@ -456,7 +454,7 @@ legend {
         <div class="foto-item">
           <div class="foto-preview" id="mod_previewBox3" onclick="document.getElementById('mod_foto3').click()">
             <div class="foto-preview-placeholder" id="mod_preview3-placeholder">
-              <span class="foto-preview-placeholder-icon">📷</span>
+              <span class="foto-preview-placeholder-icon"></span>
               <div>Foto 3</div>
             </div>
             <img id="mod_preview3" style="display: none;" alt="Foto 3">
@@ -468,7 +466,7 @@ legend {
         <div class="foto-item">
           <div class="foto-preview" id="mod_previewBox4" onclick="document.getElementById('mod_foto4').click()">
             <div class="foto-preview-placeholder" id="mod_preview4-placeholder">
-              <span class="foto-preview-placeholder-icon">📷</span>
+              <span class="foto-preview-placeholder-icon"></span>
               <div>Foto 4</div>
             </div>
             <img id="mod_preview4" style="display: none;" alt="Foto 4">
@@ -484,7 +482,7 @@ legend {
   <!-- Botones de acción (ocultos hasta buscar) -->
   <div id="buttonGroupModificacion" class="button-group" style="display: none;">
     <button type="button" class="btn-action btn-primary" id="btnGuardarMod" onclick="guardarModificacion()">💾 Guardar Cambios</button>
-    <button type="button" class="btn-action btn-secondary" onclick="cancelarModificacion()">❌ Cancelar / Buscar otro</button>
+    <button type="button" class="btn-action btn-secondary" onclick="cancelarModificacion()"> Cancelar / Buscar otro</button>
   </div>
 </div>
 
