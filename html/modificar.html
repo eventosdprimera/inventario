@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modificar Equipo - Eventos D' Primera</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231e3a8a'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-size='48' font-weight='bold' text-anchor='middle' fill='white'%3EEP%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.header {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  color: white;
+  padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.header-left { display: flex; flex-direction: column; gap: 3px; }
+.header-titulo { font-family: 'Libre Caslon Text', serif; font-size: 22px; font-weight: 700; }
+.header-subtitulo { font-size: 12px; opacity: 0.85; font-style: italic; }
+.btn-volver {
+  background-color: rgba(255,255,255,0.2);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Poppins', sans-serif;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-volver:hover { background-color: rgba(255,255,255,0.3); }
+.container {
+  flex: 1;
+  padding: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+.page-title {
+  font-family: 'Libre Caslon Text', serif;
+  color: #1e3a8a;
+  font-size: 26px;
+  margin-bottom: 8px;
+}
+.page-subtitle {
+  color: #6b7280;
+  font-size: 14px;
+  margin-bottom: 25px;
+}
+fieldset {
+  background-color: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 30px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+}
+legend {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  color: white;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.form-row { margin-bottom: 20px; }
+.form-row-full { margin-bottom: 20px; }
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+.form-group { display: flex; flex-direction: column; }
+.form-group label {
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.form-group label .required { color: #dc2626; font-weight: 700; font-size: 14px; }
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 12px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Poppins', sans-serif;
+  transition: all 0.3s;
+  background-color: #fafafa;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #1e3a8a;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(30,58,138,0.1);
+}
+.form-group input:read-only {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+  font-weight: 600;
+}
+.btn-action {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: 'Poppins', sans-serif;
+  margin-right: 10px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.btn-primary {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  color: white;
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(30,58,138,0.3);
+}
+.btn-secondary { background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%); color: white; }
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(107,114,128,0.3);
+}
+.btn-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+.button-group {
+  margin-top: 30px;
+  padding-top: 25px;
+  border-top: 2px solid #e5e7eb;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.mensaje {
+  padding: 16px 20px;
+  border-radius: 10px;
+  margin-bottom: 25px;
+  font-size: 14px;
+  font-weight: 500;
+  display: none;
+  border-left: 4px solid;
+}
+.mensaje.exito {
+  background-color: #d1fae5;
+  color: #065f46;
+  border-left-color: #10b981;
+  display: block;
+}
+.mensaje.error {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border-left-color: #dc2626;
+  display: block;
+}
+.mensaje.info {
+  background-color: #dbeafe;
+  color: #1e3a8a;
+  border-left-color: #3b82f6;
+  display: block;
+}
+/* Búsqueda */
+.busqueda-container {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+.busqueda-container .form-group { flex: 1; }
+/* Fotos */
+.fotos-section { margin-bottom: 30px; }
+.fotos-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+.foto-item { position: relative; }
+.foto-preview {
+  width: 100%;
+  height: 160px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8fafc;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s;
+  flex-direction: column;
+  gap: 8px;
+}
+.foto-preview:hover {
+  border-color: #1e3a8a;
+  background-color: #eff6ff;
+  transform: translateY(-2px);
+}
+.foto-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.foto-preview-placeholder {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 500;
+}
+.foto-preview-placeholder-icon {
+  font-size: 40px;
+  margin-bottom: 6px;
+  display: block;
+}
+.foto-input { display: none; }
+.foto-label-text {
+  text-align: center;
+  font-size: 12px;
+  color: #475569;
+  margin-top: 8px;
+  font-weight: 600;
+}
+.foto-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #dc2626;
+  color: white;
+  border: 2px solid white;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  z-index: 2;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+.foto-remove:hover {
+  background: #b91c1c;
+  transform: scale(1.15);
+}
+/* Medida compuesta */
+.medida-compuesta {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.medida-compuesta input[type="number"] { flex: 2; text-align: center; }
+.medida-compuesta select { flex: 1; min-width: 100px; cursor: pointer; }
+/* Info del equipo encontrado */
+.equipo-encontrado {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  padding: 15px 20px;
+  border-radius: 10px;
+  border-left: 4px solid #3b82f6;
+  margin-bottom: 20px;
+  display: none;
+}
+.equipo-encontrado.activo { display: block; }
+.equipo-encontrado-titulo {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 5px;
+}
+.equipo-encontrado-info {
+  font-size: 12px;
+  color: #374151;
+}
+.copyright {
+  text-align: center;
+  padding: 15px;
+  color: #9ca3af;
+  font-size: 11px;
+  background-color: white;
+  border-top: 1px solid #e5e7eb;
+}
+.copyright strong { color: #6b7280; font-weight: 600; }
+@media (max-width: 768px) {
+  .header { flex-direction: column; gap: 15px; text-align: center; }
+  .container { padding: 15px; }
+  .form-grid-3, .form-grid-2 { grid-template-columns: 1fr; }
+  .fotos-grid { grid-template-columns: repeat(2, 1fr); }
+  .busqueda-container { flex-direction: column; }
+}
+@media (max-width: 480px) {
+  .fotos-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="header-left">
+    <div class="header-titulo">Sistema de Inventario</div>
+    <div class="header-subtitulo">Modificación de Equipos</div>
+  </div>
+  <a href="../dashboard.html" class="btn-volver">← Volver al Dashboard</a>
+</header>
+
+<div class="container">
+  <h1 class="page-title">✏️ Modificar Equipo</h1>
+  <p class="page-subtitle">Escanea o escribe el Código de Barras o Serial para editar los datos del equipo.</p>
+
+  <div id="mensaje" class="mensaje"></div>
+
+  <!-- BÚSQUEDA -->
+  <fieldset id="fieldsetBusqueda">
+    <legend>🔍 Buscar Equipo</legend>
+    <p style="color: #6b7280; font-size: 13px; margin-bottom: 15px;">
+      💡 Usa el escáner USB o escribe manualmente el código de barras o serial del equipo.
+    </p>
+    <div class="busqueda-container">
+      <div class="form-group">
+        <label>Código de Barras o Serial</label>
+        <input type="text" id="buscarEquipoInput" placeholder="Escanea o escribe aquí..." autofocus>
+      </div>
+      <button type="button" class="btn-action btn-primary" id="btnBuscar" onclick="buscarEquipo()">🔎 Buscar</button>
+    </div>
+  </fieldset>
+
+  <!-- INFO DEL EQUIPO ENCONTRADO -->
+  <div id="equipoEncontrado" class="equipo-encontrado">
+    <div class="equipo-encontrado-titulo">✅ Equipo encontrado</div>
+    <div class="equipo-encontrado-info" id="equipoEncontradoInfo"></div>
+  </div>
+
+  <!-- FORMULARIO DE MODIFICACIÓN (oculto hasta buscar) -->
+  <fieldset id="fieldsetModificacion" style="display: none;">
+    <legend>✏️ Editar Datos del Equipo</legend>
+
+    <!-- Código de barras (NO modificable) -->
+    <div class="form-row-full">
+      <div class="form-group">
+        <label>Código de Barras <span style="color: #6b7280; font-size: 11px;">(No modificable)</span></label>
+        <input type="text" id="mod_codigo_barras" readonly>
+      </div>
+    </div>
+
+    <!-- Nombre -->
+    <div class="form-row-full">
+      <div class="form-group">
+        <label>Nombre del Equipo <span class="required">*</span></label>
+        <input type="text" id="mod_nombre" required>
+      </div>
+    </div>
+
+    <!-- Marca, Modelo, Serial -->
+    <div class="form-row">
+      <div class="form-grid-3">
+        <div class="form-group">
+          <label>Marca <span class="required">*</span></label>
+          <input type="text" id="mod_marca" required>
+        </div>
+        <div class="form-group">
+          <label>Modelo</label>
+          <input type="text" id="mod_modelo">
+        </div>
+        <div class="form-group">
+          <label>Serial <span class="required">*</span></label>
+          <input type="text" id="mod_serial" required>
+        </div>
+      </div>
+    </div>
+
+    <!-- Medida + Costo | Estatus -->
+    <div class="form-row">
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Medida | Costo ($) <span class="required">*</span></label>
+          <div class="medida-compuesta">
+            <input type="number" id="mod_medida_valor" step="0.01" min="0" placeholder="0.00">
+            <select id="mod_medida_unidad">
+              <option value="m">metros (m)</option>
+              <option value="cm">centímetros (cm)</option>
+            </select>
+            <input type="number" id="mod_costo" step="0.01" min="0" placeholder="$ 0.00" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Estatus <span class="required">*</span></label>
+          <select id="mod_estatus" required>
+            <option value="operativo">✅ Operativo</option>
+            <option value="inoperativo">⚠️ Inoperativo</option>
+            <option value="averiado">❌ Averiado</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Observación -->
+    <div class="form-row-full">
+      <div class="form-group">
+        <label>Observación</label>
+        <textarea id="mod_observacion" rows="4" placeholder="Observaciones adicionales..."></textarea>
+      </div>
+    </div>
+
+    <!-- Fotos -->
+    <div class="fotos-section">
+      <label style="color: #374151; font-size: 13px; font-weight: 600; margin-bottom: 10px; display: block;">
+        📸 Fotos (Opcional: selecciona nuevas para reemplazar las actuales)
+      </label>
+      <div class="fotos-grid">
+        <div class="foto-item">
+          <div class="foto-preview" id="mod_previewBox1" onclick="document.getElementById('mod_foto1').click()">
+            <div class="foto-preview-placeholder" id="mod_preview1-placeholder">
+              <span class="foto-preview-placeholder-icon">📷</span>
+              <div>Foto 1</div>
+            </div>
+            <img id="mod_preview1" style="display: none;" alt="Foto 1">
+          </div>
+          <button type="button" class="foto-remove" id="mod_remove1" style="display: none;" onclick="removerFotoModificacion(1)">×</button>
+          <input type="file" id="mod_foto1" class="foto-input" accept="image/*" onchange="previsualizarFotoModificacion(1, event)">
+          <div class="foto-label-text">Principal</div>
+        </div>
+        <div class="foto-item">
+          <div class="foto-preview" id="mod_previewBox2" onclick="document.getElementById('mod_foto2').click()">
+            <div class="foto-preview-placeholder" id="mod_preview2-placeholder">
+              <span class="foto-preview-placeholder-icon">📷</span>
+              <div>Foto 2</div>
+            </div>
+            <img id="mod_preview2" style="display: none;" alt="Foto 2">
+          </div>
+          <button type="button" class="foto-remove" id="mod_remove2" style="display: none;" onclick="removerFotoModificacion(2)">×</button>
+          <input type="file" id="mod_foto2" class="foto-input" accept="image/*" onchange="previsualizarFotoModificacion(2, event)">
+          <div class="foto-label-text">Foto 2</div>
+        </div>
+        <div class="foto-item">
+          <div class="foto-preview" id="mod_previewBox3" onclick="document.getElementById('mod_foto3').click()">
+            <div class="foto-preview-placeholder" id="mod_preview3-placeholder">
+              <span class="foto-preview-placeholder-icon">📷</span>
+              <div>Foto 3</div>
+            </div>
+            <img id="mod_preview3" style="display: none;" alt="Foto 3">
+          </div>
+          <button type="button" class="foto-remove" id="mod_remove3" style="display: none;" onclick="removerFotoModificacion(3)">×</button>
+          <input type="file" id="mod_foto3" class="foto-input" accept="image/*" onchange="previsualizarFotoModificacion(3, event)">
+          <div class="foto-label-text">Foto 3</div>
+        </div>
+        <div class="foto-item">
+          <div class="foto-preview" id="mod_previewBox4" onclick="document.getElementById('mod_foto4').click()">
+            <div class="foto-preview-placeholder" id="mod_preview4-placeholder">
+              <span class="foto-preview-placeholder-icon">📷</span>
+              <div>Foto 4</div>
+            </div>
+            <img id="mod_preview4" style="display: none;" alt="Foto 4">
+          </div>
+          <button type="button" class="foto-remove" id="mod_remove4" style="display: none;" onclick="removerFotoModificacion(4)">×</button>
+          <input type="file" id="mod_foto4" class="foto-input" accept="image/*" onchange="previsualizarFotoModificacion(4, event)">
+          <div class="foto-label-text">Foto 4</div>
+        </div>
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- Botones de acción (ocultos hasta buscar) -->
+  <div id="buttonGroupModificacion" class="button-group" style="display: none;">
+    <button type="button" class="btn-action btn-primary" id="btnGuardarMod" onclick="guardarModificacion()">💾 Guardar Cambios</button>
+    <button type="button" class="btn-action btn-secondary" onclick="cancelarModificacion()">❌ Cancelar / Buscar otro</button>
+  </div>
+</div>
+
+<div class="copyright">
+  <strong>©copyright Eventos de Primera</strong><br>
+  2026-2027 | Versión 0.1
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/modificar.js"></script>
+</body>
+</html>
