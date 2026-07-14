@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Libre+Caslon+Text:wght@700&display=swap" rel="stylesheet">
 <style>
-  /* RESET Y BASE */
   .renta-wrapper {
     font-family: 'Inter', sans-serif;
     color: #1f2937;
@@ -17,7 +16,6 @@
     margin: 0 auto;
   }
   
-  /* ENCABEZADO DEL COMPROBANTE */
   .comprobante-header {
     display: flex;
     justify-content: space-between;
@@ -37,9 +35,7 @@
     font-size: 14px;
     margin: 0;
   }
-  .comprobante-meta {
-    text-align: right;
-  }
+  .comprobante-meta { text-align: right; }
   .meta-label {
     font-size: 12px;
     text-transform: uppercase;
@@ -55,15 +51,14 @@
     font-family: 'Courier New', monospace;
     margin-bottom: 12px;
   }
-  .meta-date {
-    font-size: 15px;
-    color: #374151;
-    font-weight: 500;
-  }
+  .meta-date { font-size: 15px; color: #374151; font-weight: 500; }
 
-  /* SECCIONES */
   .section-block {
     margin-bottom: 32px;
+    background: #fff;
+    padding: 24px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
   }
   .section-title {
     font-size: 14px;
@@ -76,15 +71,8 @@
     border-bottom: 1px solid #e5e7eb;
   }
 
-  /* GRID DE INFORMACIÓN */
-  .info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 32px;
-  }
-  .info-group {
-    margin-bottom: 16px;
-  }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .info-group { margin-bottom: 16px; }
   .info-group label {
     display: block;
     font-size: 13px;
@@ -109,7 +97,6 @@
     box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
   }
 
-  /* BÚSQUEDA DE EQUIPO */
   .search-box {
     display: flex;
     gap: 12px;
@@ -145,12 +132,7 @@
   }
   .btn-add:hover { background: #1e40af; }
 
-  /* TABLA */
-  .table-clean {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-  }
+  .table-clean { width: 100%; border-collapse: collapse; font-size: 14px; }
   .table-clean th {
     text-align: left;
     padding: 12px 8px;
@@ -186,22 +168,9 @@
   }
   .btn-remove:hover { background: #fee2e2; }
 
-  /* TOTALES */
-  .totals-section {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 24px;
-  }
-  .totals-box {
-    width: 280px;
-  }
-  .total-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    font-size: 14px;
-    color: #4b5563;
-  }
+  .totals-section { display: flex; justify-content: flex-end; margin-top: 24px; }
+  .totals-box { width: 280px; }
+  .total-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; color: #4b5563; }
   .total-row.grand-total {
     border-top: 2px solid #1e3a8a;
     margin-top: 8px;
@@ -219,12 +188,11 @@
     font-size: 14px;
   }
 
-  /* BOTONES DE ACCIÓN */
   .action-bar {
     display: flex;
     gap: 12px;
     justify-content: flex-end;
-    margin-top: 40px;
+    margin-top: 32px;
     padding-top: 24px;
     border-top: 1px solid #e5e7eb;
   }
@@ -247,14 +215,7 @@
   .btn-ghost { background: transparent; color: #6b7280; border: 1px solid #d1d5db; }
   .btn-ghost:hover { background: #f9fafb; color: #1f2937; }
 
-  /* MENSAJES */
-  .alert {
-    padding: 12px 16px;
-    border-radius: 6px;
-    font-size: 14px;
-    margin-bottom: 20px;
-    display: none;
-  }
+  .alert { padding: 12px 16px; border-radius: 6px; font-size: 14px; margin-bottom: 20px; display: none; }
   .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; display: block; }
   .alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; display: block; }
 
@@ -268,117 +229,119 @@
 </head>
 <body>
 
-<div class="renta-wrapper">
-  <div id="mensaje" class="alert"></div>
+<!-- WRAPPER PRINCIPAL CON CLASE .container PARA QUE DASHBOARD.JS LO ENCUENTRE -->
+<div class="container">
+  <div class="renta-wrapper">
+    <div id="mensaje" class="alert"></div>
 
-  <!-- ENCABEZADO -->
-  <div class="comprobante-header">
-    <div class="comprobante-brand">
-      <h1>Eventos D' Primera</h1>
-      <p>Comprobante de Renta de Equipos</p>
-    </div>
-    <div class="comprobante-meta">
-      <div class="meta-label">Número de Renta</div>
-      <div class="meta-value" id="numeroRenta">RENT-2026-0001</div>
-      <div class="meta-label">Fecha de Emisión</div>
-      <div class="meta-date" id="fechaEmision">14 de julio de 2026</div>
-    </div>
-  </div>
-
-  <!-- DATOS -->
-  <div class="section-block">
-    <div class="info-grid">
-      <div>
-        <div class="section-title">Datos del Cliente / Responsable</div>
-        <div class="info-group">
-          <label>Nombre Completo <span class="req">*</span></label>
-          <input type="text" id="clienteNombre" placeholder="Nombre del responsable">
-        </div>
-        <div class="info-group">
-          <label>Teléfono</label>
-          <input type="tel" id="clienteTelefono" placeholder="Teléfono de contacto">
-        </div>
-        <div class="info-group">
-          <label>Email</label>
-          <input type="email" id="clienteEmail" placeholder="correo@ejemplo.com">
-        </div>
+    <!-- ENCABEZADO -->
+    <div class="comprobante-header">
+      <div class="comprobante-brand">
+        <h1>Eventos D' Primera</h1>
+        <p>Comprobante de Renta de Equipos</p>
       </div>
-      <div>
-        <div class="section-title">Detalles de la Renta</div>
-        <div class="info-group">
-          <label>Fecha de Renta <span class="req">*</span></label>
-          <input type="date" id="fechaRenta">
-        </div>
-        <div class="info-group">
-          <label>Fecha de Devolución <span class="req">*</span></label>
-          <input type="date" id="fechaDevolucion">
-        </div>
-        <div class="info-group">
-          <label>Ingeniero Asignado</label>
-          <input type="text" id="ingenieroNombre" placeholder="Nombre del ingeniero">
-        </div>
+      <div class="comprobante-meta">
+        <div class="meta-label">Número de Renta</div>
+        <div class="meta-value" id="numeroRenta">RENT-2026-0001</div>
+        <div class="meta-label">Fecha de Emisión</div>
+        <div class="meta-date" id="fechaEmision">14 de julio de 2026</div>
       </div>
     </div>
-    <div class="info-group" style="margin-top: 16px;">
-      <label>Observaciones</label>
-      <textarea id="observaciones" rows="2" placeholder="Notas adicionales sobre la renta..."></textarea>
-    </div>
-  </div>
 
-  <!-- EQUIPOS -->
-  <div class="section-block">
-    <div class="section-title">Equipos a Rentar</div>
-    
-    <div class="search-box">
-      <input type="text" id="buscarEquipoInput" placeholder="Escanee o escriba el código de barras o serial..." autofocus>
-      <button class="btn-add" onclick="agregarEquipo()">+ Agregar Equipo</button>
-    </div>
-
-    <table class="table-clean">
-      <thead>
-        <tr>
-          <th style="width: 40px;">#</th>
-          <th>Código</th>
-          <th>Equipo</th>
-          <th>Serial</th>
-          <th class="text-right" style="width: 100px;">Precio</th>
-          <th class="text-center" style="width: 70px;">Cant.</th>
-          <th class="text-right" style="width: 110px;">Subtotal</th>
-          <th style="width: 40px;"></th>
-        </tr>
-      </thead>
-      <tbody id="tbodyItems">
-        <tr>
-          <td colspan="8" class="text-center" style="padding: 40px; color: #9ca3af;">
-            No hay equipos agregados. Escanee o busque un equipo para comenzar.
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="totals-section">
-      <div class="totals-box">
-        <div class="total-row">
-          <span>Subtotal:</span>
-          <span id="subtotal">$0.00</span>
+    <!-- DATOS -->
+    <div class="section-block">
+      <div class="section-title">Datos de la Renta</div>
+      <div class="info-grid">
+        <div>
+          <div class="info-group">
+            <label>Nombre del Cliente / Responsable <span class="req">*</span></label>
+            <input type="text" id="clienteNombre" placeholder="Nombre completo">
+          </div>
+          <div class="info-group">
+            <label>Teléfono</label>
+            <input type="tel" id="clienteTelefono" placeholder="Teléfono de contacto">
+          </div>
+          <div class="info-group">
+            <label>Email</label>
+            <input type="email" id="clienteEmail" placeholder="correo@ejemplo.com">
+          </div>
         </div>
-        <div class="total-row">
-          <span>Descuento:</span>
-          <input type="number" id="descuento" class="discount-input" value="0" min="0" step="0.01" onchange="calcularTotales()">
+        <div>
+          <div class="info-group">
+            <label>Fecha de Renta <span class="req">*</span></label>
+            <input type="date" id="fechaRenta">
+          </div>
+          <div class="info-group">
+            <label>Fecha de Devolución <span class="req">*</span></label>
+            <input type="date" id="fechaDevolucion">
+          </div>
+          <div class="info-group">
+            <label>Ingeniero Asignado</label>
+            <input type="text" id="ingenieroNombre" placeholder="Nombre del ingeniero">
+          </div>
         </div>
-        <div class="total-row grand-total">
-          <span>TOTAL:</span>
-          <span id="total">$0.00</span>
+      </div>
+      <div class="info-group" style="margin-top: 16px;">
+        <label>Observaciones</label>
+        <textarea id="observaciones" rows="2" placeholder="Notas adicionales sobre la renta..."></textarea>
+      </div>
+    </div>
+
+    <!-- EQUIPOS -->
+    <div class="section-block">
+      <div class="section-title">Equipos a Rentar</div>
+      
+      <div class="search-box">
+        <input type="text" id="buscarEquipoInput" placeholder="Escanee o escriba el código de barras o serial..." autofocus>
+        <button class="btn-add" onclick="agregarEquipo()">+ Agregar Equipo</button>
+      </div>
+
+      <table class="table-clean">
+        <thead>
+          <tr>
+            <th style="width: 40px;">#</th>
+            <th>Código</th>
+            <th>Equipo</th>
+            <th>Serial</th>
+            <th class="text-right" style="width: 100px;">Precio</th>
+            <th class="text-center" style="width: 70px;">Cant.</th>
+            <th class="text-right" style="width: 110px;">Subtotal</th>
+            <th style="width: 40px;"></th>
+          </tr>
+        </thead>
+        <tbody id="tbodyItems">
+          <tr>
+            <td colspan="8" class="text-center" style="padding: 40px; color: #9ca3af;">
+              No hay equipos agregados. Escanee o busque un equipo para comenzar.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="totals-section">
+        <div class="totals-box">
+          <div class="total-row">
+            <span>Subtotal:</span>
+            <span id="subtotal">$0.00</span>
+          </div>
+          <div class="total-row">
+            <span>Descuento:</span>
+            <input type="number" id="descuento" class="discount-input" value="0" min="0" step="0.01" onchange="calcularTotales()">
+          </div>
+          <div class="total-row grand-total">
+            <span>TOTAL:</span>
+            <span id="total">$0.00</span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ACCIONES -->
-  <div class="action-bar">
-    <button class="btn btn-ghost" onclick="limpiarFormulario()">Cancelar</button>
-    <button class="btn btn-success" onclick="guardarRenta()" id="btnGuardar">💾 Guardar Renta</button>
-    <button class="btn btn-primary" onclick="imprimirComprobante()" id="btnImprimir" style="display: none;">🖨️ Imprimir</button>
+    <!-- ACCIONES -->
+    <div class="action-bar">
+      <button class="btn btn-ghost" onclick="limpiarFormulario()">Cancelar</button>
+      <button class="btn btn-success" onclick="guardarRenta()" id="btnGuardar">💾 Guardar Renta</button>
+      <button class="btn btn-primary" onclick="imprimirComprobante()" id="btnImprimir" style="display: none;">🖨️ Imprimir</button>
+    </div>
   </div>
 </div>
 
