@@ -168,8 +168,6 @@ async function cargarContenido(action) {
   const contenidoDiv = document.getElementById('contenidoDinamico');
   ocultarBienvenida();
 
-  // 📝 REGISTRAR LA ACTIVIDAD EN LOGS (automático para todos los módulos)
-  await registrarLog(modulo, operacion, `Acción '${operacion}' en módulo '${modulo}'`);
 
   // ============================================
   // CASO ESPECIAL: MÓDULO LOGS (carga archivos separados)
