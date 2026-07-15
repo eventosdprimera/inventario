@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modificar Renta - Eventos D' Primera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">📝 Modificar Renta</h1>
+    <p class="page-subtitle">Busque, filtre y edite las rentas existentes</p>
+  </div>
+
+  <div id="mensaje" class="mensaje"></div>
+
+  <!-- SECCIÓN 1: BÚSQUEDA Y FILTROS -->
+  <fieldset>
+    <legend>🔍 Búsqueda y Filtros</legend>
+    
+    <div class="form-grid-registro">
+      <div class="form-group-registro">
+        <label>Buscar por Cliente</label>
+        <input type="text" id="filtroCliente" placeholder="Nombre del cliente...">
+      </div>
+      <div class="form-group-registro">
+        <label>Buscar por Número de Renta</label>
+        <input type="text" id="filtroNumero" placeholder="Ej: RENT-2026-0001">
+      </div>
+      <div class="form-group-registro">
+        <label>Fecha Desde</label>
+        <input type="date" id="filtroFechaDesde">
+      </div>
+      <div class="form-group-registro">
+        <label>Fecha Hasta</label>
+        <input type="date" id="filtroFechaHasta">
+      </div>
+    </div>
+
+    <div style="margin-top: 15px; display: flex; gap: 10px;">
+      <button type="button" class="btn-action btn-primary" onclick="buscarRentas()">🔎 Buscar</button>
+      <button type="button" class="btn-action btn-secondary" onclick="limpiarFiltros()"> Limpiar Filtros</button>
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 2: LISTA DE RENTAS -->
+  <fieldset id="fieldsetLista">
+    <legend>📋 Lista de Rentas</legend>
+    
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 50px;">#</th>
+            <th>N° Renta</th>
+            <th>Cliente</th>
+            <th>Fecha Inicio</th>
+            <th>Fecha Devolución</th>
+            <th style="width: 100px; text-align: right;">Total</th>
+            <th style="width: 100px;">Estado</th>
+            <th style="width: 80px;"></th>
+          </tr>
+        </thead>
+        <tbody id="tbodyRentas">
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">
+              <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
+              <div>Realice una búsqueda para ver las rentas</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="paginacion" style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 10px;">
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 3: FORMULARIO DE EDICIÓN (oculto inicialmente) -->
+  <fieldset id="fieldsetEdicion" style="display: none;">
+    <legend>✏️ Editar Renta <span id="editNumeroRenta" style="color: #fbbf24;"></span></legend>
+
+    <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 12px 16px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 20px; font-size: 13px; color: #92400e;">
+      ⚠️ El número de renta <strong>NO</strong> se puede modificar. Todos los demás campos son editables.
+    </div>
+
+    <!-- Información del Cliente -->
+    <div class="section-subtitle">👤 Información del Cliente</div>
+    <div class="form-grid-registro">
+      <div class="form-group-registro full-width">
+        <label>Nombre del Cliente <span class="required">*</span></label>
+        <input type="text" id="editClienteNombre">
+      </div>
+      <div class="form-group-registro">
+        <label>Teléfono</label>
+        <input type="tel" id="editClienteTelefono" maxlength="11" pattern="[0-9]{11}">
+      </div>
+      <div class="form-group-registro">
+        <label>Email</label>
+        <input type="email" id="editClienteEmail">
+      </div>
+      <div class="form-group-registro full-width">
+        <label>Dirección</label>
+        <textarea id="editClienteDireccion" rows="2"></textarea>
+      </div>
+    </div>
+
+    <!-- Detalles de la Renta -->
+    <div class="section-subtitle">📅 Detalles de la Renta</div>
+    <div class="form-grid-registro">
+      <div class="form-group-registro">
+        <label>Fecha de Inicio <span class="required">*</span></label>
+        <input type="date" id="editFechaRenta">
+      </div>
+      <div class="form-group-registro">
+        <label>Fecha de Devolución <span class="required">*</span></label>
+        <input type="date" id="editFechaDevolucion">
+      </div>
+      <div class="form-group-registro">
+        <label>Ingeniero</label>
+        <input type="text" id="editIngenieroNombre">
+      </div>
+      <div class="form-group-registro">
+        <label>Contacto Ingeniero</label>
+        <input type="text" id="editIngenieroContacto">
+      </div>
+      <div class="form-group-registro">
+        <label>Estado</label>
+        <select id="editEstado">
+          <option value="activa">Activa</option>
+          <option value="devuelta">Devuelta</option>
+          <option value="vencida">Vencida</option>
+          <option value="cancelada">Cancelada</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Equipos -->
+    <div class="section-subtitle">📦 Equipos en la Renta</div>
+    
+    <div class="codigo-barras-section" style="margin-bottom: 20px;">
+      <div class="codigo-barras-label">➕ Agregar nuevo equipo a la renta</div>
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <input type="text" id="editBuscarEquipo" 
+               placeholder="Escanee o escriba el código de barras..." 
+               style="flex: 1; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+        <button type="button" class="btn-action btn-primary" onclick="agregarEquipoEdicion()">➕ Agregar</button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 40px;">#</th>
+            <th>Código</th>
+            <th>Equipo</th>
+            <th>Serial</th>
+            <th style="width: 110px; text-align: right;">Precio</th>
+            <th style="width: 80px; text-align: center;">Cant.</th>
+            <th style="width: 120px; text-align: right;">Subtotal</th>
+            <th style="width: 50px;"></th>
+          </tr>
+        </thead>
+        <tbody id="editTbodyItems">
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-radius: 12px; border-left: 4px solid #1e3a8a;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 15px;">
+        <span>Subtotal:</span>
+        <span id="editSubtotal" style="font-weight: 600;">$0.00</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 15px;">
+        <span>Descuento:</span>
+        <input type="number" id="editDescuento" value="0" min="0" step="0.01" 
+               onchange="calcularTotalesEdicion()"
+               style="width: 120px; padding: 6px 10px; border: 2px solid #e5e7eb; border-radius: 6px; text-align: right;">
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 20px; font-weight: 700; color: #1e3a8a; border-top: 2px solid #1e3a8a; padding-top: 10px; margin-top: 10px;">
+        <span>TOTAL:</span>
+        <span id="editTotal">$0.00</span>
+      </div>
+    </div>
+
+    <!-- Observaciones -->
+    <div class="section-subtitle">📝 Observaciones</div>
+    <div class="form-group-registro full-width">
+      <textarea id="editObservaciones" rows="3" placeholder="Notas adicionales..."></textarea>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="button-group">
+      <button type="button" class="btn-action btn-primary" onclick="guardarCambiosRenta()" id="btnGuardarCambios"> Guardar Cambios</button>
+      <button type="button" class="btn-action btn-secondary" onclick="cancelarEdicion()">❌ Cancelar y Volver</button>
+    </div>
+  </fieldset>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/modificar_renta.js"></script>
+</body>
+</html>
