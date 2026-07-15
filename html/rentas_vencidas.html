@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rentas Vencidas - Eventos D' Primera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+.section-subtitle {
+  font-family: 'Libre Caslon Text', serif;
+  color: #1e3a8a;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 25px 0 15px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.btn-recibida {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: white;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+.btn-recibida:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(5,150,105,0.3);
+}
+.btn-imprimir-vencida {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  color: white;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s;
+  margin-right: 5px;
+}
+.btn-imprimir-vencida:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(30,58,138,0.3);
+}
+.vencida-badge {
+  background: #ef4444;
+  color: white;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">⚠️ Rentas Vencidas</h1>
+    <p class="page-subtitle">Rentas que han superado su fecha de devolución y no han sido recibidas</p>
+  </div>
+
+  <div id="mensaje" class="mensaje"></div>
+
+  <!-- SECCIÓN: LISTA DE RENTAS VENCIDAS -->
+  <fieldset>
+    <legend>📋 Rentas Vencidas (<span id="totalVencidas">0</span>)</legend>
+    
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 50px;">#</th>
+            <th>N° Renta</th>
+            <th>Cliente</th>
+            <th>Teléfono</th>
+            <th>Fecha Inicio</th>
+            <th>Fecha Devolución</th>
+            <th style="width: 100px;">Días Vencida</th>
+            <th style="width: 100px; text-align: right;">Total</th>
+            <th style="width: 150px;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyVencidas">
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 40px; color: #6b7280;">
+              <div style="font-size: 40px; margin-bottom: 10px;"></div>
+              <div>Cargando rentas vencidas...</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </fieldset>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/rentas_vencidas.js"></script>
+</body>
+</html>
