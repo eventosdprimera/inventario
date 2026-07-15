@@ -678,7 +678,7 @@ function imprimirComprobante() {
   const total = document.getElementById('total')?.textContent || '$0.00';
 
   // ✅ RUTA COMPLETA DEL LOGO (para que funcione en ventana nueva)
-  const logoUrl = window.location.origin + '/img/logo.png';
+  const logoUrl = new URL('img/logo.png', window.location.href).href;
 
   const itemsHTML = itemsRenta.map((item, i) => `
     <tr>
