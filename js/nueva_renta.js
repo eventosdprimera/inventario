@@ -298,7 +298,6 @@ function seleccionarCliente(nombre, telefono, email) {
 // NOTIFICACIÓN TOAST (flotante, no hace scroll)
 // ==========================================
 function mostrarToast(texto, tipo) {
-  // Crear contenedor si no existe
   let toastContainer = document.getElementById('toastContainer');
   if (!toastContainer) {
     toastContainer = document.createElement('div');
@@ -345,7 +344,6 @@ function mostrarToast(texto, tipo) {
 
   toastContainer.appendChild(toast);
 
-  // Auto-eliminar después de 3 segundos
   setTimeout(() => {
     if (toast.parentElement) {
       toast.style.animation = 'toastSlideOut 0.3s ease forwards';
@@ -354,7 +352,6 @@ function mostrarToast(texto, tipo) {
   }, 3000);
 }
 
-// Agregar animaciones CSS dinámicamente si no existen
 if (!document.getElementById('toastStyles')) {
   const style = document.createElement('style');
   style.id = 'toastStyles';
@@ -372,7 +369,7 @@ if (!document.getElementById('toastStyles')) {
 }
 
 // ==========================================
-// AGREGAR EQUIPO (CON TOAST Y SANITIZACIÓN)
+// AGREGAR EQUIPO (CON LIMPIEZA INMEDIATA)
 // ==========================================
 async function agregarEquipo() {
   const input = document.getElementById('buscarEquipoInput');
@@ -381,13 +378,14 @@ async function agregarEquipo() {
   let codigo = input.value.trim();
   if (!codigo) {
     mostrarToast('Por favor ingrese un código de barras o serial', 'error');
+    input.value = '';
+    input.focus();
     return;
   }
 
   // ✅ SANITIZAR: reemplazar comillas simples por guiones (problema común de escáneres)
   codigo = codigo.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
-  input.value = codigo; // Mostrar el código corregido
-
+  
   try {
     const { data, error } = await supabaseClient
       .from('equipos')
@@ -397,12 +395,16 @@ async function agregarEquipo() {
 
     if (error || !data) {
       mostrarToast(`Equipo no encontrado: "${codigo}"`, 'error');
+      input.value = ''; // ✅ LIMPIAR INMEDIATAMENTE
+      input.focus();
       return;
     }
 
     const existe = itemsRenta.find(item => item.codigo_barras === data.codigo_barras);
     if (existe) {
       mostrarToast('Este equipo ya está en la renta', 'error');
+      input.value = ''; // ✅ LIMPIAR INMEDIATAMENTE
+      input.focus();
       return;
     }
 
@@ -418,18 +420,19 @@ async function agregarEquipo() {
       subtotal: precioUnitario
     });
 
-    input.value = '';
+    input.value = ''; // ✅ LIMPIAR INMEDIATAMENTE DESPUÉS DE AGREGAR
     input.focus();
 
     renderizarTablaItems();
     calcularTotales();
     
-    // ✅ TOAST en lugar de mensaje arriba (no hace scroll)
     mostrarToast(`Equipo agregado: ${data.nombre_equipo}`, 'exito');
 
   } catch (err) {
     console.error('Error al agregar equipo:', err);
     mostrarToast('Error al buscar equipo', 'error');
+    input.value = ''; // ✅ LIMPIAR EN CASO DE ERROR
+    input.focus();
   }
 }
 
@@ -501,7 +504,7 @@ function calcularTotales() {
 }
 
 // ==========================================
-// GUARDAR RENTA (CON LOG DETALLADO Y SCROLL)
+// GUARDAR RENTA (CON IMPRESIÓN AUTOMÁTICA Y LOG)
 // ==========================================
 async function guardarRenta() {
   const clienteNombre = document.getElementById('clienteNombre')?.value.trim() || '';
@@ -580,9 +583,16 @@ async function guardarRenta() {
     }
 
     mostrarMensaje(`✅ Renta #${numeroRentaActual} guardada exitosamente`, 'exito');
+    
+    // ✅ MOSTRAR BOTÓN DE IMPRIMIR
     const btnImprimir = document.getElementById('btnImprimir');
     if (btnImprimir) btnImprimir.style.display = 'inline-block';
     if (btnGuardar) btnGuardar.textContent = '✅ Guardada';
+
+    // ✅ IMPRIMIR AUTOMÁTICAMENTE DESPUÉS DE GUARDAR
+    setTimeout(() => {
+      imprimirComprobante();
+    }, 500);
 
   } catch (err) {
     console.error('❌ Error al guardar renta:', err);
@@ -960,7 +970,6 @@ function mostrarMensaje(texto, tipo) {
     msg.textContent = texto;
     msg.className = `mensaje ${tipo}`;
     
-    // ✅ AUTO-SCROLL para que el mensaje sea visible
     setTimeout(() => {
       msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
