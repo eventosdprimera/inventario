@@ -472,8 +472,8 @@ if (!document.getElementById('toastStyles')) {
   document.head.appendChild(style);
 }
 
-// ==========================================
-// AGREGAR EQUIPO
+/// ==========================================
+// AGREGAR EQUIPO (CORREGIDO - mantiene guiones)
 // ==========================================
 async function agregarEquipo() {
   const input = document.getElementById('buscarEquipoInput');
@@ -487,18 +487,38 @@ async function agregarEquipo() {
     return;
   }
 
-  // ✅ SANITIZAR: eliminar guiones y convertir a mayúsculas para la búsqueda
-  codigo = codigo.replace(/-/g, '').toUpperCase();
+  // ✅ CORRECCIÓN: Formatear el código (agregar guiones si faltan)
+  // Primero eliminamos guiones existentes para normalizar
+  let codigoLimpio = codigo.replace(/-/g, '').toUpperCase();
+  
+  // Luego aplicamos el formateo para agregar guiones en las posiciones correctas
+  let codigoFormateado = '';
+  if (codigoLimpio.length > 0) {
+    codigoFormateado = codigoLimpio.substring(0, 2);
+  }
+  if (codigoLimpio.length > 2) {
+    codigoFormateado += '-' + codigoLimpio.substring(2, 10);
+  }
+  if (codigoLimpio.length > 10) {
+    codigoFormateado += '-' + codigoLimpio.substring(10, 16);
+  }
+  if (codigoLimpio.length > 16) {
+    codigoFormateado += '-' + codigoLimpio.substring(16, 22);
+  }
+  
+  // Mostrar el código formateado en el input
+  input.value = codigoFormateado;
   
   try {
+    // ✅ Buscar con el código formateado (CON guiones)
     const { data, error } = await supabaseClient
       .from('equipos')
       .select('*')
-      .or(`codigo_barras.eq.${codigo},serial.eq.${codigo}`)
+      .or(`codigo_barras.eq.${codigoFormateado},serial.eq.${codigoFormateado}`)
       .maybeSingle();
 
     if (error || !data) {
-      mostrarToast(`Equipo no encontrado: "${codigo}"`, 'error');
+      mostrarToast(`Equipo no encontrado: "${codigoFormateado}"`, 'error');
       input.value = '';
       input.focus();
       return;
@@ -539,7 +559,6 @@ async function agregarEquipo() {
     input.focus();
   }
 }
-
 // ==========================================
 // RENDERIZAR TABLA
 // ==========================================
