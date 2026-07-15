@@ -192,12 +192,12 @@ function renderizarTablaHist(totalRegistros) {
         </td>
         <td style="text-align: right; font-weight: 600;">$${parseFloat(renta.total).toFixed(2)}</td>
         <td style="text-align: center;">
-          <button type="button" class="btn-imprimir-hist" onclick="imprimirRentaHist('${renta.numero_renta}')" 
-                  title="Imprimir comprobante">
+          <button type="button" class="btn-action btn-primary" onclick="imprimirRentaHist('${renta.numero_renta}')" 
+                  title="Imprimir comprobante" style="padding: 6px 12px; font-size: 12px; margin-right: 5px;">
             🖨️ Imprimir
           </button>
-          <button type="button" class="btn-recibido" onclick="marcarRecibidaHist('${renta.numero_renta}')" 
-                  title="Marcar como recibida">
+          <button type="button" class="btn-action btn-print" onclick="marcarRecibidaHist('${renta.numero_renta}')" 
+                  title="Marcar como recibida" style="padding: 6px 12px; font-size: 12px;">
             ✅ Recibido
           </button>
         </td>
@@ -525,7 +525,7 @@ async function imprimirRentaHist(numeroRenta) {
     </div>
   </div>
 
-  <h3 style="margin: 20px 0 10px 0; color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 5px;">📦 Equipos Rentados (${(items || []).length})</h3>
+  <h3 style="margin: 20px 0 10px 0; color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 5px;"> Equipos Rentados (${(items || []).length})</h3>
   <table>
     <thead>
       <tr>
@@ -579,7 +579,7 @@ async function imprimirRentaHist(numeroRenta) {
 
   <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
     <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">
-      ️ Imprimir Comprobante
+      🖨️ Imprimir Comprobante
     </button>
     <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
       ❌ Cerrar
@@ -601,12 +601,15 @@ async function imprimirRentaHist(numeroRenta) {
 // VER RENTAS TERMINADAS
 // ==========================================
 function verRentasTerminadas() {
-  // Navegar al módulo de rentas terminadas
-  const btn = document.querySelector('[data-action="rentar-historial"]');
-  if (btn) {
-    // Simular clic en el botón de rentas terminadas si existe
-    // O redirigir directamente
-    window.location.hash = '#rentar-terminadas';
+  // Buscar el botón del menú lateral y simular clic
+  const submenuBtn = document.querySelector('[data-action="rentar-terminadas"]');
+  if (submenuBtn) {
+    submenuBtn.click();
+  } else {
+    // Si no encuentra el botón, intentar con la función del dashboard
+    if (typeof cargarContenido === 'function') {
+      cargarContenido('rentar-terminadas');
+    }
   }
 }
 
@@ -635,6 +638,6 @@ function mostrarMensajeHist(texto, tipo) {
 // INICIALIZAR
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
-  console.log(' Historial de Rentas DOM cargado');
+  console.log('📄 Historial de Rentas DOM cargado');
   inicializarHistorialRentas();
 });
