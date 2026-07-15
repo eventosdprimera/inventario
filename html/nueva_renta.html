@@ -33,6 +33,7 @@ legend { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: w
 .form-group-registro label .required { color: #dc2626; }
 .form-group-registro input, .form-group-registro select, .form-group-registro textarea { padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; font-family: 'Poppins', sans-serif; transition: all 0.3s; }
 .form-group-registro input:focus, .form-group-registro select:focus, .form-group-registro textarea:focus { outline: none; border-color: #1e3a8a; box-shadow: 0 0 0 3px rgba(30,58,138,0.1); }
+.form-group-registro input:invalid { border-color: #f59e0b; }
 .btn-action { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-family: 'Poppins', sans-serif; margin-right: 10px; }
 .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; }
 .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(30,58,138,0.3); }
@@ -51,57 +52,18 @@ tr:hover { background-color: #f9fafb; }
 .copyright { text-align: center; padding: 15px; color: #9ca3af; font-size: 11px; background-color: white; border-top: 1px solid #e5e7eb; }
 .copyright strong { color: #6b7280; font-weight: 600; }
 
-/* AUTOCOMPLETE DROPDOWN */
-.autocomplete-list {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  max-height: 300px;
-  overflow-y: auto;
-  background: white;
-  border: 2px solid #1e3a8a;
-  border-top: none;
-  border-radius: 0 0 8px 8px;
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  display: none;
-}
+/* AUTOCOMPLETE */
+.autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; max-height: 300px; overflow-y: auto; background: white; border: 2px solid #1e3a8a; border-top: none; border-radius: 0 0 8px 8px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; }
 .autocomplete-list.visible { display: block; }
-.autocomplete-item {
-  padding: 10px 12px;
-  cursor: pointer;
-  border-bottom: 1px solid #f3f4f6;
-  font-size: 13px;
-  transition: background 0.2s;
-}
-.autocomplete-item:hover, .autocomplete-item.active {
-  background-color: #eff6ff;
-  color: #1e3a8a;
-}
+.autocomplete-item { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #f3f4f6; font-size: 13px; transition: background 0.2s; }
+.autocomplete-item:hover, .autocomplete-item.active { background-color: #eff6ff; color: #1e3a8a; }
 .autocomplete-item .cliente-nombre { font-weight: 600; }
 .autocomplete-item .cliente-detalles { font-size: 11px; color: #6b7280; margin-top: 2px; }
-.autocomplete-pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  padding: 8px;
-  background: #f9fafb;
-  border-top: 1px solid #e5e7eb;
-  font-size: 12px;
-  color: #6b7280;
-}
-.autocomplete-pagination button {
-  padding: 4px 10px;
-  border: 1px solid #d1d5db;
-  background: white;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-}
+.autocomplete-pagination { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 8px; background: #f9fafb; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280; }
+.autocomplete-pagination button { padding: 4px 10px; border: 1px solid #d1d5db; background: white; border-radius: 4px; cursor: pointer; font-size: 12px; }
 .autocomplete-pagination button:hover:not(:disabled) { background: #eff6ff; border-color: #1e3a8a; }
 .autocomplete-pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+
 @media (max-width: 768px) {
   .header { flex-direction: column; gap: 15px; text-align: center; }
   .container { padding: 15px; }
@@ -143,16 +105,16 @@ tr:hover { background-color: #f9fafb; }
 
   <!-- CLIENTE CON AUTOCOMPLETE -->
   <fieldset>
-    <legend> Información del Cliente/Responsable</legend>
+    <legend>👤 Información del Cliente/Responsable</legend>
     <div class="form-grid-registro">
       <div class="form-group-registro full-width">
-        <label>Nombre del Cliente/Responsable</label>
+        <label>Nombre del Cliente/Responsable <span class="required">*</span></label>
         <input type="text" id="clienteNombre" placeholder="Escriba para buscar clientes existentes o ingrese uno nuevo..." autocomplete="off">
         <div class="autocomplete-list" id="autocompleteList"></div>
       </div>
       <div class="form-group-registro">
-        <label>Teléfono</label>
-        <input type="tel" id="clienteTelefono" placeholder="Teléfono de contacto">
+        <label>Teléfono <span style="font-size:11px; color:#6b7280;">(11 dígitos)</span></label>
+        <input type="tel" id="clienteTelefono" placeholder="Ej: 04141234567" inputmode="numeric" maxlength="11" pattern="[0-9]{11}" autocomplete="off">
       </div>
       <div class="form-group-registro">
         <label>Email</label>
@@ -171,11 +133,11 @@ tr:hover { background-color: #f9fafb; }
     <div class="form-grid-registro">
       <div class="form-group-registro">
         <label>Fecha de Inicio <span class="required">*</span></label>
-        <input type="date" id="fechaRenta">
+        <input type="date" id="fechaRenta" required>
       </div>
       <div class="form-group-registro">
         <label>Fecha de Devolución <span class="required">*</span></label>
-        <input type="date" id="fechaDevolucion">
+        <input type="date" id="fechaDevolucion" required>
       </div>
       <div class="form-group-registro">
         <label>Nombre del Ingeniero</label>
@@ -200,7 +162,7 @@ tr:hover { background-color: #f9fafb; }
                    placeholder="Ej: EP-20260714-210042-252452 o YMH-001234" 
                    style="flex: 1; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;" autofocus>
             <button type="button" class="btn-action btn-primary" onclick="agregarEquipo()">
-               Agregar Equipo
+              ➕ Agregar Equipo
             </button>
           </div>
         </div>
@@ -224,7 +186,7 @@ tr:hover { background-color: #f9fafb; }
         <tbody id="tbodyItems">
           <tr>
             <td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">
-              <div style="font-size: 40px; margin-bottom: 10px;"></div>
+              <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
               <div>No hay equipos agregados. Escanee o busque un equipo para comenzar.</div>
             </td>
           </tr>
