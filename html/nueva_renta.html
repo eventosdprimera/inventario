@@ -7,16 +7,125 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Poppins', sans-serif; background-color: #f5f7fa; min-height: 100vh; display: flex; flex-direction: column; }
+.header { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+.header-left { display: flex; flex-direction: column; gap: 3px; }
+.header-titulo { font-family: 'Libre Caslon Text', serif; font-size: 22px; font-weight: 700; }
+.header-subtitulo { font-size: 12px; opacity: 0.85; font-style: italic; }
+.btn-volver { background-color: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; font-family: 'Poppins', sans-serif; text-decoration: none; display: inline-block; }
+.btn-volver:hover { background-color: rgba(255,255,255,0.3); }
+.container { flex: 1; padding: 30px; max-width: 1200px; margin: 0 auto; width: 100%; }
+.page-header { margin-bottom: 25px; }
+.page-title { font-family: 'Libre Caslon Text', serif; color: #1e3a8a; font-size: 26px; margin-bottom: 8px; }
+.page-subtitle { color: #6b7280; font-size: 14px; }
+.codigo-barras-section { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding: 25px; border-radius: 12px; border: 2px dashed #3b82f6; margin-bottom: 25px; text-align: center; }
+.codigo-barras-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px; }
+.codigo-barras-label { font-size: 12px; color: #1e3a8a; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+.codigo-barras-valor { font-size: 22px; font-weight: 700; color: #1e3a8a; font-family: 'Courier New', monospace; letter-spacing: 2px; background-color: white; padding: 10px 20px; border-radius: 8px; display: inline-block; min-width: 300px; }
+fieldset { background-color: white; border: 2px solid #e5e7eb; border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+legend { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 600; letter-spacing: 0.5px; }
+.form-grid-registro { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.form-group-registro { display: flex; flex-direction: column; position: relative; }
+.form-group-registro.full-width { grid-column: 1 / -1; }
+.form-group-registro label { color: #374151; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.form-group-registro label .required { color: #dc2626; }
+.form-group-registro input, .form-group-registro select, .form-group-registro textarea { padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; font-family: 'Poppins', sans-serif; transition: all 0.3s; }
+.form-group-registro input:focus, .form-group-registro select:focus, .form-group-registro textarea:focus { outline: none; border-color: #1e3a8a; box-shadow: 0 0 0 3px rgba(30,58,138,0.1); }
+.btn-action { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-family: 'Poppins', sans-serif; margin-right: 10px; }
+.btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(30,58,138,0.3); }
+.btn-secondary { background-color: #6b7280; color: white; }
+.btn-print { background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-family: 'Poppins', sans-serif; }
+.btn-print:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(5,150,105,0.3); }
+.button-group { margin-top: 25px; padding-top: 20px; border-top: 2px solid #e5e7eb; display: flex; flex-wrap: wrap; gap: 10px; }
+.mensaje { padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; display: none; }
+.mensaje.exito { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; display: block; }
+.mensaje.error { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; display: block; }
+.table-container { overflow-x: auto; margin-top: 20px; }
+table { width: 100%; border-collapse: collapse; background-color: white; }
+th { background-color: #1e3a8a; color: white; padding: 12px; text-align: left; font-size: 13px; font-weight: 600; }
+td { padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 13px; color: #374151; }
+tr:hover { background-color: #f9fafb; }
+.copyright { text-align: center; padding: 15px; color: #9ca3af; font-size: 11px; background-color: white; border-top: 1px solid #e5e7eb; }
+.copyright strong { color: #6b7280; font-weight: 600; }
+
+/* AUTOCOMPLETE DROPDOWN */
+.autocomplete-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  background: white;
+  border: 2px solid #1e3a8a;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  display: none;
+}
+.autocomplete-list.visible { display: block; }
+.autocomplete-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+.autocomplete-item:hover, .autocomplete-item.active {
+  background-color: #eff6ff;
+  color: #1e3a8a;
+}
+.autocomplete-item .cliente-nombre { font-weight: 600; }
+.autocomplete-item .cliente-detalles { font-size: 11px; color: #6b7280; margin-top: 2px; }
+.autocomplete-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  font-size: 12px;
+  color: #6b7280;
+}
+.autocomplete-pagination button {
+  padding: 4px 10px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.autocomplete-pagination button:hover:not(:disabled) { background: #eff6ff; border-color: #1e3a8a; }
+.autocomplete-pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+@media (max-width: 768px) {
+  .header { flex-direction: column; gap: 15px; text-align: center; }
+  .container { padding: 15px; }
+  .form-grid-registro { grid-template-columns: 1fr; }
+  .codigo-barras-header { flex-direction: column; }
+}
+</style>
 </head>
 <body>
+<header class="header">
+  <div class="header-left">
+    <div class="header-titulo">Sistema de Rentas</div>
+    <div class="header-subtitulo">Crear Nueva Renta de Equipos</div>
+  </div>
+  <a href="../dashboard.html" class="btn-volver">← Volver al Dashboard</a>
+</header>
 
 <div class="container">
-  <div id="mensaje" class="mensaje"></div>
-
   <div class="page-header">
-    <h1 class="page-title"> Nueva Renta de Equipos</h1>
+    <h1 class="page-title">🤝 Nueva Renta de Equipos</h1>
     <p class="page-subtitle">Complete la información y agregue los equipos a rentar</p>
   </div>
+
+  <div id="mensaje" class="mensaje"></div>
 
   <!-- NÚMERO DE RENTA -->
   <div class="codigo-barras-section">
@@ -27,18 +136,19 @@
       </div>
       <div>
         <div class="codigo-barras-label">Fecha de Emisión</div>
-        <div class="codigo-barras-valor" id="fechaEmision" style="font-size: 16px;">14 de julio de 2026</div>
+        <div class="codigo-barras-valor" id="fechaEmision" style="font-size: 16px;">--</div>
       </div>
     </div>
   </div>
 
-  <!-- INFORMACIÓN DEL CLIENTE -->
+  <!-- CLIENTE CON AUTOCOMPLETE -->
   <fieldset>
     <legend> Información del Cliente/Responsable</legend>
     <div class="form-grid-registro">
       <div class="form-group-registro full-width">
-        <label>Nombre Completo <span class="required">*</span></label>
-        <input type="text" id="clienteNombre" placeholder="Nombre del responsable del evento">
+        <label>Nombre del Cliente/Responsable</label>
+        <input type="text" id="clienteNombre" placeholder="Escriba para buscar clientes existentes o ingrese uno nuevo..." autocomplete="off">
+        <div class="autocomplete-list" id="autocompleteList"></div>
       </div>
       <div class="form-group-registro">
         <label>Teléfono</label>
@@ -55,12 +165,12 @@
     </div>
   </fieldset>
 
-  <!-- INFORMACIÓN DE LA RENTA -->
+  <!-- DETALLES DE LA RENTA -->
   <fieldset>
-    <legend> Detalles de la Renta</legend>
+    <legend>📅 Detalles de la Renta</legend>
     <div class="form-grid-registro">
       <div class="form-group-registro">
-        <label>Fecha de Renta <span class="required">*</span></label>
+        <label>Fecha de Inicio <span class="required">*</span></label>
         <input type="date" id="fechaRenta">
       </div>
       <div class="form-group-registro">
@@ -81,17 +191,16 @@
   <!-- AGREGAR EQUIPOS -->
   <fieldset>
     <legend>📦 Agregar Equipos</legend>
-    
     <div class="codigo-barras-section" style="margin-bottom: 20px;">
       <div class="codigo-barras-header" style="flex-direction: column; gap: 15px;">
         <div style="width: 100%;">
-          <div class="codigo-barras-label"> Escanee o escriba el código de barras / serial del equipo</div>
+          <div class="codigo-barras-label">🔍 Escanee o escriba el código de barras / serial del equipo</div>
           <div style="display: flex; gap: 10px; margin-top: 10px;">
-            <input type="text" id="buscarEquipoInput" class="form-group-registro" 
+            <input type="text" id="buscarEquipoInput" 
                    placeholder="Ej: EP-20260714-210042-252452 o YMH-001234" 
-                   style="flex: 1; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px;" autofocus>
+                   style="flex: 1; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;" autofocus>
             <button type="button" class="btn-action btn-primary" onclick="agregarEquipo()">
-              ➕ Agregar Equipo
+               Agregar Equipo
             </button>
           </div>
         </div>
@@ -115,7 +224,7 @@
         <tbody id="tbodyItems">
           <tr>
             <td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">
-              <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
+              <div style="font-size: 40px; margin-bottom: 10px;"></div>
               <div>No hay equipos agregados. Escanee o busque un equipo para comenzar.</div>
             </td>
           </tr>
@@ -143,7 +252,7 @@
 
   <!-- OBSERVACIONES -->
   <fieldset>
-    <legend> Observaciones</legend>
+    <legend>📝 Observaciones</legend>
     <div class="form-group-registro full-width">
       <textarea id="observaciones" rows="3" placeholder="Notas adicionales sobre la renta..."></textarea>
     </div>
@@ -151,16 +260,15 @@
 
   <!-- BOTONES -->
   <div class="button-group">
-    <button type="button" class="btn-action btn-primary" onclick="guardarRenta()" id="btnGuardar">
-      💾 Guardar Renta
-    </button>
-    <button type="button" class="btn-action btn-print" onclick="imprimirComprobante()" id="btnImprimir" style="display: none;">
-      🖨️ Imprimir Comprobante
-    </button>
-    <button type="button" class="btn-action btn-secondary" onclick="limpiarFormulario()">
-      🔄 Nueva Renta
-    </button>
+    <button type="button" class="btn-action btn-primary" onclick="guardarRenta()" id="btnGuardar">💾 Guardar Renta</button>
+    <button type="button" class="btn-action btn-print" onclick="imprimirComprobante()" id="btnImprimir" style="display: none;">🖨️ Imprimir Comprobante</button>
+    <button type="button" class="btn-action btn-secondary" onclick="limpiarFormulario()">🔄 Nueva Renta</button>
   </div>
+</div>
+
+<div class="copyright">
+  <strong>©copyright Eventos de Primera</strong><br>
+  2026-2027 | Versión 0.1
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
