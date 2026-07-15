@@ -230,10 +230,7 @@ function limpiarFiltrosHistorial() {
 }
 
 // ==========================================
-// MARCAR COMO RECIBIDA (Mover a terminadas con limpieza automática)
-// ==========================================
-// ==========================================
-// MARCAR COMO RECIBIDA (Versión robusta con limpieza garantizada)
+// MARCAR COMO RECIBIDA (Versión robusta con logs de depuración)
 // ==========================================
 async function marcarRecibidaHist(numeroRenta) {
   const confirmacion = confirm(`¿Confirmar que la renta #${numeroRenta} ha sido recibida?\n\nEsta acción moverá la renta al historial de terminadas y la quitará de esta lista.`);
@@ -250,9 +247,11 @@ async function marcarRecibidaHist(numeroRenta) {
 
     if (errorRenta || !renta) {
       mostrarMensajeHist('No se pudo cargar la renta o ya fue eliminada', 'error');
-      buscarRentasHistorial(); // Forzar recarga por si acaso
+      buscarRentasHistorial();
       return;
     }
+
+    console.log('📦 Renta a procesar ID:', renta.id);
 
     // 2. Cargar items de la renta
     const { data: items, error: errorItems } = await supabaseClient
@@ -310,34 +309,37 @@ async function marcarRecibidaHist(numeroRenta) {
       if (errorTerminada.message && errorTerminada.message.includes('duplicate key value violates unique constraint')) {
         console.warn('⚠️ La renta ya estaba en terminadas. Procediendo a limpiar la tabla activa...');
         
-        // 5. Eliminar items de rentas_items PRIMERO (por restricciones de clave foránea)
-        const { error: delItemsErr } = await supabaseClient
+        // 5. Eliminar items de rentas_items PRIMERO
+        const { data: dataDelItems, error: delItemsErr } = await supabaseClient
           .from('rentas_items')
           .delete()
-          .eq('renta_id', renta.id);
+          .eq('renta_id', renta.id)
+          .select(); // .select() devuelve lo que se eliminó
         
+        console.log('🗑️ Resultado eliminación items:', dataDelItems, delItemsErr);
         if (delItemsErr) {
           console.error('❌ Error al eliminar items:', delItemsErr);
           throw new Error('No se pudieron eliminar los items de la renta activa: ' + delItemsErr.message);
         }
-        console.log('✅ Items eliminados de la tabla activa');
 
         // 6. Eliminar renta de la tabla rentas
-        const { error: delRentaErr } = await supabaseClient
+        const { data: dataDelRenta, error: delRentaErr } = await supabaseClient
           .from('rentas')
           .delete()
-          .eq('id', renta.id);
-        
+          .eq('id', renta.id)
+          .select();
+          
+        console.log('🗑️ Resultado eliminación renta:', dataDelRenta, delRentaErr);
         if (delRentaErr) {
           console.error('❌ Error al eliminar renta:', delRentaErr);
           throw new Error('No se pudo eliminar la renta activa: ' + delRentaErr.message);
         }
-        console.log('✅ Renta eliminada de la tabla activa');
         
         mostrarMensajeHist(`✅ La renta #${numeroRenta} ya estaba en terminadas. Se ha limpiado correctamente de la lista activa.`, 'exito');
         
         // Forzar recarga inmediata
         setTimeout(() => {
+          console.log('🔄 Recargando lista de historial...');
           buscarRentasHistorial();
         }, 1000);
         return; 
@@ -369,19 +371,21 @@ async function marcarRecibidaHist(numeroRenta) {
     }
 
     // 8. Eliminar items de rentas_items
-    const { error: errorDeleteItems } = await supabaseClient
+    const { data: dataDelItems2, error: errorDeleteItems } = await supabaseClient
       .from('rentas_items')
       .delete()
-      .eq('renta_id', renta.id);
-
+      .eq('renta_id', renta.id)
+      .select();
+    console.log('🗑️ Eliminación normal de items:', dataDelItems2, errorDeleteItems);
     if (errorDeleteItems) throw new Error('Error al eliminar items: ' + errorDeleteItems.message);
 
     // 9. Eliminar renta de rentas
-    const { error: errorDeleteRenta } = await supabaseClient
+    const { data: dataDelRenta2, error: errorDeleteRenta } = await supabaseClient
       .from('rentas')
       .delete()
-      .eq('id', renta.id);
-
+      .eq('id', renta.id)
+      .select();
+    console.log('🗑️ Eliminación normal de renta:', dataDelRenta2, errorDeleteRenta);
     if (errorDeleteRenta) throw new Error('Error al eliminar renta: ' + errorDeleteRenta.message);
 
     // 10. Registrar en logs
