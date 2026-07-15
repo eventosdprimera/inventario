@@ -224,8 +224,11 @@ function renderizarAutocomplete() {
   const lista = document.getElementById('autocompleteList');
   if (!lista) return;
 
+  // ✅ CAMBIO CLAVE: Usar startsWith en lugar de includes.
+  // Esto asegura que solo muestre predicciones si el nombre empieza 
+  // exactamente con las letras escritas desde la primera letra.
   const filtrados = clientesCache.filter(c => 
-    c.nombre.toLowerCase().includes(autocompleteFiltro)
+    c.nombre.toLowerCase().startsWith(autocompleteFiltro)
   );
 
   if (filtrados.length === 0) {
@@ -269,7 +272,7 @@ function renderizarAutocomplete() {
 
 function cambiarPaginaAutocomplete(nuevaPagina) {
   const filtrados = clientesCache.filter(c => 
-    c.nombre.toLowerCase().includes(autocompleteFiltro)
+    c.nombre.toLowerCase().startsWith(autocompleteFiltro)
   );
   const totalPaginas = Math.ceil(filtrados.length / AUTOCOMPLETE_POR_PAGINA);
   if (nuevaPagina < 1 || nuevaPagina > totalPaginas) return;
