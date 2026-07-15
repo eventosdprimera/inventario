@@ -5,11 +5,12 @@ let numeroRentaActual = null;
 let itemsRenta = [];
 let usuarioActualRenta = null;
 let rentaGuardadaId = null;
-let clientesCache = []; // Cache de clientes para autocomplete
+let clientesCache = [];
 let autocompletePagina = 1;
-const AUTOCOMPLETE_POR_PAGINA = 10; // ✅ Cambiado a 10 por página
+const AUTOCOMPLETE_POR_PAGINA = 10;
 let autocompleteFiltro = '';
 let autocompleteIndexActivo = -1;
+let fechaHoyStr = ''; // Fecha de hoy en formato YYYY-MM-DD
 
 // ==========================================
 // INICIALIZACIÓN
@@ -32,21 +33,40 @@ async function inicializarNuevaRenta() {
   await generarNumeroRenta();
   await cargarClientesExistentes();
   
+  // ✅ FECHA DE HOY (para validaciones)
   const hoy = new Date();
+  fechaHoyStr = hoy.toISOString().split('T')[0];
+  
   const elFechaRenta = document.getElementById('fechaRenta');
   const elFechaDevolucion = document.getElementById('fechaDevolucion');
   const elFechaEmision = document.getElementById('fechaEmision');
   
-  if (elFechaRenta) elFechaRenta.value = hoy.toISOString().split('T')[0];
+  // ✅ CONFIGURAR FECHA MÍNIMA (hoy) en ambos campos de fecha
+  if (elFechaRenta) {
+    elFechaRenta.value = fechaHoyStr;
+    elFechaRenta.min = fechaHoyStr; // No permitir fechas anteriores a hoy
+  }
   
   if (elFechaDevolucion) {
     const fechaDev = new Date();
     fechaDev.setDate(fechaDev.getDate() + 7);
-    elFechaDevolucion.value = fechaDev.toISOString().split('T')[0];
+    const fechaDevStr = fechaDev.toISOString().split('T')[0];
+    elFechaDevolucion.value = fechaDevStr;
+    elFechaDevolucion.min = fechaHoyStr; // No permitir fechas anteriores a hoy
   }
   
   if (elFechaEmision) {
     elFechaEmision.textContent = hoy.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+  }
+
+  // ✅ VALIDAR QUE FECHA DEVOLUCIÓN NO SEA ANTERIOR A FECHA INICIO
+  if (elFechaRenta && elFechaDevolucion) {
+    elFechaRenta.addEventListener('change', () => {
+      elFechaDevolucion.min = elFechaRenta.value;
+      if (elFechaDevolucion.value && elFechaDevolucion.value < elFechaRenta.value) {
+        elFechaDevolucion.value = elFechaRenta.value;
+      }
+    });
   }
 
   // Event listener para Enter en búsqueda de equipos
@@ -56,6 +76,25 @@ async function inicializarNuevaRenta() {
       if (e.key === 'Enter') {
         e.preventDefault();
         agregarEquipo();
+      }
+    });
+  }
+
+  // ✅ FILTRAR SOLO NÚMEROS EN TELÉFONO (11 dígitos)
+  const inputTelefono = document.getElementById('clienteTelefono');
+  if (inputTelefono) {
+    inputTelefono.addEventListener('input', (e) => {
+      // Eliminar cualquier carácter que no sea número
+      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+      // Limitar a 11 dígitos
+      if (e.target.value.length > 11) {
+        e.target.value = e.target.value.slice(0, 11);
+      }
+    });
+    inputTelefono.addEventListener('keypress', (e) => {
+      // Prevenir entrada de caracteres no numéricos
+      if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
+        e.preventDefault();
       }
     });
   }
@@ -124,7 +163,7 @@ async function generarNumeroRenta() {
 }
 
 // ==========================================
-// CARGAR CLIENTES EXISTENTES (para autocomplete)
+// CARGAR CLIENTES EXISTENTES
 // ==========================================
 async function cargarClientesExistentes() {
   try {
@@ -139,7 +178,6 @@ async function cargarClientesExistentes() {
       return;
     }
 
-    // Agrupar por nombre (puede haber rentas repetidas del mismo cliente)
     const unicos = new Map();
     (data || []).forEach(r => {
       const nombre = r.cliente_nombre.trim();
@@ -160,17 +198,16 @@ async function cargarClientesExistentes() {
 }
 
 // ==========================================
-// AUTOCOMPLETE DE CLIENTE (LÓGICA A PRUEBA DE FALLOS)
+// AUTOCOMPLETE DE CLIENTE
 // ==========================================
 function configurarAutocompleteCliente() {
   const input = document.getElementById('clienteNombre');
   const lista = document.getElementById('autocompleteList');
   if (!input || !lista) return;
 
-  // Función centralizada para ocultar la lista
   const ocultarLista = () => {
     lista.classList.remove('visible');
-    lista.innerHTML = ''; // ✅ Limpiar el HTML para asegurar que desaparezca visualmente
+    lista.innerHTML = '';
     autocompleteFiltro = '';
     autocompletePagina = 1;
     autocompleteIndexActivo = -1;
@@ -178,13 +215,10 @@ function configurarAutocompleteCliente() {
 
   input.addEventListener('input', (e) => {
     const valor = e.target.value.trim();
-    
-    // ✅ Si está vacío, ocultar inmediatamente y salir
     if (!valor) {
       ocultarLista();
       return;
     }
-
     autocompleteFiltro = valor.toLowerCase();
     autocompletePagina = 1;
     autocompleteIndexActivo = -1;
@@ -225,7 +259,6 @@ function configurarAutocompleteCliente() {
     }
   });
 
-  // Cerrar al hacer clic fuera
   document.addEventListener('click', (e) => {
     if (!input.contains(e.target) && !lista.contains(e.target)) {
       ocultarLista();
@@ -237,26 +270,22 @@ function renderizarAutocomplete() {
   const lista = document.getElementById('autocompleteList');
   if (!lista) return;
 
-  // ✅ Doble verificación: si no hay filtro, ocultar
   if (!autocompleteFiltro) {
     lista.classList.remove('visible');
     lista.innerHTML = '';
     return;
   }
 
-  // Filtrar solo los que EMPIEZAN con el texto escrito
   const filtrados = clientesCache.filter(c => 
     c.nombre.toLowerCase().startsWith(autocompleteFiltro)
   );
 
-  // ✅ Si no hay coincidencias, ocultar inmediatamente
   if (filtrados.length === 0) {
     lista.classList.remove('visible');
     lista.innerHTML = '';
     return;
   }
 
-  // ✅ Paginación estricta de 10 en 10
   const totalPaginas = Math.ceil(filtrados.length / AUTOCOMPLETE_POR_PAGINA);
   const inicio = (autocompletePagina - 1) * AUTOCOMPLETE_POR_PAGINA;
   const fin = inicio + AUTOCOMPLETE_POR_PAGINA;
@@ -277,7 +306,6 @@ function renderizarAutocomplete() {
     `;
   });
 
-  // Controles de paginación solo si hay más de 1 página
   if (totalPaginas > 1) {
     html += `
       <div class="autocomplete-pagination">
@@ -297,9 +325,7 @@ function cambiarPaginaAutocomplete(nuevaPagina) {
     c.nombre.toLowerCase().startsWith(autocompleteFiltro)
   );
   const totalPaginas = Math.ceil(filtrados.length / AUTOCOMPLETE_POR_PAGINA);
-  
   if (nuevaPagina < 1 || nuevaPagina > totalPaginas) return;
-  
   autocompletePagina = nuevaPagina;
   autocompleteIndexActivo = -1;
   renderizarAutocomplete();
@@ -319,7 +345,6 @@ function seleccionarCliente(nombre, telefono, email) {
   if (telefono) document.getElementById('clienteTelefono').value = telefono;
   if (email) document.getElementById('clienteEmail').value = email;
   
-  // Ocultar lista después de seleccionar
   const lista = document.getElementById('autocompleteList');
   if (lista) {
     lista.classList.remove('visible');
@@ -328,7 +353,7 @@ function seleccionarCliente(nombre, telefono, email) {
 }
 
 // ==========================================
-// NOTIFICACIÓN TOAST (flotante, no hace scroll)
+// NOTIFICACIÓN TOAST
 // ==========================================
 function mostrarToast(texto, tipo) {
   let toastContainer = document.getElementById('toastContainer');
@@ -336,14 +361,8 @@ function mostrarToast(texto, tipo) {
     toastContainer = document.createElement('div');
     toastContainer.id = 'toastContainer';
     toastContainer.style.cssText = `
-      position: fixed;
-      top: 80px;
-      right: 20px;
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-width: 350px;
+      position: fixed; top: 80px; right: 20px; z-index: 9999;
+      display: flex; flex-direction: column; gap: 10px; max-width: 350px;
     `;
     document.body.appendChild(toastContainer);
   }
@@ -354,19 +373,10 @@ function mostrarToast(texto, tipo) {
   const textColor = tipo === 'exito' ? '#065f46' : (tipo === 'error' ? '#991b1b' : '#92400e');
   
   toast.style.cssText = `
-    background: ${bgColor};
-    border-left: 4px solid ${borderColor};
-    color: ${textColor};
-    padding: 14px 18px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    animation: toastSlideIn 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    background: ${bgColor}; border-left: 4px solid ${borderColor}; color: ${textColor};
+    padding: 14px 18px; border-radius: 8px; font-size: 14px; font-family: 'Poppins', sans-serif;
+    font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: toastSlideIn 0.3s ease;
+    display: flex; align-items: center; gap: 10px;
   `;
   
   toast.innerHTML = `
@@ -389,20 +399,14 @@ if (!document.getElementById('toastStyles')) {
   const style = document.createElement('style');
   style.id = 'toastStyles';
   style.textContent = `
-    @keyframes toastSlideIn {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes toastSlideOut {
-      from { transform: translateX(0); opacity: 1; }
-      to { transform: translateX(100%); opacity: 0; }
-    }
+    @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes toastSlideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
   `;
   document.head.appendChild(style);
 }
 
 // ==========================================
-// AGREGAR EQUIPO (CON LIMPIEZA INMEDIATA)
+// AGREGAR EQUIPO
 // ==========================================
 async function agregarEquipo() {
   const input = document.getElementById('buscarEquipoInput');
@@ -416,7 +420,6 @@ async function agregarEquipo() {
     return;
   }
 
-  // ✅ SANITIZAR: reemplazar comillas simples por guiones (problema común de escáneres)
   codigo = codigo.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
   
   try {
@@ -537,10 +540,11 @@ function calcularTotales() {
 }
 
 // ==========================================
-// GUARDAR RENTA (CON IMPRESIÓN AUTOMÁTICA Y LOG)
+// GUARDAR RENTA
 // ==========================================
 async function guardarRenta() {
   const clienteNombre = document.getElementById('clienteNombre')?.value.trim() || '';
+  const clienteTelefono = document.getElementById('clienteTelefono')?.value.trim() || '';
   const fechaRenta = document.getElementById('fechaRenta')?.value || '';
   const fechaDevolucion = document.getElementById('fechaDevolucion')?.value || '';
   
@@ -548,10 +552,29 @@ async function guardarRenta() {
     mostrarMensaje('Por favor ingrese el nombre del cliente/responsable', 'error'); 
     return; 
   }
+  
+  // ✅ VALIDAR TELÉFONO (si se ingresó, debe ser 11 dígitos)
+  if (clienteTelefono && clienteTelefono.length !== 11) {
+    mostrarMensaje('El teléfono debe tener exactamente 11 dígitos', 'error');
+    return;
+  }
+  
+  // ✅ VALIDAR FECHAS
   if (!fechaRenta || !fechaDevolucion) { 
     mostrarMensaje('Por favor ingrese las fechas de renta y devolución', 'error'); 
     return; 
   }
+  
+  if (fechaRenta < fechaHoyStr) {
+    mostrarMensaje('La fecha de inicio no puede ser anterior al día actual', 'error');
+    return;
+  }
+  
+  if (fechaDevolucion < fechaRenta) {
+    mostrarMensaje('La fecha de devolución no puede ser anterior a la fecha de inicio', 'error');
+    return;
+  }
+  
   if (itemsRenta.length === 0) { 
     mostrarMensaje('Por favor agregue al menos un equipo', 'error'); 
     return; 
@@ -574,7 +597,7 @@ async function guardarRenta() {
         fecha_renta: fechaRenta, 
         fecha_devolucion: fechaDevolucion,
         cliente_nombre: clienteNombre,
-        cliente_telefono: document.getElementById('clienteTelefono')?.value.trim() || '',
+        cliente_telefono: clienteTelefono,
         cliente_email: document.getElementById('clienteEmail')?.value.trim() || '',
         cliente_direccion: document.getElementById('clienteDireccion')?.value.trim() || '',
         ingeniero_nombre: document.getElementById('ingenieroNombre')?.value.trim() || '',
@@ -607,10 +630,9 @@ async function guardarRenta() {
       if (itemError) throw itemError;
     }
 
-    // ✅ LOG DETALLADO
     if (typeof registrarLog === 'function') {
-      const fechaInicioStr = new Date(fechaRenta).toLocaleDateString('es-ES');
-      const fechaDevStr = new Date(fechaDevolucion).toLocaleDateString('es-ES');
+      const fechaInicioStr = new Date(fechaRenta + 'T12:00:00').toLocaleDateString('es-ES');
+      const fechaDevStr = new Date(fechaDevolucion + 'T12:00:00').toLocaleDateString('es-ES');
       const descripcion = `Renta #${numeroRentaActual} | Cliente: ${clienteNombre} | Inicio: ${fechaInicioStr} | Devolución: ${fechaDevStr} | Equipos: ${itemsRenta.length} | Total: $${total.toFixed(2)} | Creada por: ${usuarioActualRenta?.email || 'Desconocido'}`;
       await registrarLog('rentar', 'Nueva renta creada', descripcion, 'success');
     }
@@ -621,7 +643,6 @@ async function guardarRenta() {
     if (btnImprimir) btnImprimir.style.display = 'inline-block';
     if (btnGuardar) btnGuardar.textContent = '✅ Guardada';
 
-    // ✅ IMPRIMIR AUTOMÁTICAMENTE DESPUÉS DE GUARDAR
     setTimeout(() => {
       imprimirComprobante();
     }, 500);
@@ -629,12 +650,12 @@ async function guardarRenta() {
   } catch (err) {
     console.error('❌ Error al guardar renta:', err);
     mostrarMensaje('Error al guardar: ' + err.message, 'error');
-    if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Guardar Renta'; }
+    if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = ' Guardar Renta'; }
   }
 }
 
 // ==========================================
-// IMPRIMIR COMPROBANTE (HOJA CARTA CON LOGO CENTRADO)
+// IMPRIMIR COMPROBANTE (CON LOGO img/logo.png)
 // ==========================================
 function imprimirComprobante() {
   if (!rentaGuardadaId) { 
@@ -655,6 +676,9 @@ function imprimirComprobante() {
   const descuentoInput = document.getElementById('descuento');
   const descuento = descuentoInput ? descuentoInput.value : '0';
   const total = document.getElementById('total')?.textContent || '$0.00';
+
+  // ✅ RUTA COMPLETA DEL LOGO (para que funcione en ventana nueva)
+  const logoUrl = window.location.origin + '/img/logo.png';
 
   const itemsHTML = itemsRenta.map((item, i) => `
     <tr>
@@ -696,19 +720,10 @@ function imprimirComprobante() {
       align-items: center;
       margin-bottom: 10px;
     }
-    .logo-icon { 
-      width: 70px; 
-      height: 70px; 
-      background: linear-gradient(135deg, #1e3a8a, #3b82f6); 
-      border-radius: 14px; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      color: white; 
-      font-size: 28px; 
-      font-weight: 700; 
-      font-family: serif;
-      box-shadow: 0 4px 12px rgba(30,58,138,0.3);
+    .logo-img { 
+      max-width: 120px;
+      max-height: 120px;
+      object-fit: contain;
     }
     .brand h1 { 
       color: #1e3a8a; 
@@ -854,7 +869,7 @@ function imprimirComprobante() {
 <body>
   <div class="header">
     <div class="logo-container">
-      <div class="logo-icon">EP</div>
+      <img src="${logoUrl}" alt="Logo Eventos D' Primera" class="logo-img" onerror="this.style.display='none'">
     </div>
     <div class="brand">
       <h1>Eventos D' Primera</h1>
@@ -883,7 +898,7 @@ function imprimirComprobante() {
     </div>
   </div>
 
-  <h3 style="margin: 20px 0 10px 0; color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 5px;"> Equipos Rentados (${itemsRenta.length})</h3>
+  <h3 style="margin: 20px 0 10px 0; color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 5px;">📦 Equipos Rentados (${itemsRenta.length})</h3>
   <table>
     <thead>
       <tr>
@@ -973,35 +988,43 @@ function limpiarFormulario() {
   const btnGuardar = document.getElementById('btnGuardar');
   if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Guardar Renta'; }
   
-  renderizarTablaItems();
-  calcularTotales();
-  generarNumeroRenta();
-  
+  // ✅ RESTABLECER FECHAS CON VALIDACIÓN
   const hoy = new Date();
-  const fechaEmision = document.getElementById('fechaEmision');
-  if (fechaEmision) fechaEmision.textContent = hoy.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+  const fechaHoy = hoy.toISOString().split('T')[0];
   
   const elFechaRenta = document.getElementById('fechaRenta');
   const elFechaDevolucion = document.getElementById('fechaDevolucion');
-  if (elFechaRenta) elFechaRenta.value = hoy.toISOString().split('T')[0];
+  const fechaEmision = document.getElementById('fechaEmision');
+  
+  if (elFechaRenta) {
+    elFechaRenta.value = fechaHoy;
+    elFechaRenta.min = fechaHoy;
+  }
   if (elFechaDevolucion) {
     const fechaDev = new Date();
     fechaDev.setDate(fechaDev.getDate() + 7);
     elFechaDevolucion.value = fechaDev.toISOString().split('T')[0];
+    elFechaDevolucion.min = fechaHoy;
+  }
+  if (fechaEmision) {
+    fechaEmision.textContent = hoy.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
   }
   
-  // Asegurar que la lista de autocomplete esté oculta al limpiar
   const lista = document.getElementById('autocompleteList');
   if (lista) {
     lista.classList.remove('visible');
     lista.innerHTML = '';
   }
   
+  renderizarTablaItems();
+  calcularTotales();
+  generarNumeroRenta();
+  
   mostrarMensaje('Formulario listo para nueva renta', 'exito');
 }
 
 // ==========================================
-// MOSTRAR MENSAJE (CON AUTO-SCROLL)
+// MOSTRAR MENSAJE
 // ==========================================
 function mostrarMensaje(texto, tipo) {
   const msg = document.getElementById('mensaje');
