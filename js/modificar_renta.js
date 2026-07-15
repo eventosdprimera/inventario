@@ -1,13 +1,13 @@
 // ==========================================
-// VARIABLES GLOBALES
+// VARIABLES GLOBALES (con nombres únicos para evitar conflictos)
 // ==========================================
 let rentasCache = [];
-let paginaActual = 1;
-const POR_PAGINA = 20;
+let paginaActualModificar = 1;
+const POR_PAGINA_MODIFICAR = 20;
 let rentaEditando = null;
 let itemsEdicion = [];
-let usuarioActual = null;
-let fechaHoyStr = '';
+let usuarioActualModificarRenta = null;
+let fechaHoyStrModificar = '';
 
 // ==========================================
 // INICIALIZACIÓN
@@ -22,17 +22,17 @@ async function inicializarModificarRenta() {
   }
 
   if (typeof supabaseClient === 'undefined') {
-    mostrarMensaje('Error: Supabase no está disponible', 'error');
+    mostrarMensajeModificar('Error: Supabase no está disponible', 'error');
     return;
   }
 
-  await cargarUsuario();
+  await cargarUsuarioModificar();
   
   const hoy = new Date();
-  fechaHoyStr = hoy.toISOString().split('T')[0];
+  fechaHoyStrModificar = hoy.toISOString().split('T')[0];
   
   // Cargar últimas 20 rentas al iniciar
-  await buscarRentas();
+  await buscarRentasModificar();
 
   // Enter en búsqueda de equipos
   const inputEquipo = document.getElementById('editBuscarEquipo');
@@ -59,7 +59,7 @@ async function inicializarModificarRenta() {
 // ==========================================
 // CARGAR USUARIO
 // ==========================================
-async function cargarUsuario() {
+async function cargarUsuarioModificar() {
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) return;
@@ -71,9 +71,9 @@ async function cargarUsuario() {
       .maybeSingle();
 
     if (data && !error) {
-      usuarioActual = data;
+      usuarioActualModificarRenta = data;
     } else {
-      usuarioActual = { email: session.user.email, id: session.user.id };
+      usuarioActualModificarRenta = { email: session.user.email, id: session.user.id };
     }
   } catch (err) {
     console.error('Error al cargar usuario:', err);
@@ -83,7 +83,7 @@ async function cargarUsuario() {
 // ==========================================
 // BUSCAR RENTAS CON FILTROS
 // ==========================================
-async function buscarRentas() {
+async function buscarRentasModificar() {
   const filtroCliente = document.getElementById('filtroCliente')?.value.trim() || '';
   const filtroNumero = document.getElementById('filtroNumero')?.value.trim() || '';
   const filtroDesde = document.getElementById('filtroFechaDesde')?.value || '';
@@ -109,8 +109,8 @@ async function buscarRentas() {
     }
 
     // Paginación
-    const desde = (paginaActual - 1) * POR_PAGINA;
-    const hasta = desde + POR_PAGINA - 1;
+    const desde = (paginaActualModificar - 1) * POR_PAGINA_MODIFICAR;
+    const hasta = desde + POR_PAGINA_MODIFICAR - 1;
     query = query.range(desde, hasta);
 
     const { data, error, count } = await query;
@@ -118,18 +118,18 @@ async function buscarRentas() {
     if (error) throw error;
 
     rentasCache = data || [];
-    renderizarTablaRentas(count || 0);
+    renderizarTablaRentasModificar(count || 0);
 
   } catch (err) {
     console.error('Error al buscar rentas:', err);
-    mostrarMensaje('Error al buscar rentas: ' + err.message, 'error');
+    mostrarMensajeModificar('Error al buscar rentas: ' + err.message, 'error');
   }
 }
 
 // ==========================================
 // RENDERIZAR TABLA DE RENTAS
 // ==========================================
-function renderizarTablaRentas(totalRegistros) {
+function renderizarTablaRentasModificar(totalRegistros) {
   const tbody = document.getElementById('tbodyRentas');
   if (!tbody) return;
 
@@ -137,7 +137,7 @@ function renderizarTablaRentas(totalRegistros) {
     tbody.innerHTML = `
       <tr>
         <td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">
-          <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
+          <div style="font-size: 40px; margin-bottom: 10px;"></div>
           <div>No se encontraron rentas con los filtros aplicados</div>
         </td>
       </tr>`;
@@ -146,7 +146,7 @@ function renderizarTablaRentas(totalRegistros) {
   }
 
   tbody.innerHTML = rentasCache.map((renta, index) => {
-    const globalIndex = (paginaActual - 1) * POR_PAGINA + index + 1;
+    const globalIndex = (paginaActualModificar - 1) * POR_PAGINA_MODIFICAR + index + 1;
     const fechaInicio = new Date(renta.fecha_renta + 'T12:00:00').toLocaleDateString('es-ES');
     const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00').toLocaleDateString('es-ES');
     
@@ -172,7 +172,7 @@ function renderizarTablaRentas(totalRegistros) {
           </span>
         </td>
         <td style="text-align: center;">
-          <button type="button" onclick="seleccionarRenta('${renta.numero_renta}')" 
+          <button type="button" onclick="seleccionarRentaModificar('${renta.numero_renta}')" 
                   style="background: #dbeafe; color: #1e3a8a; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;"
                   title="Editar esta renta">
             ✏️ Editar
@@ -182,17 +182,17 @@ function renderizarTablaRentas(totalRegistros) {
     `;
   }).join('');
 
-  renderizarPaginacion(totalRegistros);
+  renderizarPaginacionModificar(totalRegistros);
 }
 
 // ==========================================
 // PAGINACIÓN
 // ==========================================
-function renderizarPaginacion(totalRegistros) {
+function renderizarPaginacionModificar(totalRegistros) {
   const cont = document.getElementById('paginacion');
   if (!cont) return;
 
-  const totalPaginas = Math.ceil(totalRegistros / POR_PAGINA);
+  const totalPaginas = Math.ceil(totalRegistros / POR_PAGINA_MODIFICAR);
   
   if (totalPaginas <= 1) {
     cont.innerHTML = `<span style="color: #6b7280; font-size: 13px;">Total: ${totalRegistros} renta(s)</span>`;
@@ -200,52 +200,50 @@ function renderizarPaginacion(totalRegistros) {
   }
 
   let html = '';
-  html += `<button type="button" onclick="cambiarPagina(${paginaActual - 1})" ${paginaActual === 1 ? 'disabled' : ''} 
+  html += `<button type="button" onclick="cambiarPaginaModificar(${paginaActualModificar - 1})" 
            style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px;"
-           ${paginaActual === 1 ? 'style="opacity: 0.4; cursor: not-allowed;"' : ''}>‹ Anterior</button>`;
+           ${paginaActualModificar === 1 ? 'style="opacity: 0.4; cursor: not-allowed;"' : ''}>‹ Anterior</button>`;
   
-  html += `<span style="color: #374151; font-size: 13px; font-weight: 600;">Página ${paginaActual} de ${totalPaginas}</span>`;
+  html += `<span style="color: #374151; font-size: 13px; font-weight: 600;">Página ${paginaActualModificar} de ${totalPaginas}</span>`;
   
-  html += `<button type="button" onclick="cambiarPagina(${paginaActual + 1})" 
+  html += `<button type="button" onclick="cambiarPaginaModificar(${paginaActualModificar + 1})" 
            style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px;"
-           ${paginaActual === totalPaginas ? 'style="opacity: 0.4; cursor: not-allowed;"' : ''}>Siguiente ›</button>`;
+           ${paginaActualModificar === totalPaginas ? 'style="opacity: 0.4; cursor: not-allowed;"' : ''}>Siguiente ›</button>`;
   
   html += `<span style="color: #6b7280; font-size: 13px;">Total: ${totalRegistros} renta(s)</span>`;
 
   cont.innerHTML = html;
 }
 
-async function cambiarPagina(nuevaPagina) {
+async function cambiarPaginaModificar(nuevaPagina) {
   const totalRegistros = rentasCache.length;
-  const totalPaginas = Math.ceil(totalRegistros / POR_PAGINA);
+  const totalPaginas = Math.ceil(totalRegistros / POR_PAGINA_MODIFICAR);
   
   if (nuevaPagina < 1 || nuevaPagina > totalPaginas) return;
   
-  paginaActual = nuevaPagina;
-  await buscarRentas();
+  paginaActualModificar = nuevaPagina;
+  await buscarRentasModificar();
   
-  // Scroll al inicio de la lista
   document.getElementById('fieldsetLista')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ==========================================
 // LIMPIAR FILTROS
 // ==========================================
-function limpiarFiltros() {
+function limpiarFiltrosModificar() {
   document.getElementById('filtroCliente').value = '';
   document.getElementById('filtroNumero').value = '';
   document.getElementById('filtroFechaDesde').value = '';
   document.getElementById('filtroFechaHasta').value = '';
-  paginaActual = 1;
-  buscarRentas();
+  paginaActualModificar = 1;
+  buscarRentasModificar();
 }
 
 // ==========================================
 // SELECCIONAR RENTA PARA EDITAR
 // ==========================================
-async function seleccionarRenta(numeroRenta) {
+async function seleccionarRentaModificar(numeroRenta) {
   try {
-    // Cargar datos de la renta
     const { data: renta, error } = await supabaseClient
       .from('rentas')
       .select('*')
@@ -253,11 +251,10 @@ async function seleccionarRenta(numeroRenta) {
       .single();
 
     if (error || !renta) {
-      mostrarMensaje('No se pudo cargar la renta', 'error');
+      mostrarMensajeModificar('No se pudo cargar la renta', 'error');
       return;
     }
 
-    // Cargar items de la renta
     const { data: items, error: errorItems } = await supabaseClient
       .from('rentas_items')
       .select('*')
@@ -269,7 +266,6 @@ async function seleccionarRenta(numeroRenta) {
     rentaEditando = renta;
     itemsEdicion = items || [];
 
-    // Llenar formulario
     document.getElementById('editNumeroRenta').textContent = ` - ${renta.numero_renta}`;
     document.getElementById('editClienteNombre').value = renta.cliente_nombre || '';
     document.getElementById('editClienteTelefono').value = renta.cliente_telefono || '';
@@ -283,11 +279,10 @@ async function seleccionarRenta(numeroRenta) {
     document.getElementById('editObservaciones').value = renta.observaciones || '';
     document.getElementById('editDescuento').value = renta.descuento || 0;
 
-    // Validar fechas mínimas
     const elFechaRenta = document.getElementById('editFechaRenta');
     const elFechaDevolucion = document.getElementById('editFechaDevolucion');
-    if (elFechaRenta) elFechaRenta.min = fechaHoyStr;
-    if (elFechaDevolucion) elFechaDevolucion.min = fechaHoyStr;
+    if (elFechaRenta) elFechaRenta.min = fechaHoyStrModificar;
+    if (elFechaDevolucion) elFechaDevolucion.min = fechaHoyStrModificar;
 
     if (elFechaRenta && elFechaDevolucion) {
       elFechaRenta.addEventListener('change', () => {
@@ -298,20 +293,17 @@ async function seleccionarRenta(numeroRenta) {
       });
     }
 
-    // Renderizar items
     renderizarItemsEdicion();
     calcularTotalesEdicion();
 
-    // Mostrar formulario de edición, ocultar lista
     document.getElementById('fieldsetLista').style.display = 'none';
     document.getElementById('fieldsetEdicion').style.display = 'block';
 
-    // Scroll al formulario
     document.getElementById('fieldsetEdicion').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   } catch (err) {
     console.error('Error al seleccionar renta:', err);
-    mostrarMensaje('Error al cargar la renta: ' + err.message, 'error');
+    mostrarMensajeModificar('Error al cargar la renta: ' + err.message, 'error');
   }
 }
 
@@ -401,7 +393,6 @@ async function agregarEquipoEdicion() {
     return;
   }
 
-  // Formatear código
   let codigoLimpio = codigo.replace(/-/g, '').toUpperCase();
   let codigoFormateado = '';
   if (codigoLimpio.length > 0) codigoFormateado = codigoLimpio.substring(0, 2);
@@ -423,7 +414,6 @@ async function agregarEquipoEdicion() {
       return;
     }
 
-    // Verificar si ya está en la renta
     const existe = itemsEdicion.find(item => item.codigo_barras === data.codigo_barras);
     if (existe) {
       alert('Este equipo ya está en la renta');
@@ -467,23 +457,23 @@ async function guardarCambiosRenta() {
   const fechaDevolucion = document.getElementById('editFechaDevolucion')?.value || '';
 
   if (!clienteNombre) {
-    mostrarMensaje('Por favor ingrese el nombre del cliente', 'error');
+    mostrarMensajeModificar('Por favor ingrese el nombre del cliente', 'error');
     return;
   }
   if (!fechaRenta || !fechaDevolucion) {
-    mostrarMensaje('Por favor ingrese las fechas de renta y devolución', 'error');
+    mostrarMensajeModificar('Por favor ingrese las fechas de renta y devolución', 'error');
     return;
   }
-  if (fechaRenta < fechaHoyStr) {
-    mostrarMensaje('La fecha de inicio no puede ser anterior al día actual', 'error');
+  if (fechaRenta < fechaHoyStrModificar) {
+    mostrarMensajeModificar('La fecha de inicio no puede ser anterior al día actual', 'error');
     return;
   }
   if (fechaDevolucion < fechaRenta) {
-    mostrarMensaje('La fecha de devolución no puede ser anterior a la fecha de inicio', 'error');
+    mostrarMensajeModificar('La fecha de devolución no puede ser anterior a la fecha de inicio', 'error');
     return;
   }
   if (itemsEdicion.length === 0) {
-    mostrarMensaje('Debe haber al menos un equipo en la renta', 'error');
+    mostrarMensajeModificar('Debe haber al menos un equipo en la renta', 'error');
     return;
   }
 
@@ -495,7 +485,6 @@ async function guardarCambiosRenta() {
     const descuento = parseFloat(document.getElementById('editDescuento')?.value) || 0;
     const total = Math.max(0, subtotal - descuento);
 
-    // Actualizar renta
     const { error: errorRenta } = await supabaseClient
       .from('rentas')
       .update({
@@ -511,14 +500,12 @@ async function guardarCambiosRenta() {
         subtotal: subtotal,
         descuento: descuento,
         total: total,
-        observaciones: document.getElementById('editObservaciones')?.value.trim() || '',
-        usuario_modificacion: usuarioActual?.email || 'unknown'
+        observaciones: document.getElementById('editObservaciones')?.value.trim() || ''
       })
       .eq('id', rentaEditando.id);
 
     if (errorRenta) throw errorRenta;
 
-    // Eliminar items antiguos
     const { error: errorDelete } = await supabaseClient
       .from('rentas_items')
       .delete()
@@ -526,7 +513,6 @@ async function guardarCambiosRenta() {
 
     if (errorDelete) throw errorDelete;
 
-    // Insertar items nuevos
     for (const item of itemsEdicion) {
       const { error: errorItem } = await supabaseClient
         .from('rentas_items')
@@ -545,24 +531,22 @@ async function guardarCambiosRenta() {
       if (errorItem) throw errorItem;
     }
 
-    // Registrar en logs
     if (typeof registrarLog === 'function') {
-      const descripcion = `Modificó Renta #${rentaEditando.numero_renta} | Cliente: ${clienteNombre} | Total: $${total.toFixed(2)} | Equipos: ${itemsEdicion.length} | Modificado por: ${usuarioActual?.email || 'Desconocido'}`;
+      const descripcion = `Modificó Renta #${rentaEditando.numero_renta} | Cliente: ${clienteNombre} | Total: $${total.toFixed(2)} | Equipos: ${itemsEdicion.length} | Modificado por: ${usuarioActualModificarRenta?.email || 'Desconocido'}`;
       await registrarLog('rentar', 'Renta modificada', descripcion, 'warning');
     }
 
-    mostrarMensaje(`✅ Renta #${rentaEditando.numero_renta} modificada exitosamente`, 'exito');
+    mostrarMensajeModificar(`✅ Renta #${rentaEditando.numero_renta} modificada exitosamente`, 'exito');
 
-    // Volver a la lista después de 2 segundos
     setTimeout(() => {
       cancelarEdicion();
-      paginaActual = 1;
-      buscarRentas();
+      paginaActualModificar = 1;
+      buscarRentasModificar();
     }, 2000);
 
   } catch (err) {
     console.error('Error al guardar cambios:', err);
-    mostrarMensaje('Error al guardar: ' + err.message, 'error');
+    mostrarMensajeModificar('Error al guardar: ' + err.message, 'error');
     if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Guardar Cambios'; }
   }
 }
@@ -587,7 +571,7 @@ function cancelarEdicion() {
 // ==========================================
 // MOSTRAR MENSAJE
 // ==========================================
-function mostrarMensaje(texto, tipo) {
+function mostrarMensajeModificar(texto, tipo) {
   const msg = document.getElementById('mensaje');
   if (msg) {
     msg.textContent = texto;
