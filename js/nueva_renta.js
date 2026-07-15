@@ -104,14 +104,14 @@ async function inicializarNuevaRenta() {
 }
 
 // ==========================================
-// FORMATEAR CÓDIGO DE BARRAS AUTOMÁTICAMENTE
+// FORMATEAR CÓDIGO DE BARRAS (solo al perder foco o Enter)
 // ==========================================
 function formatearCodigoBarras(input) {
-  // Guardar posición del cursor
-  const cursorPos = input.selectionStart;
+  let valor = input.value.trim();
+  if (!valor) return;
   
   // 1. Eliminar cualquier guion existente
-  let valor = input.value.replace(/-/g, '');
+  valor = valor.replace(/-/g, '');
   
   // 2. Convertir a mayúsculas
   valor = valor.toUpperCase();
@@ -124,39 +124,52 @@ function formatearCodigoBarras(input) {
   let formateado = '';
   
   if (valor.length > 0) {
-    formateado = valor.substring(0, 2); // Primeros 2 caracteres (EP)
+    formateado = valor.substring(0, 2);
   }
   if (valor.length > 2) {
-    formateado += '-' + valor.substring(2, 10); // Siguientes 8 (fecha)
+    formateado += '-' + valor.substring(2, 10);
   }
   if (valor.length > 10) {
-    formateado += '-' + valor.substring(10, 16); // Siguientes 6 (hora)
+    formateado += '-' + valor.substring(10, 16);
   }
   if (valor.length > 16) {
-    formateado += '-' + valor.substring(16, 22); // Últimos 6 (random)
+    formateado += '-' + valor.substring(16, 22);
   }
   
-  // 5. Limitar a 22 caracteres sin guiones (25 con guiones)
+  // Limitar a 22 caracteres sin guiones
   if (valor.length > 22) {
     valor = valor.substring(0, 22);
     formateado = valor.substring(0, 2) + '-' + valor.substring(2, 10) + '-' + valor.substring(10, 16) + '-' + valor.substring(16, 22);
   }
   
-  // 6. Actualizar el valor del input
   input.value = formateado;
+}
+
+// En la inicialización, reemplaza los event listeners del inputBusqueda por estos:
+const inputBusqueda = document.getElementById('buscarEquipoInput');
+if (inputBusqueda) {
+  // Convertir a mayúsculas mientras se escribe (sin formatear aún)
+  inputBusqueda.addEventListener('input', (e) => {
+    // Solo convertir a mayúsculas, no formatear
+    const cursorPos = e.target.selectionStart;
+    e.target.value = e.target.value.toUpperCase();
+    // Mantener posición del cursor
+    e.target.setSelectionRange(cursorPos, cursorPos);
+  });
   
-  // 7. Restaurar posición del cursor (ajustando por los guiones agregados)
-  const nuevosGuiones = (formateado.substring(0, cursorPos).match(/-/g) || []).length;
-  const cursorOriginal = cursorPos - nuevosGuiones;
-  const nuevosGuionesHastaCursor = (formateado.substring(0, cursorPos + nuevosGuiones).match(/-/g) || []).length;
+  // Formatear al perder el foco
+  inputBusqueda.addEventListener('blur', (e) => {
+    formatearCodigoBarras(e.target);
+  });
   
-  let nuevaPosicion = cursorPos;
-  if (cursorOriginal <= 2) nuevaPosicion = cursorOriginal;
-  else if (cursorOriginal <= 10) nuevaPosicion = cursorOriginal + 1;
-  else if (cursorOriginal <= 16) nuevaPosicion = cursorOriginal + 2;
-  else if (cursorOriginal <= 22) nuevaPosicion = cursorOriginal + 3;
-  
-  input.setSelectionRange(nuevaPosicion, nuevaPosicion);
+  // Formatear al presionar Enter (antes de buscar)
+  inputBusqueda.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      formatearCodigoBarras(e.target);
+      agregarEquipo();
+    }
+  });
 }
 
 // ==========================================
