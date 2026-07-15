@@ -8,57 +8,30 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-.btn-volver-hist {
-  background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);
-  color: white;
-  padding: 12px 24px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.3s;
-  margin-bottom: 20px;
-}
-.btn-volver-hist:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(107,114,128,0.3);
-}
-.btn-imprimir-term {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-  color: white;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.3s;
-}
-.btn-imprimir-term:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(30,58,138,0.3);
-}
-.terminada-badge {
-  background: #3b82f6;
-  color: white;
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
+/* Estilos específicos para badges de estado de entrega */
 .anticipada {
   color: #10b981;
   font-weight: 600;
+  background: #d1fae5;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
 }
 .retrasada {
-  color: #ef4444;
+  color: #dc2626;
   font-weight: 600;
+  background: #fee2e2;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
 }
 .a-tiempo {
-  color: #6b7280;
+  color: #2563eb;
   font-weight: 600;
+  background: #dbeafe;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
 }
 </style>
 </head>
@@ -66,16 +39,21 @@
 
 <div class="container">
   <div class="page-header">
-    <h1 class="page-title"> Rentas Terminadas</h1>
+    <h1 class="page-title">📋 Rentas Terminadas</h1>
     <p class="page-subtitle">Historial de rentas completadas y recibidas</p>
   </div>
 
   <div id="mensaje" class="mensaje"></div>
 
   <!-- BOTÓN VOLVER -->
-  <button type="button" class="btn-volver-hist" onclick="volverAlHistorial()">
-    ← Volver al Historial de Rentas
-  </button>
+  <fieldset>
+    <legend>🔙 Navegación</legend>
+    <div class="button-group" style="justify-content: flex-start;">
+      <button type="button" class="btn-action btn-secondary" onclick="volverAlHistorial()">
+        ← Volver al Historial de Rentas
+      </button>
+    </div>
+  </fieldset>
 
   <!-- SECCIÓN 1: BÚSQUEDA Y FILTROS -->
   <fieldset>
@@ -100,15 +78,15 @@
       </div>
     </div>
 
-    <div style="margin-top: 15px; display: flex; gap: 10px;">
-      <button type="button" class="btn-action btn-primary" onclick="buscarRentasTerminadas()"> Buscar</button>
-      <button type="button" class="btn-action btn-secondary" onclick="limpiarFiltrosTerminadas()">Limpiar Filtros</button>
+    <div class="button-group" style="margin-top: 15px;">
+      <button type="button" class="btn-action btn-primary" onclick="buscarRentasTerminadas()">🔎 Buscar</button>
+      <button type="button" class="btn-action btn-secondary" onclick="limpiarFiltrosTerminadas()">🧹 Limpiar Filtros</button>
     </div>
   </fieldset>
 
   <!-- SECCIÓN 2: LISTA DE RENTAS TERMINADAS -->
   <fieldset id="fieldsetListaTerm">
-    <legend>📋 Rentas Terminadas (<span id="totalTerminadas">0</span>)</legend>
+    <legend>📋 Listado de Rentas Terminadas (<span id="totalTerminadas">0</span>)</legend>
     
     <div class="table-container">
       <table>
@@ -120,15 +98,15 @@
             <th>Fecha Inicio</th>
             <th>Fecha Programada</th>
             <th>Fecha Real</th>
-            <th style="width: 100px;">Estado Entrega</th>
-            <th style="width: 100px; text-align: right;">Total</th>
-            <th style="width: 80px;"></th>
+            <th style="width: 110px; text-align: center;">Estado Entrega</th>
+            <th style="width: 110px; text-align: right;">Total</th>
+            <th style="width: 100px; text-align: center;">Acciones</th>
           </tr>
         </thead>
         <tbody id="tbodyTerminadas">
           <tr>
             <td colspan="9" style="text-align: center; padding: 40px; color: #6b7280;">
-              <div style="font-size: 40px; margin-bottom: 10px;"></div>
+              <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
               <div>Realice una búsqueda para ver las rentas terminadas</div>
             </td>
           </tr>
