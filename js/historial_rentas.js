@@ -232,8 +232,11 @@ function limpiarFiltrosHistorial() {
 // ==========================================
 // MARCAR COMO RECIBIDA (Mover a terminadas con limpieza automática)
 // ==========================================
+// ==========================================
+// MARCAR COMO RECIBIDA (Versión robusta con limpieza garantizada)
+// ==========================================
 async function marcarRecibidaHist(numeroRenta) {
-  const confirmacion = confirm(`¿Confirmar que la renta #${numeroRenta} ha sido recibida?\n\nEsta acción:\n- Cambiará el estado a "Terminada"\n- Moverá la renta al historial de terminadas\n- Registrará la fecha real de devolución\n- Quedará fuera de esta lista`);
+  const confirmacion = confirm(`¿Confirmar que la renta #${numeroRenta} ha sido recibida?\n\nEsta acción moverá la renta al historial de terminadas y la quitará de esta lista.`);
   
   if (!confirmacion) return;
 
@@ -247,6 +250,7 @@ async function marcarRecibidaHist(numeroRenta) {
 
     if (errorRenta || !renta) {
       mostrarMensajeHist('No se pudo cargar la renta o ya fue eliminada', 'error');
+      buscarRentasHistorial(); // Forzar recarga por si acaso
       return;
     }
 
@@ -258,7 +262,7 @@ async function marcarRecibidaHist(numeroRenta) {
 
     if (errorItems) throw errorItems;
 
-    // 3. Calcular días de diferencia (anticipado o retraso)
+    // 3. Calcular días de diferencia
     const hoy = new Date();
     const fechaHoy = hoy.toISOString().split('T')[0];
     const fechaDevProgramada = new Date(renta.fecha_devolucion + 'T12:00:00');
@@ -267,14 +271,10 @@ async function marcarRecibidaHist(numeroRenta) {
     
     let diasAnticipados = null;
     let diasRetraso = null;
-    
-    if (diffDays > 0) {
-      diasAnticipados = diffDays;
-    } else if (diffDays < 0) {
-      diasRetraso = Math.abs(diffDays);
-    }
+    if (diffDays > 0) diasAnticipados = diffDays;
+    else if (diffDays < 0) diasRetraso = Math.abs(diffDays);
 
-    // 4. Insertar en rentas_terminadas
+    // 4. Intentar insertar en rentas_terminadas
     const { data: rentaTerminada, error: errorTerminada } = await supabaseClient
       .from('rentas_terminadas')
       .insert({
@@ -308,44 +308,67 @@ async function marcarRecibidaHist(numeroRenta) {
     // ✅ MANEJO INTELIGENTE DE ERRORES DE DUPLICADO
     if (errorTerminada) {
       if (errorTerminada.message && errorTerminada.message.includes('duplicate key value violates unique constraint')) {
-        console.warn('La renta ya estaba en terminadas. Procediendo a limpiar la tabla activa...');
+        console.warn('⚠️ La renta ya estaba en terminadas. Procediendo a limpiar la tabla activa...');
         
-        // La renta ya está en terminadas, solo necesitamos eliminarla de las tablas activas para limpiar la inconsistencia
-        await supabaseClient.from('rentas_items').delete().eq('renta_id', renta.id);
-        await supabaseClient.from('rentas').delete().eq('id', renta.id);
+        // 5. Eliminar items de rentas_items PRIMERO (por restricciones de clave foránea)
+        const { error: delItemsErr } = await supabaseClient
+          .from('rentas_items')
+          .delete()
+          .eq('renta_id', renta.id);
         
-        mostrarMensajeHist(`⚠️ La renta #${numeroRenta} ya estaba registrada como terminada. Se ha limpiado de la lista activa.`, 'exito');
+        if (delItemsErr) {
+          console.error('❌ Error al eliminar items:', delItemsErr);
+          throw new Error('No se pudieron eliminar los items de la renta activa: ' + delItemsErr.message);
+        }
+        console.log('✅ Items eliminados de la tabla activa');
+
+        // 6. Eliminar renta de la tabla rentas
+        const { error: delRentaErr } = await supabaseClient
+          .from('rentas')
+          .delete()
+          .eq('id', renta.id);
         
+        if (delRentaErr) {
+          console.error('❌ Error al eliminar renta:', delRentaErr);
+          throw new Error('No se pudo eliminar la renta activa: ' + delRentaErr.message);
+        }
+        console.log('✅ Renta eliminada de la tabla activa');
+        
+        mostrarMensajeHist(`✅ La renta #${numeroRenta} ya estaba en terminadas. Se ha limpiado correctamente de la lista activa.`, 'exito');
+        
+        // Forzar recarga inmediata
         setTimeout(() => {
           buscarRentasHistorial();
-        }, 1500);
-        return; // Salir de la función exitosamente
+        }, 1000);
+        return; 
       } else {
         throw new Error('Error al crear renta terminada: ' + errorTerminada.message);
       }
     }
 
-    // 5. Insertar items en rentas_items_terminadas
-    for (const item of items || []) {
-      const { error: errorItem } = await supabaseClient
-        .from('rentas_items_terminadas')
-        .insert({
-          renta_terminada_id: rentaTerminada.id,
-          renta_id_original: item.renta_id,
-          codigo_barras: item.codigo_barras,
-          nombre_equipo: item.nombre_equipo,
-          marca: item.marca,
-          modelo: item.modelo,
-          serial: item.serial,
-          cantidad: item.cantidad,
-          precio_unitario: item.precio_unitario,
-          subtotal: item.subtotal
-        });
+    // 7. Si no hubo error de duplicado, insertar items en terminadas
+    if (items && items.length > 0) {
+      for (const item of items) {
+        const { error: errorItem } = await supabaseClient
+          .from('rentas_items_terminadas')
+          .insert({
+            renta_terminada_id: rentaTerminada.id,
+            renta_id_original: item.renta_id,
+            codigo_barras: item.codigo_barras,
+            nombre_equipo: item.nombre_equipo,
+            marca: item.marca,
+            modelo: item.modelo,
+            serial: item.serial,
+            cantidad: item.cantidad,
+            precio_unitario: item.precio_unitario,
+            subtotal: item.subtotal
+          });
 
-      if (errorItem) throw new Error('Error al crear item terminado: ' + errorItem.message);
+        if (errorItem) throw new Error('Error al crear item terminado: ' + errorItem.message);
+      }
     }
 
-    // 6. Eliminar items de rentas_items
+    // 8. Eliminar items de rentas_items
     const { error: errorDeleteItems } = await supabaseClient
       .from('rentas_items')
       .delete()
@@ -353,7 +376,7 @@ async function marcarRecibidaHist(numeroRenta) {
 
     if (errorDeleteItems) throw new Error('Error al eliminar items: ' + errorDeleteItems.message);
 
-    // 7. Eliminar renta de rentas
+    // 9. Eliminar renta de rentas
     const { error: errorDeleteRenta } = await supabaseClient
       .from('rentas')
       .delete()
@@ -361,7 +384,7 @@ async function marcarRecibidaHist(numeroRenta) {
 
     if (errorDeleteRenta) throw new Error('Error al eliminar renta: ' + errorDeleteRenta.message);
 
-    // 8. Registrar en logs
+    // 10. Registrar en logs
     if (typeof registrarLog === 'function') {
       const descripcion = `Renta #${numeroRenta} marcada como recibida y terminada | Cliente: ${renta.cliente_nombre} | Total: $${parseFloat(renta.total).toFixed(2)} | ${diasAnticipados ? `${diasAnticipados} días antes` : diasRetraso ? `${diasRetraso} días tarde` : 'A tiempo'} | Recibido por: ${usuarioActualHist?.email || 'Desconocido'}`;
       await registrarLog('rentar', 'Renta terminada', descripcion, 'success');
@@ -369,17 +392,16 @@ async function marcarRecibidaHist(numeroRenta) {
 
     mostrarMensajeHist(`✅ Renta #${numeroRenta} marcada como recibida y movida a terminadas`, 'exito');
 
-    // 9. Recargar la lista automáticamente
+    // 11. Recargar la lista automáticamente
     setTimeout(() => {
       buscarRentasHistorial();
-    }, 1500);
+    }, 1000);
 
   } catch (err) {
-    console.error('Error al marcar como recibida:', err);
+    console.error('❌ Error crítico al marcar como recibida:', err);
     mostrarMensajeHist('Error al procesar: ' + err.message, 'error');
   }
 }
-
 // ==========================================
 // IMPRIMIR RENTA
 // ==========================================
