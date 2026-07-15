@@ -437,6 +437,69 @@ if (modulo === 'rentar' && operacion === 'vencidas') {
   return;
 }
   // ==========================================
+// CASO: RENTAR → HISTORIAL
+// ==========================================
+if (modulo === 'rentar' && operacion === 'historial') {
+  try {
+    if (typeof registrarLog === 'undefined') {
+      await cargarScript('js/logs.js');
+    }
+    
+    if (typeof inicializarHistorialRentas === 'undefined') {
+      await cargarScript('js/historial_rentas.js');
+    }
+
+    const response = await fetch('html/historial_rentas.html');
+    if (!response.ok) throw new Error('No se pudo cargar html/historial_rentas.html');
+    const htmlText = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+
+    const container = doc.querySelector('.container');
+    if (!container) throw new Error('No se encontró .container');
+    contenidoDiv.innerHTML = container.innerHTML;
+
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (typeof inicializarHistorialRentas === 'function') {
+      await inicializarHistorialRentas();
+    }
+  } catch (err) {
+    console.error('Error cargando historial rentas:', err);
+    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+  }
+  return;
+}
+
+// ==========================================
+// CASO: RENTAR → TERMINADAS
+// ==========================================
+if (modulo === 'rentar' && operacion === 'terminadas') {
+  try {
+    if (typeof inicializarRentasTerminadas === 'undefined') {
+      await cargarScript('js/rentas_terminadas.js');
+    }
+
+    const response = await fetch('html/rentas_terminadas.html');
+    if (!response.ok) throw new Error('No se pudo cargar html/rentas_terminadas.html');
+    const htmlText = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+
+    const container = doc.querySelector('.container');
+    if (!container) throw new Error('No se encontró .container');
+    contenidoDiv.innerHTML = container.innerHTML;
+
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (typeof inicializarRentasTerminadas === 'function') {
+      await inicializarRentasTerminadas();
+    }
+  } catch (err) {
+    console.error('Error cargando rentas terminadas:', err);
+    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+  }
+  return;
+}
+  // ==========================================
   // 4. OTROS MÓDULOS (Placeholders organizados)
   // ==========================================
   let html = '';
