@@ -588,7 +588,349 @@ function mostrarMensajeModificar(texto, tipo) {
     }
   }
 }
+// ==========================================
+// IMPRIMIR COMPROBANTE DE RENTA MODIFICADA
+// ==========================================
+function imprimirComprobanteModificacion() {
+  if (!rentaEditando) {
+    alert('No hay ninguna renta seleccionada para imprimir');
+    return;
+  }
 
+  // Tomar los valores ACTUALES del formulario (no los originales de la BD)
+  const clienteNombre = document.getElementById('editClienteNombre')?.value || 'N/A';
+  const clienteTel = document.getElementById('editClienteTelefono')?.value || 'N/A';
+  const clienteEmail = document.getElementById('editClienteEmail')?.value || 'N/A';
+  const clienteDir = document.getElementById('editClienteDireccion')?.value || 'N/A';
+  const fechaRenta = document.getElementById('editFechaRenta')?.value || '';
+  const fechaDevolucion = document.getElementById('editFechaDevolucion')?.value || '';
+  const ingenieroNombre = document.getElementById('editIngenieroNombre')?.value || 'N/A';
+  const ingenieroContacto = document.getElementById('editIngenieroContacto')?.value || 'N/A';
+  const observaciones = document.getElementById('editObservaciones')?.value || '';
+  const subtotal = document.getElementById('editSubtotal')?.textContent || '$0.00';
+  const descuento = document.getElementById('editDescuento')?.value || '0';
+  const total = document.getElementById('editTotal')?.textContent || '$0.00';
+  const estado = document.getElementById('editEstado')?.value || 'activa';
+
+  // Ruta del logo
+  const logoUrl = new URL('img/logo.png', window.location.href).href;
+
+  // Generar HTML de los items
+  const itemsHTML = itemsEdicion.map((item, i) => `
+    <tr>
+      <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center;">${i + 1}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-family: monospace; font-size: 10px;">${item.codigo_barras}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;"><strong>${item.nombre_equipo}</strong><br><small style="color:#666;">${item.marca || ''} ${item.modelo || ''}</small></td>
+      <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${item.serial || '-'}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">$${parseFloat(item.precio_unitario).toFixed(2)}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center;">${item.cantidad}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: right;"><strong>$${parseFloat(item.subtotal).toFixed(2)}</strong></td>
+    </tr>
+  `).join('');
+
+  const ventana = window.open('', '_blank', 'width=900,height=1100');
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <title>Comprobante de Renta #${rentaEditando.numero_renta}</title>
+  <style>
+    @page { size: letter; margin: 15mm; }
+    * { box-sizing: border-box; }
+    body { 
+      font-family: Arial, sans-serif; 
+      font-size: 12px; 
+      color: #333; 
+      max-width: 216mm; 
+      margin: 0 auto; 
+      padding: 10mm;
+    }
+    .header { 
+      text-align: center; 
+      border-bottom: 3px solid #1e3a8a; 
+      padding-bottom: 15px; 
+      margin-bottom: 20px; 
+    }
+    .logo-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .logo-img { 
+      max-width: 200px;
+      max-height: 200px;
+      object-fit: contain;
+    }
+    .brand h1 { 
+      color: #1e3a8a; 
+      margin: 10px 0 5px 0; 
+      font-size: 26px; 
+      font-family: 'Libre Caslon Text', serif;
+    }
+    .brand p { 
+      margin: 3px 0 0 0; 
+      color: #666; 
+      font-size: 12px; 
+    }
+    .numero-renta-box {
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      padding: 12px 20px;
+      border-radius: 8px;
+      margin: 15px auto;
+      display: inline-block;
+      border: 2px dashed #3b82f6;
+    }
+    .numero-renta-box .label { 
+      font-size: 10px; 
+      color: #666; 
+      text-transform: uppercase; 
+      letter-spacing: 1px; 
+    }
+    .numero-renta-box .valor { 
+      font-size: 22px; 
+      font-weight: bold; 
+      color: #1e3a8a; 
+      font-family: monospace; 
+      margin-top: 3px; 
+    }
+    .info-grid { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 20px; 
+      margin-bottom: 20px; 
+    }
+    .info-box { 
+      background: #f9fafb; 
+      padding: 15px; 
+      border-radius: 8px; 
+      border-left: 4px solid #3b82f6; 
+    }
+    .info-box h3 { 
+      margin: 0 0 10px 0; 
+      color: #1e3a8a; 
+      font-size: 13px; 
+      text-transform: uppercase; 
+      letter-spacing: 1px; 
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 5px;
+    }
+    .info-box p { 
+      margin: 5px 0; 
+      font-size: 12px; 
+    }
+    .info-box p strong { color: #374151; }
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      margin: 20px 0; 
+    }
+    th { 
+      background: #1e3a8a; 
+      color: white; 
+      padding: 10px 8px; 
+      text-align: left; 
+      font-size: 11px; 
+      text-transform: uppercase;
+    }
+    td { 
+      padding: 8px; 
+      border-bottom: 1px solid #e5e7eb; 
+      font-size: 11px; 
+    }
+    .totales { 
+      text-align: right; 
+      margin-top: 20px; 
+      padding: 15px; 
+      background: #eff6ff; 
+      border-radius: 8px; 
+    }
+    .totales p { 
+      margin: 5px 0; 
+      font-size: 13px; 
+    }
+    .totales .total { 
+      font-size: 20px; 
+      font-weight: bold; 
+      color: #1e3a8a; 
+      border-top: 2px solid #1e3a8a; 
+      padding-top: 10px; 
+      margin-top: 10px; 
+    }
+    .observaciones { 
+      margin-top: 20px; 
+      padding: 15px; 
+      background: #fef3c7; 
+      border-left: 4px solid #f59e0b; 
+      border-radius: 4px; 
+    }
+    .observaciones h4 { 
+      margin: 0 0 5px 0; 
+      color: #92400e; 
+      font-size: 12px; 
+    }
+    .observaciones p { 
+      margin: 0; 
+      font-size: 12px; 
+    }
+    .estado-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: white;
+      margin-top: 5px;
+    }
+    .firmas { 
+      margin-top: 50px; 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 50px; 
+      text-align: center; 
+    }
+    .firma-line { 
+      border-top: 1px solid #333; 
+      margin-top: 40px; 
+      padding-top: 5px; 
+    }
+    .firma-line p { 
+      margin: 3px 0; 
+      font-size: 12px; 
+    }
+    .footer { 
+      margin-top: 30px; 
+      text-align: center; 
+      font-size: 10px; 
+      color: #9ca3af; 
+      border-top: 1px solid #e5e7eb; 
+      padding-top: 10px; 
+    }
+    .reimpresion-aviso {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      color: #92400e;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    @media print { 
+      .no-print { display: none !important; } 
+      body { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo-container">
+      <img src="${logoUrl}" alt="Logo Eventos D' Primera" class="logo-img" onerror="this.style.display='none'">
+    </div>
+    <div class="brand">
+      <h1>Eventos D' Primera</h1>
+      <p>Sistema de Inventario y Rentas</p>
+    </div>
+    <div class="numero-renta-box">
+      <div class="label">Comprobante de Renta N°</div>
+      <div class="valor">${rentaEditando.numero_renta}</div>
+    </div>
+  </div>
+
+  <div class="reimpresion-avisos">
+    📄 Documento reimpreso el ${new Date().toLocaleString('es-ES')}
+  </div>
+
+  <div class="info-grid">
+    <div class="info-box">
+      <h3>👤 Cliente / Responsable</h3>
+      <p><strong>Nombre:</strong> ${clienteNombre}</p>
+      <p><strong>Teléfono:</strong> ${clienteTel}</p>
+      <p><strong>Email:</strong> ${clienteEmail}</p>
+      <p><strong>Dirección:</strong> ${clienteDir}</p>
+    </div>
+    <div class="info-box">
+      <h3>📅 Detalles de Renta</h3>
+      <p><strong>Fecha Inicio:</strong> ${fechaRenta ? new Date(fechaRenta + 'T12:00:00').toLocaleDateString('es-ES') : 'N/A'}</p>
+      <p><strong>Fecha Devolución:</strong> ${fechaDevolucion ? new Date(fechaDevolucion + 'T12:00:00').toLocaleDateString('es-ES') : 'N/A'}</p>
+      <p><strong>Ingeniero:</strong> ${ingenieroNombre}</p>
+      <p><strong>Contacto Ing.:</strong> ${ingenieroContacto}</p>
+      <p><strong>Estado:</strong> 
+        <span class="estado-badge" style="background: ${
+          estado === 'activa' ? '#10b981' : 
+          estado === 'devuelta' ? '#3b82f6' : 
+          estado === 'vencida' ? '#ef4444' : '#6b7280'
+        };">${estado}</span>
+      </p>
+    </div>
+  </div>
+
+  <h3 style="margin: 20px 0 10px 0; color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 5px;">📦 Equipos Rentados (${itemsEdicion.length})</h3>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 30px;">#</th>
+        <th style="width: 130px;">Código</th>
+        <th>Equipo</th>
+        <th style="width: 100px;">Serial</th>
+        <th style="text-align: right; width: 80px;">Precio</th>
+        <th style="text-align: center; width: 50px;">Cant.</th>
+        <th style="text-align: right; width: 90px;">Subtotal</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${itemsHTML}
+    </tbody>
+  </table>
+
+  <div class="totales">
+    <p>Subtotal: <strong>${subtotal}</strong></p>
+    <p>Descuento: <strong>$${parseFloat(descuento).toFixed(2)}</strong></p>
+    <p class="total">TOTAL: <strong>${total}</strong></p>
+  </div>
+
+  ${observaciones ? `
+  <div class="observaciones">
+    <h4>📝 Observaciones</h4>
+    <p>${observaciones}</p>
+  </div>
+  ` : ''}
+
+  <div class="firmas">
+    <div>
+      <div class="firma-line">
+        <p><strong>${clienteNombre}</strong></p>
+        <p>Cliente / Responsable</p>
+        <p style="font-size: 10px; color: #666;">Firma de conformidad</p>
+      </div>
+    </div>
+    <div>
+      <div class="firma-line">
+        <p><strong>${usuarioActualModificarRenta?.email || 'Administrador'}</strong></p>
+        <p>Entregado por</p>
+        <p style="font-size: 10px; color: #666;">Firma del responsable</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>©copyright Eventos de Primera | 2026-2027 | Documento reimpreso el ${new Date().toLocaleString('es-ES')}</p>
+  </div>
+
+  <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
+    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">
+      🖨️ Imprimir Comprobante
+    </button>
+    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+      ❌ Cerrar
+    </button>
+  </div>
+</body>
+</html>`;
+
+  ventana.document.write(html);
+  ventana.document.close();
+}
 // ==========================================
 // INICIALIZAR
 // ==========================================
