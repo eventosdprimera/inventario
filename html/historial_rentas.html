@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
+/* Estadísticas */
 .stats-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -37,60 +38,13 @@
   text-transform: uppercase;
   letter-spacing: 1px;
 }
-.btn-recibido {
-  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-  color: white;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.3s;
-}
-.btn-recibido:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(5,150,105,0.3);
-}
-.btn-imprimir-hist {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-  color: white;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.3s;
-  margin-right: 5px;
-}
-.btn-imprimir-hist:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(30,58,138,0.3);
-}
-.btn-terminadas {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  padding: 12px 24px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.3s;
-  margin-bottom: 20px;
-}
-.btn-terminadas:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59,130,246,0.3);
-}
 </style>
 </head>
 <body>
 
 <div class="container">
   <div class="page-header">
-    <h1 class="page-title">📜 Historial de Rentas</h1>
+    <h1 class="page-title"> Historial de Rentas</h1>
     <p class="page-subtitle">Gestione las rentas activas y vencidas</p>
   </div>
 
@@ -117,13 +71,18 @@
   </div>
 
   <!-- BOTÓN VER TERMINADAS -->
-  <button type="button" class="btn-terminadas" onclick="verRentasTerminadas()">
-    📋 Ver Rentas Terminadas
-  </button>
+  <fieldset>
+    <legend> Rentas Terminadas</legend>
+    <div style="text-align: center; padding: 10px;">
+      <button type="button" class="btn-action btn-primary" onclick="verRentasTerminadas()">
+        📋 Ver Rentas Terminadas
+      </button>
+    </div>
+  </fieldset>
 
   <!-- SECCIÓN 1: BÚSQUEDA Y FILTROS -->
   <fieldset>
-    <legend> Búsqueda y Filtros</legend>
+    <legend>🔍 Búsqueda y Filtros</legend>
     
     <div class="form-grid-registro">
       <div class="form-group-registro">
@@ -144,15 +103,15 @@
       </div>
     </div>
 
-    <div style="margin-top: 15px; display: flex; gap: 10px;">
+    <div class="button-group" style="margin-top: 15px;">
       <button type="button" class="btn-action btn-primary" onclick="buscarRentasHistorial()"> Buscar</button>
-      <button type="button" class="btn-action btn-secondary" onclick="limpiarFiltrosHistorial()">Limpiar Filtros</button>
+      <button type="button" class="btn-action btn-secondary" onclick="limpiarFiltrosHistorial()"> Limpiar Filtros</button>
     </div>
   </fieldset>
 
   <!-- SECCIÓN 2: LISTA DE RENTAS -->
   <fieldset id="fieldsetListaHist">
-    <legend> Rentas Activas y Vencidas</legend>
+    <legend>📋 Rentas Activas y Vencidas</legend>
     
     <div class="table-container">
       <table>
@@ -165,13 +124,13 @@
             <th>Fecha Devolución</th>
             <th style="width: 80px;">Estado</th>
             <th style="width: 100px; text-align: right;">Total</th>
-            <th style="width: 180px;">Acciones</th>
+            <th style="width: 200px;">Acciones</th>
           </tr>
         </thead>
         <tbody id="tbodyRentasHist">
           <tr>
             <td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">
-              <div style="font-size: 40px; margin-bottom: 10px;"></div>
+              <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
               <div>Realice una búsqueda para ver las rentas</div>
             </td>
           </tr>
