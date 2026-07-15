@@ -813,8 +813,8 @@ function imprimirComprobante() {
       margin-bottom: 10px;
     }
     .logo-img { 
-      max-width: 120px;
-      max-height: 120px;
+      max-width: 250px;
+      max-height: 250px;
       object-fit: contain;
     }
     .brand h1 { 
