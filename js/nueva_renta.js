@@ -243,7 +243,7 @@ function renderizarAutocomplete() {
     const globalIdx = inicio + idx;
     const detalles = [];
     if (cliente.telefono) detalles.push(`📞 ${cliente.telefono}`);
-    if (cliente.email) detalles.push(`️ ${cliente.email}`);
+    if (cliente.email) detalles.push(`📧 ${cliente.email}`);
     
     html += `
       <div class="autocomplete-item" data-index="${globalIdx}" onclick="seleccionarCliente('${cliente.nombre.replace(/'/g, "\\'")}', '${cliente.telefono || ''}', '${cliente.email || ''}')">
@@ -295,7 +295,84 @@ function seleccionarCliente(nombre, telefono, email) {
 }
 
 // ==========================================
-// AGREGAR EQUIPO (CON SANITIZACIÓN DE ESCÁNER)
+// NOTIFICACIÓN TOAST (flotante, no hace scroll)
+// ==========================================
+function mostrarToast(texto, tipo) {
+  // Crear contenedor si no existe
+  let toastContainer = document.getElementById('toastContainer');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toastContainer';
+    toastContainer.style.cssText = `
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 350px;
+    `;
+    document.body.appendChild(toastContainer);
+  }
+
+  const toast = document.createElement('div');
+  const bgColor = tipo === 'exito' ? '#d1fae5' : (tipo === 'error' ? '#fee2e2' : '#fef3c7');
+  const borderColor = tipo === 'exito' ? '#10b981' : (tipo === 'error' ? '#dc2626' : '#f59e0b');
+  const textColor = tipo === 'exito' ? '#065f46' : (tipo === 'error' ? '#991b1b' : '#92400e');
+  
+  toast.style.cssText = `
+    background: ${bgColor};
+    border-left: 4px solid ${borderColor};
+    color: ${textColor};
+    padding: 14px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: toastSlideIn 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  `;
+  
+  toast.innerHTML = `
+    <span style="font-size: 18px;">${tipo === 'exito' ? '✅' : (tipo === 'error' ? '⚠️' : 'ℹ️')}</span>
+    <span style="flex: 1;">${texto}</span>
+    <span onclick="this.parentElement.remove()" style="cursor: pointer; font-size: 18px; opacity: 0.6;">✕</span>
+  `;
+
+  toastContainer.appendChild(toast);
+
+  // Auto-eliminar después de 3 segundos
+  setTimeout(() => {
+    if (toast.parentElement) {
+      toast.style.animation = 'toastSlideOut 0.3s ease forwards';
+      setTimeout(() => toast.remove(), 300);
+    }
+  }, 3000);
+}
+
+// Agregar animaciones CSS dinámicamente si no existen
+if (!document.getElementById('toastStyles')) {
+  const style = document.createElement('style');
+  style.id = 'toastStyles';
+  style.textContent = `
+    @keyframes toastSlideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes toastSlideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+// ==========================================
+// AGREGAR EQUIPO (CON TOAST Y SANITIZACIÓN)
 // ==========================================
 async function agregarEquipo() {
   const input = document.getElementById('buscarEquipoInput');
@@ -303,7 +380,7 @@ async function agregarEquipo() {
   
   let codigo = input.value.trim();
   if (!codigo) {
-    mostrarMensaje('Por favor ingrese un código de barras o serial', 'error');
+    mostrarToast('Por favor ingrese un código de barras o serial', 'error');
     return;
   }
 
@@ -319,13 +396,13 @@ async function agregarEquipo() {
       .maybeSingle();
 
     if (error || !data) {
-      mostrarMensaje(`❌ Equipo no encontrado: "${codigo}"`, 'error');
+      mostrarToast(`Equipo no encontrado: "${codigo}"`, 'error');
       return;
     }
 
     const existe = itemsRenta.find(item => item.codigo_barras === data.codigo_barras);
     if (existe) {
-      mostrarMensaje('⚠️ Este equipo ya está en la renta', 'error');
+      mostrarToast('Este equipo ya está en la renta', 'error');
       return;
     }
 
@@ -346,11 +423,13 @@ async function agregarEquipo() {
 
     renderizarTablaItems();
     calcularTotales();
-    mostrarMensaje(`✅ Equipo agregado: ${data.nombre_equipo}`, 'exito');
+    
+    // ✅ TOAST en lugar de mensaje arriba (no hace scroll)
+    mostrarToast(`Equipo agregado: ${data.nombre_equipo}`, 'exito');
 
   } catch (err) {
     console.error('Error al agregar equipo:', err);
-    mostrarMensaje('Error al buscar equipo: ' + err.message, 'error');
+    mostrarToast('Error al buscar equipo', 'error');
   }
 }
 
@@ -422,7 +501,7 @@ function calcularTotales() {
 }
 
 // ==========================================
-// GUARDAR RENTA (CON LOG DETALLADO)
+// GUARDAR RENTA (CON LOG DETALLADO Y SCROLL)
 // ==========================================
 async function guardarRenta() {
   const clienteNombre = document.getElementById('clienteNombre')?.value.trim() || '';
