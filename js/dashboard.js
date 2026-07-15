@@ -362,6 +362,40 @@ if (modulo === 'rentar' && operacion === 'modificar') {
   }
   return;
 }
+
+  // ==========================================
+// CASO: RENTAR → ELIMINAR
+// ==========================================
+if (modulo === 'rentar' && operacion === 'eliminar') {
+  try {
+    if (typeof registrarLog === 'undefined') {
+      await cargarScript('js/logs.js');
+    }
+    
+    if (typeof inicializarEliminarRenta === 'undefined') {
+      await cargarScript('js/eliminar_renta.js');
+    }
+
+    const response = await fetch('html/eliminar_renta.html');
+    if (!response.ok) throw new Error('No se pudo cargar html/eliminar_renta.html');
+    const htmlText = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+
+    const container = doc.querySelector('.container');
+    if (!container) throw new Error('No se encontró .container');
+    contenidoDiv.innerHTML = container.innerHTML;
+
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (typeof inicializarEliminarRenta === 'function') {
+      await inicializarEliminarRenta();
+    }
+  } catch (err) {
+    console.error('Error cargando eliminar renta:', err);
+    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+  }
+  return;
+}
   // ==========================================
   // 4. OTROS MÓDULOS (Placeholders organizados)
   // ==========================================
