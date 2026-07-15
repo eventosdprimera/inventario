@@ -762,4 +762,142 @@ function imprimirComprobante() {
     </div>
   </div>
 
-  <h3 style="margin: 20px 0 10px
+  <h3 style="margin: 20px 0 10px 0; color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 5px;"> Equipos Rentados (${itemsRenta.length})</h3>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 30px;">#</th>
+        <th style="width: 130px;">Código</th>
+        <th>Equipo</th>
+        <th style="width: 100px;">Serial</th>
+        <th style="text-align: right; width: 80px;">Precio</th>
+        <th style="text-align: center; width: 50px;">Cant.</th>
+        <th style="text-align: right; width: 90px;">Subtotal</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${itemsHTML}
+    </tbody>
+  </table>
+
+  <div class="totales">
+    <p>Subtotal: <strong>${subtotal}</strong></p>
+    <p>Descuento: <strong>$${parseFloat(descuento).toFixed(2)}</strong></p>
+    <p class="total">TOTAL: <strong>${total}</strong></p>
+  </div>
+
+  ${observaciones ? `
+  <div class="observaciones">
+    <h4>📝 Observaciones</h4>
+    <p>${observaciones}</p>
+  </div>
+  ` : ''}
+
+  <div class="firmas">
+    <div>
+      <div class="firma-line">
+        <p><strong>${clienteNombre}</strong></p>
+        <p>Cliente / Responsable</p>
+        <p style="font-size: 10px; color: #666;">Firma de conformidad</p>
+      </div>
+    </div>
+    <div>
+      <div class="firma-line">
+        <p><strong>${usuarioActualRenta?.email || 'Administrador'}</strong></p>
+        <p>Entregado por</p>
+        <p style="font-size: 10px; color: #666;">Firma del responsable</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>©copyright Eventos de Primera | 2026-2027 | Documento generado el ${new Date().toLocaleString('es-ES')}</p>
+  </div>
+
+  <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
+    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">
+      🖨️ Imprimir Comprobante
+    </button>
+    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+      ❌ Cerrar
+    </button>
+  </div>
+</body>
+</html>`;
+
+  ventana.document.write(html);
+  ventana.document.close();
+}
+
+// ==========================================
+// LIMPIAR FORMULARIO
+// ==========================================
+function limpiarFormulario() {
+  if (itemsRenta.length > 0 && !confirm('¿Está seguro de iniciar una nueva renta? Se perderán los datos no guardados.')) return;
+
+  itemsRenta = [];
+  rentaGuardadaId = null;
+  
+  ['clienteNombre', 'clienteTelefono', 'clienteEmail', 'clienteDireccion', 'ingenieroNombre', 'ingenieroContacto', 'observaciones'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  
+  const descuentoEl = document.getElementById('descuento');
+  if (descuentoEl) descuentoEl.value = '0';
+  
+  const btnImprimir = document.getElementById('btnImprimir');
+  if (btnImprimir) btnImprimir.style.display = 'none';
+  
+  const btnGuardar = document.getElementById('btnGuardar');
+  if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Guardar Renta'; }
+  
+  renderizarTablaItems();
+  calcularTotales();
+  generarNumeroRenta();
+  
+  const hoy = new Date();
+  const fechaEmision = document.getElementById('fechaEmision');
+  if (fechaEmision) fechaEmision.textContent = hoy.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+  
+  const elFechaRenta = document.getElementById('fechaRenta');
+  const elFechaDevolucion = document.getElementById('fechaDevolucion');
+  if (elFechaRenta) elFechaRenta.value = hoy.toISOString().split('T')[0];
+  if (elFechaDevolucion) {
+    const fechaDev = new Date();
+    fechaDev.setDate(fechaDev.getDate() + 7);
+    elFechaDevolucion.value = fechaDev.toISOString().split('T')[0];
+  }
+  
+  mostrarMensaje('Formulario listo para nueva renta', 'exito');
+}
+
+// ==========================================
+// MOSTRAR MENSAJE (CON AUTO-SCROLL)
+// ==========================================
+function mostrarMensaje(texto, tipo) {
+  const msg = document.getElementById('mensaje');
+  if (msg) {
+    msg.textContent = texto;
+    msg.className = `mensaje ${tipo}`;
+    
+    // ✅ AUTO-SCROLL para que el mensaje sea visible
+    setTimeout(() => {
+      msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+    
+    if (tipo === 'exito') {
+      setTimeout(() => { 
+        if (msg.classList.contains('exito')) msg.className = 'mensaje'; 
+      }, 5000);
+    }
+  }
+}
+
+// ==========================================
+// INICIALIZAR
+// ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('📄 Nueva Renta DOM cargado');
+  inicializarNuevaRenta();
+});
