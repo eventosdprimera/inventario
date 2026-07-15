@@ -10,7 +10,7 @@ let autocompletePagina = 1;
 const AUTOCOMPLETE_POR_PAGINA = 10;
 let autocompleteFiltro = '';
 let autocompleteIndexActivo = -1;
-let fechaHoyStr = ''; // Fecha de hoy en formato YYYY-MM-DD
+let fechaHoyStr = '';
 
 // ==========================================
 // INICIALIZACIÓN
@@ -33,7 +33,6 @@ async function inicializarNuevaRenta() {
   await generarNumeroRenta();
   await cargarClientesExistentes();
   
-  // ✅ FECHA DE HOY (para validaciones)
   const hoy = new Date();
   fechaHoyStr = hoy.toISOString().split('T')[0];
   
@@ -41,25 +40,22 @@ async function inicializarNuevaRenta() {
   const elFechaDevolucion = document.getElementById('fechaDevolucion');
   const elFechaEmision = document.getElementById('fechaEmision');
   
-  // ✅ CONFIGURAR FECHA MÍNIMA (hoy) en ambos campos de fecha
   if (elFechaRenta) {
     elFechaRenta.value = fechaHoyStr;
-    elFechaRenta.min = fechaHoyStr; // No permitir fechas anteriores a hoy
+    elFechaRenta.min = fechaHoyStr;
   }
   
   if (elFechaDevolucion) {
     const fechaDev = new Date();
     fechaDev.setDate(fechaDev.getDate() + 7);
-    const fechaDevStr = fechaDev.toISOString().split('T')[0];
-    elFechaDevolucion.value = fechaDevStr;
-    elFechaDevolucion.min = fechaHoyStr; // No permitir fechas anteriores a hoy
+    elFechaDevolucion.value = fechaDev.toISOString().split('T')[0];
+    elFechaDevolucion.min = fechaHoyStr;
   }
   
   if (elFechaEmision) {
     elFechaEmision.textContent = hoy.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
   }
 
-  // ✅ VALIDAR QUE FECHA DEVOLUCIÓN NO SEA ANTERIOR A FECHA INICIO
   if (elFechaRenta && elFechaDevolucion) {
     elFechaRenta.addEventListener('change', () => {
       elFechaDevolucion.min = elFechaRenta.value;
@@ -69,9 +65,15 @@ async function inicializarNuevaRenta() {
     });
   }
 
-  // Event listener para Enter en búsqueda de equipos
+  // ✅ NUEVO: Formateo automático del código de barras (mayúsculas + guiones automáticos)
   const inputBusqueda = document.getElementById('buscarEquipoInput');
   if (inputBusqueda) {
+    // Event listener para formatear en tiempo real
+    inputBusqueda.addEventListener('input', (e) => {
+      formatearCodigoBarras(e.target);
+    });
+    
+    // Event listener para Enter
     inputBusqueda.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -80,29 +82,81 @@ async function inicializarNuevaRenta() {
     });
   }
 
-  // ✅ FILTRAR SOLO NÚMEROS EN TELÉFONO (11 dígitos)
+  // Filtrar solo números en teléfono (11 dígitos)
   const inputTelefono = document.getElementById('clienteTelefono');
   if (inputTelefono) {
     inputTelefono.addEventListener('input', (e) => {
-      // Eliminar cualquier carácter que no sea número
       e.target.value = e.target.value.replace(/[^0-9]/g, '');
-      // Limitar a 11 dígitos
       if (e.target.value.length > 11) {
         e.target.value = e.target.value.slice(0, 11);
       }
     });
     inputTelefono.addEventListener('keypress', (e) => {
-      // Prevenir entrada de caracteres no numéricos
       if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
         e.preventDefault();
       }
     });
   }
 
-  // Configurar autocomplete del cliente
   configurarAutocompleteCliente();
 
   console.log('✅ === NUEVA RENTA INICIALIZADA ===');
+}
+
+// ==========================================
+// FORMATEAR CÓDIGO DE BARRAS AUTOMÁTICAMENTE
+// ==========================================
+function formatearCodigoBarras(input) {
+  // Guardar posición del cursor
+  const cursorPos = input.selectionStart;
+  
+  // 1. Eliminar cualquier guion existente
+  let valor = input.value.replace(/-/g, '');
+  
+  // 2. Convertir a mayúsculas
+  valor = valor.toUpperCase();
+  
+  // 3. Eliminar cualquier carácter que no sea letra o número
+  valor = valor.replace(/[^A-Z0-9]/g, '');
+  
+  // 4. Insertar guiones automáticamente en las posiciones correctas
+  // Formato: XX-XXXXXXXX-XXXXXX-XXXXXX (2-8-6-6)
+  let formateado = '';
+  
+  if (valor.length > 0) {
+    formateado = valor.substring(0, 2); // Primeros 2 caracteres (EP)
+  }
+  if (valor.length > 2) {
+    formateado += '-' + valor.substring(2, 10); // Siguientes 8 (fecha)
+  }
+  if (valor.length > 10) {
+    formateado += '-' + valor.substring(10, 16); // Siguientes 6 (hora)
+  }
+  if (valor.length > 16) {
+    formateado += '-' + valor.substring(16, 22); // Últimos 6 (random)
+  }
+  
+  // 5. Limitar a 22 caracteres sin guiones (25 con guiones)
+  if (valor.length > 22) {
+    valor = valor.substring(0, 22);
+    formateado = valor.substring(0, 2) + '-' + valor.substring(2, 10) + '-' + valor.substring(10, 16) + '-' + valor.substring(16, 22);
+  }
+  
+  // 6. Actualizar el valor del input
+  input.value = formateado;
+  
+  // 7. Restaurar posición del cursor (ajustando por los guiones agregados)
+  const nuevosGuiones = (formateado.substring(0, cursorPos).match(/-/g) || []).length;
+  const cursorOriginal = cursorPos - nuevosGuiones;
+  const nuevosGuionesHastaCursor = (formateado.substring(0, cursorPos + nuevosGuiones).match(/-/g) || []).length;
+  
+  let nuevaPosicion = cursorPos;
+  if (cursorOriginal <= 2) nuevaPosicion = cursorOriginal;
+  else if (cursorOriginal <= 10) nuevaPosicion = cursorOriginal + 1;
+  else if (cursorOriginal <= 16) nuevaPosicion = cursorOriginal + 2;
+  else if (cursorOriginal <= 22) nuevaPosicion = cursorOriginal + 3;
+  
+  input.setSelectionRange(nuevaPosicion, nuevaPosicion);
 }
 
 // ==========================================
@@ -380,9 +434,9 @@ function mostrarToast(texto, tipo) {
   `;
   
   toast.innerHTML = `
-    <span style="font-size: 18px;">${tipo === 'exito' ? '✅' : (tipo === 'error' ? '⚠️' : 'ℹ️')}</span>
+    <span style="font-size: 18px;">${tipo === 'exito' ? '✅' : (tipo === 'error' ? '️' : 'ℹ️')}</span>
     <span style="flex: 1;">${texto}</span>
-    <span onclick="this.parentElement.remove()" style="cursor: pointer; font-size: 18px; opacity: 0.6;">✕</span>
+    <span onclick="this.parentElement.remove()" style="cursor: pointer; font-size: 18px; opacity: 0.6;"></span>
   `;
 
   toastContainer.appendChild(toast);
@@ -420,7 +474,8 @@ async function agregarEquipo() {
     return;
   }
 
-  codigo = codigo.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
+  // ✅ SANITIZAR: eliminar guiones y convertir a mayúsculas para la búsqueda
+  codigo = codigo.replace(/-/g, '').toUpperCase();
   
   try {
     const { data, error } = await supabaseClient
@@ -506,7 +561,7 @@ function renderizarTablaItems() {
       <td style="text-align: center;">
         <button type="button" onclick="eliminarItem(${index})" 
                 style="background: #fee2e2; color: #dc2626; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer;">
-          🗑️
+          ️
         </button>
       </td>
     </tr>
@@ -553,13 +608,11 @@ async function guardarRenta() {
     return; 
   }
   
-  // ✅ VALIDAR TELÉFONO (si se ingresó, debe ser 11 dígitos)
   if (clienteTelefono && clienteTelefono.length !== 11) {
     mostrarMensaje('El teléfono debe tener exactamente 11 dígitos', 'error');
     return;
   }
   
-  // ✅ VALIDAR FECHAS
   if (!fechaRenta || !fechaDevolucion) { 
     mostrarMensaje('Por favor ingrese las fechas de renta y devolución', 'error'); 
     return; 
@@ -650,12 +703,12 @@ async function guardarRenta() {
   } catch (err) {
     console.error('❌ Error al guardar renta:', err);
     mostrarMensaje('Error al guardar: ' + err.message, 'error');
-    if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = ' Guardar Renta'; }
+    if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Guardar Renta'; }
   }
 }
 
 // ==========================================
-// IMPRIMIR COMPROBANTE (CON LOGO img/logo.png)
+// IMPRIMIR COMPROBANTE
 // ==========================================
 function imprimirComprobante() {
   if (!rentaGuardadaId) { 
@@ -677,7 +730,6 @@ function imprimirComprobante() {
   const descuento = descuentoInput ? descuentoInput.value : '0';
   const total = document.getElementById('total')?.textContent || '$0.00';
 
-  // ✅ RUTA COMPLETA DEL LOGO (para que funcione en ventana nueva)
   const logoUrl = new URL('img/logo.png', window.location.href).href;
 
   const itemsHTML = itemsRenta.map((item, i) => `
@@ -883,7 +935,7 @@ function imprimirComprobante() {
 
   <div class="info-grid">
     <div class="info-box">
-      <h3>👤 Cliente / Responsable</h3>
+      <h3> Cliente / Responsable</h3>
       <p><strong>Nombre:</strong> ${clienteNombre}</p>
       <p><strong>Teléfono:</strong> ${clienteTel}</p>
       <p><strong>Email:</strong> ${clienteEmail}</p>
@@ -988,7 +1040,6 @@ function limpiarFormulario() {
   const btnGuardar = document.getElementById('btnGuardar');
   if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Guardar Renta'; }
   
-  // ✅ RESTABLECER FECHAS CON VALIDACIÓN
   const hoy = new Date();
   const fechaHoy = hoy.toISOString().split('T')[0];
   
