@@ -7,7 +7,7 @@ let usuarioActualRenta = null;
 let rentaGuardadaId = null;
 let clientesCache = []; // Cache de clientes para autocomplete
 let autocompletePagina = 1;
-const AUTOCOMPLETE_POR_PAGINA = 20;
+const AUTOCOMPLETE_POR_PAGINA = 10; // ✅ Cambiado a 10 por página
 let autocompleteFiltro = '';
 let autocompleteIndexActivo = -1;
 
@@ -160,30 +160,40 @@ async function cargarClientesExistentes() {
 }
 
 // ==========================================
-// AUTOCOMPLETE DE CLIENTE
+// AUTOCOMPLETE DE CLIENTE (LÓGICA A PRUEBA DE FALLOS)
 // ==========================================
 function configurarAutocompleteCliente() {
   const input = document.getElementById('clienteNombre');
   const lista = document.getElementById('autocompleteList');
   if (!input || !lista) return;
 
+  // Función centralizada para ocultar la lista
+  const ocultarLista = () => {
+    lista.classList.remove('visible');
+    lista.innerHTML = ''; // ✅ Limpiar el HTML para asegurar que desaparezca visualmente
+    autocompleteFiltro = '';
+    autocompletePagina = 1;
+    autocompleteIndexActivo = -1;
+  };
+
   input.addEventListener('input', (e) => {
     const valor = e.target.value.trim();
+    
+    // ✅ Si está vacío, ocultar inmediatamente y salir
+    if (!valor) {
+      ocultarLista();
+      return;
+    }
+
     autocompleteFiltro = valor.toLowerCase();
     autocompletePagina = 1;
     autocompleteIndexActivo = -1;
-    
-    if (valor.length === 0) {
-      lista.classList.remove('visible');
-      return;
-    }
-    
     renderizarAutocomplete();
   });
 
   input.addEventListener('focus', (e) => {
     const valor = e.target.value.trim();
-    if (valor.length > 0) {
+    if (valor) {
       autocompleteFiltro = valor.toLowerCase();
       autocompletePagina = 1;
       renderizarAutocomplete();
@@ -192,7 +202,10 @@ function configurarAutocompleteCliente() {
 
   input.addEventListener('keydown', (e) => {
     const items = lista.querySelectorAll('.autocomplete-item');
-    if (!lista.classList.contains('visible') || items.length === 0) return;
+    if (!lista.classList.contains('visible') || items.length === 0) {
+      if (e.key === 'Escape') ocultarLista();
+      return;
+    }
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -208,14 +221,14 @@ function configurarAutocompleteCliente() {
         items[autocompleteIndexActivo].click();
       }
     } else if (e.key === 'Escape') {
-      lista.classList.remove('visible');
+      ocultarLista();
     }
   });
 
   // Cerrar al hacer clic fuera
   document.addEventListener('click', (e) => {
     if (!input.contains(e.target) && !lista.contains(e.target)) {
-      lista.classList.remove('visible');
+      ocultarLista();
     }
   });
 }
@@ -224,18 +237,26 @@ function renderizarAutocomplete() {
   const lista = document.getElementById('autocompleteList');
   if (!lista) return;
 
-  // ✅ CAMBIO CLAVE: Usar startsWith en lugar de includes.
-  // Esto asegura que solo muestre predicciones si el nombre empieza 
-  // exactamente con las letras escritas desde la primera letra.
+  // ✅ Doble verificación: si no hay filtro, ocultar
+  if (!autocompleteFiltro) {
+    lista.classList.remove('visible');
+    lista.innerHTML = '';
+    return;
+  }
+
+  // Filtrar solo los que EMPIEZAN con el texto escrito
   const filtrados = clientesCache.filter(c => 
     c.nombre.toLowerCase().startsWith(autocompleteFiltro)
   );
 
+  // ✅ Si no hay coincidencias, ocultar inmediatamente
   if (filtrados.length === 0) {
     lista.classList.remove('visible');
+    lista.innerHTML = '';
     return;
   }
 
+  // ✅ Paginación estricta de 10 en 10
   const totalPaginas = Math.ceil(filtrados.length / AUTOCOMPLETE_POR_PAGINA);
   const inicio = (autocompletePagina - 1) * AUTOCOMPLETE_POR_PAGINA;
   const fin = inicio + AUTOCOMPLETE_POR_PAGINA;
@@ -256,12 +277,13 @@ function renderizarAutocomplete() {
     `;
   });
 
+  // Controles de paginación solo si hay más de 1 página
   if (totalPaginas > 1) {
     html += `
       <div class="autocomplete-pagination">
-        <button onclick="cambiarPaginaAutocomplete(${autocompletePagina - 1})" ${autocompletePagina === 1 ? 'disabled' : ''}>‹ Anterior</button>
-        <span>Página ${autocompletePagina} de ${totalPaginas} (${filtrados.length} clientes)</span>
-        <button onclick="cambiarPaginaAutocomplete(${autocompletePagina + 1})" ${autocompletePagina === totalPaginas ? 'disabled' : ''}>Siguiente ›</button>
+        <button type="button" onclick="cambiarPaginaAutocomplete(${autocompletePagina - 1})" ${autocompletePagina === 1 ? 'disabled' : ''}>‹ Anterior</button>
+        <span>Pág. ${autocompletePagina} de ${totalPaginas} (${filtrados.length} clientes)</span>
+        <button type="button" onclick="cambiarPaginaAutocomplete(${autocompletePagina + 1})" ${autocompletePagina === totalPaginas ? 'disabled' : ''}>Siguiente ›</button>
       </div>
     `;
   }
@@ -275,7 +297,9 @@ function cambiarPaginaAutocomplete(nuevaPagina) {
     c.nombre.toLowerCase().startsWith(autocompleteFiltro)
   );
   const totalPaginas = Math.ceil(filtrados.length / AUTOCOMPLETE_POR_PAGINA);
+  
   if (nuevaPagina < 1 || nuevaPagina > totalPaginas) return;
+  
   autocompletePagina = nuevaPagina;
   autocompleteIndexActivo = -1;
   renderizarAutocomplete();
@@ -294,7 +318,13 @@ function seleccionarCliente(nombre, telefono, email) {
   document.getElementById('clienteNombre').value = nombre;
   if (telefono) document.getElementById('clienteTelefono').value = telefono;
   if (email) document.getElementById('clienteEmail').value = email;
-  document.getElementById('autocompleteList').classList.remove('visible');
+  
+  // Ocultar lista después de seleccionar
+  const lista = document.getElementById('autocompleteList');
+  if (lista) {
+    lista.classList.remove('visible');
+    lista.innerHTML = '';
+  }
 }
 
 // ==========================================
@@ -398,7 +428,7 @@ async function agregarEquipo() {
 
     if (error || !data) {
       mostrarToast(`Equipo no encontrado: "${codigo}"`, 'error');
-      input.value = ''; // ✅ LIMPIAR INMEDIATAMENTE
+      input.value = '';
       input.focus();
       return;
     }
@@ -406,7 +436,7 @@ async function agregarEquipo() {
     const existe = itemsRenta.find(item => item.codigo_barras === data.codigo_barras);
     if (existe) {
       mostrarToast('Este equipo ya está en la renta', 'error');
-      input.value = ''; // ✅ LIMPIAR INMEDIATAMENTE
+      input.value = '';
       input.focus();
       return;
     }
@@ -423,7 +453,7 @@ async function agregarEquipo() {
       subtotal: precioUnitario
     });
 
-    input.value = ''; // ✅ LIMPIAR INMEDIATAMENTE DESPUÉS DE AGREGAR
+    input.value = '';
     input.focus();
 
     renderizarTablaItems();
@@ -434,7 +464,7 @@ async function agregarEquipo() {
   } catch (err) {
     console.error('Error al agregar equipo:', err);
     mostrarToast('Error al buscar equipo', 'error');
-    input.value = ''; // ✅ LIMPIAR EN CASO DE ERROR
+    input.value = '';
     input.focus();
   }
 }
@@ -587,7 +617,6 @@ async function guardarRenta() {
 
     mostrarMensaje(`✅ Renta #${numeroRentaActual} guardada exitosamente`, 'exito');
     
-    // ✅ MOSTRAR BOTÓN DE IMPRIMIR
     const btnImprimir = document.getElementById('btnImprimir');
     if (btnImprimir) btnImprimir.style.display = 'inline-block';
     if (btnGuardar) btnGuardar.textContent = '✅ Guardada';
@@ -959,6 +988,13 @@ function limpiarFormulario() {
     const fechaDev = new Date();
     fechaDev.setDate(fechaDev.getDate() + 7);
     elFechaDevolucion.value = fechaDev.toISOString().split('T')[0];
+  }
+  
+  // Asegurar que la lista de autocomplete esté oculta al limpiar
+  const lista = document.getElementById('autocompleteList');
+  if (lista) {
+    lista.classList.remove('visible');
+    lista.innerHTML = '';
   }
   
   mostrarMensaje('Formulario listo para nueva renta', 'exito');
