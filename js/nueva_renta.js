@@ -1102,3 +1102,4 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('📄 Nueva Renta DOM cargado');
   inicializarNuevaRenta();
 });
+
