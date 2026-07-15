@@ -48,6 +48,12 @@ async function iniciarDashboard() {
   aplicarPermisosPorRol();
   iniciarReloj();
   mostrarBienvenida();
+  // ✅ Cargar contador de rentas vencidas
+  await cargarContadorRentasVencidas();
+  
+  // Actualizar cada 2 minutos
+  setInterval(cargarContadorRentasVencidas, 120000);
+  
   console.log('✅ Dashboard iniciado correctamente');
 }
 
@@ -396,6 +402,40 @@ if (modulo === 'rentar' && operacion === 'eliminar') {
   }
   return;
 }
+
+  // ==========================================
+// CASO: RENTAR → VENCIDAS
+// ==========================================
+if (modulo === 'rentar' && operacion === 'vencidas') {
+  try {
+    if (typeof registrarLog === 'undefined') {
+      await cargarScript('js/logs.js');
+    }
+    
+    if (typeof inicializarRentasVencidas === 'undefined') {
+      await cargarScript('js/rentas_vencidas.js');
+    }
+
+    const response = await fetch('html/rentas_vencidas.html');
+    if (!response.ok) throw new Error('No se pudo cargar html/rentas_vencidas.html');
+    const htmlText = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+
+    const container = doc.querySelector('.container');
+    if (!container) throw new Error('No se encontró .container');
+    contenidoDiv.innerHTML = container.innerHTML;
+
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (typeof inicializarRentasVencidas === 'function') {
+      await inicializarRentasVencidas();
+    }
+  } catch (err) {
+    console.error('Error cargando rentas vencidas:', err);
+    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+  }
+  return;
+}
   // ==========================================
   // 4. OTROS MÓDULOS (Placeholders organizados)
   // ==========================================
@@ -504,7 +544,35 @@ function iniciarHeartbeat(email) {
     } catch (err) { console.error('Error en heartbeat:', err); }
   }, 120000);
 }
+// ============================================
+// CONTADOR DE RENTAS VENCIDAS (CAMPANITA)
+// ============================================
+async function cargarContadorRentasVencidas() {
+  try {
+    const hoy = new Date().toISOString().split('T')[0];
 
+    const { count, error } = await supabaseClient
+      .from('rentas')
+      .select('*', { count: 'exact', head: true })
+      .lt('fecha_devolucion', hoy)
+      .neq('estado', 'devuelta')
+      .neq('estado', 'cancelada');
+
+    if (error) throw error;
+
+    const badge = document.getElementById('badgeVencidas');
+    if (badge) {
+      if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = 'block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  } catch (err) {
+    console.error('Error al cargar contador de rentas vencidas:', err);
+  }
+}
 // ============================================
 // LOGOUT
 // ============================================
