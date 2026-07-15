@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eliminar Renta - Eventos D' Primera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+.section-subtitle {
+  font-family: 'Libre Caslon Text', serif;
+  color: #1e3a8a;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 25px 0 15px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">🗑️ Eliminar Renta</h1>
+    <p class="page-subtitle">Busque, filtre y elimine rentas del sistema (se guardarán en respaldo)</p>
+  </div>
+
+  <div id="mensaje" class="mensaje"></div>
+
+  <!-- SECCIÓN 1: BÚSQUEDA Y FILTROS -->
+  <fieldset>
+    <legend>🔍 Búsqueda y Filtros</legend>
+    
+    <div class="form-grid-registro">
+      <div class="form-group-registro">
+        <label>Buscar por Cliente</label>
+        <input type="text" id="filtroClienteEliminar" placeholder="Nombre del cliente...">
+      </div>
+      <div class="form-group-registro">
+        <label>Buscar por Número de Renta</label>
+        <input type="text" id="filtroNumeroEliminar" placeholder="Ej: RENT-2026-0001">
+      </div>
+      <div class="form-group-registro">
+        <label>Fecha Desde</label>
+        <input type="date" id="filtroFechaDesdeEliminar">
+      </div>
+      <div class="form-group-registro">
+        <label>Fecha Hasta</label>
+        <input type="date" id="filtroFechaHastaEliminar">
+      </div>
+    </div>
+
+    <div style="margin-top: 15px; display: flex; gap: 10px;">
+      <button type="button" class="btn-action btn-primary" onclick="buscarRentasEliminar()">🔎 Buscar</button>
+      <button type="button" class="btn-action btn-secondary" onclick="limpiarFiltrosEliminar()">Limpiar Filtros</button>
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 2: LISTA DE RENTAS -->
+  <fieldset id="fieldsetListaEliminar">
+    <legend>📋 Lista de Rentas</legend>
+    
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 50px;">#</th>
+            <th>N° Renta</th>
+            <th>Cliente</th>
+            <th>Fecha Inicio</th>
+            <th>Fecha Devolución</th>
+            <th style="width: 100px; text-align: right;">Total</th>
+            <th style="width: 100px;">Estado</th>
+            <th style="width: 80px;"></th>
+          </tr>
+        </thead>
+        <tbody id="tbodyRentasEliminar">
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">
+              <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
+              <div>Realice una búsqueda para ver las rentas</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="paginacionEliminar" style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 10px;">
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 3: DETALLES DE RENTA A ELIMINAR (oculto inicialmente) -->
+  <fieldset id="fieldsetDetalleEliminar" style="display: none;">
+    <legend>🗑️ Detalles de Renta a Eliminar <span id="eliminarNumeroRenta" style="color: #fbbf24;"></span></legend>
+
+    <div style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); padding: 12px 16px; border-radius: 8px; border-left: 4px solid #dc2626; margin-bottom: 20px; font-size: 13px; color: #991b1b;">
+      ⚠️ <strong>ADVERTENCIA:</strong> Esta acción eliminará la renta del sistema. Los datos se respaldarán en la tabla de eliminados por seguridad, pero la renta no estará disponible para operaciones futuras.
+    </div>
+
+    <!-- Información del Cliente -->
+    <div class="section-subtitle">👤 Información del Cliente</div>
+    <div class="form-grid-registro">
+      <div class="form-group-registro full-width">
+        <label>Nombre del Cliente</label>
+        <input type="text" id="eliminarClienteNombre" readonly style="background: #f3f4f6;">
+      </div>
+      <div class="form-group-registro">
+        <label>Teléfono</label>
+        <input type="tel" id="eliminarClienteTelefono" readonly style="background: #f3f4f6;">
+      </div>
+      <div class="form-group-registro">
+        <label>Email</label>
+        <input type="email" id="eliminarClienteEmail" readonly style="background: #f3f4f6;">
+      </div>
+      <div class="form-group-registro full-width">
+        <label>Dirección</label>
+        <textarea id="eliminarClienteDireccion" rows="2" readonly style="background: #f3f4f6;"></textarea>
+      </div>
+    </div>
+
+    <!-- Detalles de la Renta -->
+    <div class="section-subtitle"> Detalles de la Renta</div>
+    <div class="form-grid-registro">
+      <div class="form-group-registro">
+        <label>Fecha de Inicio</label>
+        <input type="date" id="eliminarFechaRenta" readonly style="background: #f3f4f6;">
+      </div>
+      <div class="form-group-registro">
+        <label>Fecha de Devolución</label>
+        <input type="date" id="eliminarFechaDevolucion" readonly style="background: #f3f4f6;">
+      </div>
+      <div class="form-group-registro">
+        <label>Ingeniero</label>
+        <input type="text" id="eliminarIngenieroNombre" readonly style="background: #f3f4f6;">
+      </div>
+      <div class="form-group-registro">
+        <label>Contacto Ingeniero</label>
+        <input type="text" id="eliminarIngenieroContacto" readonly style="background: #f3f4f6;">
+      </div>
+      <div class="form-group-registro">
+        <label>Estado</label>
+        <input type="text" id="eliminarEstado" readonly style="background: #f3f4f6;">
+      </div>
+    </div>
+
+    <!-- Equipos -->
+    <div class="section-subtitle">📦 Equipos en la Renta</div>
+    
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 40px;">#</th>
+            <th>Código</th>
+            <th>Equipo</th>
+            <th>Serial</th>
+            <th style="width: 110px; text-align: right;">Precio</th>
+            <th style="width: 80px; text-align: center;">Cant.</th>
+            <th style="width: 120px; text-align: right;">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody id="eliminarTbodyItems">
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-radius: 12px; border-left: 4px solid #1e3a8a;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 15px;">
+        <span>Subtotal:</span>
+        <span id="eliminarSubtotal" style="font-weight: 600;">$0.00</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 15px;">
+        <span>Descuento:</span>
+        <span id="eliminarDescuento" style="font-weight: 600;">$0.00</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 20px; font-weight: 700; color: #1e3a8a; border-top: 2px solid #1e3a8a; padding-top: 10px; margin-top: 10px;">
+        <span>TOTAL:</span>
+        <span id="eliminarTotal">$0.00</span>
+      </div>
+    </div>
+
+    <!-- Observaciones -->
+    <div class="section-subtitle">📝 Observaciones</div>
+    <div class="form-group-registro full-width">
+      <textarea id="eliminarObservaciones" rows="3" readonly style="background: #f3f4f6;"></textarea>
+    </div>
+
+    <!-- Motivo de Eliminación -->
+    <div class="section-subtitle">⚠️ Motivo de Eliminación</div>
+    <div class="form-group-registro full-width">
+      <label>Motivo <span class="required">*</span></label>
+      <textarea id="eliminarMotivo" rows="3" placeholder="Describa el motivo de la eliminación (obligatorio)..."></textarea>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="button-group">
+      <button type="button" class="btn-action btn-danger" onclick="confirmarEliminacionRenta()" id="btnEliminarRenta">🗑️ Eliminar Renta Permanentemente</button>
+      <button type="button" class="btn-action btn-secondary" onclick="cancelarEliminacion()">❌ Cancelar y Volver</button>
+    </div>
+  </fieldset>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/eliminar_renta.js"></script>
+</body>
+</html>
