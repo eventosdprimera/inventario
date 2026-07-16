@@ -10,7 +10,7 @@ let streamCamara = null;
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarRegistrarAveria() {
-  console.log(' === INICIANDO REGISTRO DE AVERÍA ===');
+  console.log('🔧 === INICIANDO REGISTRO DE AVERÍA ===');
 
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
@@ -114,6 +114,17 @@ async function buscarEquipoAveria() {
     equipoSeleccionadoAveria = data;
     input.value = '';
     
+    // ✅ Resetear fotos de evidencia al buscar nuevo equipo
+    fotosEvidencia = [];
+    const previewEvidencia = document.getElementById('previewFotosEvidencia');
+    if (previewEvidencia) {
+      previewEvidencia.innerHTML = `
+        <div class="foto-preview-placeholder" style="grid-column: 1/-1;">
+          <div class="foto-preview-placeholder-icon">📷</div>
+          <div>No hay fotos de evidencia</div>
+        </div>`;
+    }
+    
     mostrarFichaEquipoInmediata(data);
     mostrarSeccionesFormulario();
     cargarFotosDelEquipo(data);
@@ -195,7 +206,7 @@ async function cargarFotosDelEquipo(equipo) {
     console.error('Error al cargar fotos del equipo:', err);
     contenedorFotos.innerHTML = `
       <div class="foto-preview-placeholder" style="grid-column: 1/-1;">
-        <div class="foto-preview-placeholder-icon">️</div>
+        <div class="foto-preview-placeholder-icon">⚠️</div>
         <div>Error al cargar fotos</div>
       </div>`;
   }
@@ -357,7 +368,7 @@ function renderizarPreviewFotosEvidencia() {
   if (fotosEvidencia.length === 0) {
     contenedor.innerHTML = `
       <div class="foto-preview-placeholder" style="grid-column: 1/-1;">
-        <div class="foto-preview-placeholder-icon">📷</div>
+        <div class="foto-preview-placeholder-icon"></div>
         <div>No hay fotos de evidencia</div>
       </div>`;
     return;
@@ -536,7 +547,7 @@ function imprimirReciboAveria(averia) {
 
   <div class="info-grid">
     <div class="info-box">
-      <h3>📦 Equipo Averiados</h3>
+      <h3> Equipo Averiados</h3>
       <p><strong>Nombre:</strong> ${averia.nombre_equipo}</p>
       <p><strong>Marca:</strong> ${averia.marca || 'N/A'}</p>
       <p><strong>Modelo:</strong> ${averia.modelo || 'N/A'}</p>
@@ -544,7 +555,7 @@ function imprimirReciboAveria(averia) {
       <p><strong>Categoría:</strong> ${averia.categoria || 'N/A'}</p>
     </div>
     <div class="info-box">
-      <h3> Reportante</h3>
+      <h3>👤 Reportante</h3>
       <p><strong>Nombre:</strong> ${averia.reportante_nombre} ${averia.reportante_apellidos}</p>
       <p><strong>Cédula:</strong> ${averia.reportante_cedula}</p>
       <p><strong>Fecha Avería:</strong> ${new Date(averia.fecha_averia + 'T12:00:00').toLocaleDateString('es-ES')}</p>
@@ -553,7 +564,7 @@ function imprimirReciboAveria(averia) {
   </div>
 
   <div class="detalles-box">
-    <h3>📝 Detalles de la Avería</h3>
+    <h3> Detalles de la Avería</h3>
     <p>${averia.detalles_averia}</p>
     ${averia.observaciones ? `<p style="margin-top: 10px;"><strong>Observaciones:</strong> ${averia.observaciones}</p>` : ''}
   </div>
@@ -593,7 +604,7 @@ function imprimirReciboAveria(averia) {
       🖨️ Imprimir Recibo
     </button>
     <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
-       Cerrar
+      ❌ Cerrar
     </button>
   </div>
 </body>
@@ -620,7 +631,16 @@ function limpiarFormularioAveria() {
   document.getElementById('reportanteCedula').value = '';
   document.getElementById('detallesAveria').value = '';
   document.getElementById('observacionesAveria').value = '';
-  document.getElementById('previewFotosEvidencia').innerHTML = '';
+  
+  // ✅ Resetear fotos de evidencia
+  const previewEvidencia = document.getElementById('previewFotosEvidencia');
+  if (previewEvidencia) {
+    previewEvidencia.innerHTML = `
+      <div class="foto-preview-placeholder" style="grid-column: 1/-1;">
+        <div class="foto-preview-placeholder-icon">📷</div>
+        <div>No hay fotos de evidencia</div>
+      </div>`;
+  }
 
   const ahora = new Date();
   document.getElementById('fechaAveria').value = ahora.toISOString().split('T')[0];
@@ -633,7 +653,7 @@ function limpiarFormularioAveria() {
   document.getElementById('botonesAccion').style.display = 'none';
 
   const btnGuardar = document.getElementById('btnGuardarAveria');
-  if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = ' Registrar Avería'; }
+  if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Registrar Avería'; }
 
   mostrarMensajeAveria('Formulario listo para nuevo reporte', 'exito');
 }
