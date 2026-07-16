@@ -141,7 +141,7 @@ function mostrarFichaEquipoInmediata(equipo) {
   document.getElementById('fichaCategoria').textContent = equipo.categoria || '-';
 
   const contenedorFotos = document.getElementById('fichaFotos');
-  contenedorFotos.innerHTML = '<div style="color: #6b7280; font-size: 12px;">Cargando fotos...</div>';
+  contenedorFotos.innerHTML = '<div style="color: #6b7280; font-size: 12px; grid-column: 1/-1; text-align: center; padding: 20px;">Cargando fotos...</div>';
 
   document.getElementById('fieldsetFichaEquipo').style.display = 'block';
 }
@@ -179,17 +179,25 @@ async function cargarFotosDelEquipo(equipo) {
       contenedorFotos.innerHTML = '';
       fotosEncontradas.forEach((foto, index) => {
         const div = document.createElement('div');
-        div.className = 'foto-thumbnail';
-        div.innerHTML = `<img src="${foto.url}" alt="Foto ${index + 1}" onclick="abrirZoom('${foto.url}')">`;
+        div.className = 'foto-preview';
+        div.innerHTML = `<img src="${foto.url}" alt="Foto ${index + 1}" onclick="abrirZoom('${foto.url}')" onerror="this.parentElement.style.display='none'">`;
         contenedorFotos.appendChild(div);
       });
     } else {
-      contenedorFotos.innerHTML = '<div style="color: #9ca3af; font-size: 12px;">Sin fotos registradas</div>';
+      contenedorFotos.innerHTML = `
+        <div class="foto-preview-placeholder" style="grid-column: 1/-1;">
+          <div class="foto-preview-placeholder-icon">📷</div>
+          <div>Sin fotos registradas</div>
+        </div>`;
     }
 
   } catch (err) {
     console.error('Error al cargar fotos del equipo:', err);
-    contenedorFotos.innerHTML = '<div style="color: #ef4444; font-size: 12px;">Error al cargar fotos</div>';
+    contenedorFotos.innerHTML = `
+      <div class="foto-preview-placeholder" style="grid-column: 1/-1;">
+        <div class="foto-preview-placeholder-icon">️</div>
+        <div>Error al cargar fotos</div>
+      </div>`;
   }
 }
 
@@ -199,12 +207,19 @@ async function cargarFotosDelEquipo(equipo) {
 function abrirZoom(url) {
   const modal = document.getElementById('modalZoom');
   const img = document.getElementById('imgZoom');
+  
+  if (!modal || !img) {
+    console.error('Modal de zoom no encontrado');
+    return;
+  }
+  
   img.src = url;
   modal.style.display = 'block';
 }
 
 function cerrarZoom() {
-  document.getElementById('modalZoom').style.display = 'none';
+  const modal = document.getElementById('modalZoom');
+  if (modal) modal.style.display = 'none';
 }
 
 // ==========================================
@@ -249,9 +264,6 @@ function capturarFoto() {
   canvas.height = video.videoHeight;
   context.drawImage(video, 0, 0);
 
-  const fotoDataURL = canvas.toDataURL('image/png');
-  
-  // Convertir a blob y subir
   canvas.toBlob(async (blob) => {
     if (!blob) {
       mostrarMensajeAveria('Error al capturar foto', 'error');
@@ -295,7 +307,7 @@ function cerrarCamara() {
 }
 
 // ==========================================
-// PROCESAR FOTOS DE EVIDENCIA (subir archivo)
+// PROCESAR FOTOS DE EVIDENCIA
 // ==========================================
 async function procesarFotosEvidencia(event) {
   const files = event.target.files;
@@ -343,16 +355,20 @@ function renderizarPreviewFotosEvidencia() {
   contenedor.innerHTML = '';
 
   if (fotosEvidencia.length === 0) {
-    contenedor.innerHTML = '<div style="color: #9ca3af; font-size: 12px;">No hay fotos de evidencia</div>';
+    contenedor.innerHTML = `
+      <div class="foto-preview-placeholder" style="grid-column: 1/-1;">
+        <div class="foto-preview-placeholder-icon">📷</div>
+        <div>No hay fotos de evidencia</div>
+      </div>`;
     return;
   }
 
   fotosEvidencia.forEach((fotoUrl, index) => {
     const div = document.createElement('div');
-    div.className = 'foto-thumbnail';
+    div.className = 'foto-preview';
     div.innerHTML = `
       <img src="${fotoUrl}" alt="Evidencia ${index + 1}">
-      <button type="button" class="remove-foto" onclick="eliminarFotoEvidencia(${index})" title="Eliminar foto">✕</button>
+      <button type="button" class="foto-remove" onclick="eliminarFotoEvidencia(${index})" title="Eliminar foto">✕</button>
     `;
     contenedor.appendChild(div);
   });
@@ -397,7 +413,7 @@ async function guardarAveria() {
   }
 
   const btnGuardar = document.getElementById('btnGuardarAveria');
-  if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = ' Registrando...'; }
+  if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = '⏳ Registrando...'; }
 
   try {
     const { data: averiaData, error: errorAveria } = await supabaseClient
@@ -528,7 +544,7 @@ function imprimirReciboAveria(averia) {
       <p><strong>Categoría:</strong> ${averia.categoria || 'N/A'}</p>
     </div>
     <div class="info-box">
-      <h3>👤 Reportante</h3>
+      <h3> Reportante</h3>
       <p><strong>Nombre:</strong> ${averia.reportante_nombre} ${averia.reportante_apellidos}</p>
       <p><strong>Cédula:</strong> ${averia.reportante_cedula}</p>
       <p><strong>Fecha Avería:</strong> ${new Date(averia.fecha_averia + 'T12:00:00').toLocaleDateString('es-ES')}</p>
@@ -544,7 +560,7 @@ function imprimirReciboAveria(averia) {
 
   ${fotosHTML ? `
   <div class="fotos-section">
-    <h3>📸 Fotos de Evidencia</h3>
+    <h3> Fotos de Evidencia</h3>
     <div style="display: flex; flex-wrap: wrap;">
       ${fotosHTML}
     </div>
@@ -577,7 +593,7 @@ function imprimirReciboAveria(averia) {
       🖨️ Imprimir Recibo
     </button>
     <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
-      ❌ Cerrar
+       Cerrar
     </button>
   </div>
 </body>
@@ -617,7 +633,7 @@ function limpiarFormularioAveria() {
   document.getElementById('botonesAccion').style.display = 'none';
 
   const btnGuardar = document.getElementById('btnGuardarAveria');
-  if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Registrar Avería'; }
+  if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = ' Registrar Avería'; }
 
   mostrarMensajeAveria('Formulario listo para nuevo reporte', 'exito');
 }
