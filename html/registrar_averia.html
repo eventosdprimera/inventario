@@ -41,40 +41,34 @@
 
 .botones-fotos { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
 
-/* ✅ MODALES - Ocultos por defecto */
-.modal-zoom, .modal-camara {
-  display: none;
+/* ✅ ESTILOS DE MODAL SIMPLES Y DIRECTOS */
+.modal-overlay {
   position: fixed;
-  z-index: 2147483647; /* Z-index máximo absoluto */
-  left: 0;
   top: 0;
+  left: 0;
   width: 100vw;
   height: 100vh;
-  overflow: hidden;
-}
-
-/* ✅ Cuando tienen la clase 'activo', se muestran con flex */
-.modal-zoom.activo, .modal-camara.activo {
-  display: flex !important;
+  z-index: 999999;
+  display: none; /* Oculto por defecto de forma absoluta */
   align-items: center;
   justify-content: center;
 }
 
-.modal-zoom.activo {
-  background-color: rgba(0,0,0,0.95);
+.modal-overlay.zoom {
+  background-color: rgba(0, 0, 0, 0.95);
 }
 
-.modal-camara.activo {
-  background-color: rgba(0,0,0,0.9);
+.modal-overlay.camara {
+  background-color: rgba(0, 0, 0, 0.9);
 }
 
-.modal-zoom-content {
+.modal-content {
   position: relative;
   max-width: 90%;
   max-height: 90%;
 }
 
-.modal-zoom-content img {
+.modal-content img {
   max-width: 100%;
   max-height: 90vh;
   display: block;
@@ -82,7 +76,7 @@
   box-shadow: 0 0 30px rgba(0,0,0,0.8);
 }
 
-.modal-zoom-close {
+.modal-close {
   position: absolute;
   top: -45px;
   right: 0;
@@ -90,23 +84,17 @@
   font-size: 40px;
   font-weight: bold;
   cursor: pointer;
-  transition: 0.3s;
   background: none;
   border: none;
   padding: 0;
 }
 
-.modal-zoom-close:hover {
-  color: #bbb;
-}
-
-.modal-camara-content {
+.modal-camara-box {
   background: white;
   padding: 20px;
   border-radius: 12px;
   max-width: 90%;
   max-height: 90%;
-  position: relative;
   box-shadow: 0 10px 40px rgba(0,0,0,0.5);
 }
 </style>
@@ -133,7 +121,7 @@
     </div>
   </fieldset>
 
-  <!-- SECCIÓN 2: FICHA DEL EQUIPO (oculto hasta buscar) -->
+  <!-- SECCIÓN 2: FICHA DEL EQUIPO -->
   <fieldset id="fieldsetFichaEquipo" style="display: none;">
     <legend>📋 Ficha del Equipo</legend>
     <div class="ficha-equipo">
@@ -153,7 +141,7 @@
     </div>
   </fieldset>
 
-  <!-- SECCIÓN 3: DATOS DEL REPORTANTE (oculto hasta buscar) -->
+  <!-- SECCIÓN 3: DATOS DEL REPORTANTE -->
   <fieldset id="fieldsetReportante" style="display: none;">
     <legend>👤 Datos del Reportante</legend>
     <div class="form-grid-registro">
@@ -163,7 +151,7 @@
     </div>
   </fieldset>
 
-  <!-- SECCIÓN 4: DETALLES DE LA AVERÍA (oculto hasta buscar) -->
+  <!-- SECCIÓN 4: DETALLES DE LA AVERÍA -->
   <fieldset id="fieldsetAveria" style="display: none;">
     <legend>⚠️ Detalles de la Avería</legend>
     <div class="form-grid-registro">
@@ -180,7 +168,7 @@
     </div>
   </fieldset>
 
-  <!-- SECCIÓN 5: FOTOS DE EVIDENCIA (oculto hasta buscar) -->
+  <!-- SECCIÓN 5: FOTOS DE EVIDENCIA -->
   <fieldset id="fieldsetFotosEvidencia" style="display: none;">
     <legend>📸 Fotos de Evidencia (Opcional - Máximo 4)</legend>
     <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 2px dashed #d1d5db;">
@@ -199,23 +187,23 @@
     </div>
   </fieldset>
 
-  <!-- BOTONES DE ACCIÓN (oculto hasta buscar) -->
+  <!-- BOTONES DE ACCIÓN -->
   <div class="button-group" id="botonesAccion" style="display: none;">
     <button type="button" class="btn-action btn-primary" onclick="guardarAveria()" id="btnGuardarAveria">💾 Registrar Avería</button>
     <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioAveria()">🔄 Nueva Avería</button>
   </div>
 
-  <!-- ✅ MODAL DE ZOOM (Se moverá al body dinámicamente) -->
-  <div id="modalZoom" class="modal-zoom">
-    <button class="modal-zoom-close" onclick="cerrarZoom()" title="Cerrar">&times;</button>
-    <div class="modal-zoom-content">
+  <!-- ✅ MODAL DE ZOOM (Oculto con style="display: none;" inline) -->
+  <div id="modalZoom" class="modal-overlay zoom" style="display: none;">
+    <button class="modal-close" onclick="cerrarZoom()" title="Cerrar">&times;</button>
+    <div class="modal-content">
       <img id="imgZoom" src="" alt="Zoom">
     </div>
   </div>
 
-  <!-- ✅ MODAL DE CÁMARA (Se moverá al body dinámicamente) -->
-  <div id="modalCamara" class="modal-camara">
-    <div class="modal-camara-content">
+  <!-- ✅ MODAL DE CÁMARA (Oculto con style="display: none;" inline) -->
+  <div id="modalCamara" class="modal-overlay camara" style="display: none;">
+    <div class="modal-camara-box">
       <h3 style="margin: 0 0 15px 0; color: #1e3a8a;">📷 Tomar Foto</h3>
       <video id="videoCamara" style="width: 100%; max-width: 500px; border-radius: 8px; background: #000;" autoplay playsinline></video>
       <canvas id="canvasCamara" style="display: none;"></canvas>
