@@ -49,7 +49,7 @@ function mostrarToast(texto, tipo) {
   `;
   
   toast.innerHTML = `
-    <span style="font-size: 18px;">${tipo === 'exito' ? '✅' : (tipo === 'error' ? '⚠️' : 'ℹ️')}</span>
+    <span style="font-size: 18px;">${tipo === 'exito' ? '✅' : (tipo === 'error' ? '⚠️' : '️')}</span>
     <span style="flex: 1;">${texto}</span>
     <span onclick="this.parentElement.remove()" style="cursor: pointer; font-size: 18px; opacity: 0.6;">✕</span>
   `;
@@ -78,7 +78,7 @@ if (!document.getElementById('toastStyles')) {
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarRegistrarAveria() {
-  console.log(' === INICIANDO REGISTRO DE AVERÍA ===');
+  console.log('🔧 === INICIANDO REGISTRO DE AVERÍA ===');
 
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
@@ -110,16 +110,24 @@ async function inicializarRegistrarAveria() {
     });
   }
 
-  // ✅ ASEGURAR QUE LOS MODALES ESTÉN COMPLETAMENTE OCULTOS
+  // ✅ VERIFICAR QUE LOS MODALES EXISTEN
   const modalZoom = document.getElementById('modalZoom');
   const modalCamara = document.getElementById('modalCamara');
-  if (modalZoom) {
+  
+  if (!modalZoom) {
+    console.error('❌ ERROR: Modal de zoom no existe en el DOM');
+  } else {
     modalZoom.classList.remove('modal-activo');
     modalZoom.style.display = 'none';
+    console.log('✅ Modal de zoom encontrado y oculto');
   }
-  if (modalCamara) {
+  
+  if (!modalCamara) {
+    console.error('❌ ERROR: Modal de cámara no existe en el DOM');
+  } else {
     modalCamara.classList.remove('modal-activo');
     modalCamara.style.display = 'none';
+    console.log('✅ Modal de cámara encontrado y oculto');
   }
 
   console.log('✅ === REGISTRO DE AVERÍA INICIALIZADO ===');
@@ -287,7 +295,7 @@ async function cargarFotosDelEquipo(equipo) {
     console.error('Error al cargar fotos del equipo:', err);
     contenedorFotos.innerHTML = `
       <div class="foto-preview-placeholder">
-        <div class="foto-preview-placeholder-icon">⚠️</div>
+        <div class="foto-preview-placeholder-icon">️</div>
         <div>Error al cargar fotos</div>
       </div>`;
   }
@@ -300,15 +308,22 @@ function abrirZoom(url) {
   const modal = document.getElementById('modalZoom');
   const img = document.getElementById('imgZoom');
   
-  if (!modal || !img) {
-    console.error('Modal de zoom no encontrado');
+  if (!modal) {
+    console.error('❌ ERROR: Modal de zoom no existe');
+    mostrarToast('Error: Modal de zoom no disponible', 'error');
     return;
   }
   
+  if (!img) {
+    console.error('❌ ERROR: Imagen del zoom no existe');
+    return;
+  }
+  
+  console.log('✅ Abriendo zoom con URL:', url);
   img.src = url;
   modal.classList.add('modal-activo');
   modal.style.display = 'block';
-  document.body.style.overflow = 'hidden'; // Evitar scroll
+  document.body.style.overflow = 'hidden';
 }
 
 function cerrarZoom() {
@@ -316,7 +331,7 @@ function cerrarZoom() {
   if (modal) {
     modal.classList.remove('modal-activo');
     modal.style.display = 'none';
-    document.body.style.overflow = ''; // Restaurar scroll
+    document.body.style.overflow = '';
   }
 }
 
@@ -339,16 +354,20 @@ async function abrirCamara() {
     return;
   }
 
+  const modal = document.getElementById('modalCamara');
+  if (!modal) {
+    console.error('❌ ERROR: Modal de cámara no existe');
+    mostrarToast('Error: Modal de cámara no disponible', 'error');
+    return;
+  }
+
   try {
     streamCamara = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
     const video = document.getElementById('videoCamara');
     if (video) {
       video.srcObject = streamCamara;
-      const modal = document.getElementById('modalCamara');
-      if (modal) {
-        modal.classList.add('modal-activo');
-        modal.style.display = 'flex';
-      }
+      modal.classList.add('modal-activo');
+      modal.style.display = 'flex';
     }
   } catch (err) {
     console.error('Error al acceder a la cámara:', err);
@@ -642,13 +661,13 @@ function imprimirReciboAveria(averia) {
   </div>
 
   <div class="aviso-averia">
-    <h2>⚠️ RECIBO DE AVERÍA</h2>
+    <h2>️ RECIBO DE AVERÍA</h2>
     <p style="margin: 10px 0 0 0; font-size: 14px;">Código: <strong>${averia.codigo_barras}</strong></p>
   </div>
 
   <div class="info-grid">
     <div class="info-box">
-      <h3> Equipo Averiados</h3>
+      <h3>📦 Equipo Averiados</h3>
       <p><strong>Nombre:</strong> ${averia.nombre_equipo}</p>
       <p><strong>Marca:</strong> ${averia.marca || 'N/A'}</p>
       <p><strong>Modelo:</strong> ${averia.modelo || 'N/A'}</p>
@@ -656,7 +675,7 @@ function imprimirReciboAveria(averia) {
       <p><strong>Categoría:</strong> ${averia.categoria || 'N/A'}</p>
     </div>
     <div class="info-box">
-      <h3>👤 Reportante</h3>
+      <h3> Reportante</h3>
       <p><strong>Nombre:</strong> ${averia.reportante_nombre} ${averia.reportante_apellidos}</p>
       <p><strong>Cédula:</strong> ${averia.reportante_cedula}</p>
       <p><strong>Fecha Avería:</strong> ${new Date(averia.fecha_averia + 'T12:00:00').toLocaleDateString('es-ES')}</p>
@@ -665,7 +684,7 @@ function imprimirReciboAveria(averia) {
   </div>
 
   <div class="detalles-box">
-    <h3> Detalles de la Avería</h3>
+    <h3>📝 Detalles de la Avería</h3>
     <p>${averia.detalles_averia}</p>
     ${averia.observaciones ? `<p style="margin-top: 10px;"><strong>Observaciones:</strong> ${averia.observaciones}</p>` : ''}
   </div>
@@ -749,7 +768,7 @@ function limpiarFormularioAveria() {
   document.getElementById('botonesAccion').style.display = 'none';
 
   const btnGuardar = document.getElementById('btnGuardarAveria');
-  if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = ' Registrar Avería'; }
+  if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Registrar Avería'; }
 
   mostrarToast('Formulario listo para nuevo reporte', 'exito');
 }
