@@ -41,7 +41,7 @@
 
 .botones-fotos { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
 
-/* ✅ MODALES - COMPLETAMENTE OCULTOS */
+/* ✅ MODALES - COMPLETAMENTE OCULTOS POR DEFECTO */
 .modal-zoom, .modal-camara {
   display: none !important;
   position: fixed;
@@ -113,7 +113,7 @@
 
 <div class="container">
   <div class="page-header">
-    <h1 class="page-title">🔧 Registrar Avería</h1>
+    <h1 class="page-title"> Registrar Avería</h1>
     <p class="page-subtitle">Reporte de equipos dañados o con fallas</p>
   </div>
 
@@ -121,7 +121,7 @@
 
   <!-- SECCIÓN 1: BÚSQUEDA DE EQUIPO -->
   <fieldset>
-    <legend> Buscar Equipo</legend>
+    <legend>🔍 Buscar Equipo</legend>
     <div class="codigo-barras-section">
       <div class="codigo-barras-label">📷 Escanee o escriba el código de barras / serial del equipo</div>
       <div style="display: flex; gap: 10px; margin-top: 10px;">
@@ -135,7 +135,7 @@
   <fieldset id="fieldsetFichaEquipo" style="display: none;">
     <legend> Ficha del Equipo</legend>
     <div class="ficha-equipo">
-      <h3> Información del Equipo</h3>
+      <h3>📦 Información del Equipo</h3>
       <div class="ficha-grid">
         <div class="ficha-item"><label>Código de Barras</label><strong id="fichaCodigo">-</strong></div>
         <div class="ficha-item"><label>Nombre del Equipo</label><strong id="fichaNombre">-</strong></div>
@@ -153,7 +153,7 @@
 
   <!-- SECCIÓN 3: DATOS DEL REPORTANTE (oculto hasta buscar) -->
   <fieldset id="fieldsetReportante" style="display: none;">
-    <legend> Datos del Reportante</legend>
+    <legend>👤 Datos del Reportante</legend>
     <div class="form-grid-registro">
       <div class="form-group-registro"><label>Nombres <span class="required">*</span></label><input type="text" id="reportanteNombres" placeholder="Nombres"></div>
       <div class="form-group-registro"><label>Apellidos <span class="required">*</span></label><input type="text" id="reportanteApellidos" placeholder="Apellidos"></div>
@@ -163,7 +163,7 @@
 
   <!-- SECCIÓN 4: DETALLES DE LA AVERÍA (oculto hasta buscar) -->
   <fieldset id="fieldsetAveria" style="display: none;">
-    <legend>️ Detalles de la Avería</legend>
+    <legend>⚠️ Detalles de la Avería</legend>
     <div class="form-grid-registro">
       <div class="form-group-registro"><label>Fecha <span class="required">*</span></label><input type="date" id="fechaAveria"></div>
       <div class="form-group-registro"><label>Hora <span class="required">*</span></label><input type="time" id="horaAveria"></div>
@@ -190,7 +190,7 @@
       </div>
       <div id="previewFotosEvidencia" class="fotos-grid">
         <div class="foto-preview-placeholder">
-          <div class="foto-preview-placeholder-icon"></div>
+          <div class="foto-preview-placeholder-icon">📷</div>
           <div>No hay fotos de evidencia</div>
         </div>
       </div>
@@ -203,16 +203,16 @@
     <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioAveria()">🔄 Nueva Avería</button>
   </div>
 
-  <!-- ✅ MODAL DE ZOOM (DENTRO DEL CONTAINER, COMPLETAMENTE OCULTO) -->
-  <div id="modalZoom" class="modal-zoom">
+  <!-- ✅ MODAL DE ZOOM (OCULTO CON HIDDEN Y STYLE INLINE) -->
+  <div id="modalZoom" class="modal-zoom" hidden style="display: none !important;">
     <button class="modal-zoom-close" onclick="cerrarZoom()" title="Cerrar">&times;</button>
     <div class="modal-zoom-content">
       <img id="imgZoom" src="" alt="Zoom">
     </div>
   </div>
 
-  <!-- ✅ MODAL DE CÁMARA (DENTRO DEL CONTAINER, COMPLETAMENTE OCULTO) -->
-  <div id="modalCamara" class="modal-camara">
+  <!-- ✅ MODAL DE CÁMARA (OCULTO CON HIDDEN Y STYLE INLINE) -->
+  <div id="modalCamara" class="modal-camara" hidden style="display: none !important;">
     <div class="modal-camara-content">
       <h3 style="margin: 0 0 15px 0; color: #1e3a8a;">📷 Tomar Foto</h3>
       <video id="videoCamara" style="width: 100%; max-width: 500px; border-radius: 8px; background: #000;" autoplay playsinline></video>
