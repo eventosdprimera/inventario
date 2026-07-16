@@ -41,11 +41,11 @@
 
 .botones-fotos { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
 
-/* ✅ MODALES - Ocultos por defecto con display: none */
+/* ✅ MODALES - Ocultos por defecto */
 .modal-zoom, .modal-camara {
   display: none;
   position: fixed;
-  z-index: 999999; /* Por encima de todo el dashboard */
+  z-index: 2147483647; /* Z-index máximo absoluto */
   left: 0;
   top: 0;
   width: 100vw;
@@ -205,7 +205,7 @@
     <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioAveria()">🔄 Nueva Avería</button>
   </div>
 
-  <!-- ✅ MODAL DE ZOOM (Sin atributo hidden, controlado por clase CSS) -->
+  <!-- ✅ MODAL DE ZOOM (Se moverá al body dinámicamente) -->
   <div id="modalZoom" class="modal-zoom">
     <button class="modal-zoom-close" onclick="cerrarZoom()" title="Cerrar">&times;</button>
     <div class="modal-zoom-content">
@@ -213,7 +213,7 @@
     </div>
   </div>
 
-  <!-- ✅ MODAL DE CÁMARA (Sin atributo hidden, controlado por clase CSS) -->
+  <!-- ✅ MODAL DE CÁMARA (Se moverá al body dinámicamente) -->
   <div id="modalCamara" class="modal-camara">
     <div class="modal-camara-content">
       <h3 style="margin: 0 0 15px 0; color: #1e3a8a;">📷 Tomar Foto</h3>
