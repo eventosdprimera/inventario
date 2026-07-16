@@ -110,25 +110,23 @@ async function inicializarRegistrarAveria() {
     });
   }
 
-  // ✅ VERIFICAR QUE LOS MODALES EXISTEN
-  const modalZoom = document.getElementById('modalZoom');
-  const modalCamara = document.getElementById('modalCamara');
-  
-  if (!modalZoom) {
-    console.error('❌ ERROR: Modal de zoom no existe en el DOM');
-  } else {
-    modalZoom.classList.remove('modal-activo');
-    modalZoom.style.display = 'none';
-    console.log('✅ Modal de zoom encontrado y oculto');
-  }
-  
-  if (!modalCamara) {
-    console.error('❌ ERROR: Modal de cámara no existe en el DOM');
-  } else {
-    modalCamara.classList.remove('modal-activo');
-    modalCamara.style.display = 'none';
-    console.log('✅ Modal de cámara encontrado y oculto');
-  }
+  // ✅ FORZAR OCULTAMIENTO DE MODALES
+  setTimeout(() => {
+    const modalZoom = document.getElementById('modalZoom');
+    const modalCamara = document.getElementById('modalCamara');
+    
+    if (modalZoom) {
+      modalZoom.classList.remove('modal-activo');
+      modalZoom.style.setProperty('display', 'none', 'important');
+    }
+    
+    if (modalCamara) {
+      modalCamara.classList.remove('modal-activo');
+      modalCamara.style.setProperty('display', 'none', 'important');
+    }
+    
+    console.log('✅ Modales forzados a display:none');
+  }, 100);
 
   console.log('✅ === REGISTRO DE AVERÍA INICIALIZADO ===');
 }
@@ -279,14 +277,15 @@ async function cargarFotosDelEquipo(equipo) {
       fotosEncontradas.forEach((foto, index) => {
         const div = document.createElement('div');
         div.className = 'foto-preview';
-        const urlEscapada = foto.url.replace(/'/g, "\\'");
-        div.innerHTML = `<img src="${foto.url}" alt="Foto ${index + 1}" onclick="abrirZoom('${urlEscapada}')" style="cursor: pointer;" onerror="this.parentElement.style.display='none'">`;
+        // ✅ Simplificar onclick para evitar conflictos
+        div.onclick = function() { abrirZoomSimple(foto.url); };
+        div.innerHTML = `<img src="${foto.url}" alt="Foto ${index + 1}" style="cursor: pointer;" onerror="this.parentElement.style.display='none'">`;
         contenedorFotos.appendChild(div);
       });
     } else {
       contenedorFotos.innerHTML = `
         <div class="foto-preview-placeholder">
-          <div class="foto-preview-placeholder-icon"></div>
+          <div class="foto-preview-placeholder-icon">📷</div>
           <div>Sin fotos registradas</div>
         </div>`;
     }
@@ -295,44 +294,62 @@ async function cargarFotosDelEquipo(equipo) {
     console.error('Error al cargar fotos del equipo:', err);
     contenedorFotos.innerHTML = `
       <div class="foto-preview-placeholder">
-        <div class="foto-preview-placeholder-icon">️</div>
+        <div class="foto-preview-placeholder-icon">⚠️</div>
         <div>Error al cargar fotos</div>
       </div>`;
   }
 }
 
 // ==========================================
-// ABRIR ZOOM DE FOTO - CENTRADO EN PANTALLA
+// ABRIR ZOOM - VERSIÓN SIMPLIFICADA SIN CONGELAR
 // ==========================================
-function abrirZoom(url) {
+function abrirZoomSimple(url) {
+  console.log(' Abriendo zoom:', url);
+  
   const modal = document.getElementById('modalZoom');
   const img = document.getElementById('imgZoom');
   
-  if (!modal) {
-    console.error('❌ ERROR: Modal de zoom no existe');
-    mostrarToast('Error: Modal de zoom no disponible', 'error');
+  if (!modal || !img) {
+    console.error('❌ Modal o imagen no encontrados');
+    mostrarToast('Error: No se puede abrir el zoom', 'error');
     return;
   }
   
-  if (!img) {
-    console.error('❌ ERROR: Imagen del zoom no existe');
-    return;
-  }
+  // Evitar recargas
+  img.onload = function() {
+    console.log('✅ Imagen cargada correctamente');
+  };
   
-  console.log('✅ Abriendo zoom con URL:', url);
+  img.onerror = function() {
+    console.error('❌ Error al cargar imagen');
+    mostrarToast('Error al cargar la imagen', 'error');
+    cerrarZoom();
+  };
+  
+  // Establecer src y mostrar modal
   img.src = url;
   modal.classList.add('modal-activo');
-  modal.style.display = 'block';
+  modal.style.setProperty('display', 'flex', 'important');
   document.body.style.overflow = 'hidden';
+  
+  console.log('✅ Zoom abierto');
 }
 
 function cerrarZoom() {
   const modal = document.getElementById('modalZoom');
+  const img = document.getElementById('imgZoom');
+  
   if (modal) {
     modal.classList.remove('modal-activo');
-    modal.style.display = 'none';
+    modal.style.setProperty('display', 'none', 'important');
     document.body.style.overflow = '';
   }
+  
+  if (img) {
+    img.src = '';
+  }
+  
+  console.log('✅ Zoom cerrado');
 }
 
 // ==========================================
@@ -362,12 +379,16 @@ async function abrirCamara() {
   }
 
   try {
-    streamCamara = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    streamCamara = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: 'environment' },
+      audio: false
+    });
+    
     const video = document.getElementById('videoCamara');
     if (video) {
       video.srcObject = streamCamara;
       modal.classList.add('modal-activo');
-      modal.style.display = 'flex';
+      modal.style.setProperty('display', 'flex', 'important');
     }
   } catch (err) {
     console.error('Error al acceder a la cámara:', err);
@@ -431,7 +452,7 @@ function cerrarCamara() {
   const modal = document.getElementById('modalCamara');
   if (modal) {
     modal.classList.remove('modal-activo');
-    modal.style.display = 'none';
+    modal.style.setProperty('display', 'none', 'important');
   }
 }
 
@@ -496,9 +517,9 @@ function renderizarPreviewFotosEvidencia() {
   fotosEvidencia.forEach((fotoUrl, index) => {
     const div = document.createElement('div');
     div.className = 'foto-preview';
-    const urlEscapada = fotoUrl.replace(/'/g, "\\'");
+    div.onclick = function() { abrirZoomSimple(fotoUrl); };
     div.innerHTML = `
-      <img src="${fotoUrl}" alt="Evidencia ${index + 1}" onclick="abrirZoom('${urlEscapada}')" style="cursor: pointer;">
+      <img src="${fotoUrl}" alt="Evidencia ${index + 1}" style="cursor: pointer;">
       <button type="button" class="foto-remove" onclick="event.stopPropagation(); eliminarFotoEvidencia(${index})" title="Eliminar foto">✕</button>
     `;
     contenedor.appendChild(div);
@@ -661,13 +682,13 @@ function imprimirReciboAveria(averia) {
   </div>
 
   <div class="aviso-averia">
-    <h2>️ RECIBO DE AVERÍA</h2>
+    <h2>⚠️ RECIBO DE AVERÍA</h2>
     <p style="margin: 10px 0 0 0; font-size: 14px;">Código: <strong>${averia.codigo_barras}</strong></p>
   </div>
 
   <div class="info-grid">
     <div class="info-box">
-      <h3>📦 Equipo Averiados</h3>
+      <h3> Equipo Averiados</h3>
       <p><strong>Nombre:</strong> ${averia.nombre_equipo}</p>
       <p><strong>Marca:</strong> ${averia.marca || 'N/A'}</p>
       <p><strong>Modelo:</strong> ${averia.modelo || 'N/A'}</p>
@@ -675,7 +696,7 @@ function imprimirReciboAveria(averia) {
       <p><strong>Categoría:</strong> ${averia.categoria || 'N/A'}</p>
     </div>
     <div class="info-box">
-      <h3> Reportante</h3>
+      <h3>👤 Reportante</h3>
       <p><strong>Nombre:</strong> ${averia.reportante_nombre} ${averia.reportante_apellidos}</p>
       <p><strong>Cédula:</strong> ${averia.reportante_cedula}</p>
       <p><strong>Fecha Avería:</strong> ${new Date(averia.fecha_averia + 'T12:00:00').toLocaleDateString('es-ES')}</p>
@@ -721,7 +742,7 @@ function imprimirReciboAveria(averia) {
 
   <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
     <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">🖨️ Imprimir Recibo</button>
-    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">❌ Cerrar</button>
+    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;"> Cerrar</button>
   </div>
 </body>
 </html>`;
