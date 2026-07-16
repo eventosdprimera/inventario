@@ -95,7 +95,7 @@ async function buscarEquipoAveria() {
 
     if (error || !data) {
       mostrarMensajeAveria(`Equipo no encontrado: "${codigo}"`, 'error');
-      input.value = ''; // Limpiar campo si no encuentra
+      input.value = '';
       input.focus();
       return;
     }
@@ -108,8 +108,8 @@ async function buscarEquipoAveria() {
       .maybeSingle();
 
     if (yaAveriado) {
-      mostrarMensajeAveria('️ Este equipo ya está registrado como averiado', 'error');
-      input.value = ''; // Limpiar campo
+      mostrarMensajeAveria('⚠️ Este equipo ya está registrado como averiado', 'error');
+      input.value = '';
       input.focus();
       return;
     }
@@ -118,11 +118,19 @@ async function buscarEquipoAveria() {
     
     // ✅ LIMPIAR EL CAMPO DE BÚSQUEDA AUTOMÁTICAMENTE
     input.value = '';
-    input.focus();
     
-    // Mostrar ficha y formulario
-    await mostrarFichaEquipo(data);
+    // ✅ MOSTRAR FICHA INMEDIATAMENTE (sin esperar fotos)
+    mostrarFichaEquipoInmediata(data);
     mostrarSeccionesFormulario();
+    
+    // ✅ CARGAR FOTOS EN SEGUNDO PLANO
+    cargarFotosDelEquipo(data);
+    
+    // Poner foco en el campo de nombres del reportante
+    setTimeout(() => {
+      const nombresInput = document.getElementById('reportanteNombres');
+      if (nombresInput) nombresInput.focus();
+    }, 300);
 
   } catch (err) {
     console.error('Error al buscar equipo:', err);
@@ -131,9 +139,9 @@ async function buscarEquipoAveria() {
 }
 
 // ==========================================
-// MOSTRAR FICHA DEL EQUIPO (con fotos del bucket)
+// MOSTRAR FICHA DEL EQUIPO INMEDIATAMENTE
 // ==========================================
-async function mostrarFichaEquipo(equipo) {
+function mostrarFichaEquipoInmediata(equipo) {
   document.getElementById('fichaCodigo').textContent = equipo.codigo_barras || '-';
   document.getElementById('fichaNombre').textContent = equipo.nombre_equipo || '-';
   document.getElementById('fichaMarca').textContent = equipo.marca || '-';
@@ -141,61 +149,63 @@ async function mostrarFichaEquipo(equipo) {
   document.getElementById('fichaSerial').textContent = equipo.serial || '-';
   document.getElementById('fichaCategoria').textContent = equipo.categoria || '-';
 
-  // ✅ CARGAR FOTOS DESDE EL BUCKET 'equipos-fotos'
+  // Mostrar placeholder mientras cargan las fotos
   const contenedorFotos = document.getElementById('fichaFotos');
-  contenedorFotos.innerHTML = '<div style="color: #6b7280; font-size: 12px;">Cargando fotos...</div>';
+  contenedorFotos.innerHTML = '<div style="color: #6b7280; font-size: 12px; grid-column: 1/-1; text-align: center; padding: 10px;">Cargando fotos...</div>';
 
+  // Mostrar la ficha
+  document.getElementById('fieldsetFichaEquipo').style.display = 'block';
+}
+
+// ==========================================
+// CARGAR FOTOS DEL EQUIPO DESDE EL BUCKET
+// ==========================================
+async function cargarFotosDelEquipo(equipo) {
+  const contenedorFotos = document.getElementById('fichaFotos');
+  
   try {
-    // Intentar listar archivos del bucket para este equipo
+    // Intentar 1: Buscar en subcarpeta con el código de barras
     const { data: archivos, error: errorArchivos } = await supabaseClient.storage
       .from('equipos-fotos')
       .list(equipo.codigo_barras);
 
-    if (errorArchivos || !archivos || archivos.length === 0) {
-      // Si no hay archivos en subcarpeta, intentar listar en raíz
+    let fotosEncontradas = [];
+
+    if (!errorArchivos && archivos && archivos.length > 0) {
+      // Fotos en subcarpeta
+      fotosEncontradas = archivos.slice(0, 4).map(archivo => ({
+        url: supabaseClient.storage.from('equipos-fotos').getPublicUrl(`${equipo.codigo_barras}/${archivo.name}`).data.publicUrl
+      }));
+    } else {
+      // Intentar 2: Buscar archivos que empiecen con el código de barras en la raíz
       const { data: archivosRaiz, error: errorRaiz } = await supabaseClient.storage
         .from('equipos-fotos')
-        .list('', { search: equipo.codigo_barras });
+        .list('', { search: equipo.codigo_barras, limit: 4 });
 
-      if (errorRaiz || !archivosRaiz || archivosRaiz.length === 0) {
-        contenedorFotos.innerHTML = '<div style="color: #9ca3af; font-size: 12px;">Sin fotos registradas</div>';
-        return;
+      if (!errorRaiz && archivosRaiz && archivosRaiz.length > 0) {
+        fotosEncontradas = archivosRaiz.map(archivo => ({
+          url: supabaseClient.storage.from('equipos-fotos').getPublicUrl(archivo.name).data.publicUrl
+        }));
       }
-
-      // Mostrar fotos encontradas en raíz
-      contenedorFotos.innerHTML = '';
-      for (const archivo of archivosRaiz.slice(0, 4)) {
-        const { data: urlData } = supabaseClient.storage
-          .from('equipos-fotos')
-          .getPublicUrl(archivo.name);
-        
-        const div = document.createElement('div');
-        div.className = 'foto-preview-item';
-        div.innerHTML = `<img src="${urlData.publicUrl}" alt="Foto del equipo">`;
-        contenedorFotos.appendChild(div);
-      }
-      return;
     }
 
-    // Mostrar fotos de la subcarpeta
-    contenedorFotos.innerHTML = '';
-    for (const archivo of archivos.slice(0, 4)) {
-      const { data: urlData } = supabaseClient.storage
-        .from('equipos-fotos')
-        .getPublicUrl(`${equipo.codigo_barras}/${archivo.name}`);
-      
-      const div = document.createElement('div');
-      div.className = 'foto-preview-item';
-      div.innerHTML = `<img src="${urlData.publicUrl}" alt="Foto del equipo">`;
-      contenedorFotos.appendChild(div);
+    // Mostrar fotos encontradas
+    if (fotosEncontradas.length > 0) {
+      contenedorFotos.innerHTML = '';
+      fotosEncontradas.forEach((foto, index) => {
+        const div = document.createElement('div');
+        div.className = 'foto-preview-item';
+        div.innerHTML = `<img src="${foto.url}" alt="Foto ${index + 1}" onerror="this.parentElement.style.display='none'">`;
+        contenedorFotos.appendChild(div);
+      });
+    } else {
+      contenedorFotos.innerHTML = '<div style="color: #9ca3af; font-size: 12px; grid-column: 1/-1; text-align: center; padding: 10px;">Sin fotos registradas</div>';
     }
 
   } catch (err) {
-    console.error('Error al cargar fotos:', err);
-    contenedorFotos.innerHTML = '<div style="color: #ef4444; font-size: 12px;">Error al cargar fotos</div>';
+    console.error('Error al cargar fotos del equipo:', err);
+    contenedorFotos.innerHTML = '<div style="color: #ef4444; font-size: 12px; grid-column: 1/-1; text-align: center; padding: 10px;">Error al cargar fotos</div>';
   }
-
-  document.getElementById('fieldsetFichaEquipo').style.display = 'block';
 }
 
 // ==========================================
@@ -209,14 +219,14 @@ function mostrarSeccionesFormulario() {
 }
 
 // ==========================================
-// PROCESAR FOTOS DE EVIDENCIA (usando bucket 'fotos-averias')
+// PROCESAR FOTOS DE EVIDENCIA
 // ==========================================
 async function procesarFotosEvidencia(event) {
   const files = event.target.files;
   if (!files || files.length === 0) return;
 
   if (fotosEvidencia.length + files.length > 4) {
-    mostrarMensajeAveria('Máximo 4 fotos de evidencia permitidas', 'error');
+    mostrarMensajeAveria(`Máximo 4 fotos permitidas. Ya tiene ${fotosEvidencia.length}.`, 'error');
     event.target.value = '';
     return;
   }
@@ -227,7 +237,7 @@ async function procesarFotosEvidencia(event) {
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     
-    // ✅ SUBIR FOTO AL BUCKET 'fotos-averias'
+    // Subir al bucket 'fotos-averias'
     const fileName = `${codigoEquipo}/${timestamp}_${i}_${file.name}`;
     const { data: uploadData, error: uploadError } = await supabaseClient.storage
       .from('fotos-averias')
@@ -248,18 +258,18 @@ async function procesarFotosEvidencia(event) {
   }
 
   renderizarPreviewFotosEvidencia();
-  event.target.value = ''; // Limpiar input
+  event.target.value = '';
 }
 
 // ==========================================
-// RENDERIZAR PREVIEW DE FOTOS (miniaturas)
+// RENDERIZAR PREVIEW DE FOTOS DE EVIDENCIA
 // ==========================================
 function renderizarPreviewFotosEvidencia() {
   const contenedor = document.getElementById('previewFotosEvidencia');
   contenedor.innerHTML = '';
 
   if (fotosEvidencia.length === 0) {
-    contenedor.innerHTML = '<div style="color: #9ca3af; font-size: 12px; grid-column: 1/-1; text-align: center; padding: 20px;">No hay fotos de evidencia</div>';
+    contenedor.innerHTML = '<div style="color: #9ca3af; font-size: 12px; grid-column: 1/-1; text-align: center; padding: 10px;">No hay fotos de evidencia</div>';
     return;
   }
 
@@ -267,8 +277,8 @@ function renderizarPreviewFotosEvidencia() {
     const div = document.createElement('div');
     div.className = 'foto-preview-item';
     div.innerHTML = `
-      <img src="${fotoUrl}" alt="Evidencia ${index + 1}" style="width: 100%; height: 100%; object-fit: cover;">
-      <button type="button" class="remove-foto" onclick="eliminarFotoEvidencia(${index})" title="Eliminar foto">✕</button>
+      <img src="${fotoUrl}" alt="Evidencia ${index + 1}">
+      <button type="button" class="remove-foto" onclick="eliminarFotoEvidencia(${index})" title="Eliminar foto"></button>
     `;
     contenedor.appendChild(div);
   });
@@ -283,7 +293,7 @@ function eliminarFotoEvidencia(index) {
 }
 
 // ==========================================
-// GUARDAR AVERÍA
+// GUARDAR AVERÍA (con logs detallados)
 // ==========================================
 async function guardarAveria() {
   if (!equipoSeleccionadoAveria) {
@@ -314,7 +324,7 @@ async function guardarAveria() {
   }
 
   const btnGuardar = document.getElementById('btnGuardarAveria');
-  if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = ' Registrando...'; }
+  if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = '⏳ Registrando...'; }
 
   try {
     // 1. Insertar en equipos_averiados
@@ -357,9 +367,10 @@ async function guardarAveria() {
       console.warn('El equipo se registró como averiado pero no se pudo eliminar de la tabla activa');
     }
 
-    // 3. Registrar en logs
+    // 3. ✅ LOG DETALLADO: quién, qué equipo, qué avería
     if (typeof registrarLog === 'function') {
-      const descripcion = `Avería registrada: ${equipoSeleccionadoAveria.codigo_barras} | Reportante: ${reportanteNombres} ${reportanteApellidos} | Fecha: ${fechaAveria} ${horaAveria} | Detalles: ${detallesAveria.substring(0, 100)}...`;
+      const nombreCompletoReportante = `${reportanteNombres} ${reportanteApellidos}`;
+      const descripcion = `🔧 AVERÍA REGISTRADA | Equipo: ${equipoSeleccionadoAveria.codigo_barras} (${equipoSeleccionadoAveria.nombre_equipo}) | Reportante: ${nombreCompletoReportante} (Cédula: ${reportanteCedula}) | Fecha: ${fechaAveria} ${horaAveria} | Avería: ${detallesAveria.substring(0, 150)}${detallesAveria.length > 150 ? '...' : ''} | Registrado por: ${usuarioActualAveria?.email || 'Desconocido'}`;
       await registrarLog('averias', 'Avería registrada', descripcion, 'warning');
     }
 
@@ -449,7 +460,7 @@ function imprimirReciboAveria(averia) {
       <p><strong>Categoría:</strong> ${averia.categoria || 'N/A'}</p>
     </div>
     <div class="info-box">
-      <h3> Reportante</h3>
+      <h3>👤 Reportante</h3>
       <p><strong>Nombre:</strong> ${averia.reportante_nombre} ${averia.reportante_apellidos}</p>
       <p><strong>Cédula:</strong> ${averia.reportante_cedula}</p>
       <p><strong>Fecha Avería:</strong> ${new Date(averia.fecha_averia + 'T12:00:00').toLocaleDateString('es-ES')}</p>
@@ -458,14 +469,14 @@ function imprimirReciboAveria(averia) {
   </div>
 
   <div class="detalles-box">
-    <h3>📝 Detalles de la Avería</h3>
+    <h3> Detalles de la Avería</h3>
     <p>${averia.detalles_averia}</p>
     ${averia.observaciones ? `<p style="margin-top: 10px;"><strong>Observaciones:</strong> ${averia.observaciones}</p>` : ''}
   </div>
 
   ${fotosHTML ? `
   <div class="fotos-section">
-    <h3>📸 Fotos de Evidencia</h3>
+    <h3> Fotos de Evidencia</h3>
     <div style="display: flex; flex-wrap: wrap;">
       ${fotosHTML}
     </div>
