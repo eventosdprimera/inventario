@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* Ficha del equipo */
 .ficha-equipo {
   background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
   padding: 20px;
@@ -22,7 +21,6 @@
 .ficha-item label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px; }
 .ficha-item strong { color: #1e3a8a; font-size: 14px; }
 
-/* Fotos en fila horizontal */
 .fotos-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 10px; }
 .foto-preview {
   width: 100%; height: 140px; border: 2px dashed #e5e7eb; border-radius: 8px;
@@ -34,7 +32,6 @@
 .foto-preview-placeholder { text-align: center; color: #9ca3af; font-size: 11px; grid-column: 1 / -1; padding: 20px; }
 .foto-preview-placeholder-icon { font-size: 32px; margin-bottom: 4px; }
 
-/* Botón eliminar foto */
 .foto-remove {
   position: absolute; top: 5px; right: 5px; background: rgba(220, 38, 38, 0.9); color: white;
   border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px;
@@ -42,12 +39,14 @@
 }
 .foto-remove:hover { background: rgba(185, 28, 28, 1); transform: scale(1.1); }
 
-/* Botones de cámara y archivo */
 .botones-fotos { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
 
-/* ✅ MODAL DE ZOOM - OCULTO POR DEFECTO */
-#modalZoom {
+/* ✅ MODALES SIEMPRE OCULTOS POR DEFECTO */
+#modalZoom, #modalCamara {
   display: none !important;
+}
+
+.modal-zoom {
   position: fixed; z-index: 99999; left: 0; top: 0;
   width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.9);
 }
@@ -62,9 +61,7 @@
 }
 .modal-zoom-close:hover { color: #bbb; }
 
-/* ✅ MODAL DE CÁMARA - OCULTO POR DEFECTO */
-#modalCamara {
-  display: none !important;
+.modal-camara {
   position: fixed; z-index: 99999; left: 0; top: 0;
   width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.8);
 }
@@ -166,18 +163,18 @@
 
   <!-- BOTONES DE ACCIÓN (oculto hasta buscar) -->
   <div class="button-group" id="botonesAccion" style="display: none;">
-    <button type="button" class="btn-action btn-primary" onclick="guardarAveria()" id="btnGuardarAveria">💾 Registrar Avería</button>
+    <button type="button" class="btn-action btn-primary" onclick="guardarAveria()" id="btnGuardarAveria"> Registrar Avería</button>
     <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioAveria()">🔄 Nueva Avería</button>
   </div>
 
-  <!-- ✅ MODAL DE ZOOM (oculto por defecto con !important) -->
-  <div id="modalZoom" onclick="cerrarZoom()">
+  <!-- ✅ MODAL DE ZOOM (siempre oculto por defecto) -->
+  <div id="modalZoom" class="modal-zoom" onclick="cerrarZoom()">
     <span class="modal-zoom-close">&times;</span>
     <img class="modal-zoom-content" id="imgZoom">
   </div>
 
-  <!-- ✅ MODAL DE CÁMARA (oculto por defecto con !important) -->
-  <div id="modalCamara">
+  <!-- ✅ MODAL DE CÁMARA (siempre oculto por defecto) -->
+  <div id="modalCamara" class="modal-camara">
     <div class="modal-camara-content">
       <h3 style="margin: 0 0 15px 0; color: #1e3a8a;">📷 Tomar Foto</h3>
       <video id="videoCamara" style="width: 100%; max-width: 500px; border-radius: 8px; background: #000;" autoplay></video>
