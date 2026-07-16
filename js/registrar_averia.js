@@ -78,7 +78,7 @@ if (!document.getElementById('toastStyles')) {
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarRegistrarAveria() {
-  console.log('🔧 === INICIANDO REGISTRO DE AVERÍA ===');
+  console.log(' === INICIANDO REGISTRO DE AVERÍA ===');
 
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
@@ -108,6 +108,18 @@ async function inicializarRegistrarAveria() {
         buscarEquipoAveria();
       }
     });
+  }
+
+  // ✅ ASEGURAR QUE LOS MODALES ESTÉN COMPLETAMENTE OCULTOS
+  const modalZoom = document.getElementById('modalZoom');
+  const modalCamara = document.getElementById('modalCamara');
+  if (modalZoom) {
+    modalZoom.classList.remove('modal-activo');
+    modalZoom.style.display = 'none';
+  }
+  if (modalCamara) {
+    modalCamara.classList.remove('modal-activo');
+    modalCamara.style.display = 'none';
   }
 
   console.log('✅ === REGISTRO DE AVERÍA INICIALIZADO ===');
@@ -266,7 +278,7 @@ async function cargarFotosDelEquipo(equipo) {
     } else {
       contenedorFotos.innerHTML = `
         <div class="foto-preview-placeholder">
-          <div class="foto-preview-placeholder-icon">📷</div>
+          <div class="foto-preview-placeholder-icon"></div>
           <div>Sin fotos registradas</div>
         </div>`;
     }
@@ -275,14 +287,14 @@ async function cargarFotosDelEquipo(equipo) {
     console.error('Error al cargar fotos del equipo:', err);
     contenedorFotos.innerHTML = `
       <div class="foto-preview-placeholder">
-        <div class="foto-preview-placeholder-icon">️</div>
+        <div class="foto-preview-placeholder-icon">⚠️</div>
         <div>Error al cargar fotos</div>
       </div>`;
   }
 }
 
 // ==========================================
-// ABRIR ZOOM DE FOTO
+// ABRIR ZOOM DE FOTO - CENTRADO EN PANTALLA
 // ==========================================
 function abrirZoom(url) {
   const modal = document.getElementById('modalZoom');
@@ -294,12 +306,18 @@ function abrirZoom(url) {
   }
   
   img.src = url;
+  modal.classList.add('modal-activo');
   modal.style.display = 'block';
+  document.body.style.overflow = 'hidden'; // Evitar scroll
 }
 
 function cerrarZoom() {
   const modal = document.getElementById('modalZoom');
-  if (modal) modal.style.display = 'none';
+  if (modal) {
+    modal.classList.remove('modal-activo');
+    modal.style.display = 'none';
+    document.body.style.overflow = ''; // Restaurar scroll
+  }
 }
 
 // ==========================================
@@ -327,7 +345,10 @@ async function abrirCamara() {
     if (video) {
       video.srcObject = streamCamara;
       const modal = document.getElementById('modalCamara');
-      if (modal) modal.style.display = 'block';
+      if (modal) {
+        modal.classList.add('modal-activo');
+        modal.style.display = 'flex';
+      }
     }
   } catch (err) {
     console.error('Error al acceder a la cámara:', err);
@@ -389,7 +410,10 @@ function cerrarCamara() {
     streamCamara = null;
   }
   const modal = document.getElementById('modalCamara');
-  if (modal) modal.style.display = 'none';
+  if (modal) {
+    modal.classList.remove('modal-activo');
+    modal.style.display = 'none';
+  }
 }
 
 // ==========================================
@@ -618,13 +642,13 @@ function imprimirReciboAveria(averia) {
   </div>
 
   <div class="aviso-averia">
-    <h2>️ RECIBO DE AVERÍA</h2>
+    <h2>⚠️ RECIBO DE AVERÍA</h2>
     <p style="margin: 10px 0 0 0; font-size: 14px;">Código: <strong>${averia.codigo_barras}</strong></p>
   </div>
 
   <div class="info-grid">
     <div class="info-box">
-      <h3>📦 Equipo Averiados</h3>
+      <h3> Equipo Averiados</h3>
       <p><strong>Nombre:</strong> ${averia.nombre_equipo}</p>
       <p><strong>Marca:</strong> ${averia.marca || 'N/A'}</p>
       <p><strong>Modelo:</strong> ${averia.modelo || 'N/A'}</p>
@@ -632,7 +656,7 @@ function imprimirReciboAveria(averia) {
       <p><strong>Categoría:</strong> ${averia.categoria || 'N/A'}</p>
     </div>
     <div class="info-box">
-      <h3> Reportante</h3>
+      <h3>👤 Reportante</h3>
       <p><strong>Nombre:</strong> ${averia.reportante_nombre} ${averia.reportante_apellidos}</p>
       <p><strong>Cédula:</strong> ${averia.reportante_cedula}</p>
       <p><strong>Fecha Avería:</strong> ${new Date(averia.fecha_averia + 'T12:00:00').toLocaleDateString('es-ES')}</p>
@@ -641,7 +665,7 @@ function imprimirReciboAveria(averia) {
   </div>
 
   <div class="detalles-box">
-    <h3>📝 Detalles de la Avería</h3>
+    <h3> Detalles de la Avería</h3>
     <p>${averia.detalles_averia}</p>
     ${averia.observaciones ? `<p style="margin-top: 10px;"><strong>Observaciones:</strong> ${averia.observaciones}</p>` : ''}
   </div>
@@ -678,7 +702,7 @@ function imprimirReciboAveria(averia) {
 
   <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
     <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">🖨️ Imprimir Recibo</button>
-    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;"> Cerrar</button>
+    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">❌ Cerrar</button>
   </div>
 </body>
 </html>`;
@@ -725,7 +749,7 @@ function limpiarFormularioAveria() {
   document.getElementById('botonesAccion').style.display = 'none';
 
   const btnGuardar = document.getElementById('btnGuardarAveria');
-  if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Registrar Avería'; }
+  if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = ' Registrar Avería'; }
 
   mostrarToast('Formulario listo para nuevo reporte', 'exito');
 }
