@@ -49,7 +49,7 @@ function mostrarToast(texto, tipo) {
   `;
   
   toast.innerHTML = `
-    <span style="font-size: 18px;">${tipo === 'exito' ? '✅' : (tipo === 'error' ? '⚠️' : '️')}</span>
+    <span style="font-size: 18px;">${tipo === 'exito' ? '✅' : (tipo === 'error' ? '⚠️' : 'ℹ️')}</span>
     <span style="flex: 1;">${texto}</span>
     <span onclick="this.parentElement.remove()" style="cursor: pointer; font-size: 18px; opacity: 0.6;">✕</span>
   `;
@@ -110,20 +110,18 @@ async function inicializarRegistrarAveria() {
     });
   }
 
-  // ✅ FORZAR OCULTAMIENTO DE MODALES CON HIDDEN
+  // ✅ FORZAR OCULTAMIENTO USANDO EL ATRIBUTO HIDDEN
   const modalZoom = document.getElementById('modalZoom');
   const modalCamara = document.getElementById('modalCamara');
   
   if (modalZoom) {
     modalZoom.setAttribute('hidden', '');
-    modalZoom.style.display = 'none';
     modalZoom.classList.remove('modal-activo');
     console.log('✅ Modal zoom forzado a oculto');
   }
   
   if (modalCamara) {
     modalCamara.setAttribute('hidden', '');
-    modalCamara.style.display = 'none';
     modalCamara.classList.remove('modal-activo');
     console.log('✅ Modal cámara forzado a oculto');
   }
@@ -200,7 +198,6 @@ async function buscarEquipoAveria() {
     equipoSeleccionadoAveria = data;
     input.value = '';
     
-    // ✅ LIMPIEZA TOTAL DE FOTOS DE EVIDENCIA AL BUSCAR
     fotosEvidencia = [];
     const previewEvidencia = document.getElementById('previewFotosEvidencia');
     if (previewEvidencia) {
@@ -300,7 +297,7 @@ async function cargarFotosDelEquipo(equipo) {
 }
 
 // ==========================================
-// ABRIR ZOOM - VERSIÓN SIMPLIFICADA
+// ABRIR ZOOM - CORREGIDO PARA MOSTRAR CORRECTAMENTE
 // ==========================================
 function abrirZoomSimple(url) {
   console.log('🔍 Abriendo zoom:', url);
@@ -315,7 +312,7 @@ function abrirZoomSimple(url) {
   }
   
   img.onload = function() {
-    console.log('✅ Imagen cargada');
+    console.log('✅ Imagen cargada correctamente');
   };
   
   img.onerror = function() {
@@ -325,12 +322,13 @@ function abrirZoomSimple(url) {
   };
   
   img.src = url;
-  modal.removeAttribute('hidden');
-  modal.style.display = 'flex';
-  modal.classList.add('modal-activo');
-  document.body.style.overflow = 'hidden';
   
-  console.log('✅ Zoom abierto');
+  // ✅ ELIMINAR 'hidden' Y AGREGAR CLASE 'modal-activo'
+  modal.removeAttribute('hidden');
+  modal.classList.add('modal-activo');
+  document.body.style.overflow = 'hidden'; // Bloquear scroll del fondo
+  
+  console.log('✅ Zoom abierto visualmente');
 }
 
 function cerrarZoom() {
@@ -339,13 +337,12 @@ function cerrarZoom() {
   
   if (modal) {
     modal.setAttribute('hidden', '');
-    modal.style.display = 'none';
     modal.classList.remove('modal-activo');
-    document.body.style.overflow = '';
+    document.body.style.overflow = ''; // Restaurar scroll
   }
   
   if (img) {
-    img.src = '';
+    img.src = ''; // Limpiar src para liberar memoria
   }
   
   console.log('✅ Zoom cerrado');
@@ -387,7 +384,6 @@ async function abrirCamara() {
     if (video) {
       video.srcObject = streamCamara;
       modal.removeAttribute('hidden');
-      modal.style.display = 'flex';
       modal.classList.add('modal-activo');
     }
   } catch (err) {
@@ -452,7 +448,6 @@ function cerrarCamara() {
   const modal = document.getElementById('modalCamara');
   if (modal) {
     modal.setAttribute('hidden', '');
-    modal.style.display = 'none';
     modal.classList.remove('modal-activo');
   }
 }
@@ -713,7 +708,7 @@ function imprimirReciboAveria(averia) {
 
   ${fotosHTML ? `
   <div class="fotos-section">
-    <h3> Fotos de Evidencia</h3>
+    <h3>📸 Fotos de Evidencia</h3>
     <div style="display: flex; flex-wrap: wrap;">
       ${fotosHTML}
     </div>
@@ -742,7 +737,7 @@ function imprimirReciboAveria(averia) {
   </div>
 
   <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
-    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">️ Imprimir Recibo</button>
+    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">🖨️ Imprimir Recibo</button>
     <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">❌ Cerrar</button>
   </div>
 </body>
