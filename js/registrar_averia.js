@@ -18,7 +18,7 @@ function mostrarToast(texto, tipo) {
       position: fixed;
       top: 80px;
       right: 20px;
-      z-index: 99999;
+      z-index: 999999;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -110,20 +110,18 @@ async function inicializarRegistrarAveria() {
     });
   }
 
-  // ✅ FORZAR OCULTAMIENTO USANDO EL ATRIBUTO HIDDEN
+  // ✅ ASEGURAR QUE LOS MODALES ESTÉN OCULTOS AL INICIO
   const modalZoom = document.getElementById('modalZoom');
   const modalCamara = document.getElementById('modalCamara');
   
   if (modalZoom) {
-    modalZoom.setAttribute('hidden', '');
-    modalZoom.classList.remove('modal-activo');
-    console.log('✅ Modal zoom forzado a oculto');
+    modalZoom.classList.remove('activo');
+    console.log('✅ Modal zoom inicializado oculto');
   }
   
   if (modalCamara) {
-    modalCamara.setAttribute('hidden', '');
-    modalCamara.classList.remove('modal-activo');
-    console.log('✅ Modal cámara forzado a oculto');
+    modalCamara.classList.remove('activo');
+    console.log('✅ Modal cámara inicializado oculto');
   }
 
   console.log('✅ === REGISTRO DE AVERÍA INICIALIZADO ===');
@@ -297,7 +295,7 @@ async function cargarFotosDelEquipo(equipo) {
 }
 
 // ==========================================
-// ABRIR ZOOM - CORREGIDO PARA MOSTRAR CORRECTAMENTE
+// ABRIR ZOOM - MÉTODO infalible con clases CSS
 // ==========================================
 function abrirZoomSimple(url) {
   console.log('🔍 Abriendo zoom:', url);
@@ -312,7 +310,7 @@ function abrirZoomSimple(url) {
   }
   
   img.onload = function() {
-    console.log('✅ Imagen cargada correctamente');
+    console.log('✅ Imagen cargada y mostrada correctamente');
   };
   
   img.onerror = function() {
@@ -321,12 +319,14 @@ function abrirZoomSimple(url) {
     cerrarZoom();
   };
   
+  // 1. Establecer la URL
   img.src = url;
   
-  // ✅ ELIMINAR 'hidden' Y AGREGAR CLASE 'modal-activo'
-  modal.removeAttribute('hidden');
-  modal.classList.add('modal-activo');
-  document.body.style.overflow = 'hidden'; // Bloquear scroll del fondo
+  // 2. Agregar la clase 'activo' que tiene display: flex !important
+  modal.classList.add('activo');
+  
+  // 3. Bloquear el scroll del fondo
+  document.body.style.overflow = 'hidden';
   
   console.log('✅ Zoom abierto visualmente');
 }
@@ -336,13 +336,16 @@ function cerrarZoom() {
   const img = document.getElementById('imgZoom');
   
   if (modal) {
-    modal.setAttribute('hidden', '');
-    modal.classList.remove('modal-activo');
-    document.body.style.overflow = ''; // Restaurar scroll
+    // 1. Quitar la clase 'activo'
+    modal.classList.remove('activo');
+    
+    // 2. Restaurar el scroll
+    document.body.style.overflow = '';
   }
   
   if (img) {
-    img.src = ''; // Limpiar src para liberar memoria
+    // 3. Limpiar src para liberar memoria
+    img.src = '';
   }
   
   console.log('✅ Zoom cerrado');
@@ -375,6 +378,7 @@ async function abrirCamara() {
   }
 
   try {
+    // Solicitar permiso de cámara
     streamCamara = await navigator.mediaDevices.getUserMedia({ 
       video: { facingMode: 'environment' },
       audio: false
@@ -383,12 +387,13 @@ async function abrirCamara() {
     const video = document.getElementById('videoCamara');
     if (video) {
       video.srcObject = streamCamara;
-      modal.removeAttribute('hidden');
-      modal.classList.add('modal-activo');
+      // Mostrar modal agregando la clase 'activo'
+      modal.classList.add('activo');
+      console.log('✅ Cámara iniciada y modal mostrado');
     }
   } catch (err) {
     console.error('Error al acceder a la cámara:', err);
-    mostrarToast('No se pudo acceder a la cámara. Verifique los permisos.', 'error');
+    mostrarToast('No se pudo acceder a la cámara. Verifique los permisos del navegador.', 'error');
   }
 }
 
@@ -447,9 +452,9 @@ function cerrarCamara() {
   }
   const modal = document.getElementById('modalCamara');
   if (modal) {
-    modal.setAttribute('hidden', '');
-    modal.classList.remove('modal-activo');
+    modal.classList.remove('activo');
   }
+  console.log('✅ Cámara cerrada');
 }
 
 // ==========================================
@@ -797,3 +802,4 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('📄 Registrar Avería DOM cargado');
   inicializarRegistrarAveria();
 });
+
