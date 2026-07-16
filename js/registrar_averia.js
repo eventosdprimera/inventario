@@ -18,7 +18,7 @@ function mostrarToast(texto, tipo) {
       position: fixed;
       top: 80px;
       right: 20px;
-      z-index: 999999;
+      z-index: 2147483647;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -114,15 +114,8 @@ async function inicializarRegistrarAveria() {
   const modalZoom = document.getElementById('modalZoom');
   const modalCamara = document.getElementById('modalCamara');
   
-  if (modalZoom) {
-    modalZoom.classList.remove('activo');
-    console.log('✅ Modal zoom inicializado oculto');
-  }
-  
-  if (modalCamara) {
-    modalCamara.classList.remove('activo');
-    console.log('✅ Modal cámara inicializado oculto');
-  }
+  if (modalZoom) modalZoom.classList.remove('activo');
+  if (modalCamara) modalCamara.classList.remove('activo');
 
   console.log('✅ === REGISTRO DE AVERÍA INICIALIZADO ===');
 }
@@ -295,12 +288,12 @@ async function cargarFotosDelEquipo(equipo) {
 }
 
 // ==========================================
-// ABRIR ZOOM - MÉTODO infalible con clases CSS
+// 🚀 ABRIR ZOOM - TRUCO INFALIBLE: MOVER AL BODY
 // ==========================================
 function abrirZoomSimple(url) {
   console.log('🔍 Abriendo zoom:', url);
   
-  const modal = document.getElementById('modalZoom');
+  let modal = document.getElementById('modalZoom');
   const img = document.getElementById('imgZoom');
   
   if (!modal || !img) {
@@ -309,24 +302,18 @@ function abrirZoomSimple(url) {
     return;
   }
   
+  // 🚀 TRUCO INFALIBLE: Mover el modal al final del <body> para que escape de cualquier overflow o z-index del dashboard
+  if (modal.parentElement !== document.body) {
+    document.body.appendChild(modal);
+  }
+  
   img.onload = function() {
     console.log('✅ Imagen cargada y mostrada correctamente');
   };
   
-  img.onerror = function() {
-    console.error('❌ Error al cargar imagen');
-    mostrarToast('Error al cargar la imagen', 'error');
-    cerrarZoom();
-  };
-  
-  // 1. Establecer la URL
   img.src = url;
-  
-  // 2. Agregar la clase 'activo' que tiene display: flex !important
   modal.classList.add('activo');
-  
-  // 3. Bloquear el scroll del fondo
-  document.body.style.overflow = 'hidden';
+  document.body.style.overflow = 'hidden'; // Bloquear scroll del fondo
   
   console.log('✅ Zoom abierto visualmente');
 }
@@ -336,18 +323,12 @@ function cerrarZoom() {
   const img = document.getElementById('imgZoom');
   
   if (modal) {
-    // 1. Quitar la clase 'activo'
     modal.classList.remove('activo');
-    
-    // 2. Restaurar el scroll
-    document.body.style.overflow = '';
+    document.body.style.overflow = ''; // Restaurar scroll
   }
-  
   if (img) {
-    // 3. Limpiar src para liberar memoria
-    img.src = '';
+    img.src = ''; // Limpiar src para liberar memoria
   }
-  
   console.log('✅ Zoom cerrado');
 }
 
@@ -362,7 +343,7 @@ function mostrarSeccionesFormulario() {
 }
 
 // ==========================================
-// ABRIR CÁMARA
+// 🚀 ABRIR CÁMARA - TRUCO INFALIBLE: MOVER AL BODY
 // ==========================================
 async function abrirCamara() {
   if (fotosEvidencia.length >= 4) {
@@ -370,15 +351,19 @@ async function abrirCamara() {
     return;
   }
 
-  const modal = document.getElementById('modalCamara');
+  let modal = document.getElementById('modalCamara');
   if (!modal) {
     console.error('❌ ERROR: Modal de cámara no existe');
     mostrarToast('Error: Modal de cámara no disponible', 'error');
     return;
   }
 
+  // 🚀 TRUCO INFALIBLE: Mover al body para evitar que el dashboard lo oculte
+  if (modal.parentElement !== document.body) {
+    document.body.appendChild(modal);
+  }
+
   try {
-    // Solicitar permiso de cámara
     streamCamara = await navigator.mediaDevices.getUserMedia({ 
       video: { facingMode: 'environment' },
       audio: false
@@ -387,7 +372,6 @@ async function abrirCamara() {
     const video = document.getElementById('videoCamara');
     if (video) {
       video.srcObject = streamCamara;
-      // Mostrar modal agregando la clase 'activo'
       modal.classList.add('activo');
       console.log('✅ Cámara iniciada y modal mostrado');
     }
@@ -802,4 +786,3 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('📄 Registrar Avería DOM cargado');
   inicializarRegistrarAveria();
 });
-
