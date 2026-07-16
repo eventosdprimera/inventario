@@ -499,6 +499,40 @@ if (modulo === 'rentar' && operacion === 'terminadas') {
   }
   return;
 }
+
+  // ==========================================
+// CASO: AVERÍAS → REGISTRAR
+// ==========================================
+if (modulo === 'averias' && operacion === 'registrar') {
+  try {
+    if (typeof registrarLog === 'undefined') {
+      await cargarScript('js/logs.js');
+    }
+    
+    if (typeof inicializarRegistrarAveria === 'undefined') {
+      await cargarScript('js/registrar_averia.js');
+    }
+
+    const response = await fetch('html/registrar_averia.html');
+    if (!response.ok) throw new Error('No se pudo cargar html/registrar_averia.html');
+    const htmlText = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+
+    const container = doc.querySelector('.container');
+    if (!container) throw new Error('No se encontró .container');
+    contenidoDiv.innerHTML = container.innerHTML;
+
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (typeof inicializarRegistrarAveria === 'function') {
+      await inicializarRegistrarAveria();
+    }
+  } catch (err) {
+    console.error('Error cargando registrar avería:', err);
+    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+  }
+  return;
+}
   // ==========================================
   // 4. OTROS MÓDULOS (Placeholders organizados)
   // ==========================================
