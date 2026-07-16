@@ -41,9 +41,8 @@
 
 .botones-fotos { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
 
-/* ✅ MODALES - COMPLETAMENTE OCULTOS POR DEFECTO */
+/* ✅ MODALES - Ocultos por defecto mediante el atributo hidden del navegador */
 .modal-zoom, .modal-camara {
-  display: none !important;
   position: fixed;
   z-index: 999999;
   left: 0;
@@ -53,6 +52,7 @@
   overflow: hidden;
 }
 
+/* Cuando tienen la clase modal-activo, se muestran con flex */
 .modal-zoom.modal-activo {
   display: flex !important;
   align-items: center;
@@ -105,15 +105,13 @@
   max-height: 90%;
   position: relative;
 }
-
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 </style>
 </head>
 <body>
 
 <div class="container">
   <div class="page-header">
-    <h1 class="page-title"> Registrar Avería</h1>
+    <h1 class="page-title">🔧 Registrar Avería</h1>
     <p class="page-subtitle">Reporte de equipos dañados o con fallas</p>
   </div>
 
@@ -133,7 +131,7 @@
 
   <!-- SECCIÓN 2: FICHA DEL EQUIPO (oculto hasta buscar) -->
   <fieldset id="fieldsetFichaEquipo" style="display: none;">
-    <legend> Ficha del Equipo</legend>
+    <legend>📋 Ficha del Equipo</legend>
     <div class="ficha-equipo">
       <h3>📦 Información del Equipo</h3>
       <div class="ficha-grid">
@@ -203,22 +201,22 @@
     <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioAveria()">🔄 Nueva Avería</button>
   </div>
 
-  <!-- ✅ MODAL DE ZOOM (OCULTO CON HIDDEN Y STYLE INLINE) -->
-  <div id="modalZoom" class="modal-zoom" hidden style="display: none !important;">
+  <!-- ✅ MODAL DE ZOOM (Solo atributo hidden, sin style inline conflictivo) -->
+  <div id="modalZoom" class="modal-zoom" hidden>
     <button class="modal-zoom-close" onclick="cerrarZoom()" title="Cerrar">&times;</button>
     <div class="modal-zoom-content">
       <img id="imgZoom" src="" alt="Zoom">
     </div>
   </div>
 
-  <!-- ✅ MODAL DE CÁMARA (OCULTO CON HIDDEN Y STYLE INLINE) -->
-  <div id="modalCamara" class="modal-camara" hidden style="display: none !important;">
+  <!-- ✅ MODAL DE CÁMARA (Solo atributo hidden, sin style inline conflictivo) -->
+  <div id="modalCamara" class="modal-camara" hidden>
     <div class="modal-camara-content">
       <h3 style="margin: 0 0 15px 0; color: #1e3a8a;">📷 Tomar Foto</h3>
       <video id="videoCamara" style="width: 100%; max-width: 500px; border-radius: 8px; background: #000;" autoplay playsinline></video>
       <canvas id="canvasCamara" style="display: none;"></canvas>
       <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center;">
-        <button type="button" class="btn-action btn-primary" onclick="capturarFoto()"> Capturar</button>
+        <button type="button" class="btn-action btn-primary" onclick="capturarFoto()">📸 Capturar</button>
         <button type="button" class="btn-action btn-secondary" onclick="cerrarCamara()">❌ Cancelar</button>
       </div>
     </div>
