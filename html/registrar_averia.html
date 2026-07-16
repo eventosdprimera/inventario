@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registrar Avería - Eventos D' Primera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+.ficha-equipo {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  padding: 20px;
+  border-radius: 12px;
+  border-left: 4px solid #f59e0b;
+  margin-bottom: 20px;
+}
+.ficha-equipo h3 {
+  color: #92400e;
+  margin: 0 0 15px 0;
+  font-size: 16px;
+}
+.ficha-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 15px;
+}
+.ficha-item {
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+}
+.ficha-item label {
+  font-size: 11px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 4px;
+}
+.ficha-item strong {
+  color: #1e3a8a;
+  font-size: 14px;
+}
+.fotos-preview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+.foto-preview-item {
+  width: 100%;
+  height: 120px;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f9fafb;
+  overflow: hidden;
+  position: relative;
+}
+.foto-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.foto-preview-item .remove-foto {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 14px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">🔧 Registrar Avería</h1>
+    <p class="page-subtitle">Reporte de equipos dañados o con fallas</p>
+  </div>
+
+  <div id="mensaje" class="mensaje"></div>
+
+  <!-- SECCIÓN 1: BÚSQUEDA DE EQUIPO -->
+  <fieldset>
+    <legend> Buscar Equipo</legend>
+    
+    <div class="codigo-barras-section">
+      <div class="codigo-barras-label">Escanee o escriba el código de barras / serial del equipo</div>
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <input type="text" id="buscarEquipoAveria" 
+               placeholder="Ej: EP-20260714-210042-252452 o YMH-001234" 
+               style="flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;" autofocus>
+        <button type="button" class="btn-action btn-primary" onclick="buscarEquipoAveria()">
+          🔎 Buscar Equipo
+        </button>
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 2: FICHA DEL EQUIPO (oculta inicialmente) -->
+  <fieldset id="fieldsetFichaEquipo" style="display: none;">
+    <legend> Ficha del Equipo</legend>
+    
+    <div class="ficha-equipo">
+      <h3>📋 Información del Equipo</h3>
+      <div class="ficha-grid">
+        <div class="ficha-item">
+          <label>Código de Barras</label>
+          <strong id="fichaCodigo">-</strong>
+        </div>
+        <div class="ficha-item">
+          <label>Nombre del Equipo</label>
+          <strong id="fichaNombre">-</strong>
+        </div>
+        <div class="ficha-item">
+          <label>Marca</label>
+          <strong id="fichaMarca">-</strong>
+        </div>
+        <div class="ficha-item">
+          <label>Modelo</label>
+          <strong id="fichaModelo">-</strong>
+        </div>
+        <div class="ficha-item">
+          <label>Serial</label>
+          <strong id="fichaSerial">-</strong>
+        </div>
+        <div class="ficha-item">
+          <label>Categoría</label>
+          <strong id="fichaCategoria">-</strong>
+        </div>
+      </div>
+      
+      <!-- Fotos del equipo -->
+      <div style="margin-top: 15px;">
+        <label style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">Fotos del Equipo</label>
+        <div id="fichaFotos" class="fotos-preview"></div>
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 3: DATOS DEL REPORTANTE -->
+  <fieldset id="fieldsetReportante" style="display: none;">
+    <legend>👤 Datos del Reportante</legend>
+    
+    <div class="form-grid-registro">
+      <div class="form-group-registro">
+        <label>Nombres <span class="required">*</span></label>
+        <input type="text" id="reportanteNombres" placeholder="Nombres del reportante">
+      </div>
+      <div class="form-group-registro">
+        <label>Apellidos <span class="required">*</span></label>
+        <input type="text" id="reportanteApellidos" placeholder="Apellidos del reportante">
+      </div>
+      <div class="form-group-registro">
+        <label>Cédula <span class="required">*</span></label>
+        <input type="text" id="reportanteCedula" placeholder="V-12345678">
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 4: DETALLES DE LA AVERÍA -->
+  <fieldset id="fieldsetAveria" style="display: none;">
+    <legend>️ Detalles de la Avería</legend>
+    
+    <div class="form-grid-registro">
+      <div class="form-group-registro">
+        <label>Fecha de la Avería <span class="required">*</span></label>
+        <input type="date" id="fechaAveria">
+      </div>
+      <div class="form-group-registro">
+        <label>Hora de la Avería <span class="required">*</span></label>
+        <input type="time" id="horaAveria">
+      </div>
+    </div>
+
+    <div class="form-group-registro full-width" style="margin-top: 15px;">
+      <label>Detalles / Explicación de la Avería <span class="required">*</span></label>
+      <textarea id="detallesAveria" rows="4" placeholder="Describa detalladamente la avería o daño presentado..."></textarea>
+    </div>
+
+    <div class="form-group-registro full-width" style="margin-top: 15px;">
+      <label>Observaciones Adicionales</label>
+      <textarea id="observacionesAveria" rows="3" placeholder="Observaciones adicionales (opcional)..."></textarea>
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 5: FOTOS DE EVIDENCIA -->
+  <fieldset id="fieldsetFotosEvidencia" style="display: none;">
+    <legend>📸 Fotos de Evidencia (Opcional - Máximo 4)</legend>
+    
+    <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 2px dashed #d1d5db;">
+      <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">
+        Haga clic para seleccionar fotos de evidencia del daño
+      </label>
+      <input type="file" id="inputFotosEvidencia" accept="image/*" multiple 
+             style="display: none;" onchange="procesarFotosEvidencia(event)">
+      <button type="button" class="btn-action btn-secondary" onclick="document.getElementById('inputFotosEvidencia').click()">
+         Seleccionar Fotos
+      </button>
+      
+      <div id="previewFotosEvidencia" class="fotos-preview" style="margin-top: 15px;"></div>
+    </div>
+  </fieldset>
+
+  <!-- BOTONES DE ACCIÓN -->
+  <div class="button-group" id="botonesAccion" style="display: none;">
+    <button type="button" class="btn-action btn-primary" onclick="guardarAveria()" id="btnGuardarAveria">
+      💾 Registrar Avería
+    </button>
+    <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioAveria()">
+      🔄 Nueva Avería
+    </button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/registrar_averia.js"></script>
+</body>
+</html>
