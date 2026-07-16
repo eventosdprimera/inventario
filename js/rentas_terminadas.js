@@ -106,7 +106,10 @@ async function buscarRentasTerminadas() {
 // ==========================================
 function renderizarTablaTerm(totalRegistros) {
   const tbody = document.getElementById('tbodyTerminadas');
+  const totalSpan = document.getElementById('totalTerminadas');
   if (!tbody) return;
+
+  if (totalSpan) totalSpan.textContent = totalRegistros;
 
   if (rentasTermCache.length === 0) {
     tbody.innerHTML = `
@@ -153,9 +156,12 @@ function renderizarTablaTerm(totalRegistros) {
         </td>
         <td style="text-align: right; font-weight: 600;">$${parseFloat(renta.total).toFixed(2)}</td>
         <td style="text-align: center;">
-          <button type="button" class="btn-imprimir-term" onclick="imprimirRentaTerminada('${renta.numero_renta}')" 
-                  title="Imprimir comprobante">
-            ️ Imprimir
+          <button type="button" onclick="imprimirRentaTerminada('${renta.numero_renta}')" 
+                  title="Imprimir comprobante" 
+                  style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.3s; box-shadow: 0 2px 4px rgba(30,58,138,0.2);"
+                  onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(30,58,138,0.3)';"
+                  onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(30,58,138,0.2)';">
+            🖨️ Imprimir
           </button>
         </td>
       </tr>
