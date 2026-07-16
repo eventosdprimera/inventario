@@ -15,7 +15,7 @@ function mostrarToast(texto, tipo) {
     toastContainer = document.createElement('div');
     toastContainer.id = 'toastContainer';
     toastContainer.style.cssText = `
-      position: fixed; top: 80px; right: 20px; z-index: 2147483647;
+      position: fixed; top: 80px; right: 20px; z-index: 999999;
       display: flex; flex-direction: column; gap: 10px; max-width: 350px;
     `;
     document.body.appendChild(toastContainer);
@@ -59,20 +59,44 @@ if (!document.getElementById('toastStyles')) {
 }
 
 // ==========================================
-// 🚀 FUNCIÓN INFALIBLE PARA ABRIR ZOOM
+// 🚀 FUNCIÓN INFALIBLE PARA ABRIR ZOOM (CON ESTILOS INLINE)
 // ==========================================
 function abrirZoomInfalible(url) {
   console.log('🔍 Abriendo zoom con URL:', url);
   
   // 1. Crear el modal dinámicamente
   const modal = document.createElement('div');
-  modal.className = 'modal-overlay-dinamico';
   modal.id = 'modalZoomDinamico';
+  // ✅ ESTILOS INLINE DIRECTOS (Evita que el dashboard ignore el CSS)
+  modal.style.cssText = `
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background-color: rgba(0, 0, 0, 0.95) !important;
+    z-index: 999999 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: zoom-out;
+  `;
   
   // 2. Crear el botón de cerrar
   const closeBtn = document.createElement('button');
-  closeBtn.className = 'modal-close-dinamico';
   closeBtn.innerHTML = '&times;';
+  closeBtn.style.cssText = `
+    position: absolute !important;
+    top: 20px !important;
+    right: 30px !important;
+    color: #fff !important;
+    font-size: 40px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    background: none !important;
+    border: none !important;
+    z-index: 1000000 !important;
+  `;
   closeBtn.onclick = function(e) {
     e.stopPropagation();
     cerrarZoomInfalible();
@@ -82,12 +106,19 @@ function abrirZoomInfalible(url) {
   const img = document.createElement('img');
   img.src = url;
   img.alt = 'Zoom de foto';
+  img.style.cssText = `
+    max-width: 90% !important;
+    max-height: 90vh !important;
+    border-radius: 8px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    cursor: default;
+  `;
   
   // 4. Ensamblar
   modal.appendChild(closeBtn);
   modal.appendChild(img);
   
-  // 5. Agregar al BODY (fuera de cualquier contenedor restrictivo)
+  // 5. Agregar al BODY (fuera de cualquier contenedor restrictivo del dashboard)
   document.body.appendChild(modal);
   
   // 6. Bloquear scroll del fondo
@@ -100,7 +131,7 @@ function abrirZoomInfalible(url) {
     }
   });
   
-  console.log('✅ Modal de zoom creado y mostrado');
+  console.log('✅ Modal de zoom creado y mostrado visualmente');
 }
 
 function cerrarZoomInfalible() {
