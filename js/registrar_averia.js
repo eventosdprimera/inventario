@@ -15,7 +15,7 @@ function mostrarToast(texto, tipo) {
     toastContainer = document.createElement('div');
     toastContainer.id = 'toastContainer';
     toastContainer.style.cssText = `
-      position: fixed; top: 80px; right: 20px; z-index: 999999;
+      position: fixed; top: 80px; right: 20px; z-index: 2147483647;
       display: flex; flex-direction: column; gap: 10px; max-width: 350px;
     `;
     document.body.appendChild(toastContainer);
@@ -59,6 +59,60 @@ if (!document.getElementById('toastStyles')) {
 }
 
 // ==========================================
+// 🚀 FUNCIÓN INFALIBLE PARA ABRIR ZOOM
+// ==========================================
+function abrirZoomInfalible(url) {
+  console.log('🔍 Abriendo zoom con URL:', url);
+  
+  // 1. Crear el modal dinámicamente
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay-dinamico';
+  modal.id = 'modalZoomDinamico';
+  
+  // 2. Crear el botón de cerrar
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'modal-close-dinamico';
+  closeBtn.innerHTML = '&times;';
+  closeBtn.onclick = function(e) {
+    e.stopPropagation();
+    cerrarZoomInfalible();
+  };
+  
+  // 3. Crear la imagen
+  const img = document.createElement('img');
+  img.src = url;
+  img.alt = 'Zoom de foto';
+  
+  // 4. Ensamblar
+  modal.appendChild(closeBtn);
+  modal.appendChild(img);
+  
+  // 5. Agregar al BODY (fuera de cualquier contenedor restrictivo)
+  document.body.appendChild(modal);
+  
+  // 6. Bloquear scroll del fondo
+  document.body.style.overflow = 'hidden';
+  
+  // 7. Cerrar al hacer clic fuera de la imagen
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) {
+      cerrarZoomInfalible();
+    }
+  });
+  
+  console.log('✅ Modal de zoom creado y mostrado');
+}
+
+function cerrarZoomInfalible() {
+  const modal = document.getElementById('modalZoomDinamico');
+  if (modal) {
+    modal.remove();
+    document.body.style.overflow = ''; // Restaurar scroll
+    console.log('✅ Modal de zoom cerrado');
+  }
+}
+
+// ==========================================
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarRegistrarAveria() {
@@ -92,12 +146,6 @@ async function inicializarRegistrarAveria() {
       }
     });
   }
-
-  // ✅ FORZAR OCULTAMIENTO ABSOLUTO AL INICIO
-  const modalZoom = document.getElementById('modalZoom');
-  const modalCamara = document.getElementById('modalCamara');
-  if (modalZoom) modalZoom.style.display = 'none';
-  if (modalCamara) modalCamara.style.display = 'none';
 
   console.log('✅ === REGISTRO DE AVERÍA INICIALIZADO ===');
 }
@@ -228,7 +276,8 @@ async function cargarFotosDelEquipo(equipo) {
       fotosEncontradas.forEach((foto, index) => {
         const div = document.createElement('div');
         div.className = 'foto-preview';
-        div.onclick = function() { abrirZoomSimple(foto.url); };
+        // ✅ USAR LA FUNCIÓN INFALIBLE DIRECTAMENTE
+        div.onclick = function() { abrirZoomInfalible(foto.url); };
         div.innerHTML = `<img src="${foto.url}" alt="Foto ${index + 1}" style="cursor: pointer;" onerror="this.parentElement.style.display='none'">`;
         contenedorFotos.appendChild(div);
       });
@@ -238,29 +287,6 @@ async function cargarFotosDelEquipo(equipo) {
   } catch (err) {
     contenedorFotos.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">⚠️</div><div>Error al cargar fotos</div></div>`;
   }
-}
-
-// ==========================================
-// 🚀 ABRIR ZOOM (MÉTODO DIRECTO Y SEGURO)
-// ==========================================
-function abrirZoomSimple(url) {
-  const modal = document.getElementById('modalZoom');
-  const img = document.getElementById('imgZoom');
-  if (!modal || !img) return;
-  
-  img.src = url;
-  modal.style.display = 'flex'; // Mostrar directamente
-  document.body.style.overflow = 'hidden'; // Bloquear scroll
-}
-
-function cerrarZoom() {
-  const modal = document.getElementById('modalZoom');
-  const img = document.getElementById('imgZoom');
-  if (modal) {
-    modal.style.display = 'none'; // Ocultar directamente
-    document.body.style.overflow = ''; // Restaurar scroll
-  }
-  if (img) img.src = '';
 }
 
 // ==========================================
@@ -274,7 +300,7 @@ function mostrarSeccionesFormulario() {
 }
 
 // ==========================================
-// 🚀 ABRIR CÁMARA (MÉTODO DIRECTO Y SEGURO)
+// ABRIR CÁMARA
 // ==========================================
 async function abrirCamara() {
   if (fotosEvidencia.length >= 4) {
@@ -290,7 +316,7 @@ async function abrirCamara() {
     const video = document.getElementById('videoCamara');
     if (video) {
       video.srcObject = streamCamara;
-      modal.style.display = 'flex'; // Mostrar directamente
+      modal.style.display = 'flex';
     }
   } catch (err) {
     console.error('Error al acceder a la cámara:', err);
@@ -343,7 +369,7 @@ function cerrarCamara() {
     streamCamara = null;
   }
   const modal = document.getElementById('modalCamara');
-  if (modal) modal.style.display = 'none'; // Ocultar directamente
+  if (modal) modal.style.display = 'none';
 }
 
 // ==========================================
@@ -394,7 +420,8 @@ function renderizarPreviewFotosEvidencia() {
   fotosEvidencia.forEach((fotoUrl, index) => {
     const div = document.createElement('div');
     div.className = 'foto-preview';
-    div.onclick = function() { abrirZoomSimple(fotoUrl); };
+    // ✅ USAR LA FUNCIÓN INFALIBLE DIRECTAMENTE
+    div.onclick = function() { abrirZoomInfalible(fotoUrl); };
     div.innerHTML = `
       <img src="${fotoUrl}" alt="Evidencia ${index + 1}" style="cursor: pointer;">
       <button type="button" class="foto-remove" onclick="event.stopPropagation(); eliminarFotoEvidencia(${index})">✕</button>
