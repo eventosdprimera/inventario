@@ -7,7 +7,7 @@ let usuarioActualAveria = null;
 let streamCamara = null;
 
 // ==========================================
-// SISTEMA DE NOTIFICACIONES TOAST (Idéntico a nueva_renta.js)
+// SISTEMA DE NOTIFICACIONES TOAST
 // ==========================================
 function mostrarToast(texto, tipo) {
   let toastContainer = document.getElementById('toastContainer');
@@ -64,7 +64,7 @@ function mostrarToast(texto, tipo) {
   }, 3000);
 }
 
-// Agregar animaciones CSS dinámicamente si no existen
+// Agregar animaciones CSS dinámicamente
 if (!document.getElementById('toastStyles')) {
   const style = document.createElement('style');
   style.id = 'toastStyles';
@@ -110,6 +110,12 @@ async function inicializarRegistrarAveria() {
       }
     });
   }
+
+  // ✅ ASEGURAR QUE LOS MODALES ESTÉN OCULTOS AL INICIAR
+  const modalZoom = document.getElementById('modalZoom');
+  const modalCamara = document.getElementById('modalCamara');
+  if (modalZoom) modalZoom.style.display = 'none';
+  if (modalCamara) modalCamara.style.display = 'none';
 
   console.log('✅ === REGISTRO DE AVERÍA INICIALIZADO ===');
 }
@@ -276,7 +282,7 @@ async function cargarFotosDelEquipo(equipo) {
     console.error('Error al cargar fotos del equipo:', err);
     contenedorFotos.innerHTML = `
       <div class="foto-preview-placeholder">
-        <div class="foto-preview-placeholder-icon">⚠️</div>
+        <div class="foto-preview-placeholder-icon">️</div>
         <div>Error al cargar fotos</div>
       </div>`;
   }
@@ -327,7 +333,8 @@ async function abrirCamara() {
     const video = document.getElementById('videoCamara');
     if (video) {
       video.srcObject = streamCamara;
-      document.getElementById('modalCamara').style.display = 'block';
+      const modal = document.getElementById('modalCamara');
+      if (modal) modal.style.display = 'block';
     }
   } catch (err) {
     console.error('Error al acceder a la cámara:', err);
@@ -678,7 +685,7 @@ function imprimirReciboAveria(averia) {
 
   <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
     <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">🖨️ Imprimir Recibo</button>
-    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">❌ Cerrar</button>
+    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;"> Cerrar</button>
   </div>
 </body>
 </html>`;
