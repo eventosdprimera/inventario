@@ -80,6 +80,8 @@
   text-align: center;
   color: #9ca3af;
   font-size: 11px;
+  grid-column: 1 / -1;
+  padding: 20px;
 }
 .foto-preview-placeholder-icon {
   font-size: 32px;
@@ -110,11 +112,11 @@
   transform: scale(1.1);
 }
 
-/* Modal de Zoom */
+/* ✅ Modal de Zoom (Corregido para funcionar siempre) */
 .modal-zoom {
   display: none;
   position: fixed;
-  z-index: 9999;
+  z-index: 10000;
   left: 0;
   top: 0;
   width: 100%;
@@ -132,6 +134,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 8px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
 }
 .modal-zoom-close {
   position: absolute;
@@ -142,6 +145,7 @@
   font-weight: bold;
   cursor: pointer;
   transition: 0.3s;
+  z-index: 10001;
 }
 .modal-zoom-close:hover {
   color: #bbb;
@@ -173,7 +177,6 @@
   <!-- SECCIÓN 1: BÚSQUEDA DE EQUIPO -->
   <fieldset>
     <legend>🔍 Buscar Equipo</legend>
-    
     <div class="codigo-barras-section">
       <div class="codigo-barras-label">📷 Escanee o escriba el código de barras / serial del equipo</div>
       <div style="display: flex; gap: 10px; margin-top: 10px;">
@@ -190,37 +193,17 @@
   <!-- SECCIÓN 2: FICHA DEL EQUIPO (oculta inicialmente) -->
   <fieldset id="fieldsetFichaEquipo" style="display: none;">
     <legend>📋 Ficha del Equipo</legend>
-    
     <div class="ficha-equipo">
-      <h3> Información del Equipo</h3>
+      <h3>📦 Información del Equipo</h3>
       <div class="ficha-grid">
-        <div class="ficha-item">
-          <label>Código de Barras</label>
-          <strong id="fichaCodigo">-</strong>
-        </div>
-        <div class="ficha-item">
-          <label>Nombre del Equipo</label>
-          <strong id="fichaNombre">-</strong>
-        </div>
-        <div class="ficha-item">
-          <label>Marca</label>
-          <strong id="fichaMarca">-</strong>
-        </div>
-        <div class="ficha-item">
-          <label>Modelo</label>
-          <strong id="fichaModelo">-</strong>
-        </div>
-        <div class="ficha-item">
-          <label>Serial</label>
-          <strong id="fichaSerial">-</strong>
-        </div>
-        <div class="ficha-item">
-          <label>Categoría</label>
-          <strong id="fichaCategoria">-</strong>
-        </div>
+        <div class="ficha-item"><label>Código de Barras</label><strong id="fichaCodigo">-</strong></div>
+        <div class="ficha-item"><label>Nombre del Equipo</label><strong id="fichaNombre">-</strong></div>
+        <div class="ficha-item"><label>Marca</label><strong id="fichaMarca">-</strong></div>
+        <div class="ficha-item"><label>Modelo</label><strong id="fichaModelo">-</strong></div>
+        <div class="ficha-item"><label>Serial</label><strong id="fichaSerial">-</strong></div>
+        <div class="ficha-item"><label>Categoría</label><strong id="fichaCategoria">-</strong></div>
       </div>
       
-      <!-- Fotos del equipo en fila horizontal -->
       <div style="margin-top: 15px;">
         <label style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">📸 Fotos del Equipo (clic para zoom)</label>
         <div id="fichaFotos" class="fotos-grid"></div>
@@ -231,43 +214,24 @@
   <!-- SECCIÓN 3: DATOS DEL REPORTANTE -->
   <fieldset id="fieldsetReportante" style="display: none;">
     <legend>👤 Datos del Reportante</legend>
-    
     <div class="form-grid-registro">
-      <div class="form-group-registro">
-        <label>Nombres <span class="required">*</span></label>
-        <input type="text" id="reportanteNombres" placeholder="Nombres del reportante">
-      </div>
-      <div class="form-group-registro">
-        <label>Apellidos <span class="required">*</span></label>
-        <input type="text" id="reportanteApellidos" placeholder="Apellidos del reportante">
-      </div>
-      <div class="form-group-registro">
-        <label>Cédula <span class="required">*</span></label>
-        <input type="text" id="reportanteCedula" placeholder="V-12345678">
-      </div>
+      <div class="form-group-registro"><label>Nombres <span class="required">*</span></label><input type="text" id="reportanteNombres" placeholder="Nombres del reportante"></div>
+      <div class="form-group-registro"><label>Apellidos <span class="required">*</span></label><input type="text" id="reportanteApellidos" placeholder="Apellidos del reportante"></div>
+      <div class="form-group-registro"><label>Cédula <span class="required">*</span></label><input type="text" id="reportanteCedula" placeholder="V-12345678"></div>
     </div>
   </fieldset>
 
   <!-- SECCIÓN 4: DETALLES DE LA AVERÍA -->
   <fieldset id="fieldsetAveria" style="display: none;">
-    <legend>️ Detalles de la Avería</legend>
-    
+    <legend>⚠️ Detalles de la Avería</legend>
     <div class="form-grid-registro">
-      <div class="form-group-registro">
-        <label>Fecha de la Avería <span class="required">*</span></label>
-        <input type="date" id="fechaAveria">
-      </div>
-      <div class="form-group-registro">
-        <label>Hora de la Avería <span class="required">*</span></label>
-        <input type="time" id="horaAveria">
-      </div>
+      <div class="form-group-registro"><label>Fecha de la Avería <span class="required">*</span></label><input type="date" id="fechaAveria"></div>
+      <div class="form-group-registro"><label>Hora de la Avería <span class="required">*</span></label><input type="time" id="horaAveria"></div>
     </div>
-
     <div class="form-group-registro full-width" style="margin-top: 15px;">
       <label>Detalles / Explicación de la Avería <span class="required">*</span></label>
       <textarea id="detallesAveria" rows="4" placeholder="Describa detalladamente la avería o daño presentado..."></textarea>
     </div>
-
     <div class="form-group-registro full-width" style="margin-top: 15px;">
       <label>Observaciones Adicionales</label>
       <textarea id="observacionesAveria" rows="3" placeholder="Observaciones adicionales (opcional)..."></textarea>
@@ -277,28 +241,19 @@
   <!-- SECCIÓN 5: FOTOS DE EVIDENCIA -->
   <fieldset id="fieldsetFotosEvidencia" style="display: none;">
     <legend>📸 Fotos de Evidencia (Opcional - Máximo 4)</legend>
-    
     <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 2px dashed #d1d5db;">
-      <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">
-        Seleccione fotos de evidencia del daño
-      </label>
+      <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">Seleccione fotos de evidencia del daño</label>
       
-      <!-- Botones: Subir archivo y Tomar foto -->
       <div class="botones-fotos">
-        <input type="file" id="inputFotosEvidencia" accept="image/*" multiple 
-               style="display: none;" onchange="procesarFotosEvidencia(event)">
-        <button type="button" class="btn-action btn-secondary" onclick="document.getElementById('inputFotosEvidencia').click()">
-          📁 Subir Archivo
-        </button>
-        <button type="button" class="btn-action btn-primary" onclick="abrirCamara()">
-           Tomar Foto
-        </button>
+        <input type="file" id="inputFotosEvidencia" accept="image/*" multiple style="display: none;" onchange="procesarFotosEvidencia(event)">
+        <button type="button" class="btn-action btn-secondary" onclick="document.getElementById('inputFotosEvidencia').click()">📁 Subir Archivo</button>
+        <button type="button" class="btn-action btn-primary" onclick="abrirCamara()">📷 Tomar Foto</button>
       </div>
       
-      <!-- Fotos de evidencia (vacío al buscar, solo se llena al agregar) -->
+      <!-- ✅ Este contenedor se limpia completamente al buscar un equipo -->
       <div id="previewFotosEvidencia" class="fotos-grid">
-        <div class="foto-preview-placeholder" style="grid-column: 1/-1;">
-          <div class="foto-preview-placeholder-icon"></div>
+        <div class="foto-preview-placeholder">
+          <div class="foto-preview-placeholder-icon">📷</div>
           <div>No hay fotos de evidencia</div>
         </div>
       </div>
@@ -307,15 +262,11 @@
 
   <!-- BOTONES DE ACCIÓN -->
   <div class="button-group" id="botonesAccion" style="display: none;">
-    <button type="button" class="btn-action btn-primary" onclick="guardarAveria()" id="btnGuardarAveria">
-      💾 Registrar Avería
-    </button>
-    <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioAveria()">
-       Nueva Avería
-    </button>
+    <button type="button" class="btn-action btn-primary" onclick="guardarAveria()" id="btnGuardarAveria">💾 Registrar Avería</button>
+    <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioAveria()">🔄 Nueva Avería</button>
   </div>
 
-  <!-- Modal de Zoom -->
+  <!-- ✅ Modal de Zoom (Dentro del container para que el dashboard lo cargue) -->
   <div id="modalZoom" class="modal-zoom" onclick="cerrarZoom()">
     <span class="modal-zoom-close">&times;</span>
     <img class="modal-zoom-content" id="imgZoom">
