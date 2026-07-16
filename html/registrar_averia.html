@@ -41,23 +41,31 @@
 
 .botones-fotos { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
 
-/* ✅ MODALES - Ocultos por defecto mediante el atributo hidden del navegador */
+/* ✅ MODALES - Ocultos por defecto con display: none */
 .modal-zoom, .modal-camara {
+  display: none;
   position: fixed;
-  z-index: 999999;
+  z-index: 999999; /* Por encima de todo el dashboard */
   left: 0;
   top: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
 }
 
-/* Cuando tienen la clase modal-activo, se muestran con flex */
-.modal-zoom.modal-activo {
+/* ✅ Cuando tienen la clase 'activo', se muestran con flex */
+.modal-zoom.activo, .modal-camara.activo {
   display: flex !important;
   align-items: center;
   justify-content: center;
+}
+
+.modal-zoom.activo {
   background-color: rgba(0,0,0,0.95);
+}
+
+.modal-camara.activo {
+  background-color: rgba(0,0,0,0.9);
 }
 
 .modal-zoom-content {
@@ -71,11 +79,12 @@
   max-height: 90vh;
   display: block;
   border-radius: 8px;
+  box-shadow: 0 0 30px rgba(0,0,0,0.8);
 }
 
 .modal-zoom-close {
   position: absolute;
-  top: -40px;
+  top: -45px;
   right: 0;
   color: #f1f1f1;
   font-size: 40px;
@@ -84,17 +93,11 @@
   transition: 0.3s;
   background: none;
   border: none;
+  padding: 0;
 }
 
 .modal-zoom-close:hover {
   color: #bbb;
-}
-
-.modal-camara.modal-activo {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0,0,0,0.9);
 }
 
 .modal-camara-content {
@@ -104,6 +107,7 @@
   max-width: 90%;
   max-height: 90%;
   position: relative;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
 }
 </style>
 </head>
@@ -201,16 +205,16 @@
     <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioAveria()">🔄 Nueva Avería</button>
   </div>
 
-  <!-- ✅ MODAL DE ZOOM (Solo atributo hidden, sin style inline conflictivo) -->
-  <div id="modalZoom" class="modal-zoom" hidden>
+  <!-- ✅ MODAL DE ZOOM (Sin atributo hidden, controlado por clase CSS) -->
+  <div id="modalZoom" class="modal-zoom">
     <button class="modal-zoom-close" onclick="cerrarZoom()" title="Cerrar">&times;</button>
     <div class="modal-zoom-content">
       <img id="imgZoom" src="" alt="Zoom">
     </div>
   </div>
 
-  <!-- ✅ MODAL DE CÁMARA (Solo atributo hidden, sin style inline conflictivo) -->
-  <div id="modalCamara" class="modal-camara" hidden>
+  <!-- ✅ MODAL DE CÁMARA (Sin atributo hidden, controlado por clase CSS) -->
+  <div id="modalCamara" class="modal-camara">
     <div class="modal-camara-content">
       <h3 style="margin: 0 0 15px 0; color: #1e3a8a;">📷 Tomar Foto</h3>
       <video id="videoCamara" style="width: 100%; max-width: 500px; border-radius: 8px; background: #000;" autoplay playsinline></video>
