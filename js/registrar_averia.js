@@ -4,12 +4,13 @@
 let equipoSeleccionadoAveria = null;
 let fotosEvidencia = [];
 let usuarioActualAveria = null;
+let streamCamara = null;
 
 // ==========================================
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarRegistrarAveria() {
-  console.log('🔧 === INICIANDO REGISTRO DE AVERÍA ===');
+  console.log(' === INICIANDO REGISTRO DE AVERÍA ===');
 
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
@@ -24,7 +25,6 @@ async function inicializarRegistrarAveria() {
 
   await cargarUsuarioAveria();
   
-  // Establecer fecha y hora actual
   const ahora = new Date();
   const fechaInput = document.getElementById('fechaAveria');
   const horaInput = document.getElementById('horaAveria');
@@ -32,7 +32,6 @@ async function inicializarRegistrarAveria() {
   if (fechaInput) fechaInput.value = ahora.toISOString().split('T')[0];
   if (horaInput) horaInput.value = ahora.toTimeString().slice(0, 5);
 
-  // Event listener para Enter en búsqueda
   const inputBusqueda = document.getElementById('buscarEquipoAveria');
   if (inputBusqueda) {
     inputBusqueda.addEventListener('keypress', (e) => {
@@ -83,7 +82,6 @@ async function buscarEquipoAveria() {
     return;
   }
 
-  // Sanitizar código
   codigo = codigo.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
 
   try {
@@ -100,7 +98,6 @@ async function buscarEquipoAveria() {
       return;
     }
 
-    // Verificar si ya está averiado
     const { data: yaAveriado } = await supabaseClient
       .from('equipos_averiados')
       .select('id')
@@ -115,18 +112,12 @@ async function buscarEquipoAveria() {
     }
 
     equipoSeleccionadoAveria = data;
-    
-    // ✅ LIMPIAR EL CAMPO DE BÚSQUEDA AUTOMÁTICAMENTE
     input.value = '';
     
-    // ✅ MOSTRAR FICHA INMEDIATAMENTE (sin esperar fotos)
     mostrarFichaEquipoInmediata(data);
     mostrarSeccionesFormulario();
-    
-    // ✅ CARGAR FOTOS EN SEGUNDO PLANO
     cargarFotosDelEquipo(data);
     
-    // Poner foco en el campo de nombres del reportante
     setTimeout(() => {
       const nombresInput = document.getElementById('reportanteNombres');
       if (nombresInput) nombresInput.focus();
@@ -149,11 +140,9 @@ function mostrarFichaEquipoInmediata(equipo) {
   document.getElementById('fichaSerial').textContent = equipo.serial || '-';
   document.getElementById('fichaCategoria').textContent = equipo.categoria || '-';
 
-  // Mostrar placeholder mientras cargan las fotos
   const contenedorFotos = document.getElementById('fichaFotos');
-  contenedorFotos.innerHTML = '<div style="color: #6b7280; font-size: 12px; grid-column: 1/-1; text-align: center; padding: 10px;">Cargando fotos...</div>';
+  contenedorFotos.innerHTML = '<div style="color: #6b7280; font-size: 12px;">Cargando fotos...</div>';
 
-  // Mostrar la ficha
   document.getElementById('fieldsetFichaEquipo').style.display = 'block';
 }
 
@@ -164,7 +153,6 @@ async function cargarFotosDelEquipo(equipo) {
   const contenedorFotos = document.getElementById('fichaFotos');
   
   try {
-    // Intentar 1: Buscar en subcarpeta con el código de barras
     const { data: archivos, error: errorArchivos } = await supabaseClient.storage
       .from('equipos-fotos')
       .list(equipo.codigo_barras);
@@ -172,12 +160,10 @@ async function cargarFotosDelEquipo(equipo) {
     let fotosEncontradas = [];
 
     if (!errorArchivos && archivos && archivos.length > 0) {
-      // Fotos en subcarpeta
       fotosEncontradas = archivos.slice(0, 4).map(archivo => ({
         url: supabaseClient.storage.from('equipos-fotos').getPublicUrl(`${equipo.codigo_barras}/${archivo.name}`).data.publicUrl
       }));
     } else {
-      // Intentar 2: Buscar archivos que empiecen con el código de barras en la raíz
       const { data: archivosRaiz, error: errorRaiz } = await supabaseClient.storage
         .from('equipos-fotos')
         .list('', { search: equipo.codigo_barras, limit: 4 });
@@ -189,23 +175,36 @@ async function cargarFotosDelEquipo(equipo) {
       }
     }
 
-    // Mostrar fotos encontradas
     if (fotosEncontradas.length > 0) {
       contenedorFotos.innerHTML = '';
       fotosEncontradas.forEach((foto, index) => {
         const div = document.createElement('div');
-        div.className = 'foto-preview-item';
-        div.innerHTML = `<img src="${foto.url}" alt="Foto ${index + 1}" onerror="this.parentElement.style.display='none'">`;
+        div.className = 'foto-thumbnail';
+        div.innerHTML = `<img src="${foto.url}" alt="Foto ${index + 1}" onclick="abrirZoom('${foto.url}')">`;
         contenedorFotos.appendChild(div);
       });
     } else {
-      contenedorFotos.innerHTML = '<div style="color: #9ca3af; font-size: 12px; grid-column: 1/-1; text-align: center; padding: 10px;">Sin fotos registradas</div>';
+      contenedorFotos.innerHTML = '<div style="color: #9ca3af; font-size: 12px;">Sin fotos registradas</div>';
     }
 
   } catch (err) {
     console.error('Error al cargar fotos del equipo:', err);
-    contenedorFotos.innerHTML = '<div style="color: #ef4444; font-size: 12px; grid-column: 1/-1; text-align: center; padding: 10px;">Error al cargar fotos</div>';
+    contenedorFotos.innerHTML = '<div style="color: #ef4444; font-size: 12px;">Error al cargar fotos</div>';
   }
+}
+
+// ==========================================
+// ABRIR ZOOM DE FOTO
+// ==========================================
+function abrirZoom(url) {
+  const modal = document.getElementById('modalZoom');
+  const img = document.getElementById('imgZoom');
+  img.src = url;
+  modal.style.display = 'block';
+}
+
+function cerrarZoom() {
+  document.getElementById('modalZoom').style.display = 'none';
 }
 
 // ==========================================
@@ -219,7 +218,84 @@ function mostrarSeccionesFormulario() {
 }
 
 // ==========================================
-// PROCESAR FOTOS DE EVIDENCIA
+// ABRIR CÁMARA
+// ==========================================
+async function abrirCamara() {
+  if (fotosEvidencia.length >= 4) {
+    mostrarMensajeAveria('Máximo 4 fotos permitidas', 'error');
+    return;
+  }
+
+  try {
+    streamCamara = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const video = document.getElementById('videoCamara');
+    video.srcObject = streamCamara;
+    document.getElementById('modalCamara').style.display = 'block';
+  } catch (err) {
+    console.error('Error al acceder a la cámara:', err);
+    mostrarMensajeAveria('No se pudo acceder a la cámara. Verifique los permisos.', 'error');
+  }
+}
+
+// ==========================================
+// CAPTURAR FOTO
+// ==========================================
+function capturarFoto() {
+  const video = document.getElementById('videoCamara');
+  const canvas = document.getElementById('canvasCamara');
+  const context = canvas.getContext('2d');
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  context.drawImage(video, 0, 0);
+
+  const fotoDataURL = canvas.toDataURL('image/png');
+  
+  // Convertir a blob y subir
+  canvas.toBlob(async (blob) => {
+    if (!blob) {
+      mostrarMensajeAveria('Error al capturar foto', 'error');
+      return;
+    }
+
+    const codigoEquipo = equipoSeleccionadoAveria?.codigo_barras || 'sin_codigo';
+    const timestamp = Date.now();
+    const fileName = `${codigoEquipo}/${timestamp}_camara.png`;
+
+    const { data: uploadData, error: uploadError } = await supabaseClient.storage
+      .from('fotos-averias')
+      .upload(fileName, blob);
+
+    if (uploadError) {
+      console.error('Error al subir foto:', uploadError);
+      mostrarMensajeAveria(`Error al subir foto: ${uploadError.message}`, 'error');
+      return;
+    }
+
+    const { data: urlData } = supabaseClient.storage
+      .from('fotos-averias')
+      .getPublicUrl(fileName);
+
+    fotosEvidencia.push(urlData.publicUrl);
+    renderizarPreviewFotosEvidencia();
+    cerrarCamara();
+    mostrarMensajeAveria('✅ Foto capturada y subida exitosamente', 'exito');
+  }, 'image/png');
+}
+
+// ==========================================
+// CERRAR CÁMARA
+// ==========================================
+function cerrarCamara() {
+  if (streamCamara) {
+    streamCamara.getTracks().forEach(track => track.stop());
+    streamCamara = null;
+  }
+  document.getElementById('modalCamara').style.display = 'none';
+}
+
+// ==========================================
+// PROCESAR FOTOS DE EVIDENCIA (subir archivo)
 // ==========================================
 async function procesarFotosEvidencia(event) {
   const files = event.target.files;
@@ -236,9 +312,8 @@ async function procesarFotosEvidencia(event) {
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
-    
-    // Subir al bucket 'fotos-averias'
     const fileName = `${codigoEquipo}/${timestamp}_${i}_${file.name}`;
+    
     const { data: uploadData, error: uploadError } = await supabaseClient.storage
       .from('fotos-averias')
       .upload(fileName, file);
@@ -249,7 +324,6 @@ async function procesarFotosEvidencia(event) {
       continue;
     }
 
-    // Obtener URL pública
     const { data: urlData } = supabaseClient.storage
       .from('fotos-averias')
       .getPublicUrl(fileName);
@@ -269,16 +343,16 @@ function renderizarPreviewFotosEvidencia() {
   contenedor.innerHTML = '';
 
   if (fotosEvidencia.length === 0) {
-    contenedor.innerHTML = '<div style="color: #9ca3af; font-size: 12px; grid-column: 1/-1; text-align: center; padding: 10px;">No hay fotos de evidencia</div>';
+    contenedor.innerHTML = '<div style="color: #9ca3af; font-size: 12px;">No hay fotos de evidencia</div>';
     return;
   }
 
   fotosEvidencia.forEach((fotoUrl, index) => {
     const div = document.createElement('div');
-    div.className = 'foto-preview-item';
+    div.className = 'foto-thumbnail';
     div.innerHTML = `
       <img src="${fotoUrl}" alt="Evidencia ${index + 1}">
-      <button type="button" class="remove-foto" onclick="eliminarFotoEvidencia(${index})" title="Eliminar foto"></button>
+      <button type="button" class="remove-foto" onclick="eliminarFotoEvidencia(${index})" title="Eliminar foto">✕</button>
     `;
     contenedor.appendChild(div);
   });
@@ -293,7 +367,7 @@ function eliminarFotoEvidencia(index) {
 }
 
 // ==========================================
-// GUARDAR AVERÍA (con logs detallados)
+// GUARDAR AVERÍA
 // ==========================================
 async function guardarAveria() {
   if (!equipoSeleccionadoAveria) {
@@ -309,7 +383,6 @@ async function guardarAveria() {
   const detallesAveria = document.getElementById('detallesAveria')?.value.trim() || '';
   const observacionesAveria = document.getElementById('observacionesAveria')?.value.trim() || '';
 
-  // Validaciones
   if (!reportanteNombres || !reportanteApellidos || !reportanteCedula) {
     mostrarMensajeAveria('Por favor complete los datos del reportante', 'error');
     return;
@@ -324,10 +397,9 @@ async function guardarAveria() {
   }
 
   const btnGuardar = document.getElementById('btnGuardarAveria');
-  if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = '⏳ Registrando...'; }
+  if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = ' Registrando...'; }
 
   try {
-    // 1. Insertar en equipos_averiados
     const { data: averiaData, error: errorAveria } = await supabaseClient
       .from('equipos_averiados')
       .insert({
@@ -356,7 +428,6 @@ async function guardarAveria() {
 
     if (errorAveria) throw new Error('Error al registrar avería: ' + errorAveria.message);
 
-    // 2. Eliminar equipo de la tabla equipos
     const { error: errorEliminar } = await supabaseClient
       .from('equipos')
       .delete()
@@ -364,10 +435,8 @@ async function guardarAveria() {
 
     if (errorEliminar) {
       console.error('Error al eliminar equipo de tabla activa:', errorEliminar);
-      console.warn('El equipo se registró como averiado pero no se pudo eliminar de la tabla activa');
     }
 
-    // 3. ✅ LOG DETALLADO: quién, qué equipo, qué avería
     if (typeof registrarLog === 'function') {
       const nombreCompletoReportante = `${reportanteNombres} ${reportanteApellidos}`;
       const descripcion = `🔧 AVERÍA REGISTRADA | Equipo: ${equipoSeleccionadoAveria.codigo_barras} (${equipoSeleccionadoAveria.nombre_equipo}) | Reportante: ${nombreCompletoReportante} (Cédula: ${reportanteCedula}) | Fecha: ${fechaAveria} ${horaAveria} | Avería: ${detallesAveria.substring(0, 150)}${detallesAveria.length > 150 ? '...' : ''} | Registrado por: ${usuarioActualAveria?.email || 'Desconocido'}`;
@@ -376,7 +445,6 @@ async function guardarAveria() {
 
     mostrarMensajeAveria(`✅ Avería registrada exitosamente para el equipo ${equipoSeleccionadoAveria.codigo_barras}`, 'exito');
 
-    // 4. Imprimir recibo automáticamente
     setTimeout(() => {
       imprimirReciboAveria(averiaData);
     }, 1000);
@@ -469,14 +537,14 @@ function imprimirReciboAveria(averia) {
   </div>
 
   <div class="detalles-box">
-    <h3> Detalles de la Avería</h3>
+    <h3>📝 Detalles de la Avería</h3>
     <p>${averia.detalles_averia}</p>
     ${averia.observaciones ? `<p style="margin-top: 10px;"><strong>Observaciones:</strong> ${averia.observaciones}</p>` : ''}
   </div>
 
   ${fotosHTML ? `
   <div class="fotos-section">
-    <h3> Fotos de Evidencia</h3>
+    <h3>📸 Fotos de Evidencia</h3>
     <div style="display: flex; flex-wrap: wrap;">
       ${fotosHTML}
     </div>
@@ -506,7 +574,7 @@ function imprimirReciboAveria(averia) {
 
   <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
     <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">
-      ️ Imprimir Recibo
+      🖨️ Imprimir Recibo
     </button>
     <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
       ❌ Cerrar
