@@ -110,27 +110,24 @@ async function inicializarRegistrarAveria() {
     });
   }
 
-  // ✅ FORZAR OCULTAMIENTO DE MODALES
-  setTimeout(() => {
-    const modalZoom = document.getElementById('modalZoom');
-    const modalCamara = document.getElementById('modalCamara');
-    
-    if (modalZoom) {
-      modalZoom.classList.remove('modal-activo');
-      modalZoom.style.setProperty('display', 'none', 'important');
-    }
-    
-    if (modalCamara) {
-      modalCamara.classList.remove('modal-activo');
-      modalCamara.style.setProperty('display', 'none', 'important');
-    }
-    
-    console.log('✅ Modales forzados a display:none');
-  }, 100);
+  // ✅ OCULTAR MODALES INMEDIATAMENTE (SIN TIMEOUT)
+  const modalZoom = document.getElementById('modalZoom');
+  const modalCamara = document.getElementById('modalCamara');
+  
+  if (modalZoom) {
+    modalZoom.classList.remove('modal-activo');
+    modalZoom.style.setProperty('display', 'none', 'important');
+    console.log('✅ Modal zoom forzado a display:none');
+  }
+  
+  if (modalCamara) {
+    modalCamara.classList.remove('modal-activo');
+    modalCamara.style.setProperty('display', 'none', 'important');
+    console.log('✅ Modal cámara forzado a display:none');
+  }
 
   console.log('✅ === REGISTRO DE AVERÍA INICIALIZADO ===');
 }
-
 // ==========================================
 // CARGAR USUARIO
 // ==========================================
