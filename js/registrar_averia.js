@@ -359,7 +359,7 @@ async function procesarFotosEvidencia(event) {
 }
 
 // ==========================================
-// RENDERIZAR PREVIEW DE FOTOS DE EVIDENCIA
+// RENDERIZAR PREVIEW DE FOTOS DE EVIDENCIA (con zoom al hacer clic)
 // ==========================================
 function renderizarPreviewFotosEvidencia() {
   const contenedor = document.getElementById('previewFotosEvidencia');
@@ -368,7 +368,7 @@ function renderizarPreviewFotosEvidencia() {
   if (fotosEvidencia.length === 0) {
     contenedor.innerHTML = `
       <div class="foto-preview-placeholder" style="grid-column: 1/-1;">
-        <div class="foto-preview-placeholder-icon"></div>
+        <div class="foto-preview-placeholder-icon">📷</div>
         <div>No hay fotos de evidencia</div>
       </div>`;
     return;
@@ -378,8 +378,8 @@ function renderizarPreviewFotosEvidencia() {
     const div = document.createElement('div');
     div.className = 'foto-preview';
     div.innerHTML = `
-      <img src="${fotoUrl}" alt="Evidencia ${index + 1}">
-      <button type="button" class="foto-remove" onclick="eliminarFotoEvidencia(${index})" title="Eliminar foto">✕</button>
+      <img src="${fotoUrl}" alt="Evidencia ${index + 1}" onclick="abrirZoom('${fotoUrl}')" style="cursor: pointer;">
+      <button type="button" class="foto-remove" onclick="event.stopPropagation(); eliminarFotoEvidencia(${index})" title="Eliminar foto">✕</button>
     `;
     contenedor.appendChild(div);
   });
