@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
+/* Ficha del equipo */
 .ficha-equipo {
   background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
   padding: 20px;
@@ -43,6 +44,8 @@
   color: #1e3a8a;
   font-size: 14px;
 }
+
+/* ✅ Fotos en 4 cuadros pequeños */
 .fotos-preview {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -51,7 +54,7 @@
 }
 .foto-preview-item {
   width: 100%;
-  height: 120px;
+  height: 100px;
   border: 2px dashed #d1d5db;
   border-radius: 8px;
   display: flex;
@@ -68,16 +71,24 @@
 }
 .foto-preview-item .remove-foto {
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: 3px;
+  right: 3px;
   background: #dc2626;
   color: white;
   border: none;
   border-radius: 50%;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+.foto-preview-item .remove-foto:hover {
+  background: #b91c1c;
 }
 </style>
 </head>
@@ -96,7 +107,7 @@
     <legend> Buscar Equipo</legend>
     
     <div class="codigo-barras-section">
-      <div class="codigo-barras-label">Escanee o escriba el código de barras / serial del equipo</div>
+      <div class="codigo-barras-label"> Escanee o escriba el código de barras / serial del equipo</div>
       <div style="display: flex; gap: 10px; margin-top: 10px;">
         <input type="text" id="buscarEquipoAveria" 
                placeholder="Ej: EP-20260714-210042-252452 o YMH-001234" 
@@ -110,10 +121,10 @@
 
   <!-- SECCIÓN 2: FICHA DEL EQUIPO (oculta inicialmente) -->
   <fieldset id="fieldsetFichaEquipo" style="display: none;">
-    <legend> Ficha del Equipo</legend>
+    <legend>📋 Ficha del Equipo</legend>
     
     <div class="ficha-equipo">
-      <h3>📋 Información del Equipo</h3>
+      <h3>📦 Información del Equipo</h3>
       <div class="ficha-grid">
         <div class="ficha-item">
           <label>Código de Barras</label>
@@ -143,7 +154,7 @@
       
       <!-- Fotos del equipo -->
       <div style="margin-top: 15px;">
-        <label style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">Fotos del Equipo</label>
+        <label style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">📸 Fotos del Equipo</label>
         <div id="fichaFotos" class="fotos-preview"></div>
       </div>
     </div>
@@ -151,7 +162,7 @@
 
   <!-- SECCIÓN 3: DATOS DEL REPORTANTE -->
   <fieldset id="fieldsetReportante" style="display: none;">
-    <legend>👤 Datos del Reportante</legend>
+    <legend> Datos del Reportante</legend>
     
     <div class="form-grid-registro">
       <div class="form-group-registro">
@@ -171,7 +182,7 @@
 
   <!-- SECCIÓN 4: DETALLES DE LA AVERÍA -->
   <fieldset id="fieldsetAveria" style="display: none;">
-    <legend>️ Detalles de la Avería</legend>
+    <legend>⚠️ Detalles de la Avería</legend>
     
     <div class="form-grid-registro">
       <div class="form-group-registro">
@@ -206,7 +217,7 @@
       <input type="file" id="inputFotosEvidencia" accept="image/*" multiple 
              style="display: none;" onchange="procesarFotosEvidencia(event)">
       <button type="button" class="btn-action btn-secondary" onclick="document.getElementById('inputFotosEvidencia').click()">
-         Seleccionar Fotos
+        📁 Seleccionar Fotos
       </button>
       
       <div id="previewFotosEvidencia" class="fotos-preview" style="margin-top: 15px;"></div>
