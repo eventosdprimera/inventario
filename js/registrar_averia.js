@@ -7,24 +7,49 @@ let usuarioActualAveria = null;
 let streamCamara = null;
 
 // ==========================================
-// SISTEMA DE NOTIFICACIONES TOAST (Sin scroll)
+// SISTEMA DE NOTIFICACIONES TOAST (Idéntico a nueva_renta.js)
 // ==========================================
 function mostrarToast(texto, tipo) {
   let toastContainer = document.getElementById('toastContainer');
   if (!toastContainer) {
     toastContainer = document.createElement('div');
     toastContainer.id = 'toastContainer';
-    toastContainer.className = 'toast-container';
+    toastContainer.style.cssText = `
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 350px;
+    `;
     document.body.appendChild(toastContainer);
   }
 
   const toast = document.createElement('div');
-  toast.className = `toast ${tipo === 'error' ? 'error' : ''}`;
+  const bgColor = tipo === 'exito' ? '#d1fae5' : (tipo === 'error' ? '#fee2e2' : '#fef3c7');
+  const borderColor = tipo === 'exito' ? '#10b981' : (tipo === 'error' ? '#dc2626' : '#f59e0b');
+  const textColor = tipo === 'exito' ? '#065f46' : (tipo === 'error' ? '#991b1b' : '#92400e');
   
-  const icono = tipo === 'error' ? '⚠️' : '✅';
+  toast.style.cssText = `
+    background: ${bgColor};
+    border-left: 4px solid ${borderColor};
+    color: ${textColor};
+    padding: 14px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: toastSlideIn 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  `;
   
   toast.innerHTML = `
-    <span style="font-size: 18px;">${icono}</span>
+    <span style="font-size: 18px;">${tipo === 'exito' ? '✅' : (tipo === 'error' ? '⚠️' : 'ℹ️')}</span>
     <span style="flex: 1;">${texto}</span>
     <span onclick="this.parentElement.remove()" style="cursor: pointer; font-size: 18px; opacity: 0.6;">✕</span>
   `;
@@ -37,6 +62,17 @@ function mostrarToast(texto, tipo) {
       setTimeout(() => toast.remove(), 300);
     }
   }, 3000);
+}
+
+// Agregar animaciones CSS dinámicamente si no existen
+if (!document.getElementById('toastStyles')) {
+  const style = document.createElement('style');
+  style.id = 'toastStyles';
+  style.textContent = `
+    @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes toastSlideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+  `;
+  document.head.appendChild(style);
 }
 
 // ==========================================
@@ -253,7 +289,10 @@ function abrirZoom(url) {
   const modal = document.getElementById('modalZoom');
   const img = document.getElementById('imgZoom');
   
-  if (!modal || !img) return;
+  if (!modal || !img) {
+    console.error('Modal de zoom no encontrado');
+    return;
+  }
   
   img.src = url;
   modal.style.display = 'block';
@@ -286,8 +325,10 @@ async function abrirCamara() {
   try {
     streamCamara = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
     const video = document.getElementById('videoCamara');
-    video.srcObject = streamCamara;
-    document.getElementById('modalCamara').style.display = 'block';
+    if (video) {
+      video.srcObject = streamCamara;
+      document.getElementById('modalCamara').style.display = 'block';
+    }
   } catch (err) {
     console.error('Error al acceder a la cámara:', err);
     mostrarToast('No se pudo acceder a la cámara. Verifique los permisos.', 'error');
@@ -301,6 +342,8 @@ function capturarFoto() {
   const video = document.getElementById('videoCamara');
   const canvas = document.getElementById('canvasCamara');
   const context = canvas.getContext('2d');
+
+  if (!video || !canvas) return;
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
@@ -333,8 +376,6 @@ function capturarFoto() {
     fotosEvidencia.push(urlData.publicUrl);
     renderizarPreviewFotosEvidencia();
     cerrarCamara();
-    
-    // ✅ AQUÍ USAMOS TOAST EN LUGAR DE MENSAJE CON SCROLL
     mostrarToast('✅ Foto capturada y subida exitosamente', 'exito');
   }, 'image/png');
 }
@@ -347,7 +388,8 @@ function cerrarCamara() {
     streamCamara.getTracks().forEach(track => track.stop());
     streamCamara = null;
   }
-  document.getElementById('modalCamara').style.display = 'none';
+  const modal = document.getElementById('modalCamara');
+  if (modal) modal.style.display = 'none';
 }
 
 // ==========================================
@@ -505,7 +547,6 @@ async function guardarAveria() {
       await registrarLog('averias', 'Avería registrada', descripcion, 'warning');
     }
 
-    // ✅ Mensaje final de éxito (este sí puede hacer scroll leve o usamos toast, usaremos toast para consistencia)
     mostrarToast(`✅ Avería registrada exitosamente`, 'exito');
 
     setTimeout(() => {
