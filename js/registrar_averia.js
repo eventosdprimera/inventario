@@ -9,7 +9,7 @@ let usuarioActualAveria = null;
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarRegistrarAveria() {
-  console.log(' === INICIANDO REGISTRO DE AVERÍA ===');
+  console.log('🔧 === INICIANDO REGISTRO DE AVERÍA ===');
 
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
@@ -95,6 +95,8 @@ async function buscarEquipoAveria() {
 
     if (error || !data) {
       mostrarMensajeAveria(`Equipo no encontrado: "${codigo}"`, 'error');
+      input.value = ''; // Limpiar campo si no encuentra
+      input.focus();
       return;
     }
 
@@ -106,12 +108,20 @@ async function buscarEquipoAveria() {
       .maybeSingle();
 
     if (yaAveriado) {
-      mostrarMensajeAveria('⚠️ Este equipo ya está registrado como averiado', 'error');
+      mostrarMensajeAveria('️ Este equipo ya está registrado como averiado', 'error');
+      input.value = ''; // Limpiar campo
+      input.focus();
       return;
     }
 
     equipoSeleccionadoAveria = data;
-    mostrarFichaEquipo(data);
+    
+    // ✅ LIMPIAR EL CAMPO DE BÚSQUEDA AUTOMÁTICAMENTE
+    input.value = '';
+    input.focus();
+    
+    // Mostrar ficha y formulario
+    await mostrarFichaEquipo(data);
     mostrarSeccionesFormulario();
 
   } catch (err) {
@@ -121,9 +131,9 @@ async function buscarEquipoAveria() {
 }
 
 // ==========================================
-// MOSTRAR FICHA DEL EQUIPO
+// MOSTRAR FICHA DEL EQUIPO (con fotos del bucket)
 // ==========================================
-function mostrarFichaEquipo(equipo) {
+async function mostrarFichaEquipo(equipo) {
   document.getElementById('fichaCodigo').textContent = equipo.codigo_barras || '-';
   document.getElementById('fichaNombre').textContent = equipo.nombre_equipo || '-';
   document.getElementById('fichaMarca').textContent = equipo.marca || '-';
@@ -131,19 +141,58 @@ function mostrarFichaEquipo(equipo) {
   document.getElementById('fichaSerial').textContent = equipo.serial || '-';
   document.getElementById('fichaCategoria').textContent = equipo.categoria || '-';
 
-  // Mostrar fotos del equipo
+  // ✅ CARGAR FOTOS DESDE EL BUCKET 'equipos-fotos'
   const contenedorFotos = document.getElementById('fichaFotos');
-  contenedorFotos.innerHTML = '';
+  contenedorFotos.innerHTML = '<div style="color: #6b7280; font-size: 12px;">Cargando fotos...</div>';
 
-  if (equipo.fotos && equipo.fotos.length > 0) {
-    equipo.fotos.forEach((fotoUrl, index) => {
+  try {
+    // Intentar listar archivos del bucket para este equipo
+    const { data: archivos, error: errorArchivos } = await supabaseClient.storage
+      .from('equipos-fotos')
+      .list(equipo.codigo_barras);
+
+    if (errorArchivos || !archivos || archivos.length === 0) {
+      // Si no hay archivos en subcarpeta, intentar listar en raíz
+      const { data: archivosRaiz, error: errorRaiz } = await supabaseClient.storage
+        .from('equipos-fotos')
+        .list('', { search: equipo.codigo_barras });
+
+      if (errorRaiz || !archivosRaiz || archivosRaiz.length === 0) {
+        contenedorFotos.innerHTML = '<div style="color: #9ca3af; font-size: 12px;">Sin fotos registradas</div>';
+        return;
+      }
+
+      // Mostrar fotos encontradas en raíz
+      contenedorFotos.innerHTML = '';
+      for (const archivo of archivosRaiz.slice(0, 4)) {
+        const { data: urlData } = supabaseClient.storage
+          .from('equipos-fotos')
+          .getPublicUrl(archivo.name);
+        
+        const div = document.createElement('div');
+        div.className = 'foto-preview-item';
+        div.innerHTML = `<img src="${urlData.publicUrl}" alt="Foto del equipo">`;
+        contenedorFotos.appendChild(div);
+      }
+      return;
+    }
+
+    // Mostrar fotos de la subcarpeta
+    contenedorFotos.innerHTML = '';
+    for (const archivo of archivos.slice(0, 4)) {
+      const { data: urlData } = supabaseClient.storage
+        .from('equipos-fotos')
+        .getPublicUrl(`${equipo.codigo_barras}/${archivo.name}`);
+      
       const div = document.createElement('div');
       div.className = 'foto-preview-item';
-      div.innerHTML = `<img src="${fotoUrl}" alt="Foto ${index + 1}">`;
+      div.innerHTML = `<img src="${urlData.publicUrl}" alt="Foto del equipo">`;
       contenedorFotos.appendChild(div);
-    });
-  } else {
-    contenedorFotos.innerHTML = '<div style="color: #9ca3af; font-size: 12px;">Sin fotos registradas</div>';
+    }
+
+  } catch (err) {
+    console.error('Error al cargar fotos:', err);
+    contenedorFotos.innerHTML = '<div style="color: #ef4444; font-size: 12px;">Error al cargar fotos</div>';
   }
 
   document.getElementById('fieldsetFichaEquipo').style.display = 'block';
@@ -160,7 +209,7 @@ function mostrarSeccionesFormulario() {
 }
 
 // ==========================================
-// PROCESAR FOTOS DE EVIDENCIA
+// PROCESAR FOTOS DE EVIDENCIA (usando bucket 'fotos-averias')
 // ==========================================
 async function procesarFotosEvidencia(event) {
   const files = event.target.files;
@@ -172,23 +221,27 @@ async function procesarFotosEvidencia(event) {
     return;
   }
 
+  const codigoEquipo = equipoSeleccionadoAveria?.codigo_barras || 'sin_codigo';
+  const timestamp = Date.now();
+
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     
-    // Subir foto a Supabase Storage
-    const fileName = `averias/${Date.now()}_${i}_${file.name}`;
+    // ✅ SUBIR FOTO AL BUCKET 'fotos-averias'
+    const fileName = `${codigoEquipo}/${timestamp}_${i}_${file.name}`;
     const { data: uploadData, error: uploadError } = await supabaseClient.storage
-      .from('fotos_equipos')
+      .from('fotos-averias')
       .upload(fileName, file);
 
     if (uploadError) {
       console.error('Error al subir foto:', uploadError);
+      mostrarMensajeAveria(`Error al subir foto ${i + 1}: ${uploadError.message}`, 'error');
       continue;
     }
 
     // Obtener URL pública
     const { data: urlData } = supabaseClient.storage
-      .from('fotos_equipos')
+      .from('fotos-averias')
       .getPublicUrl(fileName);
 
     fotosEvidencia.push(urlData.publicUrl);
@@ -199,18 +252,23 @@ async function procesarFotosEvidencia(event) {
 }
 
 // ==========================================
-// RENDERIZAR PREVIEW DE FOTOS
+// RENDERIZAR PREVIEW DE FOTOS (miniaturas)
 // ==========================================
 function renderizarPreviewFotosEvidencia() {
   const contenedor = document.getElementById('previewFotosEvidencia');
   contenedor.innerHTML = '';
 
+  if (fotosEvidencia.length === 0) {
+    contenedor.innerHTML = '<div style="color: #9ca3af; font-size: 12px; grid-column: 1/-1; text-align: center; padding: 20px;">No hay fotos de evidencia</div>';
+    return;
+  }
+
   fotosEvidencia.forEach((fotoUrl, index) => {
     const div = document.createElement('div');
     div.className = 'foto-preview-item';
     div.innerHTML = `
-      <img src="${fotoUrl}" alt="Evidencia ${index + 1}">
-      <button type="button" class="remove-foto" onclick="eliminarFotoEvidencia(${index})">✕</button>
+      <img src="${fotoUrl}" alt="Evidencia ${index + 1}" style="width: 100%; height: 100%; object-fit: cover;">
+      <button type="button" class="remove-foto" onclick="eliminarFotoEvidencia(${index})" title="Eliminar foto">✕</button>
     `;
     contenedor.appendChild(div);
   });
@@ -256,7 +314,7 @@ async function guardarAveria() {
   }
 
   const btnGuardar = document.getElementById('btnGuardarAveria');
-  if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = '⏳ Registrando...'; }
+  if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = ' Registrando...'; }
 
   try {
     // 1. Insertar en equipos_averiados
@@ -296,7 +354,6 @@ async function guardarAveria() {
 
     if (errorEliminar) {
       console.error('Error al eliminar equipo de tabla activa:', errorEliminar);
-      // No fallar la operación, solo advertir
       console.warn('El equipo se registró como averiado pero no se pudo eliminar de la tabla activa');
     }
 
@@ -438,7 +495,7 @@ function imprimirReciboAveria(averia) {
 
   <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
     <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">
-      🖨️ Imprimir Recibo
+      ️ Imprimir Recibo
     </button>
     <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
       ❌ Cerrar
@@ -481,7 +538,7 @@ function limpiarFormularioAveria() {
   document.getElementById('botonesAccion').style.display = 'none';
 
   const btnGuardar = document.getElementById('btnGuardarAveria');
-  if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = ' Registrar Avería'; }
+  if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Registrar Avería'; }
 
   mostrarMensajeAveria('Formulario listo para nuevo reporte', 'exito');
 }
