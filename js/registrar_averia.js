@@ -114,12 +114,12 @@ async function buscarEquipoAveria() {
     equipoSeleccionadoAveria = data;
     input.value = '';
     
-    // ✅ Resetear fotos de evidencia al buscar nuevo equipo
+    // ✅ LIMPIEZA TOTAL DE FOTOS DE EVIDENCIA AL BUSCAR
     fotosEvidencia = [];
     const previewEvidencia = document.getElementById('previewFotosEvidencia');
     if (previewEvidencia) {
       previewEvidencia.innerHTML = `
-        <div class="foto-preview-placeholder" style="grid-column: 1/-1;">
+        <div class="foto-preview-placeholder">
           <div class="foto-preview-placeholder-icon">📷</div>
           <div>No hay fotos de evidencia</div>
         </div>`;
@@ -152,7 +152,7 @@ function mostrarFichaEquipoInmediata(equipo) {
   document.getElementById('fichaCategoria').textContent = equipo.categoria || '-';
 
   const contenedorFotos = document.getElementById('fichaFotos');
-  contenedorFotos.innerHTML = '<div style="color: #6b7280; font-size: 12px; grid-column: 1/-1; text-align: center; padding: 20px;">Cargando fotos...</div>';
+  contenedorFotos.innerHTML = '<div class="foto-preview-placeholder">Cargando fotos...</div>';
 
   document.getElementById('fieldsetFichaEquipo').style.display = 'block';
 }
@@ -191,12 +191,14 @@ async function cargarFotosDelEquipo(equipo) {
       fotosEncontradas.forEach((foto, index) => {
         const div = document.createElement('div');
         div.className = 'foto-preview';
-        div.innerHTML = `<img src="${foto.url}" alt="Foto ${index + 1}" onclick="abrirZoom('${foto.url}')" onerror="this.parentElement.style.display='none'">`;
+        // ✅ Escapamos comillas para que el zoom funcione siempre
+        const urlEscapada = foto.url.replace(/'/g, "\\'");
+        div.innerHTML = `<img src="${foto.url}" alt="Foto ${index + 1}" onclick="abrirZoom('${urlEscapada}')" style="cursor: pointer;" onerror="this.parentElement.style.display='none'">`;
         contenedorFotos.appendChild(div);
       });
     } else {
       contenedorFotos.innerHTML = `
-        <div class="foto-preview-placeholder" style="grid-column: 1/-1;">
+        <div class="foto-preview-placeholder">
           <div class="foto-preview-placeholder-icon">📷</div>
           <div>Sin fotos registradas</div>
         </div>`;
@@ -205,7 +207,7 @@ async function cargarFotosDelEquipo(equipo) {
   } catch (err) {
     console.error('Error al cargar fotos del equipo:', err);
     contenedorFotos.innerHTML = `
-      <div class="foto-preview-placeholder" style="grid-column: 1/-1;">
+      <div class="foto-preview-placeholder">
         <div class="foto-preview-placeholder-icon">⚠️</div>
         <div>Error al cargar fotos</div>
       </div>`;
@@ -359,7 +361,7 @@ async function procesarFotosEvidencia(event) {
 }
 
 // ==========================================
-// RENDERIZAR PREVIEW DE FOTOS DE EVIDENCIA (con zoom al hacer clic)
+// RENDERIZAR PREVIEW DE FOTOS DE EVIDENCIA
 // ==========================================
 function renderizarPreviewFotosEvidencia() {
   const contenedor = document.getElementById('previewFotosEvidencia');
@@ -367,7 +369,7 @@ function renderizarPreviewFotosEvidencia() {
 
   if (fotosEvidencia.length === 0) {
     contenedor.innerHTML = `
-      <div class="foto-preview-placeholder" style="grid-column: 1/-1;">
+      <div class="foto-preview-placeholder">
         <div class="foto-preview-placeholder-icon">📷</div>
         <div>No hay fotos de evidencia</div>
       </div>`;
@@ -377,8 +379,10 @@ function renderizarPreviewFotosEvidencia() {
   fotosEvidencia.forEach((fotoUrl, index) => {
     const div = document.createElement('div');
     div.className = 'foto-preview';
+    // ✅ Escapamos comillas para que el zoom funcione siempre
+    const urlEscapada = fotoUrl.replace(/'/g, "\\'");
     div.innerHTML = `
-      <img src="${fotoUrl}" alt="Evidencia ${index + 1}" onclick="abrirZoom('${fotoUrl}')" style="cursor: pointer;">
+      <img src="${fotoUrl}" alt="Evidencia ${index + 1}" onclick="abrirZoom('${urlEscapada}')" style="cursor: pointer;">
       <button type="button" class="foto-remove" onclick="event.stopPropagation(); eliminarFotoEvidencia(${index})" title="Eliminar foto">✕</button>
     `;
     contenedor.appendChild(div);
@@ -547,7 +551,7 @@ function imprimirReciboAveria(averia) {
 
   <div class="info-grid">
     <div class="info-box">
-      <h3> Equipo Averiados</h3>
+      <h3>📦 Equipo Averiados</h3>
       <p><strong>Nombre:</strong> ${averia.nombre_equipo}</p>
       <p><strong>Marca:</strong> ${averia.marca || 'N/A'}</p>
       <p><strong>Modelo:</strong> ${averia.modelo || 'N/A'}</p>
@@ -564,14 +568,14 @@ function imprimirReciboAveria(averia) {
   </div>
 
   <div class="detalles-box">
-    <h3> Detalles de la Avería</h3>
+    <h3>📝 Detalles de la Avería</h3>
     <p>${averia.detalles_averia}</p>
     ${averia.observaciones ? `<p style="margin-top: 10px;"><strong>Observaciones:</strong> ${averia.observaciones}</p>` : ''}
   </div>
 
   ${fotosHTML ? `
   <div class="fotos-section">
-    <h3> Fotos de Evidencia</h3>
+    <h3>📸 Fotos de Evidencia</h3>
     <div style="display: flex; flex-wrap: wrap;">
       ${fotosHTML}
     </div>
@@ -600,12 +604,8 @@ function imprimirReciboAveria(averia) {
   </div>
 
   <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
-    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">
-      🖨️ Imprimir Recibo
-    </button>
-    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
-      ❌ Cerrar
-    </button>
+    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">🖨️ Imprimir Recibo</button>
+    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">❌ Cerrar</button>
   </div>
 </body>
 </html>`;
@@ -632,11 +632,11 @@ function limpiarFormularioAveria() {
   document.getElementById('detallesAveria').value = '';
   document.getElementById('observacionesAveria').value = '';
   
-  // ✅ Resetear fotos de evidencia
+  // ✅ Resetear fotos de evidencia al limpiar
   const previewEvidencia = document.getElementById('previewFotosEvidencia');
   if (previewEvidencia) {
     previewEvidencia.innerHTML = `
-      <div class="foto-preview-placeholder" style="grid-column: 1/-1;">
+      <div class="foto-preview-placeholder">
         <div class="foto-preview-placeholder-icon">📷</div>
         <div>No hay fotos de evidencia</div>
       </div>`;
