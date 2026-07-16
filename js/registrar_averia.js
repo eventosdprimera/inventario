@@ -15,14 +15,8 @@ function mostrarToast(texto, tipo) {
     toastContainer = document.createElement('div');
     toastContainer.id = 'toastContainer';
     toastContainer.style.cssText = `
-      position: fixed;
-      top: 80px;
-      right: 20px;
-      z-index: 2147483647;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-width: 350px;
+      position: fixed; top: 80px; right: 20px; z-index: 999999;
+      display: flex; flex-direction: column; gap: 10px; max-width: 350px;
     `;
     document.body.appendChild(toastContainer);
   }
@@ -33,19 +27,10 @@ function mostrarToast(texto, tipo) {
   const textColor = tipo === 'exito' ? '#065f46' : (tipo === 'error' ? '#991b1b' : '#92400e');
   
   toast.style.cssText = `
-    background: ${bgColor};
-    border-left: 4px solid ${borderColor};
-    color: ${textColor};
-    padding: 14px 18px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    animation: toastSlideIn 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    background: ${bgColor}; border-left: 4px solid ${borderColor}; color: ${textColor};
+    padding: 14px 18px; border-radius: 8px; font-size: 14px; font-family: 'Poppins', sans-serif;
+    font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: toastSlideIn 0.3s ease;
+    display: flex; align-items: center; gap: 10px;
   `;
   
   toast.innerHTML = `
@@ -55,7 +40,6 @@ function mostrarToast(texto, tipo) {
   `;
 
   toastContainer.appendChild(toast);
-
   setTimeout(() => {
     if (toast.parentElement) {
       toast.style.animation = 'toastSlideOut 0.3s ease forwards';
@@ -96,7 +80,6 @@ async function inicializarRegistrarAveria() {
   const ahora = new Date();
   const fechaInput = document.getElementById('fechaAveria');
   const horaInput = document.getElementById('horaAveria');
-  
   if (fechaInput) fechaInput.value = ahora.toISOString().split('T')[0];
   if (horaInput) horaInput.value = ahora.toTimeString().slice(0, 5);
 
@@ -110,12 +93,11 @@ async function inicializarRegistrarAveria() {
     });
   }
 
-  // ✅ ASEGURAR QUE LOS MODALES ESTÉN OCULTOS AL INICIO
+  // ✅ FORZAR OCULTAMIENTO ABSOLUTO AL INICIO
   const modalZoom = document.getElementById('modalZoom');
   const modalCamara = document.getElementById('modalCamara');
-  
-  if (modalZoom) modalZoom.classList.remove('activo');
-  if (modalCamara) modalCamara.classList.remove('activo');
+  if (modalZoom) modalZoom.style.display = 'none';
+  if (modalCamara) modalCamara.style.display = 'none';
 
   console.log('✅ === REGISTRO DE AVERÍA INICIALIZADO ===');
 }
@@ -127,13 +109,7 @@ async function cargarUsuarioAveria() {
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) return;
-
-    const { data, error } = await supabaseClient
-      .from('usuarios')
-      .select('*')
-      .eq('email', session.user.email)
-      .maybeSingle();
-
+    const { data, error } = await supabaseClient.from('usuarios').select('*').eq('email', session.user.email).maybeSingle();
     if (data && !error) {
       usuarioActualAveria = data;
     } else {
@@ -192,11 +168,7 @@ async function buscarEquipoAveria() {
     fotosEvidencia = [];
     const previewEvidencia = document.getElementById('previewFotosEvidencia');
     if (previewEvidencia) {
-      previewEvidencia.innerHTML = `
-        <div class="foto-preview-placeholder">
-          <div class="foto-preview-placeholder-icon">📷</div>
-          <div>No hay fotos de evidencia</div>
-        </div>`;
+      previewEvidencia.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>No hay fotos de evidencia</div></div>`;
     }
     
     mostrarFichaEquipoInmediata(data);
@@ -215,7 +187,7 @@ async function buscarEquipoAveria() {
 }
 
 // ==========================================
-// MOSTRAR FICHA DEL EQUIPO INMEDIATAMENTE
+// MOSTRAR FICHA DEL EQUIPO
 // ==========================================
 function mostrarFichaEquipoInmediata(equipo) {
   document.getElementById('fichaCodigo').textContent = equipo.codigo_barras || '-';
@@ -225,23 +197,17 @@ function mostrarFichaEquipoInmediata(equipo) {
   document.getElementById('fichaSerial').textContent = equipo.serial || '-';
   document.getElementById('fichaCategoria').textContent = equipo.categoria || '-';
 
-  const contenedorFotos = document.getElementById('fichaFotos');
-  contenedorFotos.innerHTML = '<div class="foto-preview-placeholder">Cargando fotos...</div>';
-
+  document.getElementById('fichaFotos').innerHTML = '<div class="foto-preview-placeholder">Cargando fotos...</div>';
   document.getElementById('fieldsetFichaEquipo').style.display = 'block';
 }
 
 // ==========================================
-// CARGAR FOTOS DEL EQUIPO DESDE EL BUCKET
+// CARGAR FOTOS DEL EQUIPO
 // ==========================================
 async function cargarFotosDelEquipo(equipo) {
   const contenedorFotos = document.getElementById('fichaFotos');
-  
   try {
-    const { data: archivos, error: errorArchivos } = await supabaseClient.storage
-      .from('equipos-fotos')
-      .list(equipo.codigo_barras);
-
+    const { data: archivos, error: errorArchivos } = await supabaseClient.storage.from('equipos-fotos').list(equipo.codigo_barras);
     let fotosEncontradas = [];
 
     if (!errorArchivos && archivos && archivos.length > 0) {
@@ -249,11 +215,8 @@ async function cargarFotosDelEquipo(equipo) {
         url: supabaseClient.storage.from('equipos-fotos').getPublicUrl(`${equipo.codigo_barras}/${archivo.name}`).data.publicUrl
       }));
     } else {
-      const { data: archivosRaiz, error: errorRaiz } = await supabaseClient.storage
-        .from('equipos-fotos')
-        .list('', { search: equipo.codigo_barras, limit: 4 });
-
-      if (!errorRaiz && archivosRaiz && archivosRaiz.length > 0) {
+      const { data: archivosRaiz } = await supabaseClient.storage.from('equipos-fotos').list('', { search: equipo.codigo_barras, limit: 4 });
+      if (archivosRaiz && archivosRaiz.length > 0) {
         fotosEncontradas = archivosRaiz.map(archivo => ({
           url: supabaseClient.storage.from('equipos-fotos').getPublicUrl(archivo.name).data.publicUrl
         }));
@@ -270,66 +233,34 @@ async function cargarFotosDelEquipo(equipo) {
         contenedorFotos.appendChild(div);
       });
     } else {
-      contenedorFotos.innerHTML = `
-        <div class="foto-preview-placeholder">
-          <div class="foto-preview-placeholder-icon">📷</div>
-          <div>Sin fotos registradas</div>
-        </div>`;
+      contenedorFotos.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>Sin fotos registradas</div></div>`;
     }
-
   } catch (err) {
-    console.error('Error al cargar fotos del equipo:', err);
-    contenedorFotos.innerHTML = `
-      <div class="foto-preview-placeholder">
-        <div class="foto-preview-placeholder-icon">⚠️</div>
-        <div>Error al cargar fotos</div>
-      </div>`;
+    contenedorFotos.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">⚠️</div><div>Error al cargar fotos</div></div>`;
   }
 }
 
 // ==========================================
-// 🚀 ABRIR ZOOM - TRUCO INFALIBLE: MOVER AL BODY
+// 🚀 ABRIR ZOOM (MÉTODO DIRECTO Y SEGURO)
 // ==========================================
 function abrirZoomSimple(url) {
-  console.log('🔍 Abriendo zoom:', url);
-  
-  let modal = document.getElementById('modalZoom');
+  const modal = document.getElementById('modalZoom');
   const img = document.getElementById('imgZoom');
-  
-  if (!modal || !img) {
-    console.error('❌ Modal o imagen no encontrados');
-    mostrarToast('Error: No se puede abrir el zoom', 'error');
-    return;
-  }
-  
-  // 🚀 TRUCO INFALIBLE: Mover el modal al final del <body> para que escape de cualquier overflow o z-index del dashboard
-  if (modal.parentElement !== document.body) {
-    document.body.appendChild(modal);
-  }
-  
-  img.onload = function() {
-    console.log('✅ Imagen cargada y mostrada correctamente');
-  };
+  if (!modal || !img) return;
   
   img.src = url;
-  modal.classList.add('activo');
-  document.body.style.overflow = 'hidden'; // Bloquear scroll del fondo
-  
-  console.log('✅ Zoom abierto visualmente');
+  modal.style.display = 'flex'; // Mostrar directamente
+  document.body.style.overflow = 'hidden'; // Bloquear scroll
 }
 
 function cerrarZoom() {
   const modal = document.getElementById('modalZoom');
   const img = document.getElementById('imgZoom');
-  
   if (modal) {
-    modal.classList.remove('activo');
+    modal.style.display = 'none'; // Ocultar directamente
     document.body.style.overflow = ''; // Restaurar scroll
   }
-  if (img) {
-    img.src = ''; // Limpiar src para liberar memoria
-  }
-  console.log('✅ Zoom cerrado');
+  if (img) img.src = '';
 }
 
 // ==========================================
@@ -343,7 +274,7 @@ function mostrarSeccionesFormulario() {
 }
 
 // ==========================================
-// 🚀 ABRIR CÁMARA - TRUCO INFALIBLE: MOVER AL BODY
+// 🚀 ABRIR CÁMARA (MÉTODO DIRECTO Y SEGURO)
 // ==========================================
 async function abrirCamara() {
   if (fotosEvidencia.length >= 4) {
@@ -351,33 +282,19 @@ async function abrirCamara() {
     return;
   }
 
-  let modal = document.getElementById('modalCamara');
-  if (!modal) {
-    console.error('❌ ERROR: Modal de cámara no existe');
-    mostrarToast('Error: Modal de cámara no disponible', 'error');
-    return;
-  }
-
-  // 🚀 TRUCO INFALIBLE: Mover al body para evitar que el dashboard lo oculte
-  if (modal.parentElement !== document.body) {
-    document.body.appendChild(modal);
-  }
+  const modal = document.getElementById('modalCamara');
+  if (!modal) return;
 
   try {
-    streamCamara = await navigator.mediaDevices.getUserMedia({ 
-      video: { facingMode: 'environment' },
-      audio: false
-    });
-    
+    streamCamara = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
     const video = document.getElementById('videoCamara');
     if (video) {
       video.srcObject = streamCamara;
-      modal.classList.add('activo');
-      console.log('✅ Cámara iniciada y modal mostrado');
+      modal.style.display = 'flex'; // Mostrar directamente
     }
   } catch (err) {
     console.error('Error al acceder a la cámara:', err);
-    mostrarToast('No se pudo acceder a la cámara. Verifique los permisos del navegador.', 'error');
+    mostrarToast('No se pudo acceder a la cámara. Verifique los permisos.', 'error');
   }
 }
 
@@ -387,13 +304,11 @@ async function abrirCamara() {
 function capturarFoto() {
   const video = document.getElementById('videoCamara');
   const canvas = document.getElementById('canvasCamara');
-  const context = canvas.getContext('2d');
-
   if (!video || !canvas) return;
 
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
-  context.drawImage(video, 0, 0);
+  canvas.getContext('2d').drawImage(video, 0, 0);
 
   canvas.toBlob(async (blob) => {
     if (!blob) {
@@ -402,27 +317,20 @@ function capturarFoto() {
     }
 
     const codigoEquipo = equipoSeleccionadoAveria?.codigo_barras || 'sin_codigo';
-    const timestamp = Date.now();
-    const fileName = `${codigoEquipo}/${timestamp}_camara.png`;
+    const fileName = `${codigoEquipo}/${Date.now()}_camara.png`;
 
-    const { data: uploadData, error: uploadError } = await supabaseClient.storage
-      .from('fotos-averias')
-      .upload(fileName, blob);
-
+    const { error: uploadError } = await supabaseClient.storage.from('fotos-averias').upload(fileName, blob);
     if (uploadError) {
-      console.error('Error al subir foto:', uploadError);
-      mostrarToast(`Error al subir foto: ${uploadError.message}`, 'error');
+      mostrarToast(`Error al subir: ${uploadError.message}`, 'error');
       return;
     }
 
-    const { data: urlData } = supabaseClient.storage
-      .from('fotos-averias')
-      .getPublicUrl(fileName);
-
+    const { data: urlData } = supabaseClient.storage.from('fotos-averias').getPublicUrl(fileName);
     fotosEvidencia.push(urlData.publicUrl);
+    
     renderizarPreviewFotosEvidencia();
     cerrarCamara();
-    mostrarToast('✅ Foto capturada y subida exitosamente', 'exito');
+    mostrarToast('✅ Foto capturada exitosamente', 'exito');
   }, 'image/png');
 }
 
@@ -435,10 +343,7 @@ function cerrarCamara() {
     streamCamara = null;
   }
   const modal = document.getElementById('modalCamara');
-  if (modal) {
-    modal.classList.remove('activo');
-  }
-  console.log('✅ Cámara cerrada');
+  if (modal) modal.style.display = 'none'; // Ocultar directamente
 }
 
 // ==========================================
@@ -455,26 +360,17 @@ async function procesarFotosEvidencia(event) {
   }
 
   const codigoEquipo = equipoSeleccionadoAveria?.codigo_barras || 'sin_codigo';
-  const timestamp = Date.now();
 
   for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const fileName = `${codigoEquipo}/${timestamp}_${i}_${file.name}`;
-    
-    const { data: uploadData, error: uploadError } = await supabaseClient.storage
-      .from('fotos-averias')
-      .upload(fileName, file);
+    const fileName = `${codigoEquipo}/${Date.now()}_${i}_${files[i].name}`;
+    const { error: uploadError } = await supabaseClient.storage.from('fotos-averias').upload(fileName, files[i]);
 
     if (uploadError) {
-      console.error('Error al subir foto:', uploadError);
-      mostrarToast(`Error al subir foto ${i + 1}: ${uploadError.message}`, 'error');
+      mostrarToast(`Error al subir foto ${i + 1}`, 'error');
       continue;
     }
 
-    const { data: urlData } = supabaseClient.storage
-      .from('fotos-averias')
-      .getPublicUrl(fileName);
-
+    const { data: urlData } = supabaseClient.storage.from('fotos-averias').getPublicUrl(fileName);
     fotosEvidencia.push(urlData.publicUrl);
   }
 
@@ -484,18 +380,14 @@ async function procesarFotosEvidencia(event) {
 }
 
 // ==========================================
-// RENDERIZAR PREVIEW DE FOTOS DE EVIDENCIA
+// RENDERIZAR PREVIEW DE FOTOS
 // ==========================================
 function renderizarPreviewFotosEvidencia() {
   const contenedor = document.getElementById('previewFotosEvidencia');
   contenedor.innerHTML = '';
 
   if (fotosEvidencia.length === 0) {
-    contenedor.innerHTML = `
-      <div class="foto-preview-placeholder">
-        <div class="foto-preview-placeholder-icon">📷</div>
-        <div>No hay fotos de evidencia</div>
-      </div>`;
+    contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>No hay fotos de evidencia</div></div>`;
     return;
   }
 
@@ -505,15 +397,12 @@ function renderizarPreviewFotosEvidencia() {
     div.onclick = function() { abrirZoomSimple(fotoUrl); };
     div.innerHTML = `
       <img src="${fotoUrl}" alt="Evidencia ${index + 1}" style="cursor: pointer;">
-      <button type="button" class="foto-remove" onclick="event.stopPropagation(); eliminarFotoEvidencia(${index})" title="Eliminar foto">✕</button>
+      <button type="button" class="foto-remove" onclick="event.stopPropagation(); eliminarFotoEvidencia(${index})">✕</button>
     `;
     contenedor.appendChild(div);
   });
 }
 
-// ==========================================
-// ELIMINAR FOTO DE EVIDENCIA
-// ==========================================
 function eliminarFotoEvidencia(index) {
   fotosEvidencia.splice(index, 1);
   renderizarPreviewFotosEvidencia();
@@ -537,15 +426,11 @@ async function guardarAveria() {
   const observacionesAveria = document.getElementById('observacionesAveria')?.value.trim() || '';
 
   if (!reportanteNombres || !reportanteApellidos || !reportanteCedula) {
-    mostrarToast('Por favor complete los datos del reportante', 'error');
+    mostrarToast('Complete los datos del reportante', 'error');
     return;
   }
-  if (!fechaAveria || !horaAveria) {
-    mostrarToast('Por favor ingrese la fecha y hora de la avería', 'error');
-    return;
-  }
-  if (!detallesAveria) {
-    mostrarToast('Por favor describa los detalles de la avería', 'error');
+  if (!fechaAveria || !horaAveria || !detallesAveria) {
+    mostrarToast('Complete la fecha, hora y detalles de la avería', 'error');
     return;
   }
 
@@ -553,54 +438,38 @@ async function guardarAveria() {
   if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = '⏳ Registrando...'; }
 
   try {
-    const { data: averiaData, error: errorAveria } = await supabaseClient
-      .from('equipos_averiados')
-      .insert({
-        equipo_id_original: equipoSeleccionadoAveria.id,
-        codigo_barras: equipoSeleccionadoAveria.codigo_barras,
-        nombre_equipo: equipoSeleccionadoAveria.nombre_equipo,
-        marca: equipoSeleccionadoAveria.marca,
-        modelo: equipoSeleccionadoAveria.modelo,
-        serial: equipoSeleccionadoAveria.serial,
-        categoria: equipoSeleccionadoAveria.categoria,
-        costo: equipoSeleccionadoAveria.costo || 0,
-        estado: 'averiado',
-        reportante_nombre: reportanteNombres,
-        reportante_apellidos: reportanteApellidos,
-        reportante_cedula: reportanteCedula,
-        fecha_averia: fechaAveria,
-        hora_averia: horaAveria,
-        detalles_averia: detallesAveria,
-        observaciones: observacionesAveria,
-        fotos_evidencia: fotosEvidencia.length > 0 ? fotosEvidencia : null,
-        usuario_registro: usuarioActualAveria?.email || 'unknown',
-        usuario_registro_id: usuarioActualAveria?.id || null
-      })
-      .select()
-      .single();
+    const { data: averiaData, error: errorAveria } = await supabaseClient.from('equipos_averiados').insert({
+      equipo_id_original: equipoSeleccionadoAveria.id,
+      codigo_barras: equipoSeleccionadoAveria.codigo_barras,
+      nombre_equipo: equipoSeleccionadoAveria.nombre_equipo,
+      marca: equipoSeleccionadoAveria.marca,
+      modelo: equipoSeleccionadoAveria.modelo,
+      serial: equipoSeleccionadoAveria.serial,
+      categoria: equipoSeleccionadoAveria.categoria,
+      costo: equipoSeleccionadoAveria.costo || 0,
+      estado: 'averiado',
+      reportante_nombre: reportanteNombres,
+      reportante_apellidos: reportanteApellidos,
+      reportante_cedula: reportanteCedula,
+      fecha_averia: fechaAveria,
+      hora_averia: horaAveria,
+      detalles_averia: detallesAveria,
+      observaciones: observacionesAveria,
+      fotos_evidencia: fotosEvidencia.length > 0 ? fotosEvidencia : null,
+      usuario_registro: usuarioActualAveria?.email || 'unknown',
+      usuario_registro_id: usuarioActualAveria?.id || null
+    }).select().single();
 
-    if (errorAveria) throw new Error('Error al registrar avería: ' + errorAveria.message);
+    if (errorAveria) throw errorAveria;
 
-    const { error: errorEliminar } = await supabaseClient
-      .from('equipos')
-      .delete()
-      .eq('id', equipoSeleccionadoAveria.id);
-
-    if (errorEliminar) {
-      console.error('Error al eliminar equipo de tabla activa:', errorEliminar);
-    }
+    await supabaseClient.from('equipos').delete().eq('id', equipoSeleccionadoAveria.id);
 
     if (typeof registrarLog === 'function') {
-      const nombreCompletoReportante = `${reportanteNombres} ${reportanteApellidos}`;
-      const descripcion = `🔧 AVERÍA REGISTRADA | Equipo: ${equipoSeleccionadoAveria.codigo_barras} (${equipoSeleccionadoAveria.nombre_equipo}) | Reportante: ${nombreCompletoReportante} (Cédula: ${reportanteCedula}) | Fecha: ${fechaAveria} ${horaAveria} | Avería: ${detallesAveria.substring(0, 150)}${detallesAveria.length > 150 ? '...' : ''} | Registrado por: ${usuarioActualAveria?.email || 'Desconocido'}`;
-      await registrarLog('averias', 'Avería registrada', descripcion, 'warning');
+      await registrarLog('averias', 'Avería registrada', `Equipo: ${equipoSeleccionadoAveria.codigo_barras} | Reportante: ${reportanteNombres} ${reportanteApellidos}`, 'warning');
     }
 
-    mostrarToast(`✅ Avería registrada exitosamente`, 'exito');
-
-    setTimeout(() => {
-      imprimirReciboAveria(averiaData);
-    }, 1000);
+    mostrarToast('✅ Avería registrada exitosamente', 'exito');
+    setTimeout(() => imprimirReciboAveria(averiaData), 1000);
 
   } catch (err) {
     console.error('Error al guardar avería:', err);
@@ -614,7 +483,6 @@ async function guardarAveria() {
 // ==========================================
 function imprimirReciboAveria(averia) {
   const logoUrl = new URL('img/logo.png', window.location.href).href;
-
   const fotosHTML = (averia.fotos_evidencia || []).map((fotoUrl, i) => `
     <div style="display: inline-block; width: 48%; margin: 1%; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
       <img src="${fotoUrl}" style="width: 100%; height: 200px; object-fit: cover;">
@@ -623,116 +491,54 @@ function imprimirReciboAveria(averia) {
   `).join('');
 
   const ventana = window.open('', '_blank', 'width=900,height=1100');
-  const html = `<!DOCTYPE html>
-<html>
-<head>
-  <title>Recibo de Avería - ${averia.codigo_barras}</title>
+  ventana.document.write(`<!DOCTYPE html><html><head><title>Recibo de Avería</title>
   <style>
-    @page { size: letter; margin: 15mm; }
-    * { box-sizing: border-box; }
     body { font-family: Arial, sans-serif; font-size: 12px; color: #333; max-width: 216mm; margin: 0 auto; padding: 10mm; }
     .header { text-align: center; border-bottom: 3px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; }
-    .logo-container { display: flex; justify-content: center; align-items: center; margin-bottom: 10px; }
-    .logo-img { max-width: 120px; max-height: 120px; object-fit: contain; }
-    .brand h1 { color: #1e3a8a; margin: 10px 0 5px 0; font-size: 26px; font-family: 'Libre Caslon Text', serif; }
-    .brand p { margin: 3px 0 0 0; color: #666; font-size: 12px; }
-    .aviso-averia { background: #fee2e2; border-left: 4px solid #dc2626; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
-    .aviso-averia h2 { color: #dc2626; margin: 0; font-size: 18px; }
+    .logo-img { max-width: 120px; max-height: 120px; }
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
     .info-box { background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; }
-    .info-box h3 { margin: 0 0 10px 0; color: #1e3a8a; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
-    .info-box p { margin: 5px 0; font-size: 12px; }
-    .info-box p strong { color: #374151; }
-    .detalles-box { background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 20px; }
-    .detalles-box h3 { margin: 0 0 10px 0; color: #92400e; font-size: 13px; }
-    .detalles-box p { margin: 5px 0; font-size: 12px; }
-    .fotos-section { margin-top: 20px; }
-    .fotos-section h3 { color: #1e3a8a; font-size: 14px; margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th { background: #1e3a8a; color: white; padding: 10px 8px; text-align: left; }
+    td { padding: 8px; border-bottom: 1px solid #e5e7eb; }
     .firmas { margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; text-align: center; }
     .firma-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 5px; }
-    .firma-line p { margin: 3px 0; font-size: 12px; }
-    .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 10px; }
-    @media print { .no-print { display: none !important; } body { padding: 0; } }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div class="logo-container">
-      <img src="${logoUrl}" alt="Logo" class="logo-img" onerror="this.style.display='none'">
+    @media print { .no-print { display: none !important; } }
+  </style></head><body>
+    <div class="header">
+      <img src="${logoUrl}" class="logo-img" onerror="this.style.display='none'">
+      <h1 style="color: #1e3a8a;">Eventos D' Primera</h1>
+      <h2>⚠️ RECIBO DE AVERÍA: ${averia.codigo_barras}</h2>
     </div>
-    <div class="brand">
-      <h1>Eventos D' Primera</h1>
-      <p>Sistema de Inventario y Rentas</p>
-    </div>
-  </div>
-
-  <div class="aviso-averia">
-    <h2>⚠️ RECIBO DE AVERÍA</h2>
-    <p style="margin: 10px 0 0 0; font-size: 14px;">Código: <strong>${averia.codigo_barras}</strong></p>
-  </div>
-
-  <div class="info-grid">
-    <div class="info-box">
-      <h3>📦 Equipo Averiados</h3>
-      <p><strong>Nombre:</strong> ${averia.nombre_equipo}</p>
-      <p><strong>Marca:</strong> ${averia.marca || 'N/A'}</p>
-      <p><strong>Modelo:</strong> ${averia.modelo || 'N/A'}</p>
-      <p><strong>Serial:</strong> ${averia.serial || 'N/A'}</p>
-      <p><strong>Categoría:</strong> ${averia.categoria || 'N/A'}</p>
-    </div>
-    <div class="info-box">
-      <h3>👤 Reportante</h3>
-      <p><strong>Nombre:</strong> ${averia.reportante_nombre} ${averia.reportante_apellidos}</p>
-      <p><strong>Cédula:</strong> ${averia.reportante_cedula}</p>
-      <p><strong>Fecha Avería:</strong> ${new Date(averia.fecha_averia + 'T12:00:00').toLocaleDateString('es-ES')}</p>
-      <p><strong>Hora Avería:</strong> ${averia.hora_averia}</p>
-    </div>
-  </div>
-
-  <div class="detalles-box">
-    <h3>📝 Detalles de la Avería</h3>
-    <p>${averia.detalles_averia}</p>
-    ${averia.observaciones ? `<p style="margin-top: 10px;"><strong>Observaciones:</strong> ${averia.observaciones}</p>` : ''}
-  </div>
-
-  ${fotosHTML ? `
-  <div class="fotos-section">
-    <h3>📸 Fotos de Evidencia</h3>
-    <div style="display: flex; flex-wrap: wrap;">
-      ${fotosHTML}
-    </div>
-  </div>
-  ` : ''}
-
-  <div class="firmas">
-    <div>
-      <div class="firma-line">
-        <p><strong>${averia.reportante_nombre} ${averia.reportante_apellidos}</strong></p>
-        <p>Reportante</p>
-        <p style="font-size: 10px; color: #666;">Cédula: ${averia.reportante_cedula}</p>
+    <div class="info-grid">
+      <div class="info-box">
+        <h3>Equipo</h3>
+        <p><strong>Nombre:</strong> ${averia.nombre_equipo}</p>
+        <p><strong>Marca/Modelo:</strong> ${averia.marca || ''} ${averia.modelo || ''}</p>
+        <p><strong>Serial:</strong> ${averia.serial || 'N/A'}</p>
+      </div>
+      <div class="info-box">
+        <h3>Reportante</h3>
+        <p><strong>Nombre:</strong> ${averia.reportante_nombre} ${averia.reportante_apellidos}</p>
+        <p><strong>Cédula:</strong> ${averia.reportante_cedula}</p>
+        <p><strong>Fecha:</strong> ${averia.fecha_averia} ${averia.hora_averia}</p>
       </div>
     </div>
-    <div>
-      <div class="firma-line">
-        <p><strong>${usuarioActualAveria?.email || 'Administrador'}</strong></p>
-        <p>Recibido por</p>
-        <p style="font-size: 10px; color: #666;">Firma del responsable</p>
-      </div>
+    <div class="info-box" style="margin-bottom: 20px;">
+      <h3>Detalles de la Avería</h3>
+      <p>${averia.detalles_averia}</p>
+      ${averia.observaciones ? `<p><strong>Observaciones:</strong> ${averia.observaciones}</p>` : ''}
     </div>
-  </div>
-
-  <div class="footer">
-    <p>©copyright Eventos de Primera | 2026-2027 | Documento generado el ${new Date().toLocaleString('es-ES')}</p>
-  </div>
-
-  <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
-    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">🖨️ Imprimir Recibo</button>
-    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">❌ Cerrar</button>
-  </div>
-</body>
-</html>`;
-
-  ventana.document.write(html);
+    ${fotosHTML ? `<h3>Fotos de Evidencia</h3><div style="display: flex; flex-wrap: wrap;">${fotosHTML}</div>` : ''}
+    <div class="firmas">
+      <div class="firma-line"><p><strong>${averia.reportante_nombre} ${averia.reportante_apellidos}</strong></p><p>Reportante</p></div>
+      <div class="firma-line"><p><strong>${usuarioActualAveria?.email || 'Administrador'}</strong></p><p>Recibido por</p></div>
+    </div>
+    <div class="no-print" style="margin-top: 30px; text-align: center;">
+      <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer;">🖨️ Imprimir</button>
+      <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; margin-left: 10px;">❌ Cerrar</button>
+    </div>
+  </body></html>`);
   ventana.document.close();
 }
 
@@ -740,9 +546,7 @@ function imprimirReciboAveria(averia) {
 // LIMPIAR FORMULARIO
 // ==========================================
 function limpiarFormularioAveria() {
-  if (equipoSeleccionadoAveria && !confirm('¿Está seguro de iniciar un nuevo reporte? Se perderán los datos no guardados.')) {
-    return;
-  }
+  if (equipoSeleccionadoAveria && !confirm('¿Iniciar nuevo reporte? Se perderán los datos no guardados.')) return;
 
   equipoSeleccionadoAveria = null;
   fotosEvidencia = [];
@@ -753,15 +557,7 @@ function limpiarFormularioAveria() {
   document.getElementById('reportanteCedula').value = '';
   document.getElementById('detallesAveria').value = '';
   document.getElementById('observacionesAveria').value = '';
-  
-  const previewEvidencia = document.getElementById('previewFotosEvidencia');
-  if (previewEvidencia) {
-    previewEvidencia.innerHTML = `
-      <div class="foto-preview-placeholder">
-        <div class="foto-preview-placeholder-icon">📷</div>
-        <div>No hay fotos de evidencia</div>
-      </div>`;
-  }
+  document.getElementById('previewFotosEvidencia').innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>No hay fotos de evidencia</div></div>`;
 
   const ahora = new Date();
   document.getElementById('fechaAveria').value = ahora.toISOString().split('T')[0];
