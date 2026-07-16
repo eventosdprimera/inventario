@@ -7,6 +7,39 @@ let usuarioActualAveria = null;
 let streamCamara = null;
 
 // ==========================================
+// SISTEMA DE NOTIFICACIONES TOAST (Sin scroll)
+// ==========================================
+function mostrarToast(texto, tipo) {
+  let toastContainer = document.getElementById('toastContainer');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toastContainer';
+    toastContainer.className = 'toast-container';
+    document.body.appendChild(toastContainer);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = `toast ${tipo === 'error' ? 'error' : ''}`;
+  
+  const icono = tipo === 'error' ? '⚠️' : '✅';
+  
+  toast.innerHTML = `
+    <span style="font-size: 18px;">${icono}</span>
+    <span style="flex: 1;">${texto}</span>
+    <span onclick="this.parentElement.remove()" style="cursor: pointer; font-size: 18px; opacity: 0.6;">✕</span>
+  `;
+
+  toastContainer.appendChild(toast);
+
+  setTimeout(() => {
+    if (toast.parentElement) {
+      toast.style.animation = 'toastSlideOut 0.3s ease forwards';
+      setTimeout(() => toast.remove(), 300);
+    }
+  }, 3000);
+}
+
+// ==========================================
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarRegistrarAveria() {
@@ -19,7 +52,7 @@ async function inicializarRegistrarAveria() {
   }
 
   if (typeof supabaseClient === 'undefined') {
-    mostrarMensajeAveria('Error: Supabase no está disponible', 'error');
+    mostrarToast('Error: Supabase no está disponible', 'error');
     return;
   }
 
@@ -78,7 +111,7 @@ async function buscarEquipoAveria() {
 
   let codigo = input.value.trim();
   if (!codigo) {
-    mostrarMensajeAveria('Por favor ingrese un código de barras o serial', 'error');
+    mostrarToast('Por favor ingrese un código de barras o serial', 'error');
     return;
   }
 
@@ -92,7 +125,7 @@ async function buscarEquipoAveria() {
       .maybeSingle();
 
     if (error || !data) {
-      mostrarMensajeAveria(`Equipo no encontrado: "${codigo}"`, 'error');
+      mostrarToast(`Equipo no encontrado: "${codigo}"`, 'error');
       input.value = '';
       input.focus();
       return;
@@ -105,7 +138,7 @@ async function buscarEquipoAveria() {
       .maybeSingle();
 
     if (yaAveriado) {
-      mostrarMensajeAveria('⚠️ Este equipo ya está registrado como averiado', 'error');
+      mostrarToast('⚠️ Este equipo ya está registrado como averiado', 'error');
       input.value = '';
       input.focus();
       return;
@@ -136,7 +169,7 @@ async function buscarEquipoAveria() {
 
   } catch (err) {
     console.error('Error al buscar equipo:', err);
-    mostrarMensajeAveria('Error al buscar equipo: ' + err.message, 'error');
+    mostrarToast('Error al buscar equipo: ' + err.message, 'error');
   }
 }
 
@@ -191,7 +224,6 @@ async function cargarFotosDelEquipo(equipo) {
       fotosEncontradas.forEach((foto, index) => {
         const div = document.createElement('div');
         div.className = 'foto-preview';
-        // ✅ Escapamos comillas para que el zoom funcione siempre
         const urlEscapada = foto.url.replace(/'/g, "\\'");
         div.innerHTML = `<img src="${foto.url}" alt="Foto ${index + 1}" onclick="abrirZoom('${urlEscapada}')" style="cursor: pointer;" onerror="this.parentElement.style.display='none'">`;
         contenedorFotos.appendChild(div);
@@ -221,10 +253,7 @@ function abrirZoom(url) {
   const modal = document.getElementById('modalZoom');
   const img = document.getElementById('imgZoom');
   
-  if (!modal || !img) {
-    console.error('Modal de zoom no encontrado');
-    return;
-  }
+  if (!modal || !img) return;
   
   img.src = url;
   modal.style.display = 'block';
@@ -250,7 +279,7 @@ function mostrarSeccionesFormulario() {
 // ==========================================
 async function abrirCamara() {
   if (fotosEvidencia.length >= 4) {
-    mostrarMensajeAveria('Máximo 4 fotos permitidas', 'error');
+    mostrarToast('Máximo 4 fotos permitidas', 'error');
     return;
   }
 
@@ -261,7 +290,7 @@ async function abrirCamara() {
     document.getElementById('modalCamara').style.display = 'block';
   } catch (err) {
     console.error('Error al acceder a la cámara:', err);
-    mostrarMensajeAveria('No se pudo acceder a la cámara. Verifique los permisos.', 'error');
+    mostrarToast('No se pudo acceder a la cámara. Verifique los permisos.', 'error');
   }
 }
 
@@ -279,7 +308,7 @@ function capturarFoto() {
 
   canvas.toBlob(async (blob) => {
     if (!blob) {
-      mostrarMensajeAveria('Error al capturar foto', 'error');
+      mostrarToast('Error al capturar foto', 'error');
       return;
     }
 
@@ -293,7 +322,7 @@ function capturarFoto() {
 
     if (uploadError) {
       console.error('Error al subir foto:', uploadError);
-      mostrarMensajeAveria(`Error al subir foto: ${uploadError.message}`, 'error');
+      mostrarToast(`Error al subir foto: ${uploadError.message}`, 'error');
       return;
     }
 
@@ -304,7 +333,9 @@ function capturarFoto() {
     fotosEvidencia.push(urlData.publicUrl);
     renderizarPreviewFotosEvidencia();
     cerrarCamara();
-    mostrarMensajeAveria('✅ Foto capturada y subida exitosamente', 'exito');
+    
+    // ✅ AQUÍ USAMOS TOAST EN LUGAR DE MENSAJE CON SCROLL
+    mostrarToast('✅ Foto capturada y subida exitosamente', 'exito');
   }, 'image/png');
 }
 
@@ -327,7 +358,7 @@ async function procesarFotosEvidencia(event) {
   if (!files || files.length === 0) return;
 
   if (fotosEvidencia.length + files.length > 4) {
-    mostrarMensajeAveria(`Máximo 4 fotos permitidas. Ya tiene ${fotosEvidencia.length}.`, 'error');
+    mostrarToast(`Máximo 4 fotos permitidas. Ya tiene ${fotosEvidencia.length}.`, 'error');
     event.target.value = '';
     return;
   }
@@ -345,7 +376,7 @@ async function procesarFotosEvidencia(event) {
 
     if (uploadError) {
       console.error('Error al subir foto:', uploadError);
-      mostrarMensajeAveria(`Error al subir foto ${i + 1}: ${uploadError.message}`, 'error');
+      mostrarToast(`Error al subir foto ${i + 1}: ${uploadError.message}`, 'error');
       continue;
     }
 
@@ -358,6 +389,7 @@ async function procesarFotosEvidencia(event) {
 
   renderizarPreviewFotosEvidencia();
   event.target.value = '';
+  mostrarToast('✅ Fotos subidas exitosamente', 'exito');
 }
 
 // ==========================================
@@ -379,7 +411,6 @@ function renderizarPreviewFotosEvidencia() {
   fotosEvidencia.forEach((fotoUrl, index) => {
     const div = document.createElement('div');
     div.className = 'foto-preview';
-    // ✅ Escapamos comillas para que el zoom funcione siempre
     const urlEscapada = fotoUrl.replace(/'/g, "\\'");
     div.innerHTML = `
       <img src="${fotoUrl}" alt="Evidencia ${index + 1}" onclick="abrirZoom('${urlEscapada}')" style="cursor: pointer;">
@@ -402,7 +433,7 @@ function eliminarFotoEvidencia(index) {
 // ==========================================
 async function guardarAveria() {
   if (!equipoSeleccionadoAveria) {
-    mostrarMensajeAveria('No hay equipo seleccionado', 'error');
+    mostrarToast('No hay equipo seleccionado', 'error');
     return;
   }
 
@@ -415,15 +446,15 @@ async function guardarAveria() {
   const observacionesAveria = document.getElementById('observacionesAveria')?.value.trim() || '';
 
   if (!reportanteNombres || !reportanteApellidos || !reportanteCedula) {
-    mostrarMensajeAveria('Por favor complete los datos del reportante', 'error');
+    mostrarToast('Por favor complete los datos del reportante', 'error');
     return;
   }
   if (!fechaAveria || !horaAveria) {
-    mostrarMensajeAveria('Por favor ingrese la fecha y hora de la avería', 'error');
+    mostrarToast('Por favor ingrese la fecha y hora de la avería', 'error');
     return;
   }
   if (!detallesAveria) {
-    mostrarMensajeAveria('Por favor describa los detalles de la avería', 'error');
+    mostrarToast('Por favor describa los detalles de la avería', 'error');
     return;
   }
 
@@ -474,7 +505,8 @@ async function guardarAveria() {
       await registrarLog('averias', 'Avería registrada', descripcion, 'warning');
     }
 
-    mostrarMensajeAveria(`✅ Avería registrada exitosamente para el equipo ${equipoSeleccionadoAveria.codigo_barras}`, 'exito');
+    // ✅ Mensaje final de éxito (este sí puede hacer scroll leve o usamos toast, usaremos toast para consistencia)
+    mostrarToast(`✅ Avería registrada exitosamente`, 'exito');
 
     setTimeout(() => {
       imprimirReciboAveria(averiaData);
@@ -482,7 +514,7 @@ async function guardarAveria() {
 
   } catch (err) {
     console.error('Error al guardar avería:', err);
-    mostrarMensajeAveria('Error al registrar: ' + err.message, 'error');
+    mostrarToast('Error al registrar: ' + err.message, 'error');
     if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Registrar Avería'; }
   }
 }
@@ -632,7 +664,6 @@ function limpiarFormularioAveria() {
   document.getElementById('detallesAveria').value = '';
   document.getElementById('observacionesAveria').value = '';
   
-  // ✅ Resetear fotos de evidencia al limpiar
   const previewEvidencia = document.getElementById('previewFotosEvidencia');
   if (previewEvidencia) {
     previewEvidencia.innerHTML = `
@@ -655,28 +686,7 @@ function limpiarFormularioAveria() {
   const btnGuardar = document.getElementById('btnGuardarAveria');
   if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Registrar Avería'; }
 
-  mostrarMensajeAveria('Formulario listo para nuevo reporte', 'exito');
-}
-
-// ==========================================
-// MOSTRAR MENSAJE
-// ==========================================
-function mostrarMensajeAveria(texto, tipo) {
-  const msg = document.getElementById('mensaje');
-  if (msg) {
-    msg.textContent = texto;
-    msg.className = `mensaje ${tipo}`;
-    
-    setTimeout(() => {
-      msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
-    
-    if (tipo === 'exito') {
-      setTimeout(() => { 
-        if (msg.classList.contains('exito')) msg.className = 'mensaje'; 
-      }, 5000);
-    }
-  }
+  mostrarToast('Formulario listo para nuevo reporte', 'exito');
 }
 
 // ==========================================
