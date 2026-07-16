@@ -64,7 +64,6 @@ function mostrarToast(texto, tipo) {
   }, 3000);
 }
 
-// Agregar animaciones CSS dinámicamente
 if (!document.getElementById('toastStyles')) {
   const style = document.createElement('style');
   style.id = 'toastStyles';
@@ -110,12 +109,6 @@ async function inicializarRegistrarAveria() {
       }
     });
   }
-
-  // ✅ ASEGURAR QUE LOS MODALES ESTÉN OCULTOS AL INICIAR
-  const modalZoom = document.getElementById('modalZoom');
-  const modalCamara = document.getElementById('modalCamara');
-  if (modalZoom) modalZoom.style.display = 'none';
-  if (modalCamara) modalCamara.style.display = 'none';
 
   console.log('✅ === REGISTRO DE AVERÍA INICIALIZADO ===');
 }
@@ -625,7 +618,7 @@ function imprimirReciboAveria(averia) {
   </div>
 
   <div class="aviso-averia">
-    <h2>⚠️ RECIBO DE AVERÍA</h2>
+    <h2>️ RECIBO DE AVERÍA</h2>
     <p style="margin: 10px 0 0 0; font-size: 14px;">Código: <strong>${averia.codigo_barras}</strong></p>
   </div>
 
@@ -639,7 +632,7 @@ function imprimirReciboAveria(averia) {
       <p><strong>Categoría:</strong> ${averia.categoria || 'N/A'}</p>
     </div>
     <div class="info-box">
-      <h3>👤 Reportante</h3>
+      <h3> Reportante</h3>
       <p><strong>Nombre:</strong> ${averia.reportante_nombre} ${averia.reportante_apellidos}</p>
       <p><strong>Cédula:</strong> ${averia.reportante_cedula}</p>
       <p><strong>Fecha Avería:</strong> ${new Date(averia.fecha_averia + 'T12:00:00').toLocaleDateString('es-ES')}</p>
