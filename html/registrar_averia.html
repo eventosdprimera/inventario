@@ -45,11 +45,11 @@
 /* Botones de cámara y archivo */
 .botones-fotos { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
 
-/* ✅ MODAL DE ZOOM (Dentro del container, pero fixed y al frente) */
-.modal-zoom {
-  display: none; position: fixed; z-index: 99999; left: 0; top: 0;
+/* ✅ MODAL DE ZOOM - OCULTO POR DEFECTO */
+#modalZoom {
+  display: none !important;
+  position: fixed; z-index: 99999; left: 0; top: 0;
   width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.9);
-  animation: fadeIn 0.3s;
 }
 .modal-zoom-content {
   display: block; max-width: 90vw; max-height: 90vh;
@@ -62,9 +62,10 @@
 }
 .modal-zoom-close:hover { color: #bbb; }
 
-/* Modal de Cámara */
-.modal-camara {
-  display: none; position: fixed; z-index: 99999; left: 0; top: 0;
+/* ✅ MODAL DE CÁMARA - OCULTO POR DEFECTO */
+#modalCamara {
+  display: none !important;
+  position: fixed; z-index: 99999; left: 0; top: 0;
   width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.8);
 }
 .modal-camara-content {
@@ -87,7 +88,7 @@
 
   <!-- SECCIÓN 1: BÚSQUEDA DE EQUIPO -->
   <fieldset>
-    <legend>🔍 Buscar Equipo</legend>
+    <legend> Buscar Equipo</legend>
     <div class="codigo-barras-section">
       <div class="codigo-barras-label">📷 Escanee o escriba el código de barras / serial del equipo</div>
       <div style="display: flex; gap: 10px; margin-top: 10px;">
@@ -97,7 +98,7 @@
     </div>
   </fieldset>
 
-  <!-- SECCIÓN 2: FICHA DEL EQUIPO -->
+  <!-- SECCIÓN 2: FICHA DEL EQUIPO (oculto hasta buscar) -->
   <fieldset id="fieldsetFichaEquipo" style="display: none;">
     <legend>📋 Ficha del Equipo</legend>
     <div class="ficha-equipo">
@@ -117,9 +118,9 @@
     </div>
   </fieldset>
 
-  <!-- SECCIÓN 3: DATOS DEL REPORTANTE -->
+  <!-- SECCIÓN 3: DATOS DEL REPORTANTE (oculto hasta buscar) -->
   <fieldset id="fieldsetReportante" style="display: none;">
-    <legend>👤 Datos del Reportante</legend>
+    <legend> Datos del Reportante</legend>
     <div class="form-grid-registro">
       <div class="form-group-registro"><label>Nombres <span class="required">*</span></label><input type="text" id="reportanteNombres" placeholder="Nombres"></div>
       <div class="form-group-registro"><label>Apellidos <span class="required">*</span></label><input type="text" id="reportanteApellidos" placeholder="Apellidos"></div>
@@ -127,9 +128,9 @@
     </div>
   </fieldset>
 
-  <!-- SECCIÓN 4: DETALLES DE LA AVERÍA -->
+  <!-- SECCIÓN 4: DETALLES DE LA AVERÍA (oculto hasta buscar) -->
   <fieldset id="fieldsetAveria" style="display: none;">
-    <legend>⚠️ Detalles de la Avería</legend>
+    <legend>️ Detalles de la Avería</legend>
     <div class="form-grid-registro">
       <div class="form-group-registro"><label>Fecha <span class="required">*</span></label><input type="date" id="fechaAveria"></div>
       <div class="form-group-registro"><label>Hora <span class="required">*</span></label><input type="time" id="horaAveria"></div>
@@ -144,15 +145,15 @@
     </div>
   </fieldset>
 
-  <!-- SECCIÓN 5: FOTOS DE EVIDENCIA -->
+  <!-- SECCIÓN 5: FOTOS DE EVIDENCIA (oculto hasta buscar) -->
   <fieldset id="fieldsetFotosEvidencia" style="display: none;">
-    <legend>📸 Fotos de Evidencia (Opcional - Máximo 4)</legend>
+    <legend> Fotos de Evidencia (Opcional - Máximo 4)</legend>
     <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 2px dashed #d1d5db;">
       <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">Seleccione fotos de evidencia del daño</label>
       <div class="botones-fotos">
         <input type="file" id="inputFotosEvidencia" accept="image/*" multiple style="display: none;" onchange="procesarFotosEvidencia(event)">
         <button type="button" class="btn-action btn-secondary" onclick="document.getElementById('inputFotosEvidencia').click()">📁 Subir Archivo</button>
-        <button type="button" class="btn-action btn-primary" onclick="abrirCamara()">📷 Tomar Foto</button>
+        <button type="button" class="btn-action btn-primary" onclick="abrirCamara()"> Tomar Foto</button>
       </div>
       <div id="previewFotosEvidencia" class="fotos-grid">
         <div class="foto-preview-placeholder">
@@ -163,19 +164,20 @@
     </div>
   </fieldset>
 
-  <!-- BOTONES DE ACCIÓN -->
+  <!-- BOTONES DE ACCIÓN (oculto hasta buscar) -->
   <div class="button-group" id="botonesAccion" style="display: none;">
     <button type="button" class="btn-action btn-primary" onclick="guardarAveria()" id="btnGuardarAveria">💾 Registrar Avería</button>
     <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioAveria()">🔄 Nueva Avería</button>
   </div>
 
-  <!-- ✅ MODALES DENTRO DEL CONTAINER PARA QUE EL DASHBOARD LOS CARGUE -->
-  <div id="modalZoom" class="modal-zoom" onclick="cerrarZoom()">
+  <!-- ✅ MODAL DE ZOOM (oculto por defecto con !important) -->
+  <div id="modalZoom" onclick="cerrarZoom()">
     <span class="modal-zoom-close">&times;</span>
     <img class="modal-zoom-content" id="imgZoom">
   </div>
 
-  <div id="modalCamara" class="modal-camara">
+  <!-- ✅ MODAL DE CÁMARA (oculto por defecto con !important) -->
+  <div id="modalCamara">
     <div class="modal-camara-content">
       <h3 style="margin: 0 0 15px 0; color: #1e3a8a;">📷 Tomar Foto</h3>
       <video id="videoCamara" style="width: 100%; max-width: 500px; border-radius: 8px; background: #000;" autoplay></video>
