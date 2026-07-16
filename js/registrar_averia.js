@@ -110,24 +110,27 @@ async function inicializarRegistrarAveria() {
     });
   }
 
-  // ✅ OCULTAR MODALES INMEDIATAMENTE (SIN TIMEOUT)
+  // ✅ FORZAR OCULTAMIENTO DE MODALES CON HIDDEN
   const modalZoom = document.getElementById('modalZoom');
   const modalCamara = document.getElementById('modalCamara');
   
   if (modalZoom) {
+    modalZoom.setAttribute('hidden', '');
+    modalZoom.style.display = 'none';
     modalZoom.classList.remove('modal-activo');
-    modalZoom.style.setProperty('display', 'none', 'important');
-    console.log('✅ Modal zoom forzado a display:none');
+    console.log('✅ Modal zoom forzado a oculto');
   }
   
   if (modalCamara) {
+    modalCamara.setAttribute('hidden', '');
+    modalCamara.style.display = 'none';
     modalCamara.classList.remove('modal-activo');
-    modalCamara.style.setProperty('display', 'none', 'important');
-    console.log('✅ Modal cámara forzado a display:none');
+    console.log('✅ Modal cámara forzado a oculto');
   }
 
   console.log('✅ === REGISTRO DE AVERÍA INICIALIZADO ===');
 }
+
 // ==========================================
 // CARGAR USUARIO
 // ==========================================
@@ -274,7 +277,6 @@ async function cargarFotosDelEquipo(equipo) {
       fotosEncontradas.forEach((foto, index) => {
         const div = document.createElement('div');
         div.className = 'foto-preview';
-        // ✅ Simplificar onclick para evitar conflictos
         div.onclick = function() { abrirZoomSimple(foto.url); };
         div.innerHTML = `<img src="${foto.url}" alt="Foto ${index + 1}" style="cursor: pointer;" onerror="this.parentElement.style.display='none'">`;
         contenedorFotos.appendChild(div);
@@ -298,10 +300,10 @@ async function cargarFotosDelEquipo(equipo) {
 }
 
 // ==========================================
-// ABRIR ZOOM - VERSIÓN SIMPLIFICADA SIN CONGELAR
+// ABRIR ZOOM - VERSIÓN SIMPLIFICADA
 // ==========================================
 function abrirZoomSimple(url) {
-  console.log(' Abriendo zoom:', url);
+  console.log('🔍 Abriendo zoom:', url);
   
   const modal = document.getElementById('modalZoom');
   const img = document.getElementById('imgZoom');
@@ -312,9 +314,8 @@ function abrirZoomSimple(url) {
     return;
   }
   
-  // Evitar recargas
   img.onload = function() {
-    console.log('✅ Imagen cargada correctamente');
+    console.log('✅ Imagen cargada');
   };
   
   img.onerror = function() {
@@ -323,10 +324,10 @@ function abrirZoomSimple(url) {
     cerrarZoom();
   };
   
-  // Establecer src y mostrar modal
   img.src = url;
+  modal.removeAttribute('hidden');
+  modal.style.display = 'flex';
   modal.classList.add('modal-activo');
-  modal.style.setProperty('display', 'flex', 'important');
   document.body.style.overflow = 'hidden';
   
   console.log('✅ Zoom abierto');
@@ -337,8 +338,9 @@ function cerrarZoom() {
   const img = document.getElementById('imgZoom');
   
   if (modal) {
+    modal.setAttribute('hidden', '');
+    modal.style.display = 'none';
     modal.classList.remove('modal-activo');
-    modal.style.setProperty('display', 'none', 'important');
     document.body.style.overflow = '';
   }
   
@@ -384,8 +386,9 @@ async function abrirCamara() {
     const video = document.getElementById('videoCamara');
     if (video) {
       video.srcObject = streamCamara;
+      modal.removeAttribute('hidden');
+      modal.style.display = 'flex';
       modal.classList.add('modal-activo');
-      modal.style.setProperty('display', 'flex', 'important');
     }
   } catch (err) {
     console.error('Error al acceder a la cámara:', err);
@@ -448,8 +451,9 @@ function cerrarCamara() {
   }
   const modal = document.getElementById('modalCamara');
   if (modal) {
+    modal.setAttribute('hidden', '');
+    modal.style.display = 'none';
     modal.classList.remove('modal-activo');
-    modal.style.setProperty('display', 'none', 'important');
   }
 }
 
@@ -685,7 +689,7 @@ function imprimirReciboAveria(averia) {
 
   <div class="info-grid">
     <div class="info-box">
-      <h3> Equipo Averiados</h3>
+      <h3>📦 Equipo Averiados</h3>
       <p><strong>Nombre:</strong> ${averia.nombre_equipo}</p>
       <p><strong>Marca:</strong> ${averia.marca || 'N/A'}</p>
       <p><strong>Modelo:</strong> ${averia.modelo || 'N/A'}</p>
@@ -709,7 +713,7 @@ function imprimirReciboAveria(averia) {
 
   ${fotosHTML ? `
   <div class="fotos-section">
-    <h3>📸 Fotos de Evidencia</h3>
+    <h3> Fotos de Evidencia</h3>
     <div style="display: flex; flex-wrap: wrap;">
       ${fotosHTML}
     </div>
@@ -738,8 +742,8 @@ function imprimirReciboAveria(averia) {
   </div>
 
   <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
-    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">🖨️ Imprimir Recibo</button>
-    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;"> Cerrar</button>
+    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">️ Imprimir Recibo</button>
+    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">❌ Cerrar</button>
   </div>
 </body>
 </html>`;
