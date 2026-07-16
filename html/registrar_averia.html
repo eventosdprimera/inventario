@@ -41,21 +41,21 @@
 
 .botones-fotos { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
 
-/* ✅ MODALES - SIEMPRE OCULTOS POR DEFECTO */
-#modalZoom {
-  display: none;
+/* ✅ MODALES - SIEMPRE OCULTOS CON !IMPORTANT */
+#modalZoom, #modalCamara {
+  display: none !important;
   position: fixed;
   z-index: 999999;
   left: 0;
   top: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0,0,0,0.9);
   overflow: auto;
 }
 
 #modalZoom.modal-activo {
   display: block !important;
+  background-color: rgba(0,0,0,0.9);
 }
 
 .modal-zoom-content {
@@ -91,22 +91,11 @@
   color: #bbb;
 }
 
-/* Modal de Cámara */
-#modalCamara {
-  display: none;
-  position: fixed;
-  z-index: 999999;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.8);
-}
-
 #modalCamara.modal-activo {
   display: flex !important;
   align-items: center;
   justify-content: center;
+  background-color: rgba(0,0,0,0.8);
 }
 
 .modal-camara-content {
@@ -138,14 +127,14 @@
       <div class="codigo-barras-label">📷 Escanee o escriba el código de barras / serial del equipo</div>
       <div style="display: flex; gap: 10px; margin-top: 10px;">
         <input type="text" id="buscarEquipoAveria" placeholder="Ej: EP-20260714-210042-252452" style="flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;" autofocus>
-        <button type="button" class="btn-action btn-primary" onclick="buscarEquipoAveria()">🔎 Buscar</button>
+        <button type="button" class="btn-action btn-primary" onclick="buscarEquipoAveria()"> Buscar</button>
       </div>
     </div>
   </fieldset>
 
   <!-- SECCIÓN 2: FICHA DEL EQUIPO (oculto hasta buscar) -->
   <fieldset id="fieldsetFichaEquipo" style="display: none;">
-    <legend> Ficha del Equipo</legend>
+    <legend>📋 Ficha del Equipo</legend>
     <div class="ficha-equipo">
       <h3>📦 Información del Equipo</h3>
       <div class="ficha-grid">
@@ -157,7 +146,7 @@
         <div class="ficha-item"><label>Categoría</label><strong id="fichaCategoria">-</strong></div>
       </div>
       <div style="margin-top: 15px;">
-        <label style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">📸 Fotos del Equipo (clic para zoom)</label>
+        <label style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;"> Fotos del Equipo (clic para zoom)</label>
         <div id="fichaFotos" class="fotos-grid"></div>
       </div>
     </div>
@@ -175,7 +164,7 @@
 
   <!-- SECCIÓN 4: DETALLES DE LA AVERÍA (oculto hasta buscar) -->
   <fieldset id="fieldsetAveria" style="display: none;">
-    <legend>⚠️ Detalles de la Avería</legend>
+    <legend>️ Detalles de la Avería</legend>
     <div class="form-grid-registro">
       <div class="form-group-registro"><label>Fecha <span class="required">*</span></label><input type="date" id="fechaAveria"></div>
       <div class="form-group-registro"><label>Hora <span class="required">*</span></label><input type="time" id="horaAveria"></div>
@@ -192,17 +181,17 @@
 
   <!-- SECCIÓN 5: FOTOS DE EVIDENCIA (oculto hasta buscar) -->
   <fieldset id="fieldsetFotosEvidencia" style="display: none;">
-    <legend>📸 Fotos de Evidencia (Opcional - Máximo 4)</legend>
+    <legend> Fotos de Evidencia (Opcional - Máximo 4)</legend>
     <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 2px dashed #d1d5db;">
       <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">Seleccione fotos de evidencia del daño</label>
       <div class="botones-fotos">
         <input type="file" id="inputFotosEvidencia" accept="image/*" multiple style="display: none;" onchange="procesarFotosEvidencia(event)">
-        <button type="button" class="btn-action btn-secondary" onclick="document.getElementById('inputFotosEvidencia').click()">📁 Subir Archivo</button>
+        <button type="button" class="btn-action btn-secondary" onclick="document.getElementById('inputFotosEvidencia').click()"> Subir Archivo</button>
         <button type="button" class="btn-action btn-primary" onclick="abrirCamara()">📷 Tomar Foto</button>
       </div>
       <div id="previewFotosEvidencia" class="fotos-grid">
         <div class="foto-preview-placeholder">
-          <div class="foto-preview-placeholder-icon">📷</div>
+          <div class="foto-preview-placeholder-icon"></div>
           <div>No hay fotos de evidencia</div>
         </div>
       </div>
@@ -214,25 +203,25 @@
     <button type="button" class="btn-action btn-primary" onclick="guardarAveria()" id="btnGuardarAveria"> Registrar Avería</button>
     <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioAveria()">🔄 Nueva Avería</button>
   </div>
-</div>
 
-<!-- ✅ MODAL DE ZOOM (FUERA DEL CONTAINER, SIEMPRE OCULTO) -->
-<div id="modalZoom">
-  <span class="modal-zoom-close" onclick="cerrarZoom()">&times;</span>
-  <div class="modal-zoom-content">
-    <img id="imgZoom" src="" alt="Zoom">
+  <!-- ✅ MODAL DE ZOOM (DENTRO DEL CONTAINER PERO OCULTO) -->
+  <div id="modalZoom">
+    <span class="modal-zoom-close" onclick="cerrarZoom()">&times;</span>
+    <div class="modal-zoom-content">
+      <img id="imgZoom" src="" alt="Zoom">
+    </div>
   </div>
-</div>
 
-<!-- ✅ MODAL DE CÁMARA (FUERA DEL CONTAINER, SIEMPRE OCULTO) -->
-<div id="modalCamara">
-  <div class="modal-camara-content">
-    <h3 style="margin: 0 0 15px 0; color: #1e3a8a;">📷 Tomar Foto</h3>
-    <video id="videoCamara" style="width: 100%; max-width: 500px; border-radius: 8px; background: #000;" autoplay></video>
-    <canvas id="canvasCamara" style="display: none;"></canvas>
-    <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center;">
-      <button type="button" class="btn-action btn-primary" onclick="capturarFoto()"> Capturar</button>
-      <button type="button" class="btn-action btn-secondary" onclick="cerrarCamara()">❌ Cancelar</button>
+  <!-- ✅ MODAL DE CÁMARA (DENTRO DEL CONTAINER PERO OCULTO) -->
+  <div id="modalCamara">
+    <div class="modal-camara-content">
+      <h3 style="margin: 0 0 15px 0; color: #1e3a8a;">📷 Tomar Foto</h3>
+      <video id="videoCamara" style="width: 100%; max-width: 500px; border-radius: 8px; background: #000;" autoplay></video>
+      <canvas id="canvasCamara" style="display: none;"></canvas>
+      <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center;">
+        <button type="button" class="btn-action btn-primary" onclick="capturarFoto()"> Capturar</button>
+        <button type="button" class="btn-action btn-secondary" onclick="cerrarCamara()">❌ Cancelar</button>
+      </div>
     </div>
   </div>
 </div>
