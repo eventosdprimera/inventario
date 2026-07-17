@@ -567,6 +567,39 @@ if (modulo === 'averias' && operacion === 'modificar') {
   return;
 }
   // ==========================================
+// CASO: AVERÍAS → REINTEGRAR
+// ==========================================
+if (modulo === 'averias' && operacion === 'reintegrar') {
+  try {
+    if (typeof registrarLog === 'undefined') {
+      await cargarScript('js/logs.js');
+    }
+    
+    if (typeof inicializarReintegrarAveria === 'undefined') {
+      await cargarScript('js/reintegrar_averia.js');
+    }
+
+    const response = await fetch('html/reintegrar_averia.html');
+    if (!response.ok) throw new Error('No se pudo cargar html/reintegrar_averia.html');
+    const htmlText = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+
+    const container = doc.querySelector('.container');
+    if (!container) throw new Error('No se encontró .container');
+    contenidoDiv.innerHTML = container.innerHTML;
+
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (typeof inicializarReintegrarAveria === 'function') {
+      await inicializarReintegrarAveria();
+    }
+  } catch (err) {
+    console.error('Error cargando reintegrar avería:', err);
+    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+  }
+  return;
+}
+  // ==========================================
   // 4. OTROS MÓDULOS (Placeholders organizados)
   // ==========================================
   let html = '';
