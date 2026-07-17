@@ -59,87 +59,49 @@ if (!document.getElementById('toastStyles')) {
 }
 
 // ==========================================
-// 🚀 FUNCIÓN INFALIBLE PARA ABRIR ZOOM (CON ESTILOS INLINE)
+// 🚀 FUNCIÓN INFALIBLE PARA ABRIR ZOOM
 // ==========================================
 function abrirZoomInfalible(url) {
-  console.log('🔍 Abriendo zoom con URL:', url);
-  
-  // 1. Crear el modal dinámicamente
   const modal = document.createElement('div');
   modal.id = 'modalZoomDinamico';
-  // ✅ ESTILOS INLINE DIRECTOS (Evita que el dashboard ignore el CSS)
   modal.style.cssText = `
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    background-color: rgba(0, 0, 0, 0.95) !important;
-    z-index: 999999 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+    position: fixed !important; top: 0 !important; left: 0 !important;
+    width: 100vw !important; height: 100vh !important;
+    background-color: rgba(0, 0, 0, 0.95) !important; z-index: 999999 !important;
+    display: flex !important; align-items: center !important; justify-content: center !important;
     cursor: zoom-out;
   `;
   
-  // 2. Crear el botón de cerrar
   const closeBtn = document.createElement('button');
   closeBtn.innerHTML = '&times;';
   closeBtn.style.cssText = `
-    position: absolute !important;
-    top: 20px !important;
-    right: 30px !important;
-    color: #fff !important;
-    font-size: 40px !important;
-    font-weight: bold !important;
-    cursor: pointer !important;
-    background: none !important;
-    border: none !important;
+    position: absolute !important; top: 20px !important; right: 30px !important;
+    color: #fff !important; font-size: 40px !important; font-weight: bold !important;
+    cursor: pointer !important; background: none !important; border: none !important;
     z-index: 1000000 !important;
   `;
-  closeBtn.onclick = function(e) {
-    e.stopPropagation();
-    cerrarZoomInfalible();
-  };
+  closeBtn.onclick = function(e) { e.stopPropagation(); cerrarZoomInfalible(); };
   
-  // 3. Crear la imagen
   const img = document.createElement('img');
   img.src = url;
   img.alt = 'Zoom de foto';
-  img.style.cssText = `
-    max-width: 90% !important;
-    max-height: 90vh !important;
-    border-radius: 8px;
-    box-shadow: 0 0 30px rgba(0,0,0,0.8);
-    cursor: default;
-  `;
+  img.style.cssText = `max-width: 90% !important; max-height: 90vh !important; border-radius: 8px; box-shadow: 0 0 30px rgba(0,0,0,0.8); cursor: default;`;
   
-  // 4. Ensamblar
   modal.appendChild(closeBtn);
   modal.appendChild(img);
-  
-  // 5. Agregar al BODY (fuera de cualquier contenedor restrictivo del dashboard)
   document.body.appendChild(modal);
-  
-  // 6. Bloquear scroll del fondo
   document.body.style.overflow = 'hidden';
   
-  // 7. Cerrar al hacer clic fuera de la imagen
   modal.addEventListener('click', function(e) {
-    if (e.target === modal) {
-      cerrarZoomInfalible();
-    }
+    if (e.target === modal) cerrarZoomInfalible();
   });
-  
-  console.log('✅ Modal de zoom creado y mostrado visualmente');
 }
 
 function cerrarZoomInfalible() {
   const modal = document.getElementById('modalZoomDinamico');
   if (modal) {
     modal.remove();
-    document.body.style.overflow = ''; // Restaurar scroll
-    console.log('✅ Modal de zoom cerrado');
+    document.body.style.overflow = '';
   }
 }
 
@@ -147,8 +109,6 @@ function cerrarZoomInfalible() {
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarRegistrarAveria() {
-  console.log('🔧 === INICIANDO REGISTRO DE AVERÍA ===');
-
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -171,14 +131,9 @@ async function inicializarRegistrarAveria() {
   const inputBusqueda = document.getElementById('buscarEquipoAveria');
   if (inputBusqueda) {
     inputBusqueda.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        buscarEquipoAveria();
-      }
+      if (e.key === 'Enter') { e.preventDefault(); buscarEquipoAveria(); }
     });
   }
-
-  console.log('✅ === REGISTRO DE AVERÍA INICIALIZADO ===');
 }
 
 // ==========================================
@@ -215,30 +170,17 @@ async function buscarEquipoAveria() {
   codigo = codigo.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
 
   try {
-    const { data, error } = await supabaseClient
-      .from('equipos')
-      .select('*')
-      .or(`codigo_barras.eq.${codigo},serial.eq.${codigo}`)
-      .maybeSingle();
+    const { data, error } = await supabaseClient.from('equipos').select('*').or(`codigo_barras.eq.${codigo},serial.eq.${codigo}`).maybeSingle();
 
     if (error || !data) {
       mostrarToast(`Equipo no encontrado: "${codigo}"`, 'error');
-      input.value = '';
-      input.focus();
-      return;
+      input.value = ''; input.focus(); return;
     }
 
-    const { data: yaAveriado } = await supabaseClient
-      .from('equipos_averiados')
-      .select('id')
-      .eq('codigo_barras', data.codigo_barras)
-      .maybeSingle();
-
+    const { data: yaAveriado } = await supabaseClient.from('equipos_averiados').select('id').eq('codigo_barras', data.codigo_barras).maybeSingle();
     if (yaAveriado) {
       mostrarToast('⚠️ Este equipo ya está registrado como averiado', 'error');
-      input.value = '';
-      input.focus();
-      return;
+      input.value = ''; input.focus(); return;
     }
 
     equipoSeleccionadoAveria = data;
@@ -260,7 +202,6 @@ async function buscarEquipoAveria() {
     }, 300);
 
   } catch (err) {
-    console.error('Error al buscar equipo:', err);
     mostrarToast('Error al buscar equipo: ' + err.message, 'error');
   }
 }
@@ -286,10 +227,10 @@ function mostrarFichaEquipoInmediata(equipo) {
 async function cargarFotosDelEquipo(equipo) {
   const contenedorFotos = document.getElementById('fichaFotos');
   try {
-    const { data: archivos, error: errorArchivos } = await supabaseClient.storage.from('equipos-fotos').list(equipo.codigo_barras);
+    const { data: archivos } = await supabaseClient.storage.from('equipos-fotos').list(equipo.codigo_barras);
     let fotosEncontradas = [];
 
-    if (!errorArchivos && archivos && archivos.length > 0) {
+    if (archivos && archivos.length > 0) {
       fotosEncontradas = archivos.slice(0, 4).map(archivo => ({
         url: supabaseClient.storage.from('equipos-fotos').getPublicUrl(`${equipo.codigo_barras}/${archivo.name}`).data.publicUrl
       }));
@@ -307,7 +248,6 @@ async function cargarFotosDelEquipo(equipo) {
       fotosEncontradas.forEach((foto, index) => {
         const div = document.createElement('div');
         div.className = 'foto-preview';
-        // ✅ USAR LA FUNCIÓN INFALIBLE DIRECTAMENTE
         div.onclick = function() { abrirZoomInfalible(foto.url); };
         div.innerHTML = `<img src="${foto.url}" alt="Foto ${index + 1}" style="cursor: pointer;" onerror="this.parentElement.style.display='none'">`;
         contenedorFotos.appendChild(div);
@@ -350,7 +290,6 @@ async function abrirCamara() {
       modal.style.display = 'flex';
     }
   } catch (err) {
-    console.error('Error al acceder a la cámara:', err);
     mostrarToast('No se pudo acceder a la cámara. Verifique los permisos.', 'error');
   }
 }
@@ -368,19 +307,13 @@ function capturarFoto() {
   canvas.getContext('2d').drawImage(video, 0, 0);
 
   canvas.toBlob(async (blob) => {
-    if (!blob) {
-      mostrarToast('Error al capturar foto', 'error');
-      return;
-    }
+    if (!blob) { mostrarToast('Error al capturar foto', 'error'); return; }
 
     const codigoEquipo = equipoSeleccionadoAveria?.codigo_barras || 'sin_codigo';
     const fileName = `${codigoEquipo}/${Date.now()}_camara.png`;
 
     const { error: uploadError } = await supabaseClient.storage.from('fotos-averias').upload(fileName, blob);
-    if (uploadError) {
-      mostrarToast(`Error al subir: ${uploadError.message}`, 'error');
-      return;
-    }
+    if (uploadError) { mostrarToast(`Error al subir: ${uploadError.message}`, 'error'); return; }
 
     const { data: urlData } = supabaseClient.storage.from('fotos-averias').getPublicUrl(fileName);
     fotosEvidencia.push(urlData.publicUrl);
@@ -412,8 +345,7 @@ async function procesarFotosEvidencia(event) {
 
   if (fotosEvidencia.length + files.length > 4) {
     mostrarToast(`Máximo 4 fotos permitidas. Ya tiene ${fotosEvidencia.length}.`, 'error');
-    event.target.value = '';
-    return;
+    event.target.value = ''; return;
   }
 
   const codigoEquipo = equipoSeleccionadoAveria?.codigo_barras || 'sin_codigo';
@@ -422,10 +354,7 @@ async function procesarFotosEvidencia(event) {
     const fileName = `${codigoEquipo}/${Date.now()}_${i}_${files[i].name}`;
     const { error: uploadError } = await supabaseClient.storage.from('fotos-averias').upload(fileName, files[i]);
 
-    if (uploadError) {
-      mostrarToast(`Error al subir foto ${i + 1}`, 'error');
-      continue;
-    }
+    if (uploadError) { mostrarToast(`Error al subir foto ${i + 1}`, 'error'); continue; }
 
     const { data: urlData } = supabaseClient.storage.from('fotos-averias').getPublicUrl(fileName);
     fotosEvidencia.push(urlData.publicUrl);
@@ -451,7 +380,6 @@ function renderizarPreviewFotosEvidencia() {
   fotosEvidencia.forEach((fotoUrl, index) => {
     const div = document.createElement('div');
     div.className = 'foto-preview';
-    // ✅ USAR LA FUNCIÓN INFALIBLE DIRECTAMENTE
     div.onclick = function() { abrirZoomInfalible(fotoUrl); };
     div.innerHTML = `
       <img src="${fotoUrl}" alt="Evidencia ${index + 1}" style="cursor: pointer;">
@@ -484,12 +412,10 @@ async function guardarAveria() {
   const observacionesAveria = document.getElementById('observacionesAveria')?.value.trim() || '';
 
   if (!reportanteNombres || !reportanteApellidos || !reportanteCedula) {
-    mostrarToast('Complete los datos del reportante', 'error');
-    return;
+    mostrarToast('Complete los datos del reportante', 'error'); return;
   }
   if (!fechaAveria || !horaAveria || !detallesAveria) {
-    mostrarToast('Complete la fecha, hora y detalles de la avería', 'error');
-    return;
+    mostrarToast('Complete la fecha, hora y detalles de la avería', 'error'); return;
   }
 
   const btnGuardar = document.getElementById('btnGuardarAveria');
@@ -528,10 +454,9 @@ async function guardarAveria() {
 
     mostrarToast('✅ Avería registrada exitosamente', 'exito');
 
-    // ✅ LIMPIAR EL FORMULARIO INMEDIATAMENTE (true = no preguntar nada)
+    // ✅ AQUÍ ESTÁ LA CLAVE: forzar = true para que NO pregunte nada
     limpiarFormularioAveria(true);
 
-    // ✅ ABRIR LA IMPRESIÓN EN SEGUNDO PLANO
     setTimeout(() => {
       imprimirReciboAveria(averiaData);
     }, 500);
@@ -544,74 +469,17 @@ async function guardarAveria() {
 }
 
 // ==========================================
-// LIMPIAR FORMULARIO (Con opción de forzar sin preguntar)
+// LIMPIAR FORMULARIO (ÚNICA VERSIÓN, SIN DUPLICADOS)
 // ==========================================
 function limpiarFormularioAveria(forzar = false) {
-  console.log('🧹 Limpiando formulario. Modo forzar:', forzar);
-  
-  // ✅ Si NO se está forzando y hay un equipo seleccionado, preguntar.
-  // Si forzar es true, se salta el if y limpia todo directamente.
+  // Si NO se está forzando y hay un equipo seleccionado, preguntar.
+  // Si forzar es true, se salta este if y limpia todo directamente.
   if (!forzar && equipoSeleccionadoAveria) {
     if (!confirm('¿Iniciar nuevo reporte? Se perderán los datos no guardados.')) {
-      return; // El usuario canceló, no limpiamos nada.
+      return;
     }
   }
 
-  // Restablecer variables
-  equipoSeleccionadoAveria = null;
-  fotosEvidencia = [];
-
-  // Limpiar inputs
-  document.getElementById('buscarEquipoAveria').value = '';
-  document.getElementById('reportanteNombres').value = '';
-  document.getElementById('reportanteApellidos').value = '';
-  document.getElementById('reportanteCedula').value = '';
-  document.getElementById('detallesAveria').value = '';
-  document.getElementById('observacionesAveria').value = '';
-  
-  // Limpiar preview de fotos
-  const previewEvidencia = document.getElementById('previewFotosEvidencia');
-  if (previewEvidencia) {
-    previewEvidencia.innerHTML = `
-      <div class="foto-preview-placeholder">
-        <div class="foto-preview-placeholder-icon">📷</div>
-        <div>No hay fotos de evidencia</div>
-      </div>`;
-  }
-
-  // Restablecer fecha y hora
-  const ahora = new Date();
-  document.getElementById('fechaAveria').value = ahora.toISOString().split('T')[0];
-  document.getElementById('horaAveria').value = ahora.toTimeString().slice(0, 5);
-
-  // Ocultar fieldsets
-  document.getElementById('fieldsetFichaEquipo').style.display = 'none';
-  document.getElementById('fieldsetReportante').style.display = 'none';
-  document.getElementById('fieldsetAveria').style.display = 'none';
-  document.getElementById('fieldsetFotosEvidencia').style.display = 'none';
-  document.getElementById('botonesAccion').style.display = 'none';
-
-  // Restaurar botón de guardar
-  const btnGuardar = document.getElementById('btnGuardarAveria');
-  if (btnGuardar) { 
-    btnGuardar.disabled = false; 
-    btnGuardar.textContent = '💾 Registrar Avería'; 
-  }
-
-  // Solo mostrar toast si fue una limpieza manual
-  if (!forzar) {
-    mostrarToast('Formulario listo para nuevo reporte', 'exito');
-  }
-}
-// ==========================================
-// LIMPIAR FORMULARIO (Con opción de forzar sin preguntar)
-// ==========================================
-function limpiarFormularioAveria(forzar = false) {
-  // ✅ Solo mostrar el mensaje de confirmación si NO se está forzando la limpieza
-  if (!forzar && equipoSeleccionadoAveria && !confirm('¿Iniciar nuevo reporte? Se perderán los datos no guardados.')) {
-    return;
-  }
-
   equipoSeleccionadoAveria = null;
   fotosEvidencia = [];
 
@@ -624,11 +492,7 @@ function limpiarFormularioAveria(forzar = false) {
   
   const previewEvidencia = document.getElementById('previewFotosEvidencia');
   if (previewEvidencia) {
-    previewEvidencia.innerHTML = `
-      <div class="foto-preview-placeholder">
-        <div class="foto-preview-placeholder-icon">📷</div>
-        <div>No hay fotos de evidencia</div>
-      </div>`;
+    previewEvidencia.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>No hay fotos de evidencia</div></div>`;
   }
 
   const ahora = new Date();
@@ -647,19 +511,17 @@ function limpiarFormularioAveria(forzar = false) {
     btnGuardar.textContent = '💾 Registrar Avería'; 
   }
 
-  // Solo mostrar toast si fue una limpieza manual (no automática)
   if (!forzar) {
     mostrarToast('Formulario listo para nuevo reporte', 'exito');
   }
 }
 
 // ==========================================
-// IMPRIMIR RECIBO DE AVERÍA (CON DISEÑO MEJORADO)
+// IMPRIMIR RECIBO DE AVERÍA
 // ==========================================
 function imprimirReciboAveria(averia) {
   const logoUrl = new URL('img/logo.png', window.location.href).href;
   
-  // ✅ GRID DE 2 COLUMNAS PARA LAS FOTOS
   const fotosHTML = (averia.fotos_evidencia || []).map((fotoUrl, i) => `
     <div class="foto-recibo-item">
       <img src="${fotoUrl}" alt="Evidencia ${i + 1}">
@@ -677,67 +539,29 @@ function imprimirReciboAveria(averia) {
     @page { size: letter; margin: 15mm; }
     * { box-sizing: border-box; }
     body { font-family: 'Poppins', Arial, sans-serif; font-size: 12px; color: #333; max-width: 216mm; margin: 0 auto; padding: 10mm; }
-    
     .header { text-align: center; border-bottom: 3px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; }
     .logo-img { max-width: 120px; max-height: 120px; object-fit: contain; }
-    
-    /* ✅ TÍTULO CON LA MISMA FUENTE ELEGANTE QUE EL COMPROBANTE */
-    .brand h1 { 
-      color: #1e3a8a; 
-      margin: 10px 0 5px 0; 
-      font-size: 28px; 
-      font-family: 'Libre Caslon Text', serif; 
-      font-weight: 700; 
-    }
+    .brand h1 { color: #1e3a8a; margin: 10px 0 5px 0; font-size: 28px; font-family: 'Libre Caslon Text', serif; font-weight: 700; }
     .brand p { margin: 3px 0 0 0; color: #666; font-size: 12px; }
-    
     .aviso-averia { background: #fee2e2; border-left: 4px solid #dc2626; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
     .aviso-averia h2 { color: #dc2626; margin: 0; font-size: 18px; }
-    
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
     .info-box { background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; }
     .info-box h3 { margin: 0 0 10px 0; color: #1e3a8a; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
     .info-box p { margin: 5px 0; font-size: 12px; }
     .info-box p strong { color: #374151; }
-    
     .detalles-box { background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 20px; }
     .detalles-box h3 { margin: 0 0 10px 0; color: #92400e; font-size: 13px; }
     .detalles-box p { margin: 5px 0; font-size: 12px; }
-    
     .fotos-section { margin-top: 20px; }
     .fotos-section h3 { color: #1e3a8a; font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
-    
-    /* ✅ GRID DE 2 COLUMNAS EXACTAS PARA LAS FOTOS */
-    .fotos-grid-recibo {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-    }
-    .foto-recibo-item {
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      overflow: hidden;
-      background: white;
-    }
-    .foto-recibo-item img {
-      width: 100%;
-      height: 200px;
-      object-fit: cover;
-      display: block;
-    }
-    .foto-recibo-item .foto-label {
-      padding: 8px;
-      text-align: center;
-      font-size: 11px;
-      color: #6b7280;
-      background: #f9fafb;
-      font-weight: 600;
-    }
-
+    .fotos-grid-recibo { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .foto-recibo-item { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: white; }
+    .foto-recibo-item img { width: 100%; height: 200px; object-fit: cover; display: block; }
+    .foto-recibo-item .foto-label { padding: 8px; text-align: center; font-size: 11px; color: #6b7280; background: #f9fafb; font-weight: 600; }
     .firmas { margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; text-align: center; }
     .firma-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 5px; }
     .firma-line p { margin: 3px 0; font-size: 12px; }
-    
     .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 10px; }
     @media print { .no-print { display: none !important; } body { padding: 0; } }
   </style>
@@ -813,43 +637,10 @@ function imprimirReciboAveria(averia) {
 </html>`);
   ventana.document.close();
 }
-// ==========================================
-// LIMPIAR FORMULARIO
-// ==========================================
-function limpiarFormularioAveria() {
-  if (equipoSeleccionadoAveria && !confirm('¿Iniciar nuevo reporte? Se perderán los datos no guardados.')) return;
-
-  equipoSeleccionadoAveria = null;
-  fotosEvidencia = [];
-
-  document.getElementById('buscarEquipoAveria').value = '';
-  document.getElementById('reportanteNombres').value = '';
-  document.getElementById('reportanteApellidos').value = '';
-  document.getElementById('reportanteCedula').value = '';
-  document.getElementById('detallesAveria').value = '';
-  document.getElementById('observacionesAveria').value = '';
-  document.getElementById('previewFotosEvidencia').innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>No hay fotos de evidencia</div></div>`;
-
-  const ahora = new Date();
-  document.getElementById('fechaAveria').value = ahora.toISOString().split('T')[0];
-  document.getElementById('horaAveria').value = ahora.toTimeString().slice(0, 5);
-
-  document.getElementById('fieldsetFichaEquipo').style.display = 'none';
-  document.getElementById('fieldsetReportante').style.display = 'none';
-  document.getElementById('fieldsetAveria').style.display = 'none';
-  document.getElementById('fieldsetFotosEvidencia').style.display = 'none';
-  document.getElementById('botonesAccion').style.display = 'none';
-
-  const btnGuardar = document.getElementById('btnGuardarAveria');
-  if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Registrar Avería'; }
-
-  mostrarToast('Formulario listo para nuevo reporte', 'exito');
-}
 
 // ==========================================
 // INICIALIZAR
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('📄 Registrar Avería DOM cargado');
   inicializarRegistrarAveria();
 });
