@@ -528,9 +528,8 @@ async function guardarAveria() {
 
     mostrarToast('✅ Avería registrada exitosamente', 'exito');
 
-    // ✅ 1. LIMPIAR EL FORMULARIO INMEDIATAMENTE
-    // Así el usuario puede seguir trabajando aunque cierre la ventana de impresión
-    limpiarFormularioAveria();
+    // ✅ 1. LIMPIAR EL FORMULARIO INMEDIATAMENTE SIN PREGUNTAR (forzar = true)
+    limpiarFormularioAveria(true);
 
     // ✅ 2. ABRIR LA IMPRESIÓN EN SEGUNDO PLANO
     setTimeout(() => {
@@ -541,6 +540,56 @@ async function guardarAveria() {
     console.error('Error al guardar avería:', err);
     mostrarToast('Error al registrar: ' + err.message, 'error');
     if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Registrar Avería'; }
+  }
+}
+
+// ==========================================
+// LIMPIAR FORMULARIO (Con opción de forzar sin preguntar)
+// ==========================================
+function limpiarFormularioAveria(forzar = false) {
+  // ✅ Solo mostrar el mensaje de confirmación si NO se está forzando la limpieza
+  if (!forzar && equipoSeleccionadoAveria && !confirm('¿Iniciar nuevo reporte? Se perderán los datos no guardados.')) {
+    return;
+  }
+
+  equipoSeleccionadoAveria = null;
+  fotosEvidencia = [];
+
+  document.getElementById('buscarEquipoAveria').value = '';
+  document.getElementById('reportanteNombres').value = '';
+  document.getElementById('reportanteApellidos').value = '';
+  document.getElementById('reportanteCedula').value = '';
+  document.getElementById('detallesAveria').value = '';
+  document.getElementById('observacionesAveria').value = '';
+  
+  const previewEvidencia = document.getElementById('previewFotosEvidencia');
+  if (previewEvidencia) {
+    previewEvidencia.innerHTML = `
+      <div class="foto-preview-placeholder">
+        <div class="foto-preview-placeholder-icon">📷</div>
+        <div>No hay fotos de evidencia</div>
+      </div>`;
+  }
+
+  const ahora = new Date();
+  document.getElementById('fechaAveria').value = ahora.toISOString().split('T')[0];
+  document.getElementById('horaAveria').value = ahora.toTimeString().slice(0, 5);
+
+  document.getElementById('fieldsetFichaEquipo').style.display = 'none';
+  document.getElementById('fieldsetReportante').style.display = 'none';
+  document.getElementById('fieldsetAveria').style.display = 'none';
+  document.getElementById('fieldsetFotosEvidencia').style.display = 'none';
+  document.getElementById('botonesAccion').style.display = 'none';
+
+  const btnGuardar = document.getElementById('btnGuardarAveria');
+  if (btnGuardar) { 
+    btnGuardar.disabled = false; 
+    btnGuardar.textContent = '💾 Registrar Avería'; 
+  }
+
+  // Solo mostrar toast si fue una limpieza manual (no automática)
+  if (!forzar) {
+    mostrarToast('Formulario listo para nuevo reporte', 'exito');
   }
 }
 
