@@ -390,7 +390,7 @@ async function reintegrarEquipo() {
 
     if (errorHistorial) throw errorHistorial;
 
-    // 3. REINSERTAR en la tabla equipos como operativo (CON MEDIDA UNIDAD)
+    // 3. REINSERTAR en la tabla equipos como operativo
     const equipoData = {
       codigo_barras: averiaSeleccionadaReint.codigo_barras,
       nombre_equipo: averiaSeleccionadaReint.nombre_equipo,
@@ -400,13 +400,12 @@ async function reintegrarEquipo() {
       costo: averiaSeleccionadaReint.costo || 0,
       estatus: 'operativo',
       activo: true,
-      medida_unidad: 'unidades', // ✅ AGREGADO: Valor por defecto para pasar la restricción
-      medida_valor: 1,           // ✅ AGREGADO: Valor por defecto
+      medida_unidad: 'm',        // ✅ CAMBIADO: 'm' (metros) es el valor que tu tabla acepta
+      medida_valor: 1,           // ✅ Valor numérico por defecto
       usuario_registro: usuarioActualReint?.email || 'unknown',
       usuario_registro_id: usuarioActualReint?.id || null,
       fecha_registro: new Date().toISOString()
     };
-
     const { error: errorInsertEquipo } = await supabaseClient
       .from('equipos')
       .insert(equipoData);
