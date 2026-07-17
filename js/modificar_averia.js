@@ -6,7 +6,7 @@ let fotosEvidenciaMod = [];
 let usuarioActualMod = null;
 
 // ==========================================
-// SISTEMA DE NOTIFICACIONES TOAST (Reutilizado)
+// SISTEMA DE NOTIFICACIONES TOAST
 // ==========================================
 function mostrarToastMod(texto, tipo) {
   let toastContainer = document.getElementById('toastContainerMod');
@@ -39,6 +39,53 @@ if (!document.getElementById('toastStylesMod')) {
   style.id = 'toastStylesMod';
   style.textContent = `@keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } } @keyframes toastSlideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }`;
   document.head.appendChild(style);
+}
+
+// ==========================================
+//  FUNCIÓN INFALIBLE PARA ABRIR ZOOM (Reutilizada)
+// ==========================================
+function abrirZoomInfalible(url) {
+  const modal = document.createElement('div');
+  modal.id = 'modalZoomDinamicoMod';
+  modal.style.cssText = `
+    position: fixed !important; top: 0 !important; left: 0 !important;
+    width: 100vw !important; height: 100vh !important;
+    background-color: rgba(0, 0, 0, 0.95) !important; z-index: 999999 !important;
+    display: flex !important; align-items: center !important; justify-content: center !important;
+    cursor: zoom-out;
+  `;
+  
+  const closeBtn = document.createElement('button');
+  closeBtn.innerHTML = '&times;';
+  closeBtn.style.cssText = `
+    position: absolute !important; top: 20px !important; right: 30px !important;
+    color: #fff !important; font-size: 40px !important; font-weight: bold !important;
+    cursor: pointer !important; background: none !important; border: none !important;
+    z-index: 1000000 !important;
+  `;
+  closeBtn.onclick = function(e) { e.stopPropagation(); cerrarZoomInfalibleMod(); };
+  
+  const img = document.createElement('img');
+  img.src = url;
+  img.alt = 'Zoom de foto';
+  img.style.cssText = `max-width: 90% !important; max-height: 90vh !important; border-radius: 8px; box-shadow: 0 0 30px rgba(0,0,0,0.8); cursor: default;`;
+  
+  modal.appendChild(closeBtn);
+  modal.appendChild(img);
+  document.body.appendChild(modal);
+  document.body.style.overflow = 'hidden';
+  
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) cerrarZoomInfalibleMod();
+  });
+}
+
+function cerrarZoomInfalibleMod() {
+  const modal = document.getElementById('modalZoomDinamicoMod');
+  if (modal) {
+    modal.remove();
+    document.body.style.overflow = '';
+  }
 }
 
 // ==========================================
@@ -92,8 +139,11 @@ async function buscarAveriaParaModificar() {
       .or(`codigo_barras.eq.${codigo},serial.eq.${codigo}`)
       .maybeSingle();
 
+    // ✅ CORRECCIÓN 2: Si no encuentra, limpiar el campo para buscar otro
     if (error || !data) {
       mostrarToastMod('Avería no encontrada para este equipo', 'error');
+      input.value = ''; // ✅ Limpia el campo
+      input.focus();    // ✅ Devuelve el foco
       return;
     }
 
@@ -105,7 +155,6 @@ async function buscarAveriaParaModificar() {
     document.getElementById('modFichaMarca').textContent = data.marca || '-';
     document.getElementById('modFichaModelo').textContent = data.modelo || '-';
     document.getElementById('modFichaSerial').textContent = data.serial || '-';
-    document.getElementById('modFichaCategoria').textContent = data.categoria || '-';
     document.getElementById('fieldsetFichaEquipoMod').style.display = 'block';
 
     // Cargar datos editables
@@ -121,8 +170,13 @@ async function buscarAveriaParaModificar() {
     document.getElementById('fieldsetFotosMod').style.display = 'block';
     document.getElementById('botonesAccionMod').style.display = 'flex';
 
-    // Cargar fotos existentes
-    fotosEvidenciaMod = data.fotos_evidencia || [];
+    // ✅ CORRECCIÓN 1: Cargar fotos existentes correctamente
+    fotosEvidenciaMod = [];
+    if (data.fotos_evidencia && Array.isArray(data.fotos_evidencia)) {
+      fotosEvidenciaMod = data.fotos_evidencia.filter(url => url && url.trim() !== '');
+    }
+    
+    console.log(' Fotos cargadas:', fotosEvidenciaMod);
     renderizarPreviewFotosMod();
 
   } catch (err) {
@@ -135,6 +189,8 @@ async function buscarAveriaParaModificar() {
 // ==========================================
 function renderizarPreviewFotosMod() {
   const contenedor = document.getElementById('previewFotosMod');
+  if (!contenedor) return;
+  
   contenedor.innerHTML = '';
 
   if (fotosEvidenciaMod.length === 0) {
@@ -145,10 +201,29 @@ function renderizarPreviewFotosMod() {
   fotosEvidenciaMod.forEach((fotoUrl, index) => {
     const div = document.createElement('div');
     div.className = 'foto-preview';
-    div.innerHTML = `
-      <img src="${fotoUrl}" alt="Evidencia ${index + 1}" style="cursor: pointer;" onclick="abrirZoomInfalible('${fotoUrl}')">
-      <button type="button" class="foto-remove" onclick="event.stopPropagation(); eliminarFotoMod(${index})" title="Eliminar foto">✕</button>
-    `;
+    
+    const img = document.createElement('img');
+    img.src = fotoUrl;
+    img.alt = `Evidencia ${index + 1}`;
+    img.style.cursor = 'pointer';
+    img.onclick = function() { abrirZoomInfalible(fotoUrl); };
+    img.onerror = function() { 
+      // Si la imagen falla al cargar, mostrar placeholder
+      this.parentElement.innerHTML = '<div style="color: #ef4444; font-size: 11px; text-align: center; padding: 10px;">❌ Error al cargar</div>';
+    };
+    
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'foto-remove';
+    removeBtn.innerHTML = '';
+    removeBtn.title = 'Eliminar foto';
+    removeBtn.onclick = function(event) { 
+      event.stopPropagation(); 
+      eliminarFotoMod(index); 
+    };
+    
+    div.appendChild(img);
+    div.appendChild(removeBtn);
     contenedor.appendChild(div);
   });
 }
@@ -274,6 +349,9 @@ function limpiarFormularioModAveria() {
 
   const btnGuardar = document.getElementById('btnGuardarCambios');
   if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Guardar Cambios'; }
+  
+  // Devolver foco al campo de búsqueda
+  document.getElementById('buscarAveriaMod').focus();
 }
 
 // ==========================================
