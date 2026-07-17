@@ -392,7 +392,7 @@ async function reintegrarEquipo() {
         marca: averiaSeleccionadaReint.marca,
         modelo: averiaSeleccionadaReint.modelo,
         serial: averiaSeleccionadaReint.serial,
-        categoria: averiaSeleccionadaReint.categoria,
+        categoria: averiaSeleccionadaReint.categoria || null, // Aquí sí puede ir null si existe en historial
         costo_original: averiaSeleccionadaReint.costo || 0,
         reportante_nombre: averiaSeleccionadaReint.reportante_nombre,
         reportante_apellidos: averiaSeleccionadaReint.reportante_apellidos,
@@ -414,20 +414,25 @@ async function reintegrarEquipo() {
 
     if (errorHistorial) throw errorHistorial;
 
-    // 3. Reinsertar el equipo en la tabla equipos como operativo
+    // 3. ✅ CORREGIDO: Reinsertar el equipo en la tabla equipos SIN la columna 'categoria'
+    const equipoData = {
+      codigo_barras: averiaSeleccionadaReint.codigo_barras,
+      nombre_equipo: averiaSeleccionadaReint.nombre_equipo,
+      marca: averiaSeleccionadaReint.marca,
+      modelo: averiaSeleccionadaReint.modelo,
+      serial: averiaSeleccionadaReint.serial,
+      costo: averiaSeleccionadaReint.costo || 0,
+      estado: 'operativo'
+    };
+
+    // Agregar fotos solo si existen en el registro original
+    if (averiaSeleccionadaReint.fotos_equipo && Array.isArray(averiaSeleccionadaReint.fotos_equipo)) {
+      equipoData.fotos = averiaSeleccionadaReint.fotos_equipo;
+    }
+
     const { error: errorInsertEquipo } = await supabaseClient
       .from('equipos')
-      .insert({
-        codigo_barras: averiaSeleccionadaReint.codigo_barras,
-        nombre_equipo: averiaSeleccionadaReint.nombre_equipo,
-        marca: averiaSeleccionadaReint.marca,
-        modelo: averiaSeleccionadaReint.modelo,
-        serial: averiaSeleccionadaReint.serial,
-        categoria: averiaSeleccionadaReint.categoria,
-        costo: averiaSeleccionadaReint.costo || 0,
-        estado: 'operativo',
-        fotos: averiaSeleccionadaReint.fotos_equipo || []
-      });
+      .insert(equipoData);
 
     if (errorInsertEquipo) throw errorInsertEquipo;
 
@@ -453,7 +458,6 @@ async function reintegrarEquipo() {
     btnReintegrar.textContent = '✅ Reintegrar al Inventario';
   }
 }
-
 // ==========================================
 // CANCELAR / LIMPIAR
 // ==========================================
