@@ -100,7 +100,6 @@ async function inicializarReintegrarAveria() {
     });
   }
 
-  // Cargar lista inicial
   await cargarListaAverias();
 }
 
@@ -255,7 +254,6 @@ async function seleccionarAveria(id) {
       return;
     }
 
-    // Resaltar fila seleccionada
     document.querySelectorAll('#tbodyAverias tr').forEach(tr => tr.classList.remove('selected'));
     const fila = document.getElementById(`fila-averia-${id}`);
     if (fila) fila.classList.add('selected');
@@ -273,7 +271,6 @@ async function seleccionarAveria(id) {
 async function mostrarFichaReintegrar(data) {
   averiaSeleccionadaReint = data;
 
-  // Ficha del equipo
   document.getElementById('reintFichaCodigo').textContent = data.codigo_barras || '-';
   document.getElementById('reintFichaNombre').textContent = data.nombre_equipo || '-';
   document.getElementById('reintFichaMarca').textContent = data.marca || '-';
@@ -281,25 +278,20 @@ async function mostrarFichaReintegrar(data) {
   document.getElementById('reintFichaSerial').textContent = data.serial || '-';
   document.getElementById('reintFichaCosto').textContent = data.costo ? `$${parseFloat(data.costo).toFixed(2)}` : '$0.00';
 
-  // Datos de la avería
   const reportanteCompleto = `${data.reportante_nombre || ''} ${data.reportante_apellidos || ''}`.trim();
   document.getElementById('reintReportante').textContent = reportanteCompleto || '-';
   document.getElementById('reintFechaAveria').textContent = data.fecha_averia ? new Date(data.fecha_averia + 'T12:00:00').toLocaleDateString('es-ES') : '-';
   document.getElementById('reintDetalles').textContent = data.detalles_averia || '-';
 
-  // Mostrar fieldsets
   document.getElementById('fieldsetFichaReintegrar').style.display = 'block';
   document.getElementById('fieldsetReparacion').style.display = 'block';
   document.getElementById('botonesReintegrar').style.display = 'flex';
 
-  // Prellenar fecha de reparación con hoy
   const hoy = new Date().toISOString().split('T')[0];
   document.getElementById('reintFechaReparacion').value = hoy;
 
-  // Cargar fotos de evidencia
   await cargarFotosEvidenciaReint(data);
 
-  // Scroll suave hacia la ficha
   document.getElementById('fieldsetFichaReintegrar').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -337,7 +329,7 @@ async function cargarFotosEvidenciaReint(data) {
 }
 
 // ==========================================
-// REINTEGRAR EQUIPO AL INVENTARIO
+// ✅ REINTEGRAR EQUIPO AL INVENTARIO (CORREGIDO CON SCHEMA REAL)
 // ==========================================
 async function reintegrarEquipo() {
   if (!averiaSeleccionadaReint) {
@@ -414,7 +406,7 @@ async function reintegrarEquipo() {
 
     if (errorHistorial) throw errorHistorial;
 
-    // 3. ✅ CORREGIDO: Reinsertar el equipo en la tabla equipos con la columna 'estatus'
+    // 3. ✅ CORREGIDO: Reinsertar en 'equipos' con los campos EXACTOS de tu CSV
     const equipoData = {
       codigo_barras: averiaSeleccionadaReint.codigo_barras,
       nombre_equipo: averiaSeleccionadaReint.nombre_equipo,
@@ -422,13 +414,14 @@ async function reintegrarEquipo() {
       modelo: averiaSeleccionadaReint.modelo,
       serial: averiaSeleccionadaReint.serial,
       costo: averiaSeleccionadaReint.costo || 0,
-      estatus: 'operativo' // ✅ AQUÍ ESTABA EL ERROR: La columna se llama 'estatus'
+      estatus: 'operativo',          // ✅ Columna correcta
+      activo: true,                  // ✅ Requerido por tu tabla
+      usuario_registro: usuarioActualReint?.email || 'unknown', // ✅ Requerido
+      usuario_registro_id: usuarioActualReint?.id || null,      // ✅ Requerido
+      fecha_registro: new Date().toISOString()                  // ✅ Requerido
+      // Nota: Las columnas foto_url, foto2_url, etc., se dejan en null por defecto. 
+      // El equipo queda operativo y se le pueden asignar fotos nuevas desde "Modificar Inventario" si es necesario.
     };
-
-    // Agregar fotos solo si existen y son un array válido
-    if (averiaSeleccionadaReint.fotos_equipo && Array.isArray(averiaSeleccionadaReint.fotos_equipo) && averiaSeleccionadaReint.fotos_equipo.length > 0) {
-      equipoData.fotos = averiaSeleccionadaReint.fotos_equipo;
-    }
 
     const { error: errorInsertEquipo } = await supabaseClient
       .from('equipos')
@@ -458,6 +451,7 @@ async function reintegrarEquipo() {
     btnReintegrar.textContent = '✅ Reintegrar al Inventario';
   }
 }
+
 // ==========================================
 // CANCELAR / LIMPIAR
 // ==========================================
