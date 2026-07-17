@@ -527,7 +527,15 @@ async function guardarAveria() {
     }
 
     mostrarToast('✅ Avería registrada exitosamente', 'exito');
-    setTimeout(() => imprimirReciboAveria(averiaData), 1000);
+
+    // ✅ 1. LIMPIAR EL FORMULARIO INMEDIATAMENTE
+    // Así el usuario puede seguir trabajando aunque cierre la ventana de impresión
+    limpiarFormularioAveria();
+
+    // ✅ 2. ABRIR LA IMPRESIÓN EN SEGUNDO PLANO
+    setTimeout(() => {
+      imprimirReciboAveria(averiaData);
+    }, 500);
 
   } catch (err) {
     console.error('Error al guardar avería:', err);
@@ -537,69 +545,165 @@ async function guardarAveria() {
 }
 
 // ==========================================
-// IMPRIMIR RECIBO DE AVERÍA
+// IMPRIMIR RECIBO DE AVERÍA (CON DISEÑO MEJORADO)
 // ==========================================
 function imprimirReciboAveria(averia) {
   const logoUrl = new URL('img/logo.png', window.location.href).href;
+  
+  // ✅ GRID DE 2 COLUMNAS PARA LAS FOTOS
   const fotosHTML = (averia.fotos_evidencia || []).map((fotoUrl, i) => `
-    <div style="display: inline-block; width: 48%; margin: 1%; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
-      <img src="${fotoUrl}" style="width: 100%; height: 200px; object-fit: cover;">
-      <div style="padding: 8px; text-align: center; font-size: 11px; color: #6b7280;">Foto ${i + 1}</div>
+    <div class="foto-recibo-item">
+      <img src="${fotoUrl}" alt="Evidencia ${i + 1}">
+      <div class="foto-label">Foto ${i + 1}</div>
     </div>
   `).join('');
 
   const ventana = window.open('', '_blank', 'width=900,height=1100');
-  ventana.document.write(`<!DOCTYPE html><html><head><title>Recibo de Avería</title>
+  ventana.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <title>Recibo de Avería - ${averia.codigo_barras}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; font-size: 12px; color: #333; max-width: 216mm; margin: 0 auto; padding: 10mm; }
+    @page { size: letter; margin: 15mm; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Poppins', Arial, sans-serif; font-size: 12px; color: #333; max-width: 216mm; margin: 0 auto; padding: 10mm; }
+    
     .header { text-align: center; border-bottom: 3px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; }
-    .logo-img { max-width: 120px; max-height: 120px; }
+    .logo-img { max-width: 120px; max-height: 120px; object-fit: contain; }
+    
+    /* ✅ TÍTULO CON LA MISMA FUENTE ELEGANTE QUE EL COMPROBANTE */
+    .brand h1 { 
+      color: #1e3a8a; 
+      margin: 10px 0 5px 0; 
+      font-size: 28px; 
+      font-family: 'Libre Caslon Text', serif; 
+      font-weight: 700; 
+    }
+    .brand p { margin: 3px 0 0 0; color: #666; font-size: 12px; }
+    
+    .aviso-averia { background: #fee2e2; border-left: 4px solid #dc2626; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+    .aviso-averia h2 { color: #dc2626; margin: 0; font-size: 18px; }
+    
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
     .info-box { background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; }
-    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-    th { background: #1e3a8a; color: white; padding: 10px 8px; text-align: left; }
-    td { padding: 8px; border-bottom: 1px solid #e5e7eb; }
+    .info-box h3 { margin: 0 0 10px 0; color: #1e3a8a; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+    .info-box p { margin: 5px 0; font-size: 12px; }
+    .info-box p strong { color: #374151; }
+    
+    .detalles-box { background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 20px; }
+    .detalles-box h3 { margin: 0 0 10px 0; color: #92400e; font-size: 13px; }
+    .detalles-box p { margin: 5px 0; font-size: 12px; }
+    
+    .fotos-section { margin-top: 20px; }
+    .fotos-section h3 { color: #1e3a8a; font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+    
+    /* ✅ GRID DE 2 COLUMNAS EXACTAS PARA LAS FOTOS */
+    .fotos-grid-recibo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    .foto-recibo-item {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      overflow: hidden;
+      background: white;
+    }
+    .foto-recibo-item img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      display: block;
+    }
+    .foto-recibo-item .foto-label {
+      padding: 8px;
+      text-align: center;
+      font-size: 11px;
+      color: #6b7280;
+      background: #f9fafb;
+      font-weight: 600;
+    }
+
     .firmas { margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; text-align: center; }
     .firma-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 5px; }
-    @media print { .no-print { display: none !important; } }
-  </style></head><body>
-    <div class="header">
-      <img src="${logoUrl}" class="logo-img" onerror="this.style.display='none'">
-      <h1 style="color: #1e3a8a;">Eventos D' Primera</h1>
-      <h2>⚠️ RECIBO DE AVERÍA: ${averia.codigo_barras}</h2>
+    .firma-line p { margin: 3px 0; font-size: 12px; }
+    
+    .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 10px; }
+    @media print { .no-print { display: none !important; } body { padding: 0; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="${logoUrl}" class="logo-img" onerror="this.style.display='none'">
+    <div class="brand">
+      <h1>Eventos D' Primera</h1>
+      <p>Sistema de Inventario y Rentas</p>
     </div>
-    <div class="info-grid">
-      <div class="info-box">
-        <h3>Equipo</h3>
-        <p><strong>Nombre:</strong> ${averia.nombre_equipo}</p>
-        <p><strong>Marca/Modelo:</strong> ${averia.marca || ''} ${averia.modelo || ''}</p>
-        <p><strong>Serial:</strong> ${averia.serial || 'N/A'}</p>
-      </div>
-      <div class="info-box">
-        <h3>Reportante</h3>
-        <p><strong>Nombre:</strong> ${averia.reportante_nombre} ${averia.reportante_apellidos}</p>
-        <p><strong>Cédula:</strong> ${averia.reportante_cedula}</p>
-        <p><strong>Fecha:</strong> ${averia.fecha_averia} ${averia.hora_averia}</p>
-      </div>
+  </div>
+
+  <div class="aviso-averia">
+    <h2>⚠️ RECIBO DE AVERÍA</h2>
+    <p style="margin: 10px 0 0 0; font-size: 14px;">Código: <strong>${averia.codigo_barras}</strong></p>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-box">
+      <h3>📦 Equipo Averiados</h3>
+      <p><strong>Nombre:</strong> ${averia.nombre_equipo}</p>
+      <p><strong>Marca/Modelo:</strong> ${averia.marca || ''} ${averia.modelo || ''}</p>
+      <p><strong>Serial:</strong> ${averia.serial || 'N/A'}</p>
+      <p><strong>Categoría:</strong> ${averia.categoria || 'N/A'}</p>
     </div>
-    <div class="info-box" style="margin-bottom: 20px;">
-      <h3>Detalles de la Avería</h3>
-      <p>${averia.detalles_averia}</p>
-      ${averia.observaciones ? `<p><strong>Observaciones:</strong> ${averia.observaciones}</p>` : ''}
+    <div class="info-box">
+      <h3>👤 Reportante</h3>
+      <p><strong>Nombre:</strong> ${averia.reportante_nombre} ${averia.reportante_apellidos}</p>
+      <p><strong>Cédula:</strong> ${averia.reportante_cedula}</p>
+      <p><strong>Fecha:</strong> ${new Date(averia.fecha_averia + 'T12:00:00').toLocaleDateString('es-ES')}</p>
+      <p><strong>Hora:</strong> ${averia.hora_averia}</p>
     </div>
-    ${fotosHTML ? `<h3>Fotos de Evidencia</h3><div style="display: flex; flex-wrap: wrap;">${fotosHTML}</div>` : ''}
-    <div class="firmas">
-      <div class="firma-line"><p><strong>${averia.reportante_nombre} ${averia.reportante_apellidos}</strong></p><p>Reportante</p></div>
-      <div class="firma-line"><p><strong>${usuarioActualAveria?.email || 'Administrador'}</strong></p><p>Recibido por</p></div>
+  </div>
+
+  <div class="detalles-box">
+    <h3>📝 Detalles de la Avería</h3>
+    <p>${averia.detalles_averia}</p>
+    ${averia.observaciones ? `<p style="margin-top: 10px;"><strong>Observaciones:</strong> ${averia.observaciones}</p>` : ''}
+  </div>
+
+  ${fotosHTML ? `
+  <div class="fotos-section">
+    <h3>📸 Fotos de Evidencia</h3>
+    <div class="fotos-grid-recibo">
+      ${fotosHTML}
     </div>
-    <div class="no-print" style="margin-top: 30px; text-align: center;">
-      <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer;">🖨️ Imprimir</button>
-      <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; margin-left: 10px;">❌ Cerrar</button>
+  </div>
+  ` : ''}
+
+  <div class="firmas">
+    <div class="firma-line">
+      <p><strong>${averia.reportante_nombre} ${averia.reportante_apellidos}</strong></p>
+      <p>Reportante</p>
+      <p style="font-size: 10px; color: #666;">Cédula: ${averia.reportante_cedula}</p>
     </div>
-  </body></html>`);
+    <div class="firma-line">
+      <p><strong>${usuarioActualAveria?.email || 'Administrador'}</strong></p>
+      <p>Recibido por</p>
+      <p style="font-size: 10px; color: #666;">Firma del responsable</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>©copyright Eventos de Primera | 2026-2027 | Documento generado el ${new Date().toLocaleString('es-ES')}</p>
+  </div>
+
+  <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
+    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">🖨️ Imprimir Recibo</button>
+    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">❌ Cerrar</button>
+  </div>
+</body>
+</html>`);
   ventana.document.close();
 }
-
 // ==========================================
 // LIMPIAR FORMULARIO
 // ==========================================
