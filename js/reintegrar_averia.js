@@ -322,7 +322,7 @@ async function cargarFotosEvidenciaReint(data) {
 }
 
 // ==========================================
-// ✅ REINTEGRAR EQUIPO (LÓGICA DE MOVER REGISTRO)
+// ✅ REINTEGRAR EQUIPO (CORREGIDO CON MEDIDA_UNIDAD)
 // ==========================================
 async function reintegrarEquipo() {
   if (!averiaSeleccionadaReint) {
@@ -349,7 +349,7 @@ async function reintegrarEquipo() {
   btnReintegrar.textContent = '⏳ Reintegrando...';
 
   try {
-    // 1. ✅ ELIMINAR de la tabla activa (equipos_averiados)
+    // 1. ELIMINAR de la tabla activa (equipos_averiados)
     const { error: errorDelete } = await supabaseClient
       .from('equipos_averiados')
       .delete()
@@ -390,7 +390,7 @@ async function reintegrarEquipo() {
 
     if (errorHistorial) throw errorHistorial;
 
-    // 3. REINSERTAR en la tabla equipos como operativo
+    // 3. REINSERTAR en la tabla equipos como operativo (CON MEDIDA UNIDAD)
     const equipoData = {
       codigo_barras: averiaSeleccionadaReint.codigo_barras,
       nombre_equipo: averiaSeleccionadaReint.nombre_equipo,
@@ -400,6 +400,8 @@ async function reintegrarEquipo() {
       costo: averiaSeleccionadaReint.costo || 0,
       estatus: 'operativo',
       activo: true,
+      medida_unidad: 'unidades', // ✅ AGREGADO: Valor por defecto para pasar la restricción
+      medida_valor: 1,           // ✅ AGREGADO: Valor por defecto
       usuario_registro: usuarioActualReint?.email || 'unknown',
       usuario_registro_id: usuarioActualReint?.id || null,
       fecha_registro: new Date().toISOString()
