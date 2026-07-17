@@ -215,7 +215,7 @@ function mostrarFichaEquipoInmediata(equipo) {
   document.getElementById('fichaMarca').textContent = equipo.marca || '-';
   document.getElementById('fichaModelo').textContent = equipo.modelo || '-';
   document.getElementById('fichaSerial').textContent = equipo.serial || '-';
-  document.getElementById('fichaCategoria').textContent = equipo.categoria || '-';
+  // ✅ CORREGIDO: Se eliminó la línea de fichaCategoria que causaba el error
 
   document.getElementById('fichaFotos').innerHTML = '<div class="foto-preview-placeholder">Cargando fotos...</div>';
   document.getElementById('fieldsetFichaEquipo').style.display = 'block';
@@ -472,8 +472,6 @@ async function guardarAveria() {
 // LIMPIAR FORMULARIO (ÚNICA VERSIÓN, SIN DUPLICADOS)
 // ==========================================
 function limpiarFormularioAveria(forzar = false) {
-  // Si NO se está forzando y hay un equipo seleccionado, preguntar.
-  // Si forzar es true, se salta este if y limpia todo directamente.
   if (!forzar && equipoSeleccionadoAveria) {
     if (!confirm('¿Iniciar nuevo reporte? Se perderán los datos no guardados.')) {
       return;
