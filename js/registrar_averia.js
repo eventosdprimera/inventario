@@ -528,10 +528,10 @@ async function guardarAveria() {
 
     mostrarToast('✅ Avería registrada exitosamente', 'exito');
 
-    // ✅ 1. LIMPIAR EL FORMULARIO INMEDIATAMENTE SIN PREGUNTAR (forzar = true)
+    // ✅ LIMPIAR EL FORMULARIO INMEDIATAMENTE (true = no preguntar nada)
     limpiarFormularioAveria(true);
 
-    // ✅ 2. ABRIR LA IMPRESIÓN EN SEGUNDO PLANO
+    // ✅ ABRIR LA IMPRESIÓN EN SEGUNDO PLANO
     setTimeout(() => {
       imprimirReciboAveria(averiaData);
     }, 500);
@@ -543,6 +543,66 @@ async function guardarAveria() {
   }
 }
 
+// ==========================================
+// LIMPIAR FORMULARIO (Con opción de forzar sin preguntar)
+// ==========================================
+function limpiarFormularioAveria(forzar = false) {
+  console.log('🧹 Limpiando formulario. Modo forzar:', forzar);
+  
+  // ✅ Si NO se está forzando y hay un equipo seleccionado, preguntar.
+  // Si forzar es true, se salta el if y limpia todo directamente.
+  if (!forzar && equipoSeleccionadoAveria) {
+    if (!confirm('¿Iniciar nuevo reporte? Se perderán los datos no guardados.')) {
+      return; // El usuario canceló, no limpiamos nada.
+    }
+  }
+
+  // Restablecer variables
+  equipoSeleccionadoAveria = null;
+  fotosEvidencia = [];
+
+  // Limpiar inputs
+  document.getElementById('buscarEquipoAveria').value = '';
+  document.getElementById('reportanteNombres').value = '';
+  document.getElementById('reportanteApellidos').value = '';
+  document.getElementById('reportanteCedula').value = '';
+  document.getElementById('detallesAveria').value = '';
+  document.getElementById('observacionesAveria').value = '';
+  
+  // Limpiar preview de fotos
+  const previewEvidencia = document.getElementById('previewFotosEvidencia');
+  if (previewEvidencia) {
+    previewEvidencia.innerHTML = `
+      <div class="foto-preview-placeholder">
+        <div class="foto-preview-placeholder-icon">📷</div>
+        <div>No hay fotos de evidencia</div>
+      </div>`;
+  }
+
+  // Restablecer fecha y hora
+  const ahora = new Date();
+  document.getElementById('fechaAveria').value = ahora.toISOString().split('T')[0];
+  document.getElementById('horaAveria').value = ahora.toTimeString().slice(0, 5);
+
+  // Ocultar fieldsets
+  document.getElementById('fieldsetFichaEquipo').style.display = 'none';
+  document.getElementById('fieldsetReportante').style.display = 'none';
+  document.getElementById('fieldsetAveria').style.display = 'none';
+  document.getElementById('fieldsetFotosEvidencia').style.display = 'none';
+  document.getElementById('botonesAccion').style.display = 'none';
+
+  // Restaurar botón de guardar
+  const btnGuardar = document.getElementById('btnGuardarAveria');
+  if (btnGuardar) { 
+    btnGuardar.disabled = false; 
+    btnGuardar.textContent = '💾 Registrar Avería'; 
+  }
+
+  // Solo mostrar toast si fue una limpieza manual
+  if (!forzar) {
+    mostrarToast('Formulario listo para nuevo reporte', 'exito');
+  }
+}
 // ==========================================
 // LIMPIAR FORMULARIO (Con opción de forzar sin preguntar)
 // ==========================================
