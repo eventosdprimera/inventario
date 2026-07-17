@@ -392,7 +392,7 @@ async function reintegrarEquipo() {
         marca: averiaSeleccionadaReint.marca,
         modelo: averiaSeleccionadaReint.modelo,
         serial: averiaSeleccionadaReint.serial,
-        categoria: averiaSeleccionadaReint.categoria || null, // Aquí sí puede ir null si existe en historial
+        categoria: averiaSeleccionadaReint.categoria || null,
         costo_original: averiaSeleccionadaReint.costo || 0,
         reportante_nombre: averiaSeleccionadaReint.reportante_nombre,
         reportante_apellidos: averiaSeleccionadaReint.reportante_apellidos,
@@ -414,19 +414,18 @@ async function reintegrarEquipo() {
 
     if (errorHistorial) throw errorHistorial;
 
-    // 3. ✅ CORREGIDO: Reinsertar el equipo en la tabla equipos SIN la columna 'categoria'
+    // 3. ✅ CORREGIDO: Reinsertar el equipo en la tabla equipos SOLO con campos seguros
     const equipoData = {
       codigo_barras: averiaSeleccionadaReint.codigo_barras,
       nombre_equipo: averiaSeleccionadaReint.nombre_equipo,
       marca: averiaSeleccionadaReint.marca,
       modelo: averiaSeleccionadaReint.modelo,
       serial: averiaSeleccionadaReint.serial,
-      costo: averiaSeleccionadaReint.costo || 0,
-      estado: 'operativo'
+      costo: averiaSeleccionadaReint.costo || 0
     };
 
-    // Agregar fotos solo si existen en el registro original
-    if (averiaSeleccionadaReint.fotos_equipo && Array.isArray(averiaSeleccionadaReint.fotos_equipo)) {
+    // Agregar fotos solo si existen y son un array válido
+    if (averiaSeleccionadaReint.fotos_equipo && Array.isArray(averiaSeleccionadaReint.fotos_equipo) && averiaSeleccionadaReint.fotos_equipo.length > 0) {
       equipoData.fotos = averiaSeleccionadaReint.fotos_equipo;
     }
 
