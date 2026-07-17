@@ -8,39 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-.ficha-equipo {
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-  padding: 20px;
-  border-radius: 12px;
-  border-left: 4px solid #6b7280;
-  margin-bottom: 20px;
-}
-.ficha-equipo h3 { color: #374151; margin: 0 0 15px 0; font-size: 16px; }
-.ficha-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
-
-/* ✅ CORRECCIÓN 3: Más espacio entre label y contenido */
-.ficha-item { 
-  background: white; 
-  padding: 14px 16px; 
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-.ficha-item label { 
-  font-size: 11px; 
-  color: #6b7280; 
-  text-transform: uppercase; 
-  letter-spacing: 0.5px; 
-  display: block; 
-  margin-bottom: 8px; /* ✅ Más espacio entre título y contenido */
-  font-weight: 600;
-}
-.ficha-item strong { 
-  color: #1e3a8a; 
-  font-size: 15px; 
-  display: block; /* ✅ Para que quede en su propia línea */
-  word-break: break-word;
-}
-
 .fotos-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 10px; }
 .foto-preview {
   width: 100%; height: 140px; border: 2px dashed #e5e7eb; border-radius: 8px;
@@ -86,23 +53,44 @@
 
   <!-- SECCIÓN 2: FICHA DEL EQUIPO (SOLO LECTURA) -->
   <fieldset id="fieldsetFichaEquipoMod" style="display: none;">
-    <legend>📋 Ficha del Equipo (Solo lectura)</legend>
-    <div class="ficha-equipo">
-      <h3> Información del Equipo</h3>
-      <div class="ficha-grid">
-        <div class="ficha-item"><label>Código de Barras</label><strong id="modFichaCodigo">-</strong></div>
-        <div class="ficha-item"><label>Nombre del Equipo</label><strong id="modFichaNombre">-</strong></div>
-        <div class="ficha-item"><label>Marca</label><strong id="modFichaMarca">-</strong></div>
-        <div class="ficha-item"><label>Modelo</label><strong id="modFichaModelo">-</strong></div>
-        <div class="ficha-item"><label>Serial</label><strong id="modFichaSerial">-</strong></div>
-        <!-- ✅ CORRECCIÓN 3: Eliminado el campo Categoría -->
+    <legend> Ficha del Equipo (Solo lectura)</legend>
+    <div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #6b7280; margin-bottom: 20px;">
+      <h3 style="color: #374151; margin: 0 0 20px 0; font-size: 16px;">📦 Información del Equipo</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+        
+        <!-- ✅ Cada ficha-item con estilos inline para garantizar espaciado -->
+        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Código de Barras</label>
+          <strong id="modFichaCodigo" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+        </div>
+        
+        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Nombre del Equipo</label>
+          <strong id="modFichaNombre" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+        </div>
+        
+        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Marca</label>
+          <strong id="modFichaMarca" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+        </div>
+        
+        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Modelo</label>
+          <strong id="modFichaModelo" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+        </div>
+        
+        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Serial</label>
+          <strong id="modFichaSerial" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+        </div>
+        
       </div>
     </div>
   </fieldset>
 
   <!-- SECCIÓN 3: DATOS EDITABLES DE LA AVERÍA -->
   <fieldset id="fieldsetDatosAveriaMod" style="display: none;">
-    <legend>✏️ Datos de la Avería (Editables)</legend>
+    <legend>️ Datos de la Avería (Editables)</legend>
     
     <div class="form-grid-registro">
       <div class="form-group-registro"><label>Nombres del Reportante <span class="required">*</span></label><input type="text" id="modReportanteNombres"></div>
@@ -125,7 +113,7 @@
 
   <!-- SECCIÓN 4: FOTOS DE EVIDENCIA EDITABLES -->
   <fieldset id="fieldsetFotosMod" style="display: none;">
-    <legend>📸 Fotos de Evidencia (Máximo 4)</legend>
+    <legend> Fotos de Evidencia (Máximo 4)</legend>
     <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 2px dashed #d1d5db;">
       <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">Agregar o eliminar fotos</label>
       <div class="botones-fotos">
