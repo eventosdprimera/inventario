@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modificar Avería - Eventos D' Primera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+.ficha-equipo {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  padding: 20px;
+  border-radius: 12px;
+  border-left: 4px solid #6b7280;
+  margin-bottom: 20px;
+}
+.ficha-equipo h3 { color: #374151; margin: 0 0 15px 0; font-size: 16px; }
+.ficha-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+.ficha-item { background: white; padding: 10px; border-radius: 8px; }
+.ficha-item label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px; }
+.ficha-item strong { color: #1e3a8a; font-size: 14px; }
+
+.fotos-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 10px; }
+.foto-preview {
+  width: 100%; height: 140px; border: 2px dashed #e5e7eb; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; background-color: #f9fafb;
+  overflow: hidden; cursor: pointer; transition: all 0.3s; position: relative;
+}
+.foto-preview:hover { border-color: #1e3a8a; background-color: #eff6ff; transform: scale(1.02); }
+.foto-preview img { width: 100%; height: 100%; object-fit: cover; }
+.foto-preview-placeholder { text-align: center; color: #9ca3af; font-size: 11px; grid-column: 1 / -1; padding: 20px; }
+.foto-preview-placeholder-icon { font-size: 32px; margin-bottom: 4px; }
+
+.foto-remove {
+  position: absolute; top: 5px; right: 5px; background: rgba(220, 38, 38, 0.9); color: white;
+  border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center; transition: all 0.3s; z-index: 2;
+}
+.foto-remove:hover { background: rgba(185, 28, 28, 1); transform: scale(1.1); }
+
+.botones-fotos { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">✏️ Modificar Avería</h1>
+    <p class="page-subtitle">Corrija los datos o fotos de una avería registrada</p>
+  </div>
+
+  <div id="mensaje" class="mensaje"></div>
+
+  <!-- SECCIÓN 1: BÚSQUEDA -->
+  <fieldset>
+    <legend>🔍 Buscar Avería</legend>
+    <div class="codigo-barras-section">
+      <div class="codigo-barras-label">Escanee o escriba el código de barras / serial del equipo averiado</div>
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <input type="text" id="buscarAveriaMod" placeholder="Ej: EP-20260714-210042-252452" style="flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;" autofocus>
+        <button type="button" class="btn-action btn-primary" onclick="buscarAveriaParaModificar()">🔎 Buscar</button>
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 2: FICHA DEL EQUIPO (SOLO LECTURA) -->
+  <fieldset id="fieldsetFichaEquipoMod" style="display: none;">
+    <legend>📋 Ficha del Equipo (Solo lectura)</legend>
+    <div class="ficha-equipo">
+      <h3>📦 Información del Equipo</h3>
+      <div class="ficha-grid">
+        <div class="ficha-item"><label>Código de Barras</label><strong id="modFichaCodigo">-</strong></div>
+        <div class="ficha-item"><label>Nombre del Equipo</label><strong id="modFichaNombre">-</strong></div>
+        <div class="ficha-item"><label>Marca</label><strong id="modFichaMarca">-</strong></div>
+        <div class="ficha-item"><label>Modelo</label><strong id="modFichaModelo">-</strong></div>
+        <div class="ficha-item"><label>Serial</label><strong id="modFichaSerial">-</strong></div>
+        <div class="ficha-item"><label>Categoría</label><strong id="modFichaCategoria">-</strong></div>
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 3: DATOS EDITABLES DE LA AVERÍA -->
+  <fieldset id="fieldsetDatosAveriaMod" style="display: none;">
+    <legend>✏️ Datos de la Avería (Editables)</legend>
+    
+    <div class="form-grid-registro">
+      <div class="form-group-registro"><label>Nombres del Reportante <span class="required">*</span></label><input type="text" id="modReportanteNombres"></div>
+      <div class="form-group-registro"><label>Apellidos del Reportante <span class="required">*</span></label><input type="text" id="modReportanteApellidos"></div>
+      <div class="form-group-registro"><label>Cédula <span class="required">*</span></label><input type="text" id="modReportanteCedula"></div>
+      <div class="form-group-registro"><label>Fecha de la Avería <span class="required">*</span></label><input type="date" id="modFechaAveria"></div>
+      <div class="form-group-registro"><label>Hora de la Avería <span class="required">*</span></label><input type="time" id="modHoraAveria"></div>
+    </div>
+
+    <div class="form-group-registro full-width" style="margin-top: 15px;">
+      <label>Detalles / Explicación de la Avería <span class="required">*</span></label>
+      <textarea id="modDetallesAveria" rows="4"></textarea>
+    </div>
+
+    <div class="form-group-registro full-width" style="margin-top: 15px;">
+      <label>Observaciones Adicionales</label>
+      <textarea id="modObservacionesAveria" rows="3"></textarea>
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 4: FOTOS DE EVIDENCIA EDITABLES -->
+  <fieldset id="fieldsetFotosMod" style="display: none;">
+    <legend>📸 Fotos de Evidencia (Máximo 4)</legend>
+    <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 2px dashed #d1d5db;">
+      <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">Agregar o eliminar fotos</label>
+      <div class="botones-fotos">
+        <input type="file" id="inputFotosMod" accept="image/*" multiple style="display: none;" onchange="procesarFotosMod(event)">
+        <button type="button" class="btn-action btn-secondary" onclick="document.getElementById('inputFotosMod').click()">📁 Agregar Fotos</button>
+      </div>
+      <div id="previewFotosMod" class="fotos-grid">
+        <div class="foto-preview-placeholder">
+          <div class="foto-preview-placeholder-icon">📷</div>
+          <div>No hay fotos de evidencia</div>
+        </div>
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- BOTONES DE ACCIÓN -->
+  <div class="button-group" id="botonesAccionMod" style="display: none;">
+    <button type="button" class="btn-action btn-primary" onclick="guardarCambiosAveria()" id="btnGuardarCambios">💾 Guardar Cambios</button>
+    <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioModAveria()">🔄 Cancelar / Nueva Búsqueda</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/modificar_averia.js"></script>
+</body>
+</html>
