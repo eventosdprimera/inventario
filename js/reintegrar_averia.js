@@ -25,7 +25,7 @@ function mostrarToastReint(texto, tipo) {
   const textColor = tipo === 'exito' ? '#065f46' : (tipo === 'error' ? '#991b1b' : '#92400e');
   
   toast.style.cssText = `background: ${bgColor}; border-left: 4px solid ${borderColor}; color: ${textColor}; padding: 14px 18px; border-radius: 8px; font-size: 14px; font-family: 'Poppins', sans-serif; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: toastSlideIn 0.3s ease; display: flex; align-items: center; gap: 10px;`;
-  toast.innerHTML = `<span style="font-size: 18px;">${tipo === 'exito' ? '✅' : '⚠️'}</span><span style="flex: 1;">${texto}</span><span onclick="this.parentElement.remove()" style="cursor: pointer; font-size: 18px; opacity: 0.6;">✕</span>`;
+  toast.innerHTML = `<span style="font-size: 18px;">${tipo === 'exito' ? '✅' : '️'}</span><span style="flex: 1;">${texto}</span><span onclick="this.parentElement.remove()" style="cursor: pointer; font-size: 18px; opacity: 0.6;">✕</span>`;
 
   toastContainer.appendChild(toast);
   setTimeout(() => {
@@ -104,7 +104,7 @@ async function inicializarReintegrarAveria() {
 }
 
 // ==========================================
-// CARGAR LISTA DE AVERÍAS CON PAGINACIÓN
+// CARGAR LISTA DE AVERÍAS (SIN FILTRO DE ESTADO)
 // ==========================================
 async function cargarListaAverias() {
   const tbody = document.getElementById('tbodyAverias');
@@ -116,10 +116,10 @@ async function cargarListaAverias() {
     const desde = (paginaActualReint - 1) * POR_PAGINA_REINT;
     const hasta = desde + POR_PAGINA_REINT - 1;
 
+    // ✅ CORREGIDO: Ya no filtramos por estado. La tabla solo contiene averías activas.
     const { data, count, error } = await supabaseClient
       .from('equipos_averiados')
       .select('*', { count: 'exact' })
-      .neq('estado_reparacion', 'reintegrado')
       .order('fecha_averia', { ascending: false })
       .range(desde, hasta);
 
@@ -224,13 +224,6 @@ async function buscarEquipoReintegrar() {
       return;
     }
 
-    if (data.estado_reparacion === 'reintegrado') {
-      mostrarToastReint('⚠️ Este equipo ya fue reintegrado al inventario', 'error');
-      input.value = '';
-      input.focus();
-      return;
-    }
-
     await mostrarFichaReintegrar(data);
 
   } catch (err) {
@@ -329,7 +322,7 @@ async function cargarFotosEvidenciaReint(data) {
 }
 
 // ==========================================
-// ✅ REINTEGRAR EQUIPO AL INVENTARIO (CORREGIDO CON SCHEMA REAL)
+// ✅ REINTEGRAR EQUIPO (LÓGICA DE MOVER REGISTRO)
 // ==========================================
 async function reintegrarEquipo() {
   if (!averiaSeleccionadaReint) {
@@ -347,7 +340,7 @@ async function reintegrarEquipo() {
     return;
   }
 
-  if (!confirm(`¿Confirmar la reintegración del equipo ${averiaSeleccionadaReint.codigo_barras} al inventario?\n\nEsta acción:\n- Marcará la avería como reintegrada\n- Devolverá el equipo a la tabla de equipos activos\n- Creará un registro histórico en el respaldo`)) {
+  if (!confirm(`¿Confirmar la reintegración del equipo ${averiaSeleccionadaReint.codigo_barras} al inventario?\n\nEsta acción:\n- Eliminará el registro de la tabla de averías activas\n- Lo archivará en el historial de averías\n- Devolverá el equipo a la tabla de equipos como operativo`)) {
     return;
   }
 
@@ -356,24 +349,15 @@ async function reintegrarEquipo() {
   btnReintegrar.textContent = '⏳ Reintegrando...';
 
   try {
-    // 1. Actualizar el registro en equipos_averiados
-    const { error: errorUpdate } = await supabaseClient
+    // 1. ✅ ELIMINAR de la tabla activa (equipos_averiados)
+    const { error: errorDelete } = await supabaseClient
       .from('equipos_averiados')
-      .update({
-        estado_reparacion: 'reintegrado',
-        tecnico_reparador: tecnico,
-        fecha_reparacion: fechaReparacion,
-        costo_reparacion: parseFloat(costoReparacion),
-        observaciones_reparacion: observacionesReparacion,
-        fecha_reintegracion: new Date().toISOString(),
-        reintegrado_por: usuarioActualReint?.email || 'unknown',
-        reintegrado_por_id: usuarioActualReint?.id || null
-      })
+      .delete()
       .eq('id', averiaSeleccionadaReint.id);
 
-    if (errorUpdate) throw errorUpdate;
+    if (errorDelete) throw errorDelete;
 
-    // 2. Crear registro en historial_averias (respaldo completo)
+    // 2. ARCHIVAR en historial_averias
     const { error: errorHistorial } = await supabaseClient
       .from('historial_averias')
       .insert({
@@ -406,7 +390,7 @@ async function reintegrarEquipo() {
 
     if (errorHistorial) throw errorHistorial;
 
-    // 3. ✅ CORREGIDO: Reinsertar en 'equipos' con los campos EXACTOS de tu CSV
+    // 3. REINSERTAR en la tabla equipos como operativo
     const equipoData = {
       codigo_barras: averiaSeleccionadaReint.codigo_barras,
       nombre_equipo: averiaSeleccionadaReint.nombre_equipo,
@@ -414,13 +398,11 @@ async function reintegrarEquipo() {
       modelo: averiaSeleccionadaReint.modelo,
       serial: averiaSeleccionadaReint.serial,
       costo: averiaSeleccionadaReint.costo || 0,
-      estatus: 'operativo',          // ✅ Columna correcta
-      activo: true,                  // ✅ Requerido por tu tabla
-      usuario_registro: usuarioActualReint?.email || 'unknown', // ✅ Requerido
-      usuario_registro_id: usuarioActualReint?.id || null,      // ✅ Requerido
-      fecha_registro: new Date().toISOString()                  // ✅ Requerido
-      // Nota: Las columnas foto_url, foto2_url, etc., se dejan en null por defecto. 
-      // El equipo queda operativo y se le pueden asignar fotos nuevas desde "Modificar Inventario" si es necesario.
+      estatus: 'operativo',
+      activo: true,
+      usuario_registro: usuarioActualReint?.email || 'unknown',
+      usuario_registro_id: usuarioActualReint?.id || null,
+      fecha_registro: new Date().toISOString()
     };
 
     const { error: errorInsertEquipo } = await supabaseClient
