@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reintegrar Avería - Eventos D' Primera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+.fotos-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 10px; }
+.foto-preview {
+  width: 100%; height: 140px; border: 2px solid #e5e7eb; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; background-color: #f9fafb;
+  overflow: hidden; cursor: pointer; position: relative;
+}
+.foto-preview img { width: 100%; height: 100%; object-fit: cover; }
+.foto-preview-placeholder { text-align: center; color: #9ca3af; font-size: 11px; grid-column: 1 / -1; padding: 20px; }
+.foto-preview-placeholder-icon { font-size: 32px; margin-bottom: 4px; }
+
+.table-container { overflow-x: auto; margin-top: 15px; }
+table { width: 100%; border-collapse: collapse; background: white; }
+th { background: #1e3a8a; color: white; padding: 12px 10px; text-align: left; font-size: 12px; text-transform: uppercase; }
+td { padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+tr:hover { background: #f9fafb; cursor: pointer; }
+tr.selected { background: #eff6ff; border-left: 3px solid #1e3a8a; }
+
+.badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+.badge-pendiente { background: #fef3c7; color: #92400e; }
+.badge-reparado { background: #dbeafe; color: #1e40af; }
+.badge-reintegrado { background: #d1fae5; color: #065f46; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title"> Reintegrar Avería</h1>
+    <p class="page-subtitle">Devuelve equipos reparados al inventario activo</p>
+  </div>
+
+  <div id="mensaje" class="mensaje"></div>
+
+  <!-- SECCIÓN 1: BÚSQUEDA -->
+  <fieldset>
+    <legend>🔍 Buscar Equipo Averiado</legend>
+    <div class="codigo-barras-section">
+      <div class="codigo-barras-label">Escanee o escriba el código de barras / serial del equipo</div>
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <input type="text" id="buscarReintegrar" placeholder="Ej: EP-20260714-210042-252452" style="flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;" autofocus>
+        <button type="button" class="btn-action btn-primary" onclick="buscarEquipoReintegrar()"> Buscar</button>
+        <button type="button" class="btn-action btn-secondary" onclick="limpiarBusquedaReintegrar()">🔄 Limpiar</button>
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 2: LISTA DE AVERÍAS -->
+  <fieldset id="fieldsetListaReintegrar">
+    <legend>📋 Averías Pendientes de Reintegración (<span id="totalAverias">0</span>)</legend>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 50px;">#</th>
+            <th>Código</th>
+            <th>Nombre del Equipo</th>
+            <th>Marca/Modelo</th>
+            <th>Fecha Avería</th>
+            <th>Reportante</th>
+            <th style="width: 100px;">Estado</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyAverias">
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 40px; color: #6b7280;">
+              <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
+              <div>Cargando averías...</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="paginacionReintegrar" style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 10px;"></div>
+  </fieldset>
+
+  <!-- SECCIÓN 3: FICHA DEL EQUIPO AVERIADO (Solo lectura) -->
+  <fieldset id="fieldsetFichaReintegrar" style="display: none;">
+    <legend>📋 Ficha del Equipo Averiado (Solo lectura)</legend>
+    <div style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #dc2626; margin-bottom: 20px;">
+      <h3 style="color: #991b1b; margin: 0 0 20px 0; font-size: 16px;"> Información del Equipo Averiado</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Código de Barras</label>
+          <strong id="reintFichaCodigo" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+        </div>
+        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Nombre del Equipo</label>
+          <strong id="reintFichaNombre" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+        </div>
+        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Marca</label>
+          <strong id="reintFichaMarca" style="color: #1e3a8a; font-size: 15px; display: block;">-</strong>
+        </div>
+        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Modelo</label>
+          <strong id="reintFichaModelo" style="color: #1e3a8a; font-size: 15px; display: block;">-</strong>
+        </div>
+        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Serial</label>
+          <strong id="reintFichaSerial" style="color: #1e3a8a; font-size: 15px; display: block;">-</strong>
+        </div>
+        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Costo Original</label>
+          <strong id="reintFichaCosto" style="color: #1e3a8a; font-size: 15px; display: block;">-</strong>
+        </div>
+      </div>
+
+      <!-- Datos de la avería original -->
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 2px dashed #fca5a5;">
+        <h4 style="color: #991b1b; margin: 0 0 15px 0; font-size: 14px;">📝 Datos de la Avería Original</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+          <div style="background: white; padding: 14px 16px; border-radius: 8px;">
+            <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; display: block; margin-bottom: 8px; font-weight: 600;">Reportante</label>
+            <strong id="reintReportante" style="color: #374151; font-size: 14px; display: block;">-</strong>
+          </div>
+          <div style="background: white; padding: 14px 16px; border-radius: 8px;">
+            <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; display: block; margin-bottom: 8px; font-weight: 600;">Fecha de Avería</label>
+            <strong id="reintFechaAveria" style="color: #374151; font-size: 14px; display: block;">-</strong>
+          </div>
+          <div style="background: white; padding: 14px 16px; border-radius: 8px; grid-column: 1 / -1;">
+            <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; display: block; margin-bottom: 8px; font-weight: 600;">Detalles de la Avería</label>
+            <strong id="reintDetalles" style="color: #374151; font-size: 14px; display: block;">-</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fotos de evidencia de la avería -->
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 2px dashed #fca5a5;">
+        <label style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">📸 Fotos de Evidencia de la Avería</label>
+        <div id="reintFotosEvidencia" class="fotos-grid"></div>
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 4: DATOS DE LA REPARACIÓN -->
+  <fieldset id="fieldsetReparacion" style="display: none;">
+    <legend>🔧 Datos de la Reparación y Reintegración</legend>
+    <div class="form-grid-registro">
+      <div class="form-group-registro">
+        <label>Técnico Reparador <span class="required">*</span></label>
+        <input type="text" id="reintTecnico" placeholder="Nombre del técnico o empresa">
+      </div>
+      <div class="form-group-registro">
+        <label>Fecha de Reparación <span class="required">*</span></label>
+        <input type="date" id="reintFechaReparacion">
+      </div>
+      <div class="form-group-registro">
+        <label>Costo de Reparación ($)</label>
+        <input type="number" id="reintCostoReparacion" placeholder="0.00" step="0.01" min="0">
+      </div>
+    </div>
+
+    <div class="form-group-registro full-width" style="margin-top: 15px;">
+      <label>Observaciones de la Reparación <span class="required">*</span></label>
+      <textarea id="reintObservacionesReparacion" rows="3" placeholder="Describa el trabajo realizado, piezas cambiadas, etc."></textarea>
+    </div>
+
+    <div style="background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-top: 15px;">
+      <p style="margin: 0; color: #92400e; font-size: 13px;">
+        ️ <strong>Importante:</strong> Al hacer clic en "Reintegrar al Inventario", el equipo volverá a la tabla de equipos activos con estado "operativo" y quedará disponible para nuevas rentas. Se creará un registro histórico en el respaldo de averías.
+      </p>
+    </div>
+  </fieldset>
+
+  <!-- BOTONES DE ACCIÓN -->
+  <div class="button-group" id="botonesReintegrar" style="display: none;">
+    <button type="button" class="btn-action btn-primary" onclick="reintegrarEquipo()" id="btnReintegrar">
+      ✅ Reintegrar al Inventario
+    </button>
+    <button type="button" class="btn-action btn-secondary" onclick="cancelarReintegrar()">
+      ❌ Cancelar
+    </button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/reintegrar_averia.js"></script>
+</body>
+</html>
