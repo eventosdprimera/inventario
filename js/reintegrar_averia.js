@@ -414,14 +414,15 @@ async function reintegrarEquipo() {
 
     if (errorHistorial) throw errorHistorial;
 
-    // 3. ✅ CORREGIDO: Reinsertar el equipo en la tabla equipos SOLO con campos seguros
+    // 3. ✅ CORREGIDO: Reinsertar el equipo en la tabla equipos con la columna 'estatus'
     const equipoData = {
       codigo_barras: averiaSeleccionadaReint.codigo_barras,
       nombre_equipo: averiaSeleccionadaReint.nombre_equipo,
       marca: averiaSeleccionadaReint.marca,
       modelo: averiaSeleccionadaReint.modelo,
       serial: averiaSeleccionadaReint.serial,
-      costo: averiaSeleccionadaReint.costo || 0
+      costo: averiaSeleccionadaReint.costo || 0,
+      estatus: 'operativo' // ✅ AQUÍ ESTABA EL ERROR: La columna se llama 'estatus'
     };
 
     // Agregar fotos solo si existen y son un array válido
