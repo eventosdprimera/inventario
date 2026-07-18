@@ -102,12 +102,15 @@ legend {
   border-color: #1e3a8a;
   box-shadow: 0 0 0 3px rgba(30,58,138,0.1);
 }
+
+/* ✅ SEPARACIÓN AUMENTADA AQUÍ */
 .busqueda-container {
   display: flex;
-  gap: 15px;
+  gap: 25px; /* Aumentado de 15px a 25px para mejor separación */
   align-items: flex-end;
 }
 .busqueda-container .form-group { flex: 1; }
+
 .btn-action {
   padding: 14px 28px;
   border: none;
@@ -117,7 +120,7 @@ legend {
   cursor: pointer;
   transition: all 0.3s;
   font-family: 'Poppins', sans-serif;
-  margin-right: 10px;
+  white-space: nowrap; /* Evita que el texto del botón se rompa */
 }
 .btn-primary {
   background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
@@ -135,7 +138,10 @@ legend {
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(220,38,38,0.3);
 }
-.btn-secondary { background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%); color: white; }
+.btn-secondary { 
+  background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%); 
+  color: white; 
+}
 .mensaje {
   padding: 16px 20px;
   border-radius: 10px;
@@ -179,7 +185,7 @@ legend {
 .equipo-info-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 15px;
   font-size: 13px;
 }
 .equipo-info-item {
@@ -228,10 +234,17 @@ tr:hover {
   border-top: 1px solid #e5e7eb;
 }
 .copyright strong { color: #6b7280; font-weight: 600; }
+
 @media (max-width: 768px) {
   .header { flex-direction: column; gap: 15px; text-align: center; }
   .container { padding: 15px; }
-  .busqueda-container { flex-direction: column; }
+  .busqueda-container { 
+    flex-direction: column; 
+    gap: 15px; /* En móvil se apilan, así que el gap es vertical */
+  }
+  .busqueda-container .btn-action {
+    width: 100%; /* El botón ocupa todo el ancho en móvil */
+  }
   .equipo-info-grid { grid-template-columns: 1fr; }
 }
 </style>
@@ -266,7 +279,7 @@ tr:hover {
   <!-- INFO DEL EQUIPO ENCONTRADO -->
   <div id="equipoEncontrado" style="display: none;">
     <fieldset>
-      <legend>️ Equipo Encontrado</legend>
+      <legend>⚠️ Equipo Encontrado</legend>
       <div class="equipo-info">
         <div class="equipo-info-titulo">📦 Datos del Equipo</div>
         <div class="equipo-info-grid" id="equipoInfoGrid"></div>
@@ -278,10 +291,10 @@ tr:hover {
       </div>
 
       <div class="mensaje warning" style="display: block;">
-        ️ <strong>Advertencia:</strong> Esta acción eliminará el equipo del inventario activo. Los datos se moverán a la tabla de respaldo "equipos_eliminados" y no se pueden deshacer.
+        ⚠️ <strong>Advertencia:</strong> Esta acción eliminará el equipo del inventario activo. Los datos se moverán a la tabla de respaldo "equipos_eliminados" y no se pueden deshacer.
       </div>
 
-      <div style="margin-top: 20px;">
+      <div style="margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
         <button type="button" class="btn-action btn-danger" onclick="confirmarEliminacion()">🗑️ Eliminar Equipo Permanentemente</button>
         <button type="button" class="btn-action btn-secondary" onclick="cancelarBusqueda()">❌ Cancelar</button>
       </div>
