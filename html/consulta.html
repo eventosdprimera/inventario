@@ -131,14 +131,14 @@ tr.selected { background: #eff6ff; border-left: 3px solid #1e3a8a; }
   <fieldset>
     <legend>📋 Lista de Equipos en el Sistema</legend>
     
-    <!-- ✅ FILTROS CON ESTILOS MEJORADOS -->
+    <!-- FILTROS CON ESTILOS MEJORADOS -->
     <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 15px;">
       <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600; font-size: 13px;">🔎 Filtros de búsqueda (se aplican automáticamente)</label>
       <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
         
         <div style="flex: 1; min-width: 180px;">
           <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; font-weight: 600;">Estatus</label>
-          <select id="filtroEstatus" style="width: 100%; padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; transition: border-color 0.2s;">
+          <select id="filtroEstatus" style="width: 100%; padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 13px; background: white; cursor: pointer;">
             <option value="">Todos los estatus</option>
             <option value="operativo">🟢 Operativo</option>
             <option value="inoperativo">🔴 Inoperativo</option>
@@ -158,12 +158,17 @@ tr.selected { background: #eff6ff; border-left: 3px solid #1e3a8a; }
         </div>
 
         <div style="flex: 0 0 auto;">
-          <button type="button" class="btn-action btn-secondary" onclick="limpiarFiltros()" style="padding: 10px 16px; border: 2px solid #e5e7eb; background: white; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; color: #374151; transition: all 0.2s;">
+          <button type="button" class="btn-action btn-secondary" onclick="limpiarFiltros()" style="padding: 10px 16px; border: 2px solid #e5e7eb; background: white; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; color: #374151;">
             🔄 Limpiar Filtros
           </button>
         </div>
 
       </div>
+    </div>
+
+    <!-- ✅ CONTADOR ARRIBA DE LA TABLA -->
+    <div id="contadorEquipos" style="background: #eff6ff; padding: 12px 16px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-bottom: 15px; font-size: 14px; font-weight: 600; color: #1e40af;">
+      Total: 0 equipo(s)
     </div>
 
     <div class="table-container">
