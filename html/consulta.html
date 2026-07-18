@@ -131,18 +131,39 @@ tr.selected { background: #eff6ff; border-left: 3px solid #1e3a8a; }
   <fieldset>
     <legend>📋 Lista de Equipos en el Sistema</legend>
     
-    <div class="filtros-container">
-      <select id="filtroEstatus">
-        <option value="">Todos los estatus</option>
-        <option value="operativo">Operativo</option>
-        <option value="inoperativo">Inoperativo</option>
-        <option value="rentado">Rentado</option>
-        <option value="averiado">Averiado</option>
-      </select>
-      <input type="date" id="filtroFechaInicio" placeholder="Fecha inicio">
-      <input type="date" id="filtroFechaFin" placeholder="Fecha fin">
-      <button type="button" class="btn-action btn-secondary" onclick="aplicarFiltros()">🔎 Filtrar</button>
-      <button type="button" class="btn-action btn-secondary" onclick="limpiarFiltros()">🔄 Limpiar Filtros</button>
+    <!-- ✅ FILTROS CON ESTILOS MEJORADOS -->
+    <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 15px;">
+      <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600; font-size: 13px;">🔎 Filtros de búsqueda (se aplican automáticamente)</label>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+        
+        <div style="flex: 1; min-width: 180px;">
+          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; font-weight: 600;">Estatus</label>
+          <select id="filtroEstatus" style="width: 100%; padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; transition: border-color 0.2s;">
+            <option value="">Todos los estatus</option>
+            <option value="operativo">🟢 Operativo</option>
+            <option value="inoperativo">🔴 Inoperativo</option>
+            <option value="rentado">🔵 Rentado</option>
+            <option value="averiado">🟡 Averiado</option>
+          </select>
+        </div>
+
+        <div style="flex: 1; min-width: 180px;">
+          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; font-weight: 600;">Fecha desde</label>
+          <input type="date" id="filtroFechaInicio" style="width: 100%; padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 13px; background: white; cursor: pointer;">
+        </div>
+
+        <div style="flex: 1; min-width: 180px;">
+          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; font-weight: 600;">Fecha hasta</label>
+          <input type="date" id="filtroFechaFin" style="width: 100%; padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 13px; background: white; cursor: pointer;">
+        </div>
+
+        <div style="flex: 0 0 auto;">
+          <button type="button" class="btn-action btn-secondary" onclick="limpiarFiltros()" style="padding: 10px 16px; border: 2px solid #e5e7eb; background: white; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; color: #374151; transition: all 0.2s;">
+            🔄 Limpiar Filtros
+          </button>
+        </div>
+
+      </div>
     </div>
 
     <div class="table-container">
@@ -169,7 +190,7 @@ tr.selected { background: #eff6ff; border-left: 3px solid #1e3a8a; }
         </tbody>
       </table>
     </div>
-    <div id="paginacionConsulta" style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 10px;"></div>
+    <div id="paginacionConsulta" style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;"></div>
   </fieldset>
 </div>
 
