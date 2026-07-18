@@ -6,7 +6,6 @@ let paginaActualConsulta = 1;
 const POR_PAGINA_CONSULTA = 20;
 let totalEquiposConsulta = 0;
 let usuarioActualConsulta = null;
-let equiposCache = [];
 
 // ==========================================
 // SISTEMA TOAST
@@ -101,6 +100,32 @@ async function inicializarConsulta() {
     });
   }
 
+  // ✅ FILTROS AUTOMÁTICOS: Se aplican al cambiar cualquier valor
+  const filtroEstatus = document.getElementById('filtroEstatus');
+  const filtroFechaInicio = document.getElementById('filtroFechaInicio');
+  const filtroFechaFin = document.getElementById('filtroFechaFin');
+
+  if (filtroEstatus) {
+    filtroEstatus.addEventListener('change', () => {
+      paginaActualConsulta = 1;
+      cargarListaEquipos();
+    });
+  }
+
+  if (filtroFechaInicio) {
+    filtroFechaInicio.addEventListener('change', () => {
+      paginaActualConsulta = 1;
+      cargarListaEquipos();
+    });
+  }
+
+  if (filtroFechaFin) {
+    filtroFechaFin.addEventListener('change', () => {
+      paginaActualConsulta = 1;
+      cargarListaEquipos();
+    });
+  }
+
   await cargarListaEquipos();
 }
 
@@ -188,7 +213,6 @@ async function buscarEquipoConsulta() {
   codigo = codigo.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
 
   try {
-    // Buscar en tabla equipos
     const { data: equipo, error } = await supabaseClient
       .from('equipos')
       .select('*')
@@ -204,10 +228,8 @@ async function buscarEquipoConsulta() {
 
     equipoSeleccionadoConsulta = equipo;
 
-    // Determinar estatus real
     const { estatus, infoAdicional } = await determinarEstatus(equipo.codigo_barras);
 
-    // Mostrar ficha
     document.getElementById('consultaCodigo').textContent = equipo.codigo_barras || '-';
     document.getElementById('consultaNombre').textContent = equipo.nombre_equipo || '-';
     document.getElementById('consultaMarca').textContent = equipo.marca || '-';
@@ -219,7 +241,6 @@ async function buscarEquipoConsulta() {
     const estatusBadge = `<span class="badge badge-${estatus}">${estatus.toUpperCase()}</span>`;
     document.getElementById('consultaEstatus').innerHTML = estatusBadge;
 
-    // Mostrar información adicional si existe
     const infoDiv = document.getElementById('infoAdicional');
     if (infoAdicional) {
       infoDiv.innerHTML = `
@@ -237,13 +258,11 @@ async function buscarEquipoConsulta() {
       infoDiv.innerHTML = '';
     }
 
-    // Cargar fotos
     await cargarFotosConsulta(equipo);
 
     document.getElementById('fieldsetFichaConsulta').style.display = 'block';
     document.getElementById('fieldsetFichaConsulta').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    // Registrar en logs
     if (typeof registrarLog === 'function') {
       await registrarLog('consulta', 'Equipo consultado', `Código: ${equipo.codigo_barras} (${equipo.nombre_equipo}) | Estatus: ${estatus} | Consultado por: ${usuarioActualConsulta?.email || 'Desconocido'}`, 'info');
     }
@@ -262,8 +281,6 @@ async function cargarFotosConsulta(equipo) {
   contenedor.innerHTML = '';
 
   let fotos = [];
-  
-  // Fotos individuales
   if (equipo.foto_url) fotos.push(equipo.foto_url);
   if (equipo.foto2_url) fotos.push(equipo.foto2_url);
   if (equipo.foto3_url) fotos.push(equipo.foto3_url);
@@ -291,7 +308,7 @@ async function cargarFotosConsulta(equipo) {
 }
 
 // ==========================================
-// CARGAR LISTA DE EQUIPOS
+// ✅ CARGAR LISTA DE EQUIPOS CON FILTROS APLICADOS
 // ==========================================
 async function cargarListaEquipos() {
   const tbody = document.getElementById('tbodyEquipos');
@@ -301,28 +318,50 @@ async function cargarListaEquipos() {
     const desde = (paginaActualConsulta - 1) * POR_PAGINA_CONSULTA;
     const hasta = desde + POR_PAGINA_CONSULTA - 1;
 
-    // Cargar equipos con su estatus
-    const { data: equipos, count, error } = await supabaseClient
+    // ✅ Obtener valores de los filtros
+    const filtroEstatus = document.getElementById('filtroEstatus')?.value || '';
+    const filtroFechaInicio = document.getElementById('filtroFechaInicio')?.value || '';
+    const filtroFechaFin = document.getElementById('filtroFechaFin')?.value || '';
+
+    // Construir consulta base
+    let query = supabaseClient
       .from('equipos')
       .select('*', { count: 'exact' })
-      .order('fecha_registro', { ascending: false })
-      .range(desde, hasta);
+      .order('fecha_registro', { ascending: false });
+
+    // ✅ Aplicar filtro de estatus si está seleccionado
+    if (filtroEstatus) {
+      query = query.eq('estatus', filtroEstatus);
+    }
+
+    // ✅ Aplicar filtro de fecha inicio
+    if (filtroFechaInicio) {
+      query = query.gte('fecha_registro', filtroFechaInicio);
+    }
+
+    // ✅ Aplicar filtro de fecha fin
+    if (filtroFechaFin) {
+      query = query.lte('fecha_registro', filtroFechaFin + 'T23:59:59');
+    }
+
+    // Aplicar paginación
+    const { data: equipos, count, error } = await query.range(desde, hasta);
 
     if (error) throw error;
 
     totalEquiposConsulta = count || 0;
 
-    // Enriquecer con estatus real
+    if (!equipos || equipos.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;"><div style="font-size: 40px; margin-bottom: 10px;">📭</div><div>No se encontraron equipos con los filtros aplicados</div></td></tr>`;
+      document.getElementById('paginacionConsulta').innerHTML = '';
+      return;
+    }
+
+    // Enriquecer con estatus real (rentado/averiado/operativo/inoperativo)
     const equiposEnriquecidos = [];
     for (const equipo of equipos) {
       const { estatus } = await determinarEstatus(equipo.codigo_barras);
       equiposEnriquecidos.push({ ...equipo, estatus_real: estatus });
-    }
-
-    if (equiposEnriquecidos.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;"><div style="font-size: 40px; margin-bottom: 10px;">📭</div><div>No hay equipos registrados</div></td></tr>`;
-      document.getElementById('paginacionConsulta').innerHTML = '';
-      return;
     }
 
     tbody.innerHTML = equiposEnriquecidos.map((equipo, index) => {
@@ -361,7 +400,7 @@ async function seleccionarEquipoLista(codigoBarras) {
 }
 
 // ==========================================
-// PAGINACIÓN
+// ✅ PAGINACIÓN CON CONTADOR DE FILTROS ACTIVOS
 // ==========================================
 function renderizarPaginacionConsulta() {
   const cont = document.getElementById('paginacionConsulta');
@@ -369,8 +408,23 @@ function renderizarPaginacionConsulta() {
 
   const totalPaginas = Math.ceil(totalEquiposConsulta / POR_PAGINA_CONSULTA);
   
+  // Mostrar información de filtros activos
+  const filtroEstatus = document.getElementById('filtroEstatus')?.value || '';
+  const filtroFechaInicio = document.getElementById('filtroFechaInicio')?.value || '';
+  const filtroFechaFin = document.getElementById('filtroFechaFin')?.value || '';
+  
+  let filtrosActivos = [];
+  if (filtroEstatus) filtrosActivos.push(`Estatus: ${filtroEstatus}`);
+  if (filtroFechaInicio) filtrosActivos.push(`Desde: ${filtroFechaInicio}`);
+  if (filtroFechaFin) filtrosActivos.push(`Hasta: ${filtroFechaFin}`);
+
+  let infoHTML = '';
+  if (filtrosActivos.length > 0) {
+    infoHTML = `<span style="color: #f59e0b; font-size: 12px; font-weight: 600;">🔎 Filtros: ${filtrosActivos.join(' | ')}</span>`;
+  }
+
   if (totalPaginas <= 1) {
-    cont.innerHTML = `<span style="color: #6b7280; font-size: 13px;">Total: ${totalEquiposConsulta} equipo(s)</span>`;
+    cont.innerHTML = `<span style="color: #6b7280; font-size: 13px;">Total: ${totalEquiposConsulta} equipo(s)</span> ${infoHTML}`;
     return;
   }
 
@@ -379,6 +433,7 @@ function renderizarPaginacionConsulta() {
   html += `<span style="color: #374151; font-size: 13px; font-weight: 600;">Página ${paginaActualConsulta} de ${totalPaginas}</span>`;
   html += `<button type="button" onclick="cambiarPaginaConsulta(${paginaActualConsulta + 1})" style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px;" ${paginaActualConsulta === totalPaginas ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>Siguiente ›</button>`;
   html += `<span style="color: #6b7280; font-size: 13px;">Total: ${totalEquiposConsulta}</span>`;
+  html += ` ${infoHTML}`;
 
   cont.innerHTML = html;
 }
@@ -392,25 +447,20 @@ async function cambiarPaginaConsulta(nuevaPagina) {
 }
 
 // ==========================================
-// FILTROS
+// ✅ LIMPIAR FILTROS (ÚNICO BOTÓN QUE QUEDA)
 // ==========================================
-async function aplicarFiltros() {
-  const estatus = document.getElementById('filtroEstatus').value;
-  const fechaInicio = document.getElementById('filtroFechaInicio').value;
-  const fechaFin = document.getElementById('filtroFechaFin').value;
-
-  // Recargar lista con filtros (implementación básica)
-  mostrarToastConsulta('Filtros aplicados', 'exito');
-  paginaActualConsulta = 1;
-  await cargarListaEquipos();
-}
-
 function limpiarFiltros() {
-  document.getElementById('filtroEstatus').value = '';
-  document.getElementById('filtroFechaInicio').value = '';
-  document.getElementById('filtroFechaFin').value = '';
+  const filtroEstatus = document.getElementById('filtroEstatus');
+  const filtroFechaInicio = document.getElementById('filtroFechaInicio');
+  const filtroFechaFin = document.getElementById('filtroFechaFin');
+  
+  if (filtroEstatus) filtroEstatus.value = '';
+  if (filtroFechaInicio) filtroFechaInicio.value = '';
+  if (filtroFechaFin) filtroFechaFin.value = '';
+  
   paginaActualConsulta = 1;
   cargarListaEquipos();
+  mostrarToastConsulta('Filtros limpiados', 'exito');
 }
 
 // ==========================================
@@ -425,7 +475,6 @@ function imprimirFichaConsulta() {
   const equipo = equipoSeleccionadoConsulta;
   const estatus = document.getElementById('consultaEstatus').textContent;
   
-  // Recopilar fotos
   let fotos = [];
   if (equipo.foto_url) fotos.push(equipo.foto_url);
   if (equipo.foto2_url) fotos.push(equipo.foto2_url);
@@ -483,7 +532,7 @@ function imprimirFichaConsulta() {
   </div>
 
   <div class="ficha-titulo">
-    <h2>📋 FICHA DEL EQUIPO</h2>
+    <h2> FICHA DEL EQUIPO</h2>
     <p style="margin: 10px 0 0 0; font-size: 14px;">Código: <strong>${equipo.codigo_barras}</strong></p>
   </div>
 
@@ -498,7 +547,7 @@ function imprimirFichaConsulta() {
       <p><strong>Medida:</strong> ${equipo.medida_valor ? `${equipo.medida_valor} ${equipo.medida_unidad || ''}` : 'N/A'}</p>
     </div>
     <div class="info-box">
-      <h3> Estatus Actual</h3>
+      <h3>📊 Estatus Actual</h3>
       <p><span class="estatus-badge estatus-${estatus.toLowerCase()}">${estatus}</span></p>
       <p><strong>Fecha Registro:</strong> ${equipo.fecha_registro ? new Date(equipo.fecha_registro).toLocaleDateString('es-ES') : 'N/A'}</p>
       <p><strong>Registrado por:</strong> ${equipo.usuario_registro || 'N/A'}</p>
@@ -521,7 +570,7 @@ function imprimirFichaConsulta() {
   </div>
 
   <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
-    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">️ Imprimir Ficha</button>
+    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">🖨️ Imprimir Ficha</button>
     <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">❌ Cerrar</button>
   </div>
 </body>
