@@ -6,6 +6,7 @@ let paginaActualConsulta = 1;
 const POR_PAGINA_CONSULTA = 20;
 let totalEquiposConsulta = 0;
 let usuarioActualConsulta = null;
+let equiposEnriquecidosCache = []; // Cache de equipos con estatus real
 
 // ==========================================
 // SISTEMA TOAST
@@ -100,7 +101,7 @@ async function inicializarConsulta() {
     });
   }
 
-  // ✅ FILTROS AUTOMÁTICOS: Se aplican al cambiar cualquier valor
+  // Filtros automáticos
   const filtroEstatus = document.getElementById('filtroEstatus');
   const filtroFechaInicio = document.getElementById('filtroFechaInicio');
   const filtroFechaFin = document.getElementById('filtroFechaFin');
@@ -108,21 +109,21 @@ async function inicializarConsulta() {
   if (filtroEstatus) {
     filtroEstatus.addEventListener('change', () => {
       paginaActualConsulta = 1;
-      cargarListaEquipos();
+      aplicarFiltrosYRenderizar();
     });
   }
 
   if (filtroFechaInicio) {
     filtroFechaInicio.addEventListener('change', () => {
       paginaActualConsulta = 1;
-      cargarListaEquipos();
+      aplicarFiltrosYRenderizar();
     });
   }
 
   if (filtroFechaFin) {
     filtroFechaFin.addEventListener('change', () => {
       paginaActualConsulta = 1;
-      cargarListaEquipos();
+      aplicarFiltrosYRenderizar();
     });
   }
 
@@ -308,87 +309,126 @@ async function cargarFotosConsulta(equipo) {
 }
 
 // ==========================================
-// ✅ CARGAR LISTA DE EQUIPOS CON FILTROS APLICADOS
+// ✅ CARGAR LISTA DE EQUIPOS (CON ENRIQUECIMIENTO Y FILTRADO EN CLIENTE)
 // ==========================================
 async function cargarListaEquipos() {
   const tbody = document.getElementById('tbodyEquipos');
   if (!tbody) return;
 
   try {
-    const desde = (paginaActualConsulta - 1) * POR_PAGINA_CONSULTA;
-    const hasta = desde + POR_PAGINA_CONSULTA - 1;
+    // Mostrar loading
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;"><div style="font-size: 40px; margin-bottom: 10px;"></div><div>Cargando equipos y verificando estatus...</div></td></tr>`;
 
-    // ✅ Obtener valores de los filtros
-    const filtroEstatus = document.getElementById('filtroEstatus')?.value || '';
-    const filtroFechaInicio = document.getElementById('filtroFechaInicio')?.value || '';
-    const filtroFechaFin = document.getElementById('filtroFechaFin')?.value || '';
-
-    // Construir consulta base
-    let query = supabaseClient
+    // 1. Cargar TODOS los equipos de la base de datos (sin paginación SQL)
+    const { data: equipos, error } = await supabaseClient
       .from('equipos')
-      .select('*', { count: 'exact' })
+      .select('*')
       .order('fecha_registro', { ascending: false });
-
-    // ✅ Aplicar filtro de estatus si está seleccionado
-    if (filtroEstatus) {
-      query = query.eq('estatus', filtroEstatus);
-    }
-
-    // ✅ Aplicar filtro de fecha inicio
-    if (filtroFechaInicio) {
-      query = query.gte('fecha_registro', filtroFechaInicio);
-    }
-
-    // ✅ Aplicar filtro de fecha fin
-    if (filtroFechaFin) {
-      query = query.lte('fecha_registro', filtroFechaFin + 'T23:59:59');
-    }
-
-    // Aplicar paginación
-    const { data: equipos, count, error } = await query.range(desde, hasta);
 
     if (error) throw error;
 
-    totalEquiposConsulta = count || 0;
-
     if (!equipos || equipos.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;"><div style="font-size: 40px; margin-bottom: 10px;">📭</div><div>No se encontraron equipos con los filtros aplicados</div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;"><div style="font-size: 40px; margin-bottom: 10px;">📭</div><div>No hay equipos registrados</div></td></tr>`;
       document.getElementById('paginacionConsulta').innerHTML = '';
+      document.getElementById('contadorEquipos').textContent = 'Total: 0 equipo(s)';
       return;
     }
 
-    // Enriquecer con estatus real (rentado/averiado/operativo/inoperativo)
+    // 2. Enriquecer cada equipo con su estatus real (rentado/averiado/operativo/inoperativo)
     const equiposEnriquecidos = [];
     for (const equipo of equipos) {
-      const { estatus } = await determinarEstatus(equipo.codigo_barras);
-      equiposEnriquecidos.push({ ...equipo, estatus_real: estatus });
+      const { estatus, infoAdicional } = await determinarEstatus(equipo.codigo_barras);
+      equiposEnriquecidos.push({ 
+        ...equipo, 
+        estatus_real: estatus,
+        info_adicional: infoAdicional
+      });
     }
 
-    tbody.innerHTML = equiposEnriquecidos.map((equipo, index) => {
-      const globalIndex = desde + index + 1;
-      const fechaFormateada = equipo.fecha_registro ? new Date(equipo.fecha_registro).toLocaleDateString('es-ES') : '-';
-      const marcaModelo = `${equipo.marca || ''} ${equipo.modelo || ''}`.trim() || '-';
+    // Guardar en cache para filtrado rápido
+    equiposEnriquecidosCache = equiposEnriquecidos;
 
-      return `
-        <tr onclick="seleccionarEquipoLista('${equipo.codigo_barras}')" id="fila-equipo-${equipo.id}">
-          <td>${globalIndex}</td>
-          <td style="font-family: monospace; font-weight: 600; color: #1e3a8a;">${equipo.codigo_barras}</td>
-          <td><strong>${equipo.nombre_equipo}</strong></td>
-          <td>${marcaModelo}</td>
-          <td>${equipo.serial || '-'}</td>
-          <td>${equipo.costo ? `$${parseFloat(equipo.costo).toFixed(2)}` : '$0.00'}</td>
-          <td>${fechaFormateada}</td>
-          <td><span class="badge badge-${equipo.estatus_real}">${equipo.estatus_real.toUpperCase()}</span></td>
-        </tr>
-      `;
-    }).join('');
-
-    renderizarPaginacionConsulta();
+    // 3. Aplicar filtros y renderizar
+    aplicarFiltrosYRenderizar();
 
   } catch (err) {
     console.error('Error al cargar equipos:', err);
     tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: #ef4444;">Error al cargar: ${err.message}</td></tr>`;
   }
+}
+
+// ==========================================
+// ✅ APLICAR FILTROS Y RENDERIZAR (Filtrado en cliente)
+// ==========================================
+function aplicarFiltrosYRenderizar() {
+  const tbody = document.getElementById('tbodyEquipos');
+  if (!tbody) return;
+
+  // Obtener valores de los filtros
+  const filtroEstatus = document.getElementById('filtroEstatus')?.value || '';
+  const filtroFechaInicio = document.getElementById('filtroFechaInicio')?.value || '';
+  const filtroFechaFin = document.getElementById('filtroFechaFin')?.value || '';
+
+  // Filtrar equipos enriquecidos
+  let equiposFiltrados = equiposEnriquecidosCache.filter(equipo => {
+    // Filtro de estatus
+    if (filtroEstatus && equipo.estatus_real !== filtroEstatus) {
+      return false;
+    }
+
+    // Filtro de fecha inicio
+    if (filtroFechaInicio) {
+      const fechaEquipo = new Date(equipo.fecha_registro).toISOString().split('T')[0];
+      if (fechaEquipo < filtroFechaInicio) return false;
+    }
+
+    // Filtro de fecha fin
+    if (filtroFechaFin) {
+      const fechaEquipo = new Date(equipo.fecha_registro).toISOString().split('T')[0];
+      if (fechaEquipo > filtroFechaFin) return false;
+    }
+
+    return true;
+  });
+
+  // Actualizar contador TOTAL (arriba de la tabla)
+  totalEquiposConsulta = equiposFiltrados.length;
+  const contadorDiv = document.getElementById('contadorEquipos');
+  if (contadorDiv) {
+    contadorDiv.textContent = `Total: ${totalEquiposConsulta} equipo(s)`;
+  }
+
+  // Aplicar paginación en cliente
+  const desde = (paginaActualConsulta - 1) * POR_PAGINA_CONSULTA;
+  const hasta = desde + POR_PAGINA_CONSULTA;
+  const equiposPaginados = equiposFiltrados.slice(desde, hasta);
+
+  if (equiposPaginados.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;"><div style="font-size: 40px; margin-bottom: 10px;">📭</div><div>No se encontraron equipos con los filtros aplicados</div></td></tr>`;
+    renderizarPaginacionConsulta();
+    return;
+  }
+
+  tbody.innerHTML = equiposPaginados.map((equipo, index) => {
+    const globalIndex = desde + index + 1;
+    const fechaFormateada = equipo.fecha_registro ? new Date(equipo.fecha_registro).toLocaleDateString('es-ES') : '-';
+    const marcaModelo = `${equipo.marca || ''} ${equipo.modelo || ''}`.trim() || '-';
+
+    return `
+      <tr onclick="seleccionarEquipoLista('${equipo.codigo_barras}')" id="fila-equipo-${equipo.id}">
+        <td>${globalIndex}</td>
+        <td style="font-family: monospace; font-weight: 600; color: #1e3a8a;">${equipo.codigo_barras}</td>
+        <td><strong>${equipo.nombre_equipo}</strong></td>
+        <td>${marcaModelo}</td>
+        <td>${equipo.serial || '-'}</td>
+        <td>${equipo.costo ? `$${parseFloat(equipo.costo).toFixed(2)}` : '$0.00'}</td>
+        <td>${fechaFormateada}</td>
+        <td><span class="badge badge-${equipo.estatus_real}">${equipo.estatus_real.toUpperCase()}</span></td>
+      </tr>
+    `;
+  }).join('');
+
+  renderizarPaginacionConsulta();
 }
 
 // ==========================================
@@ -400,7 +440,7 @@ async function seleccionarEquipoLista(codigoBarras) {
 }
 
 // ==========================================
-// ✅ PAGINACIÓN CON CONTADOR DE FILTROS ACTIVOS
+// ✅ PAGINACIÓN CON CONTADOR ARRIBA
 // ==========================================
 function renderizarPaginacionConsulta() {
   const cont = document.getElementById('paginacionConsulta');
@@ -420,11 +460,11 @@ function renderizarPaginacionConsulta() {
 
   let infoHTML = '';
   if (filtrosActivos.length > 0) {
-    infoHTML = `<span style="color: #f59e0b; font-size: 12px; font-weight: 600;">🔎 Filtros: ${filtrosActivos.join(' | ')}</span>`;
+    infoHTML = `<span style="color: #f59e0b; font-size: 12px; font-weight: 600;"> Filtros: ${filtrosActivos.join(' | ')}</span>`;
   }
 
   if (totalPaginas <= 1) {
-    cont.innerHTML = `<span style="color: #6b7280; font-size: 13px;">Total: ${totalEquiposConsulta} equipo(s)</span> ${infoHTML}`;
+    cont.innerHTML = `<span style="color: #6b7280; font-size: 13px;">Página 1 de 1</span> ${infoHTML}`;
     return;
   }
 
@@ -432,7 +472,6 @@ function renderizarPaginacionConsulta() {
   html += `<button type="button" onclick="cambiarPaginaConsulta(${paginaActualConsulta - 1})" style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px;" ${paginaActualConsulta === 1 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>‹ Anterior</button>`;
   html += `<span style="color: #374151; font-size: 13px; font-weight: 600;">Página ${paginaActualConsulta} de ${totalPaginas}</span>`;
   html += `<button type="button" onclick="cambiarPaginaConsulta(${paginaActualConsulta + 1})" style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px;" ${paginaActualConsulta === totalPaginas ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>Siguiente ›</button>`;
-  html += `<span style="color: #6b7280; font-size: 13px;">Total: ${totalEquiposConsulta}</span>`;
   html += ` ${infoHTML}`;
 
   cont.innerHTML = html;
@@ -443,11 +482,11 @@ async function cambiarPaginaConsulta(nuevaPagina) {
   if (nuevaPagina < 1 || nuevaPagina > totalPaginas) return;
   
   paginaActualConsulta = nuevaPagina;
-  await cargarListaEquipos();
+  aplicarFiltrosYRenderizar();
 }
 
 // ==========================================
-// ✅ LIMPIAR FILTROS (ÚNICO BOTÓN QUE QUEDA)
+// LIMPIAR FILTROS
 // ==========================================
 function limpiarFiltros() {
   const filtroEstatus = document.getElementById('filtroEstatus');
@@ -459,7 +498,7 @@ function limpiarFiltros() {
   if (filtroFechaFin) filtroFechaFin.value = '';
   
   paginaActualConsulta = 1;
-  cargarListaEquipos();
+  aplicarFiltrosYRenderizar();
   mostrarToastConsulta('Filtros limpiados', 'exito');
 }
 
@@ -532,7 +571,7 @@ function imprimirFichaConsulta() {
   </div>
 
   <div class="ficha-titulo">
-    <h2> FICHA DEL EQUIPO</h2>
+    <h2>📋 FICHA DEL EQUIPO</h2>
     <p style="margin: 10px 0 0 0; font-size: 14px;">Código: <strong>${equipo.codigo_barras}</strong></p>
   </div>
 
@@ -571,7 +610,7 @@ function imprimirFichaConsulta() {
 
   <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
     <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">🖨️ Imprimir Ficha</button>
-    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">❌ Cerrar</button>
+    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;"> Cerrar</button>
   </div>
 </body>
 </html>`);
