@@ -103,16 +103,21 @@ legend {
   box-shadow: 0 0 0 3px rgba(30,58,138,0.1);
 }
 
-/* ✅ SEPARACIÓN AUMENTADA AQUÍ */
+/* ✅ SEPARACIÓN FORZADA AL MÁXIMO */
 .busqueda-container {
-  display: flex;
-  gap: 35px; /* Aumentado de 15px a 25px para mejor separación */
-  align-items: flex-end;
+  display: flex !important;
+  gap: 50px !important; /* Separación extrema para que notes el cambio */
+  align-items: flex-end !important;
 }
-  .busqueda-container .btn-action {
-  margin-left: 20px !important;
+
+.busqueda-container .btn-action {
+  margin-left: 40px !important;
+  margin-bottom: 20px !important;
 }
-.busqueda-container .form-group { flex: 1; }
+
+.busqueda-container .form-group { 
+  flex: 1 !important; 
+}
 
 .btn-action {
   padding: 14px 28px;
