@@ -104,36 +104,17 @@ async function buscarEquipo() {
 // ==========================================
 // MOSTRAR DATOS DEL EQUIPO
 // ==========================================
+// ==========================================
+// MOSTRAR DATOS DEL EQUIPO
+// ==========================================
 function mostrarDatosEquipo(equipo) {
-  const grid = document.getElementById('equipoInfoGrid');
-  if (!grid) return;
-
-  grid.innerHTML = `
-    <div class="equipo-info-item">
-      <span class="equipo-info-label">Código de Barras</span>
-      <span class="equipo-info-value">${equipo.codigo_barras || 'N/A'}</span>
-    </div>
-    <div class="equipo-info-item">
-      <span class="equipo-info-label">Nombre</span>
-      <span class="equipo-info-value">${equipo.nombre_equipo || 'N/A'}</span>
-    </div>
-    <div class="equipo-info-item">
-      <span class="equipo-info-label">Marca</span>
-      <span class="equipo-info-value">${equipo.marca || 'N/A'}</span>
-    </div>
-    <div class="equipo-info-item">
-      <span class="equipo-info-label">Modelo</span>
-      <span class="equipo-info-value">${equipo.modelo || 'N/A'}</span>
-    </div>
-    <div class="equipo-info-item">
-      <span class="equipo-info-label">Serial</span>
-      <span class="equipo-info-value">${equipo.serial || 'N/A'}</span>
-    </div>
-    <div class="equipo-info-item">
-      <span class="equipo-info-label">Estatus Actual</span>
-      <span class="equipo-info-value" style="text-transform: uppercase;">${equipo.estatus || 'N/A'}</span>
-    </div>
-  `;
+  // Actualizar cada campo individualmente
+  document.getElementById('fichaCodigo').textContent = equipo.codigo_barras || 'N/A';
+  document.getElementById('fichaNombre').textContent = equipo.nombre_equipo || 'N/A';
+  document.getElementById('fichaMarca').textContent = equipo.marca || 'N/A';
+  document.getElementById('fichaModelo').textContent = equipo.modelo || 'N/A';
+  document.getElementById('fichaSerial').textContent = equipo.serial || 'N/A';
+  document.getElementById('fichaEstatus').textContent = equipo.estatus || 'N/A';
 
   document.getElementById('equipoEncontrado').style.display = 'block';
   document.getElementById('equipoEncontrado').scrollIntoView({ behavior: 'smooth', block: 'start' });
