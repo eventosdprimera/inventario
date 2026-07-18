@@ -260,6 +260,22 @@ tr:hover {
   }
   .equipo-info-grid { grid-template-columns: 1fr; }
 }
+  /* ✅ BOTÓN DEBAJO DEL CAMPO DE BÚSQUEDA (CON MÁS ESPACIO) */
+.busqueda-container {
+  display: flex !important;
+  flex-direction: column !important; /* Mantiene el botón debajo */
+  align-items: flex-start !important; /* Alineado a la izquierda */
+  gap: 30px !important; /* 🔽 Aumentado a 30px para bajarlo un poco más */
+}
+
+.busqueda-container .form-group { 
+  width: 100% !important; 
+  margin-bottom: 0 !important;
+}
+
+.busqueda-container .btn-action {
+  margin-left: 0 !important; 
+}
 </style>
 </head>
 <body>
