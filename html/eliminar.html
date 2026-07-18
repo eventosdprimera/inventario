@@ -290,25 +290,58 @@ tr:hover {
     </div>
   </fieldset>
 
-  <!-- INFO DEL EQUIPO ENCONTRADO -->
+   <!-- INFO DEL EQUIPO ENCONTRADO -->
   <div id="equipoEncontrado" style="display: none;">
     <fieldset>
       <legend>⚠️ Equipo Encontrado</legend>
-      <div class="equipo-info">
-        <div class="equipo-info-titulo">📦 Datos del Equipo</div>
-        <div class="equipo-info-grid" id="equipoInfoGrid"></div>
+      
+      <!-- Ficha mejorada estilo Averías -->
+      <div style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); padding: 25px; border-radius: 12px; border-left: 5px solid #dc2626; margin-bottom: 25px;">
+        <h3 style="color: #991b1b; margin: 0 0 20px 0; font-size: 18px; font-weight: 700;">📦 Información del Equipo</h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+          <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Código de Barras</label>
+            <strong id="fichaCodigo" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word; font-family: monospace;">-</strong>
+          </div>
+          
+          <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Nombre del Equipo</label>
+            <strong id="fichaNombre" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+          </div>
+          
+          <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Marca</label>
+            <strong id="fichaMarca" style="color: #1e3a8a; font-size: 15px; display: block;">-</strong>
+          </div>
+          
+          <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Modelo</label>
+            <strong id="fichaModelo" style="color: #1e3a8a; font-size: 15px; display: block;">-</strong>
+          </div>
+          
+          <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Serial</label>
+            <strong id="fichaSerial" style="color: #1e3a8a; font-size: 15px; display: block; font-family: monospace;">-</strong>
+          </div>
+          
+          <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Estatus Actual</label>
+            <strong id="fichaEstatus" style="color: #1e3a8a; font-size: 15px; display: block; text-transform: uppercase;">-</strong>
+          </div>
+        </div>
       </div>
       
       <div class="form-group">
-        <label>Motivo de Eliminación (opcional)</label>
-        <textarea id="motivoEliminacion" rows="3" placeholder="Describe el motivo de la eliminación..."></textarea>
+        <label style="font-weight: 600; color: #374151;">📝 Motivo de Eliminación (opcional)</label>
+        <textarea id="motivoEliminacion" rows="3" placeholder="Describe el motivo de la eliminación..." style="border: 2px solid #e5e7eb; border-radius: 8px; padding: 12px; font-family: 'Poppins', sans-serif;"></textarea>
       </div>
 
-      <div class="mensaje warning" style="display: block;">
+      <div class="mensaje warning" style="display: block; margin-top: 20px;">
         ⚠️ <strong>Advertencia:</strong> Esta acción eliminará el equipo del inventario activo. Los datos se moverán a la tabla de respaldo "equipos_eliminados" y no se pueden deshacer.
       </div>
 
-      <div style="margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
+      <div style="margin-top: 25px; display: flex; gap: 15px; flex-wrap: wrap;">
         <button type="button" class="btn-action btn-danger" onclick="confirmarEliminacion()">🗑️ Eliminar Equipo Permanentemente</button>
         <button type="button" class="btn-action btn-secondary" onclick="cancelarBusqueda()">❌ Cancelar</button>
       </div>
