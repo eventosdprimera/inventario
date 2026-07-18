@@ -1,353 +1,286 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Eliminar Equipo - Eventos D' Primera</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231e3a8a'/%3E%3Ctext x='50' y='68' font-family='Arial,sans-serif' font-size='48' font-weight='bold' text-anchor='middle' fill='white'%3EEP%3C/text%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: 'Poppins', sans-serif;
-  background-color: #f5f7fa;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-.header {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-  color: white;
-  padding: 15px 30px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-.header-left { display: flex; flex-direction: column; gap: 3px; }
-.header-titulo { font-family: 'Libre Caslon Text', serif; font-size: 22px; font-weight: 700; }
-.header-subtitulo { font-size: 12px; opacity: 0.85; font-style: italic; }
-.btn-volver {
-  background-color: rgba(255,255,255,0.2);
-  color: white;
-  border: 1px solid rgba(255,255,255,0.3);
-  padding: 8px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  font-family: 'Poppins', sans-serif;
-  text-decoration: none;
-  display: inline-block;
-}
-.btn-volver:hover { background-color: rgba(255,255,255,0.3); }
-.container {
-  flex: 1;
-  padding: 30px;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
-}
-.page-title {
-  font-family: 'Libre Caslon Text', serif;
-  color: #1e3a8a;
-  font-size: 26px;
-  margin-bottom: 8px;
-}
-.page-subtitle {
-  color: #6b7280;
-  font-size: 14px;
-  margin-bottom: 25px;
-}
-fieldset {
-  background-color: white;
-  border: 2px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 30px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-}
-legend {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-  color: white;
-  padding: 8px 20px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-.form-group { display: flex; flex-direction: column; margin-bottom: 20px; }
-.form-group label {
-  color: #374151;
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-.form-group input,
-.form-group select,
-.form-group textarea {
-  padding: 12px 14px;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: 'Poppins', sans-serif;
-  transition: all 0.3s;
-}
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #1e3a8a;
-  box-shadow: 0 0 0 3px rgba(30,58,138,0.1);
-}
+// ==========================================
+// VARIABLES GLOBALES
+// ==========================================
+let equipoEncontrado = null;
+let usuarioActual = null;
 
-/* ✅ OPCIÓN NUCLEAR: Clase nueva + Borde rojo de prueba + Margen gigante */
-.zona-busqueda {
-  display: flex !important;
-  align-items: flex-end !important;
-  border: 3px solid red !important; /* Si ves este borde rojo, el CSS cargó bien */
-}
+// ==========================================
+// SISTEMA DE MENSAJES
+// ==========================================
+function mostrarMensaje(texto, tipo) {
+  const mensajeDiv = document.getElementById('mensaje');
+  if (!mensajeDiv) return;
 
-.zona-busqueda .form-group {
-  flex: 1 !important;
-  margin-right: 80px !important; /* Separación forzada de 80px */
-  margin-bottom: 0 !important;
-}
+  mensajeDiv.textContent = texto;
+  mensajeDiv.className = `mensaje ${tipo}`;
+  mensajeDiv.style.display = 'block';
 
-.zona-busqueda .btn-action {
-  margin-bottom: 0 !important;
-}
-
-.btn-action {
-  padding: 14px 28px;
-  border: none;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-family: 'Poppins', sans-serif;
-  white-space: nowrap;
-}
-.btn-primary {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-  color: white;
-}
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(30,58,138,0.3);
-}
-.btn-danger {
-  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
-  color: white;
-}
-.btn-danger:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(220,38,38,0.3);
-}
-.btn-secondary { 
-  background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%); 
-  color: white; 
-}
-.mensaje {
-  padding: 16px 20px;
-  border-radius: 10px;
-  margin-bottom: 25px;
-  font-size: 14px;
-  font-weight: 500;
-  display: none;
-  border-left: 4px solid;
-}
-.mensaje.exito {
-  background-color: #d1fae5;
-  color: #065f46;
-  border-left-color: #10b981;
-  display: block;
-}
-.mensaje.error {
-  background-color: #fee2e2;
-  color: #991b1b;
-  border-left-color: #dc2626;
-  display: block;
-}
-.mensaje.warning {
-  background-color: #fef3c7;
-  color: #92400e;
-  border-left-color: #f59e0b;
-  display: block;
-}
-.equipo-info {
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  padding: 20px;
-  border-radius: 10px;
-  border-left: 4px solid #3b82f6;
-  margin: 20px 0;
-}
-.equipo-info-titulo {
-  font-size: 14px;
-  font-weight: 700;
-  color: #1e3a8a;
-  margin-bottom: 10px;
-}
-.equipo-info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
-  font-size: 13px;
-}
-.equipo-info-item {
-  display: flex;
-  flex-direction: column;
-}
-.equipo-info-label {
-  color: #6b7280;
-  font-size: 11px;
-  text-transform: uppercase;
-}
-.equipo-info-value {
-  color: #1e3a8a;
-  font-weight: 600;
-}
-.table-container {
-  overflow-x: auto;
-  margin-top: 20px;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-th {
-  background-color: #1e3a8a;
-  color: white;
-  padding: 12px;
-  text-align: left;
-  font-size: 13px;
-  font-weight: 600;
-}
-td {
-  padding: 12px;
-  border-bottom: 1px solid #e5e7eb;
-  font-size: 13px;
-}
-tr:hover {
-  background-color: #f9fafb;
-}
-.copyright {
-  text-align: center;
-  padding: 15px;
-  color: #9ca3af;
-  font-size: 11px;
-  background-color: white;
-  border-top: 1px solid #e5e7eb;
-}
-.copyright strong { color: #6b7280; font-weight: 600; }
-
-@media (max-width: 768px) {
-  .header { flex-direction: column; gap: 15px; text-align: center; }
-  .container { padding: 15px; }
-  .zona-busqueda { 
-    flex-direction: column !important; 
-    border: none !important; /* Quitamos el borde rojo en móvil */
+  // Ocultar automáticamente después de 5 segundos si es éxito
+  if (tipo === 'exito') {
+    setTimeout(() => {
+      mensajeDiv.style.display = 'none';
+    }, 5000);
   }
-  .zona-busqueda .form-group {
-    margin-right: 0 !important;
-    margin-bottom: 15px !important;
-  }
-  .zona-busqueda .btn-action {
-    width: 100%;
-  }
-  .equipo-info-grid { grid-template-columns: 1fr; }
 }
-</style>
-</head>
-<body>
-<header class="header">
-  <div class="header-left">
-    <div class="header-titulo">Sistema de Inventario</div>
-    <div class="header-subtitulo">Eliminación de Equipos</div>
-  </div>
-  <a href="../dashboard.html" class="btn-volver">← Volver al Dashboard</a>
-</header>
 
-<div class="container">
-  <h1 class="page-title">🗑️ Eliminar Equipo</h1>
-  <p class="page-subtitle">Busque el equipo por código de barras o serial para eliminarlo del sistema.</p>
+// ==========================================
+// INICIALIZACIÓN
+// ==========================================
+async function inicializarEliminacion() {
+  let intentos = 0;
+  while (typeof supabaseClient === 'undefined' && intentos < 50) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    intentos++;
+  }
 
-  <div id="mensaje" class="mensaje"></div>
+  if (typeof supabaseClient === 'undefined') {
+    mostrarMensaje('Error: Supabase no está disponible', 'error');
+    return;
+  }
 
-  <!-- BÚSQUEDA -->
-  <fieldset>
-    <legend>🔍 Buscar Equipo a Eliminar</legend>
-    <!-- ✅ Clase cambiada a zona-busqueda -->
-    <div class="zona-busqueda">
-      <div class="form-group">
-        <label>Código de Barras o Serial</label>
-        <input type="text" id="buscarEquipoInput" placeholder="Escanea o escribe aquí..." autofocus>
-      </div>
-      <button type="button" class="btn-action btn-primary" onclick="buscarEquipo()">🔎 Buscar</button>
+  // Obtener usuario actual
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session) {
+    const { data } = await supabaseClient.from('usuarios').select('*').eq('email', session.user.email).maybeSingle();
+    usuarioActual = data || { email: session.user.email, id: session.user.id };
+  }
+
+  // Evento Enter en el input de búsqueda
+  const inputBusqueda = document.getElementById('buscarEquipoInput');
+  if (inputBusqueda) {
+    inputBusqueda.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        buscarEquipo();
+      }
+    });
+  }
+
+  cargarHistorialEliminados();
+}
+
+// ==========================================
+// BUSCAR EQUIPO
+// ==========================================
+async function buscarEquipo() {
+  const input = document.getElementById('buscarEquipoInput');
+  if (!input) return;
+
+  const codigoOriginal = input.value.trim();
+  if (!codigoOriginal) {
+    mostrarMensaje('⚠️ Por favor ingrese un código de barras o serial', 'warning');
+    input.focus();
+    return;
+  }
+
+  // ✅ CORRECCIÓN: Reemplazar COMILLAS SIMPLES, DOBLES y ACENTOS GRAVES por guiones
+  const codigoBusqueda = codigoOriginal.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('equipos')
+      .select('*')
+      .or(`codigo_barras.eq.${codigoBusqueda},serial.eq.${codigoBusqueda}`)
+      .maybeSingle();
+
+    if (error || !data) {
+      // Mostramos el código corregido para que el usuario sepa qué se buscó
+      mostrarMensaje(`❌ No se encontró ningún equipo con: "${codigoBusqueda}"`, 'error');
+      input.value = '';
+      input.focus();
+      return;
+    }
+
+    equipoEncontrado = data;
+    mostrarDatosEquipo(data);
+    mostrarMensaje(`✅ Equipo encontrado: ${data.nombre_equipo}`, 'exito');
+
+  } catch (err) {
+    console.error('Error al buscar:', err);
+    mostrarMensaje('Error al buscar en la base de datos: ' + err.message, 'error');
+  }
+}
+
+// ==========================================
+// MOSTRAR DATOS DEL EQUIPO
+// ==========================================
+function mostrarDatosEquipo(equipo) {
+  const grid = document.getElementById('equipoInfoGrid');
+  if (!grid) return;
+
+  grid.innerHTML = `
+    <div class="equipo-info-item">
+      <span class="equipo-info-label">Código de Barras</span>
+      <span class="equipo-info-value">${equipo.codigo_barras || 'N/A'}</span>
     </div>
-  </fieldset>
-
-  <!-- INFO DEL EQUIPO ENCONTRADO -->
-  <div id="equipoEncontrado" style="display: none;">
-    <fieldset>
-      <legend>⚠️ Equipo Encontrado</legend>
-      <div class="equipo-info">
-        <div class="equipo-info-titulo">📦 Datos del Equipo</div>
-        <div class="equipo-info-grid" id="equipoInfoGrid"></div>
-      </div>
-      
-      <div class="form-group">
-        <label>Motivo de Eliminación (opcional)</label>
-        <textarea id="motivoEliminacion" rows="3" placeholder="Describe el motivo de la eliminación..."></textarea>
-      </div>
-
-      <div class="mensaje warning" style="display: block;">
-        ⚠️ <strong>Advertencia:</strong> Esta acción eliminará el equipo del inventario activo. Los datos se moverán a la tabla de respaldo "equipos_eliminados" y no se pueden deshacer.
-      </div>
-
-      <div style="margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
-        <button type="button" class="btn-action btn-danger" onclick="confirmarEliminacion()">🗑️ Eliminar Equipo Permanentemente</button>
-        <button type="button" class="btn-action btn-secondary" onclick="cancelarBusqueda()">❌ Cancelar</button>
-      </div>
-    </fieldset>
-  </div>
-
-  <!-- TABLA DE EQUIPOS ELIMINADOS RECIENTEMENTE -->
-  <fieldset>
-    <legend>📋 Historial de Equipos Eliminados (Últimos 10)</legend>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Fecha Eliminación</th>
-            <th>Código</th>
-            <th>Nombre</th>
-            <th>Serial</th>
-            <th>Eliminado Por</th>
-          </tr>
-        </thead>
-        <tbody id="tbodyEliminados">
-          <tr>
-            <td colspan="5" style="text-align: center; padding: 40px; color: #6b7280;">
-              Cargando historial...
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="equipo-info-item">
+      <span class="equipo-info-label">Nombre</span>
+      <span class="equipo-info-value">${equipo.nombre_equipo || 'N/A'}</span>
     </div>
-  </fieldset>
-</div>
+    <div class="equipo-info-item">
+      <span class="equipo-info-label">Marca</span>
+      <span class="equipo-info-value">${equipo.marca || 'N/A'}</span>
+    </div>
+    <div class="equipo-info-item">
+      <span class="equipo-info-label">Modelo</span>
+      <span class="equipo-info-value">${equipo.modelo || 'N/A'}</span>
+    </div>
+    <div class="equipo-info-item">
+      <span class="equipo-info-label">Serial</span>
+      <span class="equipo-info-value">${equipo.serial || 'N/A'}</span>
+    </div>
+    <div class="equipo-info-item">
+      <span class="equipo-info-label">Estatus Actual</span>
+      <span class="equipo-info-value" style="text-transform: uppercase;">${equipo.estatus || 'N/A'}</span>
+    </div>
+  `;
 
-<div class="copyright">
-  <strong>©copyright Eventos de Primera</strong><br>
-  2026-2027 | Versión 0.1
-</div>
+  document.getElementById('equipoEncontrado').style.display = 'block';
+  document.getElementById('equipoEncontrado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="../js/config.js"></script>
-<script src="../js/eliminar.js"></script>
-</body>
-</html>
+// ==========================================
+// CONFIRMAR ELIMINACIÓN
+// ==========================================
+async function confirmarEliminacion() {
+  if (!equipoEncontrado) return;
+
+  const motivo = document.getElementById('motivoEliminacion').value.trim();
+  
+  const confirmacion = confirm(
+    `⚠️ ¿Estás SEGURO de que deseas eliminar permanentemente este equipo?\n\n` +
+    `Código: ${equipoEncontrado.codigo_barras}\n` +
+    `Nombre: ${equipoEncontrado.nombre_equipo}\n\n` +
+    `Esta acción no se puede deshacer.`
+  );
+
+  if (!confirmacion) return;
+
+  const btnEliminar = document.querySelector('.btn-danger');
+  btnEliminar.disabled = true;
+  btnEliminar.textContent = '⏳ Eliminando...';
+
+  try {
+    // 1. Insertar en la tabla de respaldo (equipos_eliminados)
+    const { error: errorRespaldo } = await supabaseClient
+      .from('equipos_eliminados')
+      .insert({
+        equipo_id_original: equipoEncontrado.id,
+        codigo_barras: equipoEncontrado.codigo_barras,
+        nombre_equipo: equipoEncontrado.nombre_equipo,
+        marca: equipoEncontrado.marca,
+        modelo: equipoEncontrado.modelo,
+        serial: equipoEncontrado.serial,
+        costo: equipoEncontrado.costo || 0,
+        estatus: equipoEncontrado.estatus,
+        motivo_eliminacion: motivo || 'Sin motivo especificado',
+        eliminado_por: usuarioActual?.email || 'unknown',
+        eliminado_por_id: usuarioActual?.id || null,
+        fecha_eliminacion: new Date().toISOString()
+      });
+
+    if (errorRespaldo) throw new Error('Error al guardar respaldo: ' + errorRespaldo.message);
+
+    // 2. Eliminar de la tabla activa (equipos)
+    const { error: errorEliminacion } = await supabaseClient
+      .from('equipos')
+      .delete()
+      .eq('id', equipoEncontrado.id);
+
+    if (errorEliminacion) throw new Error('Error al eliminar: ' + errorEliminacion.message);
+
+    // 3. Registrar en logs
+    if (typeof registrarLog === 'function') {
+      await registrarLog(
+        'inventario', 
+        'Equipo eliminado', 
+        `Equipo eliminado: ${equipoEncontrado.codigo_barras} (${equipoEncontrado.nombre_equipo}) | Motivo: ${motivo || 'N/A'} | Eliminado por: ${usuarioActual?.email || 'Desconocido'}`, 
+        'error'
+      );
+    }
+
+    mostrarMensaje('✅ Equipo eliminado y movido al historial de respaldo exitosamente', 'exito');
+    
+    // Limpiar y recargar
+    setTimeout(() => {
+      cancelarBusqueda();
+      cargarHistorialEliminados();
+    }, 1500);
+
+  } catch (err) {
+    console.error('Error al eliminar:', err);
+    mostrarMensaje('❌ Error al eliminar: ' + err.message, 'error');
+  } finally {
+    btnEliminar.disabled = false;
+    btnEliminar.textContent = '🗑️ Eliminar Equipo Permanentemente';
+  }
+}
+
+// ==========================================
+// CANCELAR BÚSQUEDA
+// ==========================================
+function cancelarBusqueda() {
+  equipoEncontrado = null;
+  document.getElementById('buscarEquipoInput').value = '';
+  document.getElementById('motivoEliminacion').value = '';
+  document.getElementById('equipoEncontrado').style.display = 'none';
+  document.getElementById('mensaje').style.display = 'none';
+  document.getElementById('buscarEquipoInput').focus();
+}
+
+// ==========================================
+// CARGAR HISTORIAL DE ELIMINADOS
+// ==========================================
+async function cargarHistorialEliminados() {
+  const tbody = document.getElementById('tbodyEliminados');
+  if (!tbody) return;
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('equipos_eliminados')
+      .select('*')
+      .order('fecha_eliminacion', { ascending: false })
+      .limit(10);
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align: center; padding: 40px; color: #6b7280;">
+            No hay equipos eliminados recientemente
+          </td>
+        </tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.map(item => {
+      const fecha = item.fecha_eliminacion ? new Date(item.fecha_eliminacion).toLocaleDateString('es-ES') : '-';
+      return `
+        <tr>
+          <td>${fecha}</td>
+          <td style="font-family: monospace; font-weight: 600;">${item.codigo_barras}</td>
+          <td>${item.nombre_equipo}</td>
+          <td>${item.serial || '-'}</td>
+          <td>${item.eliminado_por || 'N/A'}</td>
+        </tr>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.error('Error al cargar historial:', err);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align: center; padding: 40px; color: #ef4444;">
+          Error al cargar historial: ${err.message}
+        </td>
+      </tr>`;
+  }
+}
+
+// ==========================================
+// INICIALIZAR AL CARGAR
+// ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+  inicializarEliminacion();
+});
