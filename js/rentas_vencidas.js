@@ -56,12 +56,13 @@ async function cargarUsuarioVencidas() {
 // ==========================================
 async function cargarRentasVencidas() {
   try {
+    // Obtiene la fecha de hoy en formato 'YYYY-MM-DD' (ej: '2026-07-17')
     const hoy = new Date().toISOString().split('T')[0];
 
     const { data, error } = await supabaseClient
       .from('rentas')
       .select('*')
-      .lt('fecha_devolucion', hoy)
+      .lte('fecha_devolucion', hoy) // ✅ CAMBIADO: .lte (Less Than or Equal) en lugar de .lt
       .neq('estado', 'devuelta')
       .neq('estado', 'cancelada')
       .order('fecha_devolucion', { ascending: true });
