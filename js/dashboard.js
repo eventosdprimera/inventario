@@ -750,7 +750,7 @@ async function cargarContadorRentasVencidas() {
     const { count, error } = await supabaseClient
       .from('rentas')
       .select('*', { count: 'exact', head: true })
-      .lt('fecha_devolucion', hoy)
+      .lte('fecha_devolucion', hoy) // ✅ CAMBIADO: .lte (menor o igual) para incluir las de hoy
       .neq('estado', 'devuelta')
       .neq('estado', 'cancelada');
 
@@ -759,7 +759,8 @@ async function cargarContadorRentasVencidas() {
     const badge = document.getElementById('badgeVencidas');
     if (badge) {
       if (count > 0) {
-        badge.textContent = count;
+        // Si son más de 99, muestra "99+" para que no se deforme el círculo
+        badge.textContent = count > 99 ? '99+' : count;
         badge.style.display = 'block';
       } else {
         badge.style.display = 'none';
