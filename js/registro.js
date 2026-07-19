@@ -1,16 +1,16 @@
 // ==========================================
-// VARIABLES GLOBALES
+// VARIABLES GLOBALES (CON NOMBRES ÚNICOS PARA EVITAR COLISIONES)
 // ==========================================
 let codigoBarrasActual = null;
 let fotosSeleccionadas = [null, null, null, null];
-let usuarioActual = null;
+let usuarioActualRegistro = null; // ✅ RENOMBRADO para no chocar con eliminar.js
 let fotoSeleccionadaActual = null;
 let yaInicializado = false;
 let formularioModificado = false;
 let equipoGuardadoExitosamente = false;
 
 // ==========================================
-// INICIALIZACIÓN (SIN LOGS AQUÍ)
+// INICIALIZACIÓN
 // ==========================================
 async function inicializarRegistroEquipo() {
   console.log('🚀 === INICIANDO REGISTRO DE EQUIPO ===');
@@ -41,7 +41,7 @@ async function inicializarRegistroEquipo() {
   }
   console.log('✅ Supabase disponible');
 
-  await cargarUsuario();
+  await cargarUsuarioRegistro();
 
   let intentosJsBarcode = 0;
   while (typeof JsBarcode === 'undefined' && intentosJsBarcode < 50) {
@@ -58,7 +58,6 @@ async function inicializarRegistroEquipo() {
   configurarDeteccionCambios();
   await generarCodigoBarras();
 
-  // ✅ AQUÍ NO HAY NINGÚN registrarLog, solo inicialización
   console.log('✅ === INICIALIZACIÓN COMPLETADA ===');
 }
 
@@ -182,7 +181,7 @@ function configurarDeteccionCambios() {
 // ==========================================
 // CARGAR USUARIO
 // ==========================================
-async function cargarUsuario() {
+async function cargarUsuarioRegistro() {
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) return;
@@ -190,9 +189,9 @@ async function cargarUsuario() {
     const { data, error } = await supabaseClient.from('usuarios').select('*').eq('email', session.user.email).maybeSingle();
 
     if (data && !error) {
-      usuarioActual = data;
+      usuarioActualRegistro = data;
     } else {
-      usuarioActual = { email: session.user.email, id: session.user.id };
+      usuarioActualRegistro = { email: session.user.email, id: session.user.id };
     }
   } catch (err) {
     console.error('❌ Error al cargar usuario:', err);
@@ -482,7 +481,7 @@ function validarCosto(valor) {
 }
 
 // ==========================================
-// GUARDAR EQUIPO (ÚNICO LUGAR DONDE SE GENERA EL LOG)
+// GUARDAR EQUIPO
 // ==========================================
 window.guardarEquipo = async function() {
   console.log('💾 Guardando equipo...');
@@ -554,8 +553,8 @@ window.guardarEquipo = async function() {
       foto2_url: fotoUrls[1],
       foto3_url: fotoUrls[2],
       foto4_url: fotoUrls[3],
-      usuario_registro: usuarioActual?.email || 'unknown',
-      usuario_registro_id: usuarioActual?.id || null
+      usuario_registro: usuarioActualRegistro?.email || 'unknown', // ✅ USANDO LA VARIABLE RENOMBRADA
+      usuario_registro_id: usuarioActualRegistro?.id || null
     }).select().single();
 
     if (error) {
@@ -566,7 +565,6 @@ window.guardarEquipo = async function() {
     console.log('✅ Equipo guardado exitosamente');
     mostrarMensajeRegistro('✅ Equipo registrado con código: ' + codigoBarrasActual, 'exito');
     
-    // ✅ 1. GUARDAR LOS DATOS EN UNA VARIABLE LOCAL PARA LA IMPRESIÓN
     const datosParaImprimir = {
       codigo_barras: codigoBarrasActual,
       nombre_equipo: nombre,
@@ -577,14 +575,13 @@ window.guardarEquipo = async function() {
       fecha_registro: data.fecha_registro
     };
 
-    // ✅ 2. REGISTRAR LOG DETALLADO SOLO AL GUARDAR EXITOSAMENTE
     if (typeof registrarLog === 'function') {
       try {
         const fechaHora = new Date().toLocaleString('es-ES', { 
           day: '2-digit', month: '2-digit', year: 'numeric', 
           hour: '2-digit', minute: '2-digit', second: '2-digit' 
         });
-        const usuarioRegistro = usuarioActual?.email || 'Desconocido';
+        const usuarioRegistro = usuarioActualRegistro?.email || 'Desconocido';
         const descripcionDetallada = `Equipo: ${nombre} | Serial: ${serial} | Código: ${codigoBarrasActual} | Fecha/Hora: ${fechaHora} | Registrado por: ${usuarioRegistro}`;
         
         await registrarLog('inventario', 'Equipo registrado', descripcionDetallada, 'success');
@@ -594,10 +591,8 @@ window.guardarEquipo = async function() {
       }
     }
 
-    // ✅ 3. LIMPIAR EL FORMULARIO Y GENERAR NUEVO CÓDIGO AUTOMÁTICAMENTE
     prepararNuevoRegistro();
 
-    // ✅ 4. PREGUNTAR SI DESEA IMPRIMIR (usando la variable local)
     setTimeout(() => {
       if (confirm('✅ Equipo guardado exitosamente.\n\n¿Deseas imprimir el sticker del código de barras ahora?')) {
         imprimirSticker(datosParaImprimir);
@@ -713,7 +708,8 @@ function prepararNuevoRegistro() {
   localStorage.removeItem('codigoBarrasPendiente');
   sessionStorage.removeItem('codigoBarrasPendiente');
   
-  document.getElementById('formRegistro').reset();
+  const form = document.getElementById('formRegistro');
+  if (form) form.reset();
   
   for (let i = 1; i <= 4; i++) {
     fotosSeleccionadas[i - 1] = null;
