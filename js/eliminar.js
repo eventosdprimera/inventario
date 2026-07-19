@@ -15,10 +15,10 @@ function mostrarMensaje(texto, tipo) {
   mensajeDiv.className = `mensaje ${tipo}`;
   mensajeDiv.style.display = 'block';
 
-  // Ocultar automáticamente después de 5 segundos si es éxito
   if (tipo === 'exito') {
     setTimeout(() => {
-      mensajeDiv.style.display = 'none';
+      const msg = document.getElementById('mensaje');
+      if (msg) msg.style.display = 'none';
     }, 5000);
   }
 }
@@ -27,6 +27,12 @@ function mostrarMensaje(texto, tipo) {
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarEliminacion() {
+  console.log('🗑️ Inicializando módulo de eliminación...');
+  
+  // Limpiar estado previo por seguridad al entrar al módulo
+  equipoEncontrado = null;
+  usuarioActual = null;
+
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -45,10 +51,14 @@ async function inicializarEliminacion() {
     usuarioActual = data || { email: session.user.email, id: session.user.id };
   }
 
-  // Evento Enter en el input de búsqueda
+  // Evento Enter en el input de búsqueda (Blindado contra múltiples listeners)
   const inputBusqueda = document.getElementById('buscarEquipoInput');
   if (inputBusqueda) {
-    inputBusqueda.addEventListener('keypress', (e) => {
+    // Clonamos el nodo para eliminar cualquier listener anterior acumulado
+    const nuevoInput = inputBusqueda.cloneNode(true);
+    inputBusqueda.parentNode.replaceChild(nuevoInput, inputBusqueda);
+    
+    nuevoInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
         buscarEquipo();
@@ -56,7 +66,7 @@ async function inicializarEliminacion() {
     });
   }
 
-  cargarHistorialEliminados();
+  await cargarHistorialEliminados();
 }
 
 // ==========================================
@@ -73,7 +83,6 @@ async function buscarEquipo() {
     return;
   }
 
-  // ✅ CORRECCIÓN: Reemplazar COMILLAS SIMPLES, DOBLES y ACENTOS GRAVES por guiones
   const codigoBusqueda = codigoOriginal.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
 
   try {
@@ -84,7 +93,6 @@ async function buscarEquipo() {
       .maybeSingle();
 
     if (error || !data) {
-      // Mostramos el código corregido para que el usuario sepa qué se buscó
       mostrarMensaje(`❌ No se encontró ningún equipo con: "${codigoBusqueda}"`, 'error');
       input.value = '';
       input.focus();
@@ -102,31 +110,38 @@ async function buscarEquipo() {
 }
 
 // ==========================================
-// MOSTRAR DATOS DEL EQUIPO
-// ==========================================
-// ==========================================
-// MOSTRAR DATOS DEL EQUIPO
+// MOSTRAR DATOS DEL EQUIPO (BLINDADO)
 // ==========================================
 function mostrarDatosEquipo(equipo) {
-  // Actualizar cada campo individualmente
-  document.getElementById('fichaCodigo').textContent = equipo.codigo_barras || 'N/A';
-  document.getElementById('fichaNombre').textContent = equipo.nombre_equipo || 'N/A';
-  document.getElementById('fichaMarca').textContent = equipo.marca || 'N/A';
-  document.getElementById('fichaModelo').textContent = equipo.modelo || 'N/A';
-  document.getElementById('fichaSerial').textContent = equipo.serial || 'N/A';
-  document.getElementById('fichaEstatus').textContent = equipo.estatus || 'N/A';
+  const elCodigo = document.getElementById('fichaCodigo');
+  const elNombre = document.getElementById('fichaNombre');
+  const elMarca = document.getElementById('fichaMarca');
+  const elModelo = document.getElementById('fichaModelo');
+  const elSerial = document.getElementById('fichaSerial');
+  const elEstatus = document.getElementById('fichaEstatus');
+  const elEncontrado = document.getElementById('equipoEncontrado');
 
-  document.getElementById('equipoEncontrado').style.display = 'block';
-  document.getElementById('equipoEncontrado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (elCodigo) elCodigo.textContent = equipo.codigo_barras || 'N/A';
+  if (elNombre) elNombre.textContent = equipo.nombre_equipo || 'N/A';
+  if (elMarca) elMarca.textContent = equipo.marca || 'N/A';
+  if (elModelo) elModelo.textContent = equipo.modelo || 'N/A';
+  if (elSerial) elSerial.textContent = equipo.serial || 'N/A';
+  if (elEstatus) elEstatus.textContent = equipo.estatus || 'N/A';
+
+  if (elEncontrado) {
+    elEncontrado.style.display = 'block';
+    elEncontrado.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 // ==========================================
-// CONFIRMAR ELIMINACIÓN
+// CONFIRMAR ELIMINACIÓN (BLINDADO)
 // ==========================================
 async function confirmarEliminacion() {
   if (!equipoEncontrado) return;
 
-  const motivo = document.getElementById('motivoEliminacion').value.trim();
+  const motivoInput = document.getElementById('motivoEliminacion');
+  const motivo = motivoInput ? motivoInput.value.trim() : '';
   
   const confirmacion = confirm(
     `⚠️ ¿Estás SEGURO de que deseas eliminar permanentemente este equipo?\n\n` +
@@ -138,11 +153,13 @@ async function confirmarEliminacion() {
   if (!confirmacion) return;
 
   const btnEliminar = document.querySelector('.btn-danger');
-  btnEliminar.disabled = true;
-  btnEliminar.textContent = '⏳ Eliminando...';
+  if (btnEliminar) {
+    btnEliminar.disabled = true;
+    btnEliminar.textContent = '⏳ Eliminando...';
+  }
 
   try {
-    // 1. Insertar en la tabla de respaldo (equipos_eliminados)
+    // 1. Insertar en la tabla de respaldo
     const { error: errorRespaldo } = await supabaseClient
       .from('equipos_eliminados')
       .insert({
@@ -155,14 +172,14 @@ async function confirmarEliminacion() {
         costo: equipoEncontrado.costo || 0,
         estatus: equipoEncontrado.estatus,
         motivo_eliminacion: motivo || 'Sin motivo especificado',
-        eliminado_por_email: usuarioActual?.email || 'unknown', // ✅ CORREGIDO: Nombre exacto de la columna
+        eliminado_por_email: usuarioActual?.email || 'unknown',
         eliminado_por_id: usuarioActual?.id || null,
         fecha_eliminacion: new Date().toISOString()
       });
 
     if (errorRespaldo) throw new Error('Error al guardar respaldo: ' + errorRespaldo.message);
 
-    // 2. Eliminar de la tabla activa (equipos)
+    // 2. Eliminar de la tabla activa
     const { error: errorEliminacion } = await supabaseClient
       .from('equipos')
       .delete()
@@ -182,7 +199,7 @@ async function confirmarEliminacion() {
 
     mostrarMensaje('✅ Equipo eliminado y movido al historial de respaldo exitosamente', 'exito');
     
-    // Limpiar y recargar
+    // Limpiar y recargar de forma segura (con verificación de existencia)
     setTimeout(() => {
       cancelarBusqueda();
       cargarHistorialEliminados();
@@ -192,28 +209,41 @@ async function confirmarEliminacion() {
     console.error('Error al eliminar:', err);
     mostrarMensaje('❌ Error al eliminar: ' + err.message, 'error');
   } finally {
-    btnEliminar.disabled = false;
-    btnEliminar.textContent = '🗑️ Eliminar Equipo Permanentemente';
+    const btn = document.querySelector('.btn-danger');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🗑️ Eliminar Equipo Permanentemente';
+    }
   }
-}
-// ==========================================
-// CANCELAR BÚSQUEDA
-// ==========================================
-function cancelarBusqueda() {
-  equipoEncontrado = null;
-  document.getElementById('buscarEquipoInput').value = '';
-  document.getElementById('motivoEliminacion').value = '';
-  document.getElementById('equipoEncontrado').style.display = 'none';
-  document.getElementById('mensaje').style.display = 'none';
-  document.getElementById('buscarEquipoInput').focus();
 }
 
 // ==========================================
-// CARGAR HISTORIAL DE ELIMINADOS
+// CANCELAR BÚSQUEDA (100% BLINDADO)
+// ==========================================
+function cancelarBusqueda() {
+  equipoEncontrado = null;
+  
+  const input = document.getElementById('buscarEquipoInput');
+  if (input) input.value = '';
+  
+  const motivo = document.getElementById('motivoEliminacion');
+  if (motivo) motivo.value = '';
+  
+  const encontrado = document.getElementById('equipoEncontrado');
+  if (encontrado) encontrado.style.display = 'none';
+  
+  const mensaje = document.getElementById('mensaje');
+  if (mensaje) mensaje.style.display = 'none';
+  
+  if (input) input.focus();
+}
+
+// ==========================================
+// CARGAR HISTORIAL DE ELIMINADOS (BLINDADO)
 // ==========================================
 async function cargarHistorialEliminados() {
   const tbody = document.getElementById('tbodyEliminados');
-  if (!tbody) return;
+  if (!tbody) return; // Si el usuario ya cambió de pestaña, no hacer nada
 
   try {
     const { data, error } = await supabaseClient
@@ -236,13 +266,15 @@ async function cargarHistorialEliminados() {
 
     tbody.innerHTML = data.map(item => {
       const fecha = item.fecha_eliminacion ? new Date(item.fecha_eliminacion).toLocaleDateString('es-ES') : '-';
+      // Soporte para ambos nombres de columna por si hay variaciones en la BD
+      const eliminadoPor = item.eliminado_por_email || item.eliminado_por || 'N/A'; 
       return `
         <tr>
           <td>${fecha}</td>
           <td style="font-family: monospace; font-weight: 600;">${item.codigo_barras}</td>
           <td>${item.nombre_equipo}</td>
           <td>${item.serial || '-'}</td>
-          <td>${item.eliminado_por || 'N/A'}</td>
+          <td>${eliminadoPor}</td>
         </tr>
       `;
     }).join('');
