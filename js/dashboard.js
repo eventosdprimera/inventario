@@ -821,7 +821,7 @@ async function cargarContadorYDropdownVencidas() {
     const { count, error: errorCount } = await supabaseClient
       .from('rentas')
       .select('*', { count: 'exact', head: true })
-      .lte('fecha_devolucion', hoy) // .lte para incluir las de hoy
+      .lte('fecha_devolucion', hoy)
       .neq('estado', 'devuelta')
       .neq('estado', 'cancelada');
 
@@ -840,19 +840,25 @@ async function cargarContadorYDropdownVencidas() {
     // 2. Obtener las últimas 5 rentas vencidas para el dropdown
     const { data: ultimasVencidas, error: errorData } = await supabaseClient
       .from('rentas')
-      .select('id, numero_renta, cliente_nombre, fecha_devolucion')
+      .select('numero_renta, fecha_devolucion') // ✅ Solo traemos lo que vamos a mostrar
       .lte('fecha_devolucion', hoy)
       .neq('estado', 'devuelta')
       .neq('estado', 'cancelada')
-      .order('fecha_devolucion', { ascending: true }) // Las más antiguas primero (más urgentes)
+      .order('fecha_devolucion', { ascending: true }) // Las más antiguas primero
       .limit(5);
 
     if (errorData) throw errorData;
 
+    // ✅ Llamamos a la función para renderizar, pasando los datos (o un array vacío si es null)
     renderizarDropdownVencidas(ultimasVencidas || []);
 
   } catch (err) {
-    console.error('Error al cargar contador/dropdown de rentas vencidas:', err);
+    console.error('Error al cargar el dropdown de rentas vencidas:', err);
+    // En caso de error, quitamos el "Cargando..." y mostramos un mensaje seguro
+    const listaDiv = document.getElementById('listaVencidasDropdown');
+    if (listaDiv) {
+      listaDiv.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444; font-size: 13px;">⚠️ Error al cargar</div>`;
+    }
   }
 }
 
@@ -860,34 +866,35 @@ function renderizarDropdownVencidas(rentas) {
   const listaDiv = document.getElementById('listaVencidasDropdown');
   if (!listaDiv) return;
 
-  if (rentas.length === 0) {
+  // ✅ Si no hay rentas vencidas, mostramos este mensaje en lugar de "Cargando..."
+  if (!rentas || rentas.length === 0) {
     listaDiv.innerHTML = `<div style="padding: 20px; text-align: center; color: #10b981; font-size: 13px;">✅ No hay rentas vencidas</div>`;
     return;
   }
 
-  const hoy = new Date();
-  
+  // ✅ Generamos la lista SOLO con Número de Renta y Fecha de Devolución
   listaDiv.innerHTML = rentas.map(renta => {
+    // Formatear la fecha para que se vea bonita (ej: "22 jul 2026")
     const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00');
-    const diffTime = Math.abs(hoy - fechaDev);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const fechaFormateada = fechaDev.toLocaleDateString('es-ES', { 
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric' 
+    });
     
     return `
-      <div class="dropdown-item" onclick="irAVencidas()">
-        <div class="renta-numero">📄 ${renta.numero_renta}</div>
-        <div class="renta-cliente">👤 ${renta.cliente_nombre || 'Sin cliente'}</div>
-        <div class="renta-dias">⏰ Vencida hace ${diffDays} día${diffDays !== 1 ? 's' : ''}</div>
+      <div class="dropdown-item" onclick="irAVencidas()" style="cursor: pointer; padding: 12px 15px; border-bottom: 1px solid #f3f4f6; transition: background 0.2s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+        <div style="font-family: monospace; font-weight: 700; color: #1e3a8a; font-size: 13px;">📄 ${renta.numero_renta}</div>
+        <div style="font-size: 12px; color: #dc2626; font-weight: 600; margin-top: 4px;">📅 Devolución: ${fechaFormateada}</div>
       </div>
     `;
   }).join('');
 }
 
 function irAVencidas() {
-  // Simular clic en el botón del menú lateral para cargar el módulo
   const btnVencidas = document.querySelector('[data-action="rentar-vencidas"]');
   if (btnVencidas) {
     btnVencidas.click();
-    // Cerrar el dropdown
     const dropdown = document.getElementById('dropdownVencidas');
     if (dropdown) dropdown.style.display = 'none';
   }
@@ -898,13 +905,11 @@ function iniciarDropdownVencidas() {
   const dropdown = document.getElementById('dropdownVencidas');
 
   if (btnCampanita && dropdown) {
-    // Abrir/cerrar al hacer clic en la campanita
     btnCampanita.addEventListener('click', function(e) {
       e.stopPropagation();
       dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
     });
 
-    // Cerrar al hacer clic fuera del dropdown
     document.addEventListener('click', function(e) {
       if (!btnCampanita.contains(e.target) && !dropdown.contains(e.target)) {
         dropdown.style.display = 'none';
@@ -912,7 +917,6 @@ function iniciarDropdownVencidas() {
     });
   }
 }
-
 // ============================================
 // INICIALIZACIÓN
 // ============================================
