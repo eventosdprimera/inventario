@@ -103,21 +103,22 @@ legend {
   box-shadow: 0 0 0 3px rgba(30,58,138,0.1);
 }
 
-/* ✅ OPCIÓN NUCLEAR: Clase nueva + Borde rojo de prueba + Margen gigante */
+/* ✅ ZONA DE BÚSQUEDA - Botón unido pero ligeramente separado abajo */
 .zona-busqueda {
   display: flex !important;
   align-items: flex-end !important;
-  border: 3px solid red !important; /* SS cargó bien */
 }
 
 .zona-busqueda .form-group {
   flex: 1 !important;
-  margin-right: 80px !important; /* Separación forzada de 80px */
+  margin-right: 12px !important;
   margin-bottom: 0 !important;
 }
 
+/* ✅ Bajar el botón un poquito para que se vea bien */
 .zona-busqueda .btn-action {
   margin-bottom: 0 !important;
+  margin-top: 6px !important; /* 🔽 Esto lo baja un poquito */
 }
 
 .btn-action {
@@ -249,7 +250,6 @@ tr:hover {
   .container { padding: 15px; }
   .zona-busqueda { 
     flex-direction: column !important; 
-    border: none !important; /* Quitamos el borde rojo en móvil */
   }
   .zona-busqueda .form-group {
     margin-right: 0 !important;
@@ -257,15 +257,16 @@ tr:hover {
   }
   .zona-busqueda .btn-action {
     width: 100%;
+    margin-top: 0 !important;
   }
   .equipo-info-grid { grid-template-columns: 1fr; }
 }
-  /* ✅ BOTÓN DEBAJO DEL CAMPO DE BÚSQUEDA (CON MÁS ESPACIO) */
+
 .busqueda-container {
   display: flex !important;
-  flex-direction: column !important; /* Mantiene el botón debajo */
-  align-items: flex-start !important; /* Alineado a la izquierda */
-  gap: 30px !important; /* 🔽 Aumentado a 30px para bajarlo un poco más */
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 30px !important;
 }
 
 .busqueda-container .form-group { 
@@ -296,13 +297,12 @@ tr:hover {
   <!-- BÚSQUEDA -->
   <fieldset>
     <legend>🔍 Buscar Equipo a Eliminar</legend>
-    <!-- ✅ Clase cambiada a zona-busqueda -->
     <div class="zona-busqueda">
       <div class="form-group">
         <label>Código de Barras o Serial</label>
         <input type="text" id="buscarEquipoInput" placeholder="Escanea o escribe aquí..." autofocus>
       </div>
-      <button type="button" class="btn-action btn-primary" onclick="buscarEquipo()">🔎Buscar</button>
+      <button type="button" class="btn-action btn-primary" onclick="buscarEquipo()">🔎 Buscar</button>
     </div>
   </fieldset>
 
