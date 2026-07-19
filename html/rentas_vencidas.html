@@ -57,6 +57,41 @@
   font-weight: 600;
   text-transform: uppercase;
 }
+  /* ✅ ESTILOS ESPECÍFICOS PARA LOS BOTONES (con mayor prioridad) */
+.btn-imprimir-vencida,
+.btn-recibida {
+  padding: 6px 12px !important;
+  border: none !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  transition: all 0.3s !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+  min-width: auto !important;
+}
+
+.btn-imprimir-vencida {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%) !important;
+  color: white !important;
+  margin-right: 5px !important;
+}
+
+.btn-imprimir-vencida:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(30,58,138,0.3) !important;
+}
+
+.btn-recibida {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+  color: white !important;
+}
+
+.btn-recibida:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(5,150,105,0.3) !important;
+}
 </style>
 </head>
 <body>
