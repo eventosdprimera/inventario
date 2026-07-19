@@ -48,12 +48,13 @@ async function iniciarDashboard() {
   aplicarPermisosPorRol();
   iniciarReloj();
   mostrarBienvenida();
-  // ✅ Cargar contador de rentas vencidas
-  await cargarContadorRentasVencidas();
+  
+  // ✅ Cargar contador y dropdown de rentas vencidas (Función unificada)
+  await cargarContadorYDropdownVencidas();
   iniciarDropdownVencidas();
   
   // Actualizar cada 2 minutos
-  setInterval(cargarContadorRentasVencidas, 120000);
+  setInterval(cargarContadorYDropdownVencidas, 120000);
   
   console.log('✅ Dashboard iniciado correctamente');
 }
@@ -167,29 +168,22 @@ function configurarMenu() {
 }
 
 // ============================================
-// CARGAR CONTENIDO DINÁMICO (CORREGIDO Y COMPLETO)
+// CARGAR CONTENIDO DINÁMICO
 // ============================================
 async function cargarContenido(action) {
   const [modulo, operacion] = action.split('-');
   const contenidoDiv = document.getElementById('contenidoDinamico');
   ocultarBienvenida();
 
-  // ==========================================
   // 1. MÓDULO LOGS
-  // ==========================================
   if (modulo === 'logs' && operacion === 'ver') {
     try {
-      if (typeof inicializarModuloLogs === 'undefined') {
-        await cargarScript('js/logs.js');
-      }
+      if (typeof inicializarModuloLogs === 'undefined') await cargarScript('js/logs.js');
       const response = await fetch('html/logs.html');
       if (!response.ok) throw new Error('No se pudo cargar html/logs.html');
       contenidoDiv.innerHTML = await response.text();
-
       await new Promise(resolve => setTimeout(resolve, 200));
-      if (typeof inicializarModuloLogs === 'function') {
-        await inicializarModuloLogs();
-      }
+      if (typeof inicializarModuloLogs === 'function') await inicializarModuloLogs();
     } catch (err) {
       console.error('Error al cargar logs:', err);
       contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el módulo de logs: ${err.message}</p></fieldset>`;
@@ -197,32 +191,21 @@ async function cargarContenido(action) {
     return;
   }
 
-  // ==========================================
   // 2. INVENTARIO → REGISTRAR
-  // ==========================================
   if (modulo === 'inventario' && operacion === 'registrar') {
     try {
-      if (typeof JsBarcode === 'undefined') {
-        await cargarScript('https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js');
-      }
-      if (typeof inicializarRegistroEquipo === 'undefined') {
-        await cargarScript('js/registro.js');
-      }
-
+      if (typeof JsBarcode === 'undefined') await cargarScript('https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js');
+      if (typeof inicializarRegistroEquipo === 'undefined') await cargarScript('js/registro.js');
       const response = await fetch('html/registro.html');
       if (!response.ok) throw new Error('No se pudo cargar html/registro.html');
       const htmlText = await response.text();
       const parser = new DOMParser();
       const doc = parser.parseFromString(htmlText, 'text/html');
-
       const container = doc.querySelector('.container');
       if (!container) throw new Error('No se encontró .container');
       contenidoDiv.innerHTML = container.innerHTML;
-
       await new Promise(resolve => setTimeout(resolve, 300));
-      if (typeof inicializarRegistroEquipo === 'function') {
-        await inicializarRegistroEquipo();
-      }
+      if (typeof inicializarRegistroEquipo === 'function') await inicializarRegistroEquipo();
     } catch (err) {
       console.error('Error:', err);
       contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>${err.message}</p></fieldset>`;
@@ -230,412 +213,270 @@ async function cargarContenido(action) {
     return;
   }
 
-// ==========================================
-// 3. INVENTARIO → MODIFICAR
-// ==========================================
-if (modulo === 'inventario' && operacion === 'modificar') {
-  try {
-    // ✅ CARGAR logs.js PRIMERO (para que registrarLog esté disponible)
-    if (typeof registrarLog === 'undefined') {
-      await cargarScript('js/logs.js');
+  // 3. INVENTARIO → MODIFICAR
+  if (modulo === 'inventario' && operacion === 'modificar') {
+    try {
+      if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      if (typeof inicializarModificacion === 'undefined') await cargarScript('js/modificar.js');
+      const response = await fetch('html/modificar.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/modificar.html');
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      if (!container) throw new Error('No se encontró .container en modificar.html');
+      contenidoDiv.innerHTML = container.innerHTML;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof inicializarModificacion === 'function') await inicializarModificacion();
+    } catch (err) {
+      console.error('Error cargando modificar:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el formulario de modificación: ${err.message}</p></fieldset>`;
     }
-    
-    // Cargar modificar.js si no está disponible
-    if (typeof inicializarModificacion === 'undefined') {
-      await cargarScript('js/modificar.js');
-    }
-
-    const response = await fetch('html/modificar.html');
-    if (!response.ok) throw new Error('No se pudo cargar html/modificar.html');
-    const htmlText = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, 'text/html');
-
-    const container = doc.querySelector('.container');
-    if (!container) throw new Error('No se encontró .container en modificar.html');
-    contenidoDiv.innerHTML = container.innerHTML;
-
-    await new Promise(resolve => setTimeout(resolve, 300));
-    if (typeof inicializarModificacion === 'function') {
-      await inicializarModificacion();
-    }
-  } catch (err) {
-    console.error('Error cargando modificar:', err);
-    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el formulario de modificación: ${err.message}</p></fieldset>`;
+    return;
   }
-  return;
-}
-// ==========================================
-// 4. INVENTARIO → ELIMINAR
-// ==========================================
-if (modulo === 'inventario' && operacion === 'eliminar') {
-  try {
-    // Cargar logs.js primero (para registrarLog)
-    if (typeof registrarLog === 'undefined') {
-      await cargarScript('js/logs.js');
-    }
-    
-    // Cargar eliminar.js
-    if (typeof inicializarEliminacion === 'undefined') {
-      await cargarScript('js/eliminar.js');
-    }
 
-    const response = await fetch('html/eliminar.html');
-    if (!response.ok) throw new Error('No se pudo cargar html/eliminar.html');
-    const htmlText = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, 'text/html');
-
-    const container = doc.querySelector('.container');
-    if (!container) throw new Error('No se encontró .container');
-    contenidoDiv.innerHTML = container.innerHTML;
-
-    await new Promise(resolve => setTimeout(resolve, 300));
-    if (typeof inicializarEliminacion === 'function') {
-      await inicializarEliminacion();
+  // 4. INVENTARIO → ELIMINAR
+  if (modulo === 'inventario' && operacion === 'eliminar') {
+    try {
+      if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      if (typeof inicializarEliminacion === 'undefined') await cargarScript('js/eliminar.js');
+      const response = await fetch('html/eliminar.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/eliminar.html');
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      if (!container) throw new Error('No se encontró .container');
+      contenidoDiv.innerHTML = container.innerHTML;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof inicializarEliminacion === 'function') await inicializarEliminacion();
+    } catch (err) {
+      console.error('Error cargando eliminar:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
     }
-  } catch (err) {
-    console.error('Error cargando eliminar:', err);
-    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+    return;
   }
-  return;
-}
-  // ==========================================
-// 5. RENTAR → CREAR (NUEVA RENTA)
-// ==========================================
-if (modulo === 'rentar' && operacion === 'crear') {
-  try {
-    // Cargar logs.js primero
-    if (typeof registrarLog === 'undefined') {
-      await cargarScript('js/logs.js');
-    }
-    
-    // Cargar nueva_renta.js
-    if (typeof inicializarNuevaRenta === 'undefined') {
-      await cargarScript('js/nueva_renta.js');
-    }
 
-    const response = await fetch('html/nueva_renta.html');
-    if (!response.ok) throw new Error('No se pudo cargar html/nueva_renta.html');
-    const htmlText = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, 'text/html');
-
-    const container = doc.querySelector('.container');
-    if (!container) throw new Error('No se encontró .container');
-    contenidoDiv.innerHTML = container.innerHTML;
-
-    await new Promise(resolve => setTimeout(resolve, 300));
-    if (typeof inicializarNuevaRenta === 'function') {
-      await inicializarNuevaRenta();
+  // 5. RENTAR → CREAR
+  if (modulo === 'rentar' && operacion === 'crear') {
+    try {
+      if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      if (typeof inicializarNuevaRenta === 'undefined') await cargarScript('js/nueva_renta.js');
+      const response = await fetch('html/nueva_renta.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/nueva_renta.html');
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      if (!container) throw new Error('No se encontró .container');
+      contenidoDiv.innerHTML = container.innerHTML;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof inicializarNuevaRenta === 'function') await inicializarNuevaRenta();
+    } catch (err) {
+      console.error('Error cargando nueva renta:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
     }
-  } catch (err) {
-    console.error('Error cargando nueva renta:', err);
-    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+    return;
   }
-  return;
-}
 
-  // ==========================================
-// CASO: RENTAR → MODIFICAR
-// ==========================================
-if (modulo === 'rentar' && operacion === 'modificar') {
-  try {
-    if (typeof registrarLog === 'undefined') {
-      await cargarScript('js/logs.js');
+  // 6. RENTAR → MODIFICAR
+  if (modulo === 'rentar' && operacion === 'modificar') {
+    try {
+      if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      if (typeof inicializarModificarRenta === 'undefined') await cargarScript('js/modificar_renta.js');
+      const response = await fetch('html/modificar_renta.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/modificar_renta.html');
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      if (!container) throw new Error('No se encontró .container');
+      contenidoDiv.innerHTML = container.innerHTML;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof inicializarModificarRenta === 'function') await inicializarModificarRenta();
+    } catch (err) {
+      console.error('Error cargando modificar renta:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
     }
-    
-    if (typeof inicializarModificarRenta === 'undefined') {
-      await cargarScript('js/modificar_renta.js');
-    }
-
-    const response = await fetch('html/modificar_renta.html');
-    if (!response.ok) throw new Error('No se pudo cargar html/modificar_renta.html');
-    const htmlText = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, 'text/html');
-
-    const container = doc.querySelector('.container');
-    if (!container) throw new Error('No se encontró .container');
-    contenidoDiv.innerHTML = container.innerHTML;
-
-    await new Promise(resolve => setTimeout(resolve, 300));
-    if (typeof inicializarModificarRenta === 'function') {
-      await inicializarModificarRenta();
-    }
-  } catch (err) {
-    console.error('Error cargando modificar renta:', err);
-    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+    return;
   }
-  return;
-}
 
-  // ==========================================
-// CASO: RENTAR → ELIMINAR
-// ==========================================
-if (modulo === 'rentar' && operacion === 'eliminar') {
-  try {
-    if (typeof registrarLog === 'undefined') {
-      await cargarScript('js/logs.js');
+  // 7. RENTAR → ELIMINAR
+  if (modulo === 'rentar' && operacion === 'eliminar') {
+    try {
+      if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      if (typeof inicializarEliminarRenta === 'undefined') await cargarScript('js/eliminar_renta.js');
+      const response = await fetch('html/eliminar_renta.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/eliminar_renta.html');
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      if (!container) throw new Error('No se encontró .container');
+      contenidoDiv.innerHTML = container.innerHTML;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof inicializarEliminarRenta === 'function') await inicializarEliminarRenta();
+    } catch (err) {
+      console.error('Error cargando eliminar renta:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
     }
-    
-    if (typeof inicializarEliminarRenta === 'undefined') {
-      await cargarScript('js/eliminar_renta.js');
-    }
-
-    const response = await fetch('html/eliminar_renta.html');
-    if (!response.ok) throw new Error('No se pudo cargar html/eliminar_renta.html');
-    const htmlText = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, 'text/html');
-
-    const container = doc.querySelector('.container');
-    if (!container) throw new Error('No se encontró .container');
-    contenidoDiv.innerHTML = container.innerHTML;
-
-    await new Promise(resolve => setTimeout(resolve, 300));
-    if (typeof inicializarEliminarRenta === 'function') {
-      await inicializarEliminarRenta();
-    }
-  } catch (err) {
-    console.error('Error cargando eliminar renta:', err);
-    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+    return;
   }
-  return;
-}
 
-  // ==========================================
-// CASO: RENTAR → VENCIDAS
-// ==========================================
-if (modulo === 'rentar' && operacion === 'vencidas') {
-  try {
-    if (typeof registrarLog === 'undefined') {
-      await cargarScript('js/logs.js');
+  // 8. RENTAR → VENCIDAS
+  if (modulo === 'rentar' && operacion === 'vencidas') {
+    try {
+      if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      if (typeof inicializarRentasVencidas === 'undefined') await cargarScript('js/rentas_vencidas.js');
+      const response = await fetch('html/rentas_vencidas.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/rentas_vencidas.html');
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      if (!container) throw new Error('No se encontró .container');
+      contenidoDiv.innerHTML = container.innerHTML;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof inicializarRentasVencidas === 'function') await inicializarRentasVencidas();
+    } catch (err) {
+      console.error('Error cargando rentas vencidas:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
     }
-    
-    if (typeof inicializarRentasVencidas === 'undefined') {
-      await cargarScript('js/rentas_vencidas.js');
-    }
-
-    const response = await fetch('html/rentas_vencidas.html');
-    if (!response.ok) throw new Error('No se pudo cargar html/rentas_vencidas.html');
-    const htmlText = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, 'text/html');
-
-    const container = doc.querySelector('.container');
-    if (!container) throw new Error('No se encontró .container');
-    contenidoDiv.innerHTML = container.innerHTML;
-
-    await new Promise(resolve => setTimeout(resolve, 300));
-    if (typeof inicializarRentasVencidas === 'function') {
-      await inicializarRentasVencidas();
-    }
-  } catch (err) {
-    console.error('Error cargando rentas vencidas:', err);
-    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+    return;
   }
-  return;
-}
-  // ==========================================
-// CASO: RENTAR → HISTORIAL
-// ==========================================
-if (modulo === 'rentar' && operacion === 'historial') {
-  try {
-    if (typeof registrarLog === 'undefined') {
-      await cargarScript('js/logs.js');
-    }
-    
-    if (typeof inicializarHistorialRentas === 'undefined') {
-      await cargarScript('js/historial_rentas.js');
-    }
 
-    const response = await fetch('html/historial_rentas.html');
-    if (!response.ok) throw new Error('No se pudo cargar html/historial_rentas.html');
-    const htmlText = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, 'text/html');
-
-    const container = doc.querySelector('.container');
-    if (!container) throw new Error('No se encontró .container');
-    contenidoDiv.innerHTML = container.innerHTML;
-
-    await new Promise(resolve => setTimeout(resolve, 300));
-    if (typeof inicializarHistorialRentas === 'function') {
-      await inicializarHistorialRentas();
+  // 9. RENTAR → HISTORIAL
+  if (modulo === 'rentar' && operacion === 'historial') {
+    try {
+      if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      if (typeof inicializarHistorialRentas === 'undefined') await cargarScript('js/historial_rentas.js');
+      const response = await fetch('html/historial_rentas.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/historial_rentas.html');
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      if (!container) throw new Error('No se encontró .container');
+      contenidoDiv.innerHTML = container.innerHTML;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof inicializarHistorialRentas === 'function') await inicializarHistorialRentas();
+    } catch (err) {
+      console.error('Error cargando historial rentas:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
     }
-  } catch (err) {
-    console.error('Error cargando historial rentas:', err);
-    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+    return;
   }
-  return;
-}
 
-// ==========================================
-// CASO: RENTAR → TERMINADAS
-// ==========================================
-if (modulo === 'rentar' && operacion === 'terminadas') {
-  try {
-    if (typeof inicializarRentasTerminadas === 'undefined') {
-      await cargarScript('js/rentas_terminadas.js');
+  // 10. RENTAR → TERMINADAS
+  if (modulo === 'rentar' && operacion === 'terminadas') {
+    try {
+      if (typeof inicializarRentasTerminadas === 'undefined') await cargarScript('js/rentas_terminadas.js');
+      const response = await fetch('html/rentas_terminadas.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/rentas_terminadas.html');
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      if (!container) throw new Error('No se encontró .container');
+      contenidoDiv.innerHTML = container.innerHTML;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof inicializarRentasTerminadas === 'function') await inicializarRentasTerminadas();
+    } catch (err) {
+      console.error('Error cargando rentas terminadas:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
     }
-
-    const response = await fetch('html/rentas_terminadas.html');
-    if (!response.ok) throw new Error('No se pudo cargar html/rentas_terminadas.html');
-    const htmlText = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, 'text/html');
-
-    const container = doc.querySelector('.container');
-    if (!container) throw new Error('No se encontró .container');
-    contenidoDiv.innerHTML = container.innerHTML;
-
-    await new Promise(resolve => setTimeout(resolve, 300));
-    if (typeof inicializarRentasTerminadas === 'function') {
-      await inicializarRentasTerminadas();
-    }
-  } catch (err) {
-    console.error('Error cargando rentas terminadas:', err);
-    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+    return;
   }
-  return;
-}
 
-  // ==========================================
-// CASO: AVERÍAS → REGISTRAR
-// ==========================================
-if (modulo === 'averias' && operacion === 'registrar') {
-  try {
-    if (typeof registrarLog === 'undefined') {
-      await cargarScript('js/logs.js');
+  // 11. AVERÍAS → REGISTRAR
+  if (modulo === 'averias' && operacion === 'registrar') {
+    try {
+      if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      if (typeof inicializarRegistrarAveria === 'undefined') await cargarScript('js/registrar_averia.js');
+      const response = await fetch('html/registrar_averia.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/registrar_averia.html');
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      if (!container) throw new Error('No se encontró .container');
+      contenidoDiv.innerHTML = container.innerHTML;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof inicializarRegistrarAveria === 'function') await inicializarRegistrarAveria();
+    } catch (err) {
+      console.error('Error cargando registrar avería:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
     }
-    
-    if (typeof inicializarRegistrarAveria === 'undefined') {
-      await cargarScript('js/registrar_averia.js');
-    }
-
-    const response = await fetch('html/registrar_averia.html');
-    if (!response.ok) throw new Error('No se pudo cargar html/registrar_averia.html');
-    const htmlText = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, 'text/html');
-
-    const container = doc.querySelector('.container');
-    if (!container) throw new Error('No se encontró .container');
-    contenidoDiv.innerHTML = container.innerHTML;
-
-    await new Promise(resolve => setTimeout(resolve, 300));
-    if (typeof inicializarRegistrarAveria === 'function') {
-      await inicializarRegistrarAveria();
-    }
-  } catch (err) {
-    console.error('Error cargando registrar avería:', err);
-    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+    return;
   }
-  return;
-}
-  // ==========================================
-// CASO: AVERÍAS → MODIFICAR
-// ==========================================
-if (modulo === 'averias' && operacion === 'modificar') {
-  try {
-    if (typeof registrarLog === 'undefined') {
-      await cargarScript('js/logs.js');
-    }
-    
-    if (typeof inicializarModificarAveria === 'undefined') {
-      await cargarScript('js/modificar_averia.js');
-    }
 
-    const response = await fetch('html/modificar_averia.html');
-    if (!response.ok) throw new Error('No se pudo cargar html/modificar_averia.html');
-    const htmlText = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, 'text/html');
-
-    const container = doc.querySelector('.container');
-    if (!container) throw new Error('No se encontró .container');
-    contenidoDiv.innerHTML = container.innerHTML;
-
-    await new Promise(resolve => setTimeout(resolve, 300));
-    if (typeof inicializarModificarAveria === 'function') {
-      await inicializarModificarAveria();
+  // 12. AVERÍAS → MODIFICAR
+  if (modulo === 'averias' && operacion === 'modificar') {
+    try {
+      if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      if (typeof inicializarModificarAveria === 'undefined') await cargarScript('js/modificar_averia.js');
+      const response = await fetch('html/modificar_averia.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/modificar_averia.html');
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      if (!container) throw new Error('No se encontró .container');
+      contenidoDiv.innerHTML = container.innerHTML;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof inicializarModificarAveria === 'function') await inicializarModificarAveria();
+    } catch (err) {
+      console.error('Error cargando modificar avería:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
     }
-  } catch (err) {
-    console.error('Error cargando modificar avería:', err);
-    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+    return;
   }
-  return;
-}
-  // ==========================================
-// CASO: AVERÍAS → REINTEGRAR
-// ==========================================
-if (modulo === 'averias' && operacion === 'reintegrar') {
-  try {
-    if (typeof registrarLog === 'undefined') {
-      await cargarScript('js/logs.js');
-    }
-    
-    if (typeof inicializarReintegrarAveria === 'undefined') {
-      await cargarScript('js/reintegrar_averia.js');
-    }
 
-    const response = await fetch('html/reintegrar_averia.html');
-    if (!response.ok) throw new Error('No se pudo cargar html/reintegrar_averia.html');
-    const htmlText = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, 'text/html');
-
-    const container = doc.querySelector('.container');
-    if (!container) throw new Error('No se encontró .container');
-    contenidoDiv.innerHTML = container.innerHTML;
-
-    await new Promise(resolve => setTimeout(resolve, 300));
-    if (typeof inicializarReintegrarAveria === 'function') {
-      await inicializarReintegrarAveria();
+  // 13. AVERÍAS → REINTEGRAR
+  if (modulo === 'averias' && operacion === 'reintegrar') {
+    try {
+      if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      if (typeof inicializarReintegrarAveria === 'undefined') await cargarScript('js/reintegrar_averia.js');
+      const response = await fetch('html/reintegrar_averia.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/reintegrar_averia.html');
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      if (!container) throw new Error('No se encontró .container');
+      contenidoDiv.innerHTML = container.innerHTML;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof inicializarReintegrarAveria === 'function') await inicializarReintegrarAveria();
+    } catch (err) {
+      console.error('Error cargando reintegrar avería:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
     }
-  } catch (err) {
-    console.error('Error cargando reintegrar avería:', err);
-    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+    return;
   }
-  return;
-}
-  // ==========================================
-// CASO: CONSULTA → VER
-// ==========================================
-if (modulo === 'consulta' && operacion === 'ver') {
-  try {
-    if (typeof registrarLog === 'undefined') {
-      await cargarScript('js/logs.js');
-    }
-    
-    if (typeof inicializarConsulta === 'undefined') {
-      await cargarScript('js/consulta.js');
-    }
 
-    const response = await fetch('html/consulta.html');
-    if (!response.ok) throw new Error('No se pudo cargar html/consulta.html');
-    const htmlText = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, 'text/html');
-
-    const container = doc.querySelector('.container');
-    if (!container) throw new Error('No se encontró .container');
-    contenidoDiv.innerHTML = container.innerHTML;
-
-    await new Promise(resolve => setTimeout(resolve, 300));
-    if (typeof inicializarConsulta === 'function') {
-      await inicializarConsulta();
+  // 14. CONSULTA → VER
+  if (modulo === 'consulta' && operacion === 'ver') {
+    try {
+      if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      if (typeof inicializarConsulta === 'undefined') await cargarScript('js/consulta.js');
+      const response = await fetch('html/consulta.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/consulta.html');
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      if (!container) throw new Error('No se encontró .container');
+      contenidoDiv.innerHTML = container.innerHTML;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof inicializarConsulta === 'function') await inicializarConsulta();
+    } catch (err) {
+      console.error('Error cargando consulta:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
     }
-  } catch (err) {
-    console.error('Error cargando consulta:', err);
-    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar: ${err.message}</p></fieldset>`;
+    return;
   }
-  return;
-}
-  // ==========================================
-  // 4. OTROS MÓDULOS (Placeholders organizados)
-  // ==========================================
+
+  // 15. OTROS MÓDULOS (Placeholders)
   let html = '';
   switch (modulo) {
     case 'consulta':    html = generarFormularioConsulta(operacion); break;
@@ -741,36 +582,135 @@ function iniciarHeartbeat(email) {
     } catch (err) { console.error('Error en heartbeat:', err); }
   }, 120000);
 }
+
 // ============================================
-// CONTADOR DE RENTAS VENCIDAS (CAMPANITA)
+// CONTADOR Y DROPDOWN DE RENTAS VENCIDAS (UNIFICADO Y CON DEBUG)
 // ============================================
-async function cargarContadorRentasVencidas() {
+async function cargarContadorYDropdownVencidas() {
+  console.log('🔔 [DEBUG] Iniciando cargarContadorYDropdownVencidas...');
+  
   try {
     const hoy = new Date().toISOString().split('T')[0];
+    console.log(' [DEBUG] Fecha de hoy:', hoy);
 
-    const { count, error } = await supabaseClient
+    // 1. Conteo para la campanita
+    const { count, error: errorCount } = await supabaseClient
       .from('rentas')
       .select('*', { count: 'exact', head: true })
-      .lte('fecha_devolucion', hoy) // ✅ CAMBIADO: .lte (menor o igual) para incluir las de hoy
+      .lte('fecha_devolucion', hoy) // .lte para incluir las de hoy
       .neq('estado', 'devuelta')
       .neq('estado', 'cancelada');
 
-    if (error) throw error;
+    if (errorCount) {
+      console.error('❌ [DEBUG] Error en conteo:', errorCount);
+      throw errorCount;
+    }
+
+    console.log(' [DEBUG] Total rentas vencidas:', count);
 
     const badge = document.getElementById('badgeVencidas');
     if (badge) {
       if (count > 0) {
-        // Si son más de 99, muestra "99+" para que no se deforme el círculo
         badge.textContent = count > 99 ? '99+' : count;
         badge.style.display = 'block';
       } else {
         badge.style.display = 'none';
       }
+    } else {
+      console.warn('⚠️ [DEBUG] No se encontró el elemento badgeVencidas');
     }
+
+    // 2. Datos para el dropdown (últimas 5)
+    const { data: ultimasVencidas, error: errorData } = await supabaseClient
+      .from('rentas')
+      .select('numero_renta, fecha_devolucion')
+      .lte('fecha_devolucion', hoy)
+      .neq('estado', 'devuelta')
+      .neq('estado', 'cancelada')
+      .order('fecha_devolucion', { ascending: true })
+      .limit(5);
+
+    if (errorData) {
+      console.error('❌ [DEBUG] Error al obtener datos:', errorData);
+      throw errorData;
+    }
+
+    console.log('📋 [DEBUG] Rentas obtenidas:', ultimasVencidas);
+    console.log('📋 [DEBUG] Cantidad de rentas:', ultimasVencidas?.length || 0);
+
+    // 3. Renderizar dropdown
+    renderizarDropdownVencidas(ultimasVencidas || []);
+
   } catch (err) {
-    console.error('Error al cargar contador de rentas vencidas:', err);
+    console.error('❌ [DEBUG] Error general:', err);
+    const listaDiv = document.getElementById('listaVencidasDropdown');
+    if (listaDiv) {
+      listaDiv.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444; font-size: 13px;">⚠️ Error al cargar</div>`;
+    }
   }
 }
+
+function renderizarDropdownVencidas(rentas) {
+  console.log('🎨 [DEBUG] Renderizando dropdown con', rentas.length, 'rentas');
+  
+  const listaDiv = document.getElementById('listaVencidasDropdown');
+  if (!listaDiv) {
+    console.error('❌ [DEBUG] NO EXISTE el elemento listaVencidasDropdown en el HTML');
+    return;
+  }
+
+  if (!rentas || rentas.length === 0) {
+    console.log('✅ [DEBUG] No hay rentas vencidas');
+    listaDiv.innerHTML = `<div style="padding: 20px; text-align: center; color: #10b981; font-size: 13px;">✅ No hay rentas vencidas</div>`;
+    return;
+  }
+
+  listaDiv.innerHTML = rentas.map(renta => {
+    const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00');
+    const fechaFormateada = fechaDev.toLocaleDateString('es-ES', { 
+      day: '2-digit', month: 'short', year: 'numeric' 
+    });
+    
+    return `
+      <div class="dropdown-item" onclick="irAVencidas()" style="cursor: pointer; padding: 12px 15px; border-bottom: 1px solid #f3f4f6; transition: background 0.2s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
+        <div style="font-family: monospace; font-weight: 700; color: #1e3a8a; font-size: 13px;">📄 ${renta.numero_renta}</div>
+        <div style="font-size: 12px; color: #dc2626; font-weight: 600; margin-top: 4px;">📅 Devolución: ${fechaFormateada}</div>
+      </div>
+    `;
+  }).join('');
+  
+  console.log('✅ [DEBUG] Dropdown renderizado correctamente');
+}
+
+function irAVencidas() {
+  const btnVencidas = document.querySelector('[data-action="rentar-vencidas"]');
+  if (btnVencidas) {
+    btnVencidas.click();
+    const dropdown = document.getElementById('dropdownVencidas');
+    if (dropdown) dropdown.style.display = 'none';
+  }
+}
+
+function iniciarDropdownVencidas() {
+  const btnCampanita = document.getElementById('btnCampanita');
+  const dropdown = document.getElementById('dropdownVencidas');
+
+  if (btnCampanita && dropdown) {
+    btnCampanita.addEventListener('click', function(e) {
+      e.stopPropagation();
+      dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    });
+
+    document.addEventListener('click', function(e) {
+      if (!btnCampanita.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+  } else {
+    console.warn('⚠️ [DEBUG] No se encontró btnCampanita o dropdownVencidas en el HTML');
+  }
+}
+
 // ============================================
 // LOGOUT
 // ============================================
@@ -810,136 +750,7 @@ window.addEventListener('beforeunload', async () => {
 supabaseClient.auth.onAuthStateChange((event) => {
   if (event === 'SIGNED_OUT') window.location.href = 'index.html';
 });
-// ============================================
-// CONTADOR Y DROPDOWN DE RENTAS VENCIDAS (CON DEBUG)
-// ============================================
-async function cargarContadorYDropdownVencidas() {
-  console.log('🔔 Iniciando carga de rentas vencidas...');
-  
-  try {
-    const hoy = new Date().toISOString().split('T')[0];
-    console.log('📅 Fecha de hoy:', hoy);
 
-    // 1. Obtener el conteo total para la campanita
-    const { count, error: errorCount } = await supabaseClient
-      .from('rentas')
-      .select('*', { count: 'exact', head: true })
-      .lte('fecha_devolucion', hoy)
-      .neq('estado', 'devuelta')
-      .neq('estado', 'cancelada');
-
-    if (errorCount) {
-      console.error('❌ Error al obtener conteo:', errorCount);
-      throw errorCount;
-    }
-
-    console.log(' Total de rentas vencidas:', count);
-
-    const badge = document.getElementById('badgeVencidas');
-    if (badge) {
-      if (count > 0) {
-        badge.textContent = count > 99 ? '99+' : count;
-        badge.style.display = 'block';
-      } else {
-        badge.style.display = 'none';
-      }
-    }
-
-    // 2. Obtener las últimas 5 rentas vencidas para el dropdown
-    const { data: ultimasVencidas, error: errorData } = await supabaseClient
-      .from('rentas')
-      .select('numero_renta, fecha_devolucion')
-      .lte('fecha_devolucion', hoy)
-      .neq('estado', 'devuelta')
-      .neq('estado', 'cancelada')
-      .order('fecha_devolucion', { ascending: true })
-      .limit(5);
-
-    if (errorData) {
-      console.error('❌ Error al obtener datos:', errorData);
-      throw errorData;
-    }
-
-    console.log('📋 Rentas obtenidas:', ultimasVencidas);
-
-    // ✅ SIEMPRE llamar a renderizar, incluso si el array está vacío
-    renderizarDropdownVencidas(ultimasVencidas || []);
-
-  } catch (err) {
-    console.error('❌ Error general en cargarContadorYDropdownVencidas:', err);
-    
-    // Forzar actualización del dropdown en caso de error
-    const listaDiv = document.getElementById('listaVencidasDropdown');
-    if (listaDiv) {
-      listaDiv.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444; font-size: 13px;">⚠️ Error al cargar</div>`;
-    }
-  }
-}
-
-function renderizarDropdownVencidas(rentas) {
-  console.log(' Renderizando dropdown con', rentas.length, 'rentas');
-  
-  const listaDiv = document.getElementById('listaVencidasDropdown');
-  if (!listaDiv) {
-    console.error('❌ No se encontró el elemento listaVencidasDropdown');
-    return;
-  }
-
-  // ✅ Si no hay rentas vencidas
-  if (!rentas || rentas.length === 0) {
-    console.log('✅ No hay rentas vencidas para mostrar');
-    listaDiv.innerHTML = `<div style="padding: 20px; text-align: center; color: #10b981; font-size: 13px;">✅ No hay rentas vencidas</div>`;
-    return;
-  }
-
-  // ✅ Generar la lista
-  const hoy = new Date();
-  
-  listaDiv.innerHTML = rentas.map(renta => {
-    const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00');
-    const fechaFormateada = fechaDev.toLocaleDateString('es-ES', { 
-      day: '2-digit', 
-      month: 'short', 
-      year: 'numeric' 
-    });
-    
-    return `
-      <div class="dropdown-item" onclick="irAVencidas()" style="cursor: pointer; padding: 12px 15px; border-bottom: 1px solid #f3f4f6; transition: background 0.2s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
-        <div style="font-family: monospace; font-weight: 700; color: #1e3a8a; font-size: 13px;">📄 ${renta.numero_renta}</div>
-        <div style="font-size: 12px; color: #dc2626; font-weight: 600; margin-top: 4px;"> Devolución: ${fechaFormateada}</div>
-      </div>
-    `;
-  }).join('');
-  
-  console.log('✅ Dropdown renderizado correctamente');
-}
-
-function irAVencidas() {
-  const btnVencidas = document.querySelector('[data-action="rentar-vencidas"]');
-  if (btnVencidas) {
-    btnVencidas.click();
-    const dropdown = document.getElementById('dropdownVencidas');
-    if (dropdown) dropdown.style.display = 'none';
-  }
-}
-
-function iniciarDropdownVencidas() {
-  const btnCampanita = document.getElementById('btnCampanita');
-  const dropdown = document.getElementById('dropdownVencidas');
-
-  if (btnCampanita && dropdown) {
-    btnCampanita.addEventListener('click', function(e) {
-      e.stopPropagation();
-      dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-    });
-
-    document.addEventListener('click', function(e) {
-      if (!btnCampanita.contains(e.target) && !dropdown.contains(e.target)) {
-        dropdown.style.display = 'none';
-      }
-    });
-  }
-}
 // ============================================
 // INICIALIZACIÓN
 // ============================================
