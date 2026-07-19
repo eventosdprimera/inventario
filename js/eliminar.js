@@ -155,7 +155,7 @@ async function confirmarEliminacion() {
         costo: equipoEncontrado.costo || 0,
         estatus: equipoEncontrado.estatus,
         motivo_eliminacion: motivo || 'Sin motivo especificado',
-        eliminado_por: usuarioActual?.email || 'unknown',
+        eliminado_por_email: usuarioActual?.email || 'unknown', // ✅ CORREGIDO: Nombre exacto de la columna
         eliminado_por_id: usuarioActual?.id || null,
         fecha_eliminacion: new Date().toISOString()
       });
@@ -196,7 +196,6 @@ async function confirmarEliminacion() {
     btnEliminar.textContent = '🗑️ Eliminar Equipo Permanentemente';
   }
 }
-
 // ==========================================
 // CANCELAR BÚSQUEDA
 // ==========================================
