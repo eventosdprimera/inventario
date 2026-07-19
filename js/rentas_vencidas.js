@@ -123,16 +123,16 @@ function renderizarTablaVencidas() {
           <span class="vencida-badge">${diffDays} día${diffDays !== 1 ? 's' : ''}</span>
         </td>
         <td style="text-align: right; font-weight: 600;">$${parseFloat(renta.total).toFixed(2)}</td>
-        <td style="text-align: center;">
-          <button type="button" class="btn-imprimir-vencida" onclick="imprimirRentaVencida('${renta.numero_renta}')" 
-                  title="Imprimir comprobante">
-            🖨️ Imprimir
-          </button>
-          <button type="button" class="btn-recibida" onclick="marcarComoRecibida('${renta.numero_renta}')" 
-                  title="Marcar como recibida">
-            ✅ Recibida
-          </button>
-        </td>
+<td style="text-align: center;">
+  <button type="button" class="btn-imprimir-vencida" onclick="imprimirRentaVencida('${renta.numero_renta}')" 
+          title="Imprimir comprobante">
+    🖨️ Imprimir
+  </button>
+  <button type="button" class="btn-recibida" onclick="marcarComoRecibida('${renta.numero_renta}')" 
+          title="Marcar como recibida">
+    ✅ Recibida
+  </button>
+</td>
       </tr>
     `;
   }).join('');
