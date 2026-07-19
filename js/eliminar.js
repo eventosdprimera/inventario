@@ -5,12 +5,16 @@ let equipoEncontrado = null;
 let usuarioActual = null;
 
 // ==========================================
-// SISTEMA DE MENSAJES
+// SISTEMA DE MENSAJES (100% SEGURO)
 // ==========================================
 function mostrarMensaje(texto, tipo) {
   const mensajeDiv = document.getElementById('mensaje');
-  if (!mensajeDiv) return;
+  if (!mensajeDiv) {
+    console.warn('⚠️ Elemento #mensaje no encontrado en el DOM');
+    return;
+  }
 
+  // Usamos textContent por seguridad, evita errores de inyección y null
   mensajeDiv.textContent = texto;
   mensajeDiv.className = `mensaje ${tipo}`;
   mensajeDiv.style.display = 'block';
@@ -29,11 +33,9 @@ function mostrarMensaje(texto, tipo) {
 async function inicializarEliminacion() {
   console.log('🗑️ Inicializando módulo de eliminación...');
   
-  // 1. Limpiar estado previo al entrar
   equipoEncontrado = null;
   usuarioActual = null;
 
-  // 2. Esperar a que supabaseClient esté disponible
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -45,7 +47,6 @@ async function inicializarEliminacion() {
     return;
   }
 
-  // 3. Obtener usuario actual
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (session) {
@@ -56,10 +57,8 @@ async function inicializarEliminacion() {
     console.error('Error al obtener usuario:', err);
   }
 
-  // 4. Configurar evento Enter en el input (EVITA DUPLICADOS)
   const inputBusqueda = document.getElementById('buscarEquipoInput');
   if (inputBusqueda) {
-    // Solo agregamos el listener si NO tiene la marca de que ya fue agregado
     if (!inputBusqueda.dataset.listenerAttached) {
       inputBusqueda.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
@@ -67,18 +66,16 @@ async function inicializarEliminacion() {
           buscarEquipo();
         }
       });
-      inputBusqueda.dataset.listenerAttached = 'true'; // Marcamos que ya tiene el listener
+      inputBusqueda.dataset.listenerAttached = 'true';
     }
-    // Dar foco automático al cargar
     setTimeout(() => inputBusqueda.focus(), 100);
   }
 
-  // 5. Cargar historial
   await cargarHistorialEliminados();
 }
 
 // ==========================================
-// BUSCAR EQUIPO (CON PROTECCIÓN ANTE DOBLE CLIC)
+// BUSCAR EQUIPO
 // ==========================================
 async function buscarEquipo() {
   const input = document.getElementById('buscarEquipoInput');
@@ -93,7 +90,6 @@ async function buscarEquipo() {
     return;
   }
 
-  // Bloquear botón para evitar búsquedas múltiples simultáneas
   if (btnBuscar) {
     btnBuscar.disabled = true;
     btnBuscar.textContent = '⏳ Buscando...';
@@ -121,9 +117,8 @@ async function buscarEquipo() {
 
   } catch (err) {
     console.error('Error al buscar:', err);
-    mostrarMensaje('Error al buscar en la base de datos: ' + err.message, 'error');
+    mostrarMensaje('Error al buscar: ' + err.message, 'error');
   } finally {
-    // Restaurar botón siempre, haya éxito o error
     if (btnBuscar) {
       btnBuscar.disabled = false;
       btnBuscar.textContent = '🔎 Buscar';
@@ -135,24 +130,30 @@ async function buscarEquipo() {
 // MOSTRAR DATOS DEL EQUIPO (BLINDADO)
 // ==========================================
 function mostrarDatosEquipo(equipo) {
-  const elCodigo = document.getElementById('fichaCodigo');
-  const elNombre = document.getElementById('fichaNombre');
-  const elMarca = document.getElementById('fichaMarca');
-  const elModelo = document.getElementById('fichaModelo');
-  const elSerial = document.getElementById('fichaSerial');
-  const elEstatus = document.getElementById('fichaEstatus');
+  const campos = [
+    { id: 'fichaCodigo', valor: equipo.codigo_barras },
+    { id: 'fichaNombre', valor: equipo.nombre_equipo },
+    { id: 'fichaMarca', valor: equipo.marca },
+    { id: 'fichaModelo', valor: equipo.modelo },
+    { id: 'fichaSerial', valor: equipo.serial },
+    { id: 'fichaEstatus', valor: equipo.estatus }
+  ];
+
+  campos.forEach(campo => {
+    const el = document.getElementById(campo.id);
+    if (el) {
+      el.textContent = campo.valor || 'N/A';
+    } else {
+      console.warn(`⚠️ Elemento #${campo.id} no encontrado en el HTML`);
+    }
+  });
+
   const elEncontrado = document.getElementById('equipoEncontrado');
-
-  if (elCodigo) elCodigo.textContent = equipo.codigo_barras || 'N/A';
-  if (elNombre) elNombre.textContent = equipo.nombre_equipo || 'N/A';
-  if (elMarca) elMarca.textContent = equipo.marca || 'N/A';
-  if (elModelo) elModelo.textContent = equipo.modelo || 'N/A';
-  if (elSerial) elSerial.textContent = equipo.serial || 'N/A';
-  if (elEstatus) elEstatus.textContent = equipo.estatus || 'N/A';
-
   if (elEncontrado) {
     elEncontrado.style.display = 'block';
-    elEncontrado.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => {
+      elEncontrado.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   }
 }
 
@@ -181,7 +182,6 @@ async function confirmarEliminacion() {
   }
 
   try {
-    // 1. Insertar en la tabla de respaldo
     const { error: errorRespaldo } = await supabaseClient
       .from('equipos_eliminados')
       .insert({
@@ -201,7 +201,6 @@ async function confirmarEliminacion() {
 
     if (errorRespaldo) throw new Error('Error al guardar respaldo: ' + errorRespaldo.message);
 
-    // 2. Eliminar de la tabla activa
     const { error: errorEliminacion } = await supabaseClient
       .from('equipos')
       .delete()
@@ -209,7 +208,6 @@ async function confirmarEliminacion() {
 
     if (errorEliminacion) throw new Error('Error al eliminar: ' + errorEliminacion.message);
 
-    // 3. Registrar en logs
     if (typeof registrarLog === 'function') {
       await registrarLog(
         'inventario', 
@@ -219,9 +217,8 @@ async function confirmarEliminacion() {
       );
     }
 
-    mostrarMensaje('✅ Equipo eliminado y movido al historial de respaldo exitosamente', 'exito');
+    mostrarMensaje('✅ Equipo eliminado y movido al historial exitosamente', 'exito');
     
-    // Limpiar y recargar
     setTimeout(() => {
       cancelarBusqueda();
       cargarHistorialEliminados();
@@ -240,7 +237,7 @@ async function confirmarEliminacion() {
 }
 
 // ==========================================
-// CANCELAR BÚSQUEDA (100% BLINDADO)
+// CANCELAR BÚSQUEDA
 // ==========================================
 function cancelarBusqueda() {
   equipoEncontrado = null;
@@ -266,7 +263,10 @@ function cancelarBusqueda() {
 // ==========================================
 async function cargarHistorialEliminados() {
   const tbody = document.getElementById('tbodyEliminados');
-  if (!tbody) return; // Si el usuario ya cambió de pestaña, no hacer nada
+  if (!tbody) {
+    console.warn('⚠️ Elemento #tbodyEliminados no encontrado');
+    return;
+  }
 
   try {
     const { data, error } = await supabaseClient
