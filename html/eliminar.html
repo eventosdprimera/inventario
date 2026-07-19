@@ -103,23 +103,29 @@ legend {
   box-shadow: 0 0 0 3px rgba(30,58,138,0.1);
 }
 
-/* ✅ ZONA DE BÚSQUEDA: Botón debajo del campo con espacio limpio */
+/* ✅ ZONA DE BÚSQUEDA - CORRECCIÓN DEFINITIVA */
 .zona-busqueda {
   display: flex !important;
-  flex-direction: column !important; /* Fuerza al botón a bajar a la siguiente línea */
-  align-items: flex-start !important; /* Alinea todo a la izquierda */
-  gap: 16px !important; /* 🔽 ESTO da el "poquito de espacio" exacto entre el input y el botón */
+  flex-direction: column !important; /* Botón debajo del input */
+  align-items: flex-start !important;
+  gap: 12px !important; /* ESPacio exacto entre input y botón */
+  width: 100% !important;
 }
 
 .zona-busqueda .form-group {
   width: 100% !important;
-  margin-bottom: 0 !important; /* Eliminamos márgenes viejos que causaban conflictos */
+  margin-bottom: 0 !important;
+  margin-right: 0 !important;
 }
 
 .zona-busqueda .btn-action {
-  margin-top: 0 !important; /* El 'gap' de arriba ya se encarga del espacio */
-  width: 100% !important; /* Hace que el botón se vea ordenado y del mismo ancho */
-  max-width: 280px !important; /* Evita que el botón sea gigante en monitores grandes */
+  margin-top: 0 !important; /* El gap se encarga del espacio */
+  align-self: flex-start !important;
+}
+
+/* Eliminar el borde rojo de prueba */
+.zona-busqueda {
+  border: none !important;
 }
 
 .btn-action {
