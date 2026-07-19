@@ -19,7 +19,7 @@ function mostrarMensaje(texto, tipo) {
     setTimeout(() => {
       const msg = document.getElementById('mensaje');
       if (msg) msg.style.display = 'none';
-    }, 5000);
+    }, 4000);
   }
 }
 
@@ -29,10 +29,11 @@ function mostrarMensaje(texto, tipo) {
 async function inicializarEliminacion() {
   console.log('🗑️ Inicializando módulo de eliminación...');
   
-  // Limpiar estado previo por seguridad al entrar al módulo
+  // 1. Limpiar estado previo al entrar
   equipoEncontrado = null;
   usuarioActual = null;
 
+  // 2. Esperar a que supabaseClient esté disponible
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -44,36 +45,45 @@ async function inicializarEliminacion() {
     return;
   }
 
-  // Obtener usuario actual
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) {
-    const { data } = await supabaseClient.from('usuarios').select('*').eq('email', session.user.email).maybeSingle();
-    usuarioActual = data || { email: session.user.email, id: session.user.id };
+  // 3. Obtener usuario actual
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+      const { data } = await supabaseClient.from('usuarios').select('*').eq('email', session.user.email).maybeSingle();
+      usuarioActual = data || { email: session.user.email, id: session.user.id };
+    }
+  } catch (err) {
+    console.error('Error al obtener usuario:', err);
   }
 
-  // Evento Enter en el input de búsqueda (Blindado contra múltiples listeners)
+  // 4. Configurar evento Enter en el input (EVITA DUPLICADOS)
   const inputBusqueda = document.getElementById('buscarEquipoInput');
   if (inputBusqueda) {
-    // Clonamos el nodo para eliminar cualquier listener anterior acumulado
-    const nuevoInput = inputBusqueda.cloneNode(true);
-    inputBusqueda.parentNode.replaceChild(nuevoInput, inputBusqueda);
-    
-    nuevoInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        buscarEquipo();
-      }
-    });
+    // Solo agregamos el listener si NO tiene la marca de que ya fue agregado
+    if (!inputBusqueda.dataset.listenerAttached) {
+      inputBusqueda.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          buscarEquipo();
+        }
+      });
+      inputBusqueda.dataset.listenerAttached = 'true'; // Marcamos que ya tiene el listener
+    }
+    // Dar foco automático al cargar
+    setTimeout(() => inputBusqueda.focus(), 100);
   }
 
+  // 5. Cargar historial
   await cargarHistorialEliminados();
 }
 
 // ==========================================
-// BUSCAR EQUIPO
+// BUSCAR EQUIPO (CON PROTECCIÓN ANTE DOBLE CLIC)
 // ==========================================
 async function buscarEquipo() {
   const input = document.getElementById('buscarEquipoInput');
+  const btnBuscar = document.querySelector('button[onclick="buscarEquipo()"]');
+  
   if (!input) return;
 
   const codigoOriginal = input.value.trim();
@@ -83,9 +93,15 @@ async function buscarEquipo() {
     return;
   }
 
-  const codigoBusqueda = codigoOriginal.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
+  // Bloquear botón para evitar búsquedas múltiples simultáneas
+  if (btnBuscar) {
+    btnBuscar.disabled = true;
+    btnBuscar.textContent = '⏳ Buscando...';
+  }
 
   try {
+    const codigoBusqueda = codigoOriginal.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
+
     const { data, error } = await supabaseClient
       .from('equipos')
       .select('*')
@@ -106,6 +122,12 @@ async function buscarEquipo() {
   } catch (err) {
     console.error('Error al buscar:', err);
     mostrarMensaje('Error al buscar en la base de datos: ' + err.message, 'error');
+  } finally {
+    // Restaurar botón siempre, haya éxito o error
+    if (btnBuscar) {
+      btnBuscar.disabled = false;
+      btnBuscar.textContent = '🔎 Buscar';
+    }
   }
 }
 
@@ -135,7 +157,7 @@ function mostrarDatosEquipo(equipo) {
 }
 
 // ==========================================
-// CONFIRMAR ELIMINACIÓN (BLINDADO)
+// CONFIRMAR ELIMINACIÓN
 // ==========================================
 async function confirmarEliminacion() {
   if (!equipoEncontrado) return;
@@ -199,7 +221,7 @@ async function confirmarEliminacion() {
 
     mostrarMensaje('✅ Equipo eliminado y movido al historial de respaldo exitosamente', 'exito');
     
-    // Limpiar y recargar de forma segura (con verificación de existencia)
+    // Limpiar y recargar
     setTimeout(() => {
       cancelarBusqueda();
       cargarHistorialEliminados();
@@ -224,7 +246,10 @@ function cancelarBusqueda() {
   equipoEncontrado = null;
   
   const input = document.getElementById('buscarEquipoInput');
-  if (input) input.value = '';
+  if (input) {
+    input.value = '';
+    input.focus();
+  }
   
   const motivo = document.getElementById('motivoEliminacion');
   if (motivo) motivo.value = '';
@@ -234,12 +259,10 @@ function cancelarBusqueda() {
   
   const mensaje = document.getElementById('mensaje');
   if (mensaje) mensaje.style.display = 'none';
-  
-  if (input) input.focus();
 }
 
 // ==========================================
-// CARGAR HISTORIAL DE ELIMINADOS (BLINDADO)
+// CARGAR HISTORIAL DE ELIMINADOS
 // ==========================================
 async function cargarHistorialEliminados() {
   const tbody = document.getElementById('tbodyEliminados');
@@ -266,7 +289,6 @@ async function cargarHistorialEliminados() {
 
     tbody.innerHTML = data.map(item => {
       const fecha = item.fecha_eliminacion ? new Date(item.fecha_eliminacion).toLocaleDateString('es-ES') : '-';
-      // Soporte para ambos nombres de columna por si hay variaciones en la BD
       const eliminadoPor = item.eliminado_por_email || item.eliminado_por || 'N/A'; 
       return `
         <tr>
