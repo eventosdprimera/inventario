@@ -103,22 +103,23 @@ legend {
   box-shadow: 0 0 0 3px rgba(30,58,138,0.1);
 }
 
-/* ✅ ZONA DE BÚSQUEDA - Botón unido pero ligeramente separado abajo */
+/* ✅ ZONA DE BÚSQUEDA: Botón debajo del campo con espacio limpio */
 .zona-busqueda {
   display: flex !important;
-  align-items: flex-end !important;
+  flex-direction: column !important; /* Fuerza al botón a bajar a la siguiente línea */
+  align-items: flex-start !important; /* Alinea todo a la izquierda */
+  gap: 16px !important; /* 🔽 ESTO da el "poquito de espacio" exacto entre el input y el botón */
 }
 
 .zona-busqueda .form-group {
-  flex: 1 !important;
-  margin-right: 12px !important;
-  margin-bottom: 0 !important;
+  width: 100% !important;
+  margin-bottom: 0 !important; /* Eliminamos márgenes viejos que causaban conflictos */
 }
 
-/* ✅ Bajar el botón un poquito para que se vea bien */
 .zona-busqueda .btn-action {
-  margin-bottom: 0 !important;
-  margin-top: 6px !important; /* 🔽 Esto lo baja un poquito */
+  margin-top: 0 !important; /* El 'gap' de arriba ya se encarga del espacio */
+  width: 100% !important; /* Hace que el botón se vea ordenado y del mismo ancho */
+  max-width: 280px !important; /* Evita que el botón sea gigante en monitores grandes */
 }
 
 .btn-action {
