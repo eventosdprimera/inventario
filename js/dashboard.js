@@ -50,6 +50,7 @@ async function iniciarDashboard() {
   mostrarBienvenida();
   // ✅ Cargar contador de rentas vencidas
   await cargarContadorRentasVencidas();
+  iniciarDropdownVencidas();
   
   // Actualizar cada 2 minutos
   setInterval(cargarContadorRentasVencidas, 120000);
@@ -809,6 +810,108 @@ window.addEventListener('beforeunload', async () => {
 supabaseClient.auth.onAuthStateChange((event) => {
   if (event === 'SIGNED_OUT') window.location.href = 'index.html';
 });
+// ============================================
+// CONTADOR Y DROPDOWN DE RENTAS VENCIDAS
+// ============================================
+async function cargarContadorYDropdownVencidas() {
+  try {
+    const hoy = new Date().toISOString().split('T')[0];
+
+    // 1. Obtener el conteo total para la campanita
+    const { count, error: errorCount } = await supabaseClient
+      .from('rentas')
+      .select('*', { count: 'exact', head: true })
+      .lte('fecha_devolucion', hoy) // .lte para incluir las de hoy
+      .neq('estado', 'devuelta')
+      .neq('estado', 'cancelada');
+
+    if (errorCount) throw errorCount;
+
+    const badge = document.getElementById('badgeVencidas');
+    if (badge) {
+      if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : count;
+        badge.style.display = 'block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    // 2. Obtener las últimas 5 rentas vencidas para el dropdown
+    const { data: ultimasVencidas, error: errorData } = await supabaseClient
+      .from('rentas')
+      .select('id, numero_renta, cliente_nombre, fecha_devolucion')
+      .lte('fecha_devolucion', hoy)
+      .neq('estado', 'devuelta')
+      .neq('estado', 'cancelada')
+      .order('fecha_devolucion', { ascending: true }) // Las más antiguas primero (más urgentes)
+      .limit(5);
+
+    if (errorData) throw errorData;
+
+    renderizarDropdownVencidas(ultimasVencidas || []);
+
+  } catch (err) {
+    console.error('Error al cargar contador/dropdown de rentas vencidas:', err);
+  }
+}
+
+function renderizarDropdownVencidas(rentas) {
+  const listaDiv = document.getElementById('listaVencidasDropdown');
+  if (!listaDiv) return;
+
+  if (rentas.length === 0) {
+    listaDiv.innerHTML = `<div style="padding: 20px; text-align: center; color: #10b981; font-size: 13px;">✅ No hay rentas vencidas</div>`;
+    return;
+  }
+
+  const hoy = new Date();
+  
+  listaDiv.innerHTML = rentas.map(renta => {
+    const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00');
+    const diffTime = Math.abs(hoy - fechaDev);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return `
+      <div class="dropdown-item" onclick="irAVencidas()">
+        <div class="renta-numero">📄 ${renta.numero_renta}</div>
+        <div class="renta-cliente">👤 ${renta.cliente_nombre || 'Sin cliente'}</div>
+        <div class="renta-dias">⏰ Vencida hace ${diffDays} día${diffDays !== 1 ? 's' : ''}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function irAVencidas() {
+  // Simular clic en el botón del menú lateral para cargar el módulo
+  const btnVencidas = document.querySelector('[data-action="rentar-vencidas"]');
+  if (btnVencidas) {
+    btnVencidas.click();
+    // Cerrar el dropdown
+    const dropdown = document.getElementById('dropdownVencidas');
+    if (dropdown) dropdown.style.display = 'none';
+  }
+}
+
+function iniciarDropdownVencidas() {
+  const btnCampanita = document.getElementById('btnCampanita');
+  const dropdown = document.getElementById('dropdownVencidas');
+
+  if (btnCampanita && dropdown) {
+    // Abrir/cerrar al hacer clic en la campanita
+    btnCampanita.addEventListener('click', function(e) {
+      e.stopPropagation();
+      dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Cerrar al hacer clic fuera del dropdown
+    document.addEventListener('click', function(e) {
+      if (!btnCampanita.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+  }
+}
 
 // ============================================
 // INICIALIZACIÓN
