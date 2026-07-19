@@ -811,11 +811,14 @@ supabaseClient.auth.onAuthStateChange((event) => {
   if (event === 'SIGNED_OUT') window.location.href = 'index.html';
 });
 // ============================================
-// CONTADOR Y DROPDOWN DE RENTAS VENCIDAS
+// CONTADOR Y DROPDOWN DE RENTAS VENCIDAS (CON DEBUG)
 // ============================================
 async function cargarContadorYDropdownVencidas() {
+  console.log('🔔 Iniciando carga de rentas vencidas...');
+  
   try {
     const hoy = new Date().toISOString().split('T')[0];
+    console.log('📅 Fecha de hoy:', hoy);
 
     // 1. Obtener el conteo total para la campanita
     const { count, error: errorCount } = await supabaseClient
@@ -825,7 +828,12 @@ async function cargarContadorYDropdownVencidas() {
       .neq('estado', 'devuelta')
       .neq('estado', 'cancelada');
 
-    if (errorCount) throw errorCount;
+    if (errorCount) {
+      console.error('❌ Error al obtener conteo:', errorCount);
+      throw errorCount;
+    }
+
+    console.log(' Total de rentas vencidas:', count);
 
     const badge = document.getElementById('badgeVencidas');
     if (badge) {
@@ -840,21 +848,27 @@ async function cargarContadorYDropdownVencidas() {
     // 2. Obtener las últimas 5 rentas vencidas para el dropdown
     const { data: ultimasVencidas, error: errorData } = await supabaseClient
       .from('rentas')
-      .select('numero_renta, fecha_devolucion') // ✅ Solo traemos lo que vamos a mostrar
+      .select('numero_renta, fecha_devolucion')
       .lte('fecha_devolucion', hoy)
       .neq('estado', 'devuelta')
       .neq('estado', 'cancelada')
-      .order('fecha_devolucion', { ascending: true }) // Las más antiguas primero
+      .order('fecha_devolucion', { ascending: true })
       .limit(5);
 
-    if (errorData) throw errorData;
+    if (errorData) {
+      console.error('❌ Error al obtener datos:', errorData);
+      throw errorData;
+    }
 
-    // ✅ Llamamos a la función para renderizar, pasando los datos (o un array vacío si es null)
+    console.log('📋 Rentas obtenidas:', ultimasVencidas);
+
+    // ✅ SIEMPRE llamar a renderizar, incluso si el array está vacío
     renderizarDropdownVencidas(ultimasVencidas || []);
 
   } catch (err) {
-    console.error('Error al cargar el dropdown de rentas vencidas:', err);
-    // En caso de error, quitamos el "Cargando..." y mostramos un mensaje seguro
+    console.error('❌ Error general en cargarContadorYDropdownVencidas:', err);
+    
+    // Forzar actualización del dropdown en caso de error
     const listaDiv = document.getElementById('listaVencidasDropdown');
     if (listaDiv) {
       listaDiv.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444; font-size: 13px;">⚠️ Error al cargar</div>`;
@@ -863,18 +877,25 @@ async function cargarContadorYDropdownVencidas() {
 }
 
 function renderizarDropdownVencidas(rentas) {
+  console.log(' Renderizando dropdown con', rentas.length, 'rentas');
+  
   const listaDiv = document.getElementById('listaVencidasDropdown');
-  if (!listaDiv) return;
+  if (!listaDiv) {
+    console.error('❌ No se encontró el elemento listaVencidasDropdown');
+    return;
+  }
 
-  // ✅ Si no hay rentas vencidas, mostramos este mensaje en lugar de "Cargando..."
+  // ✅ Si no hay rentas vencidas
   if (!rentas || rentas.length === 0) {
+    console.log('✅ No hay rentas vencidas para mostrar');
     listaDiv.innerHTML = `<div style="padding: 20px; text-align: center; color: #10b981; font-size: 13px;">✅ No hay rentas vencidas</div>`;
     return;
   }
 
-  // ✅ Generamos la lista SOLO con Número de Renta y Fecha de Devolución
+  // ✅ Generar la lista
+  const hoy = new Date();
+  
   listaDiv.innerHTML = rentas.map(renta => {
-    // Formatear la fecha para que se vea bonita (ej: "22 jul 2026")
     const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00');
     const fechaFormateada = fechaDev.toLocaleDateString('es-ES', { 
       day: '2-digit', 
@@ -885,10 +906,12 @@ function renderizarDropdownVencidas(rentas) {
     return `
       <div class="dropdown-item" onclick="irAVencidas()" style="cursor: pointer; padding: 12px 15px; border-bottom: 1px solid #f3f4f6; transition: background 0.2s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
         <div style="font-family: monospace; font-weight: 700; color: #1e3a8a; font-size: 13px;">📄 ${renta.numero_renta}</div>
-        <div style="font-size: 12px; color: #dc2626; font-weight: 600; margin-top: 4px;">📅 Devolución: ${fechaFormateada}</div>
+        <div style="font-size: 12px; color: #dc2626; font-weight: 600; margin-top: 4px;"> Devolución: ${fechaFormateada}</div>
       </div>
     `;
   }).join('');
+  
+  console.log('✅ Dropdown renderizado correctamente');
 }
 
 function irAVencidas() {
