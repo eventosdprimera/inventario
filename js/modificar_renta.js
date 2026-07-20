@@ -28,8 +28,37 @@ async function inicializarModificarRenta() {
 
   await cargarUsuarioModificar();
   
-  const hoy = new Date();
-  fechaHoyStrModificar = hoy.toISOString().split('T')[0];
+// ==========================================
+// AL CARGAR LOS DATOS DE LA RENTA EN EL FORMULARIO
+// ==========================================
+
+// 1. Obtener la fecha de hoy
+const hoy = new Date();
+const fechaHoyStr = hoy.toISOString().split('T')[0];
+
+// ... (resto de tu código que carga cliente, teléfono, etc.) ...
+
+// 2. Asignar fechas (MODIFICADO PARA FORZAR EL DÍA ACTUAL)
+const elFechaRenta = document.getElementById('fechaRenta');
+const elFechaDevolucion = document.getElementById('fechaDevolucion');
+
+if (elFechaRenta) {
+  // ✅ CAMBIO: Forzar que la fecha de inicio sea siempre el día actual
+  elFechaRenta.value = fechaHoyStr;
+  elFechaRenta.min = fechaHoyStr; // Evita que seleccionen fechas pasadas
+}
+
+if (elFechaDevolucion) {
+  // La fecha de devolución se mantiene con la original de la renta, 
+  // o puedes calcularla a partir de hoy (ej: +7 días) si lo prefieres:
+  // const fechaDev = new Date();
+  // fechaDev.setDate(fechaDev.getDate() + 7);
+  // elFechaDevolucion.value = fechaDev.toISOString().split('T')[0];
+  
+  // Si prefieres mantener la fecha de devolución original de la base de datos:
+  elFechaDevolucion.value = renta.fecha_devolucion; 
+  elFechaDevolucion.min = fechaHoyStr;
+}
   
   // Cargar últimas 20 rentas al iniciar
   await buscarRentasModificar();
