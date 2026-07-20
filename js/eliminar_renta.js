@@ -69,7 +69,7 @@ async function cargarUsuarioEliminar() {
 }
 
 // ==========================================
-// BUSCAR RENTAS CON FILTROS
+// ✅ BUSCAR RENTAS (EXCLUYENDO TERMINADAS/DEVUELTAS)
 // ==========================================
 async function buscarRentasEliminar() {
   const filtroCliente = document.getElementById('filtroClienteEliminar')?.value.trim() || '';
@@ -78,9 +78,12 @@ async function buscarRentasEliminar() {
   const filtroHasta = document.getElementById('filtroFechaHastaEliminar')?.value || '';
 
   try {
+    // ✅ CAPA DE SEGURIDAD 1: Excluir explícitamente estados cerrados
     let query = supabaseClient
       .from('rentas')
       .select('*', { count: 'exact' })
+      .neq('estado', 'devuelta')
+      .neq('estado', 'cancelada')
       .order('fecha_creacion', { ascending: false });
 
     if (filtroCliente) query = query.ilike('cliente_nombre', `%${filtroCliente}%`);
@@ -105,7 +108,7 @@ async function buscarRentasEliminar() {
 }
 
 // ==========================================
-// ✅ RENDERIZAR TABLA DE RENTAS (CON ESTADO DINÁMICO EN TIEMPO REAL)
+// RENDERIZAR TABLA DE RENTAS (CON ESTADO DINÁMICO)
 // ==========================================
 function renderizarTablaRentasEliminar(totalRegistros) {
   const tbody = document.getElementById('tbodyRentasEliminar');
@@ -116,33 +119,24 @@ function renderizarTablaRentasEliminar(totalRegistros) {
       <tr>
         <td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">
           <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
-          <div>No se encontraron rentas con los filtros aplicados</div>
+          <div>No se encontraron rentas eliminables con los filtros aplicados</div>
         </td>
       </tr>`;
     document.getElementById('paginacionEliminar').innerHTML = '';
     return;
   }
 
-  // ✅ Obtener fecha de hoy en Caracas para comparación en tiempo real
   const hoyCaracas = obtenerFechaHoyCaracas();
-  console.log('🔍 Evaluando fechas. Hoy en Caracas es:', hoyCaracas);
 
   tbody.innerHTML = rentasCacheEliminar.map((renta, index) => {
     const globalIndex = (paginaActualEliminar - 1) * POR_PAGINA_ELIMINAR + index + 1;
     const fechaInicio = new Date(renta.fecha_renta + 'T12:00:00').toLocaleDateString('es-ES');
     const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00').toLocaleDateString('es-ES');
     
-    // ✅ LÓGICA CLAVE: Normalizar la fecha de la BD a "YYYY-MM-DD" puro para comparar con seguridad
-    const fechaDevStr = renta.fecha_devolucion ? renta.fecha_devolucion.split('T')[0] : '';
-    
+    // Lógica visual: si está activa pero la fecha ya pasó, se muestra como vencida
     let estadoReal = renta.estado;
-    
-    // Mensaje de depuración en consola para cada renta
-    console.log(`📌 Renta: ${renta.numero_renta} | Estado BD: "${renta.estado}" | Devolución BD: "${fechaDevStr}" | ¿Es <= hoy (${hoyCaracas})? ${fechaDevStr <= hoyCaracas}`);
-
-    if (renta.estado === 'activa' && fechaDevStr && fechaDevStr <= hoyCaracas) {
+    if (renta.estado === 'activa' && renta.fecha_devolucion && renta.fecha_devolucion <= hoyCaracas) {
       estadoReal = 'vencida';
-      console.log(`⚠️ ALERTA VISUAL: ${renta.numero_renta} forzada a mostrarse como VENCIDA`);
     }
 
     const estadoColors = {
@@ -230,18 +224,21 @@ function limpiarFiltrosEliminar() {
 }
 
 // ==========================================
-// SELECCIONAR RENTA PARA ELIMINAR
+// ✅ SELECCIONAR RENTA PARA ELIMINAR (CON VALIDACIÓN DE ESTADO)
 // ==========================================
 async function seleccionarRentaEliminar(numeroRenta) {
   try {
+    // ✅ CAPA DE SEGURIDAD 2: Solo permitir cargar si el estado es 'activa' (o visualmente vencida pero aún activa en BD)
+    // Esto bloquea automáticamente 'devuelta', 'cancelada' o 'terminada'
     const { data: renta, error } = await supabaseClient
       .from('rentas')
       .select('*')
       .eq('numero_renta', numeroRenta)
+      .in('estado', ['activa', 'vencida']) 
       .single();
 
     if (error || !renta) {
-      mostrarMensajeEliminar('No se pudo cargar la renta', 'error');
+      mostrarMensajeEliminar('No se pudo cargar la renta o ya ha sido terminada/devuelta', 'error');
       return;
     }
 
