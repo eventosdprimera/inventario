@@ -1,5 +1,5 @@
 // ==========================================
-// VARIABLES GLOBALES (nombres únicos)
+// VARIABLES GLOBALES
 // ==========================================
 let rentasCacheEliminar = [];
 let paginaActualEliminar = 1;
@@ -26,8 +26,6 @@ async function inicializarEliminarRenta() {
   }
 
   await cargarUsuarioEliminar();
-  
-  // Cargar últimas 20 rentas al iniciar
   await buscarRentasEliminar();
 
   console.log('✅ === ELIMINAR RENTA INICIALIZADO ===');
@@ -72,26 +70,16 @@ async function buscarRentasEliminar() {
       .select('*', { count: 'exact' })
       .order('fecha_renta', { ascending: false });
 
-    if (filtroCliente) {
-      query = query.ilike('cliente_nombre', `%${filtroCliente}%`);
-    }
-    if (filtroNumero) {
-      query = query.ilike('numero_renta', `%${filtroNumero}%`);
-    }
-    if (filtroDesde) {
-      query = query.gte('fecha_renta', filtroDesde);
-    }
-    if (filtroHasta) {
-      query = query.lte('fecha_renta', filtroHasta);
-    }
+    if (filtroCliente) query = query.ilike('cliente_nombre', `%${filtroCliente}%`);
+    if (filtroNumero) query = query.ilike('numero_renta', `%${filtroNumero}%`);
+    if (filtroDesde) query = query.gte('fecha_renta', filtroDesde);
+    if (filtroHasta) query = query.lte('fecha_renta', filtroHasta);
 
-    // Paginación
     const desde = (paginaActualEliminar - 1) * POR_PAGINA_ELIMINAR;
     const hasta = desde + POR_PAGINA_ELIMINAR - 1;
     query = query.range(desde, hasta);
 
     const { data, error, count } = await query;
-
     if (error) throw error;
 
     rentasCacheEliminar = data || [];
@@ -104,7 +92,7 @@ async function buscarRentasEliminar() {
 }
 
 // ==========================================
-// RENDERIZAR TABLA DE RENTAS
+// ✅ RENDERIZAR TABLA DE RENTAS (CON ESTADO DINÁMICO)
 // ==========================================
 function renderizarTablaRentasEliminar(totalRegistros) {
   const tbody = document.getElementById('tbodyRentasEliminar');
@@ -122,18 +110,26 @@ function renderizarTablaRentasEliminar(totalRegistros) {
     return;
   }
 
+  const hoy = new Date().toISOString().split('T')[0];
+
   tbody.innerHTML = rentasCacheEliminar.map((renta, index) => {
     const globalIndex = (paginaActualEliminar - 1) * POR_PAGINA_ELIMINAR + index + 1;
     const fechaInicio = new Date(renta.fecha_renta + 'T12:00:00').toLocaleDateString('es-ES');
     const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00').toLocaleDateString('es-ES');
     
+    // ✅ LÓGICA PARA DETERMINAR EL ESTADO REAL (Igual que en Modificar)
+    let estadoReal = renta.estado;
+    if (renta.estado === 'activa' && renta.fecha_devolucion < hoy) {
+      estadoReal = 'vencida';
+    }
+
     const estadoColors = {
       'activa': '#10b981',
       'devuelta': '#3b82f6',
       'vencida': '#ef4444',
       'cancelada': '#6b7280'
     };
-    const colorEstado = estadoColors[renta.estado] || '#6b7280';
+    const colorEstado = estadoColors[estadoReal] || '#6b7280';
 
     return `
       <tr>
@@ -144,13 +140,15 @@ function renderizarTablaRentasEliminar(totalRegistros) {
         <td>${fechaDev}</td>
         <td style="text-align: right; font-weight: 600;">$${parseFloat(renta.total).toFixed(2)}</td>
         <td style="text-align: center;">
-          <span style="background: ${colorEstado}; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; text-transform: capitalize;">
-            ${renta.estado}
+          <span style="background: ${colorEstado}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">
+            ${estadoReal}
           </span>
         </td>
         <td style="text-align: center;">
           <button type="button" onclick="seleccionarRentaEliminar('${renta.numero_renta}')" 
-                  style="background: #fee2e2; color: #dc2626; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;"
+                  style="background: #fee2e2; color: #dc2626; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;"
+                  onmouseover="this.style.background='#dc2626'; this.style.color='white';"
+                  onmouseout="this.style.background='#fee2e2'; this.style.color='#dc2626';"
                   title="Eliminar esta renta">
             🗑️ Eliminar
           </button>
@@ -179,28 +177,21 @@ function renderizarPaginacionEliminar(totalRegistros) {
   let html = '';
   html += `<button type="button" onclick="cambiarPaginaEliminar(${paginaActualEliminar - 1})" 
            style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px;"
-           ${paginaActualEliminar === 1 ? 'style="opacity: 0.4; cursor: not-allowed;"' : ''}>‹ Anterior</button>`;
+           ${paginaActualEliminar === 1 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>‹ Anterior</button>`;
   
   html += `<span style="color: #374151; font-size: 13px; font-weight: 600;">Página ${paginaActualEliminar} de ${totalPaginas}</span>`;
   
   html += `<button type="button" onclick="cambiarPaginaEliminar(${paginaActualEliminar + 1})" 
            style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px;"
-           ${paginaActualEliminar === totalPaginas ? 'style="opacity: 0.4; cursor: not-allowed;"' : ''}>Siguiente ›</button>`;
+           ${paginaActualEliminar === totalPaginas ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>Siguiente ›</button>`;
   
-  html += `<span style="color: #6b7280; font-size: 13px;">Total: ${totalRegistros} renta(s)</span>`;
+  html += `<span style="color: #6b7280; font-size: 13px;">Total: ${totalRegistros}</span>`;
 
   cont.innerHTML = html;
 }
 
 async function cambiarPaginaEliminar(nuevaPagina) {
-  const totalRegistros = rentasCacheEliminar.length;
-  const totalPaginas = Math.ceil(totalRegistros / POR_PAGINA_ELIMINAR);
-  
-  if (nuevaPagina < 1 || nuevaPagina > totalPaginas) return;
-  
-  paginaActualEliminar = nuevaPagina;
   await buscarRentasEliminar();
-  
   document.getElementById('fieldsetListaEliminar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -243,7 +234,6 @@ async function seleccionarRentaEliminar(numeroRenta) {
     rentaEliminarSeleccionada = renta;
     itemsEliminarSeleccionada = items || [];
 
-    // Llenar formulario (solo lectura)
     document.getElementById('eliminarNumeroRenta').textContent = ` - ${renta.numero_renta}`;
     document.getElementById('eliminarClienteNombre').value = renta.cliente_nombre || '';
     document.getElementById('eliminarClienteTelefono').value = renta.cliente_telefono || '';
@@ -256,14 +246,11 @@ async function seleccionarRentaEliminar(numeroRenta) {
     document.getElementById('eliminarEstado').value = renta.estado || 'activa';
     document.getElementById('eliminarObservaciones').value = renta.observaciones || '';
 
-    // Renderizar items
     renderizarItemsEliminar();
     calcularTotalesEliminar();
 
-    // Limpiar motivo
     document.getElementById('eliminarMotivo').value = '';
 
-    // Mostrar formulario de detalles, ocultar lista
     document.getElementById('fieldsetListaEliminar').style.display = 'none';
     document.getElementById('fieldsetDetalleEliminar').style.display = 'block';
 
@@ -337,10 +324,13 @@ async function confirmarEliminacionRenta() {
   if (!confirmacion) return;
 
   const btnEliminar = document.getElementById('btnEliminarRenta');
-  if (btnEliminar) { btnEliminar.disabled = true; btnEliminar.textContent = '⏳ Eliminando...'; }
+  if (btnEliminar) { 
+    btnEliminar.disabled = true; 
+    btnEliminar.textContent = '⏳ Eliminando...'; 
+  }
 
   try {
-    // 1. Insertar en tabla de respaldo (rentas_eliminadas)
+    // 1. Insertar en tabla de respaldo
     const { data: rentaEliminada, error: errorRespaldoRenta } = await supabaseClient
       .from('rentas_eliminadas')
       .insert({
@@ -370,7 +360,7 @@ async function confirmarEliminacionRenta() {
 
     if (errorRespaldoRenta) throw new Error('Error al crear respaldo de renta: ' + errorRespaldoRenta.message);
 
-    // 2. Insertar items en tabla de respaldo (rentas_items_eliminadas)
+    // 2. Insertar items en tabla de respaldo
     for (const item of itemsEliminarSeleccionada) {
       const { error: errorRespaldoItem } = await supabaseClient
         .from('rentas_items_eliminadas')
@@ -412,19 +402,31 @@ async function confirmarEliminacionRenta() {
       await registrarLog('rentar', 'Renta eliminada', descripcion, 'error');
     }
 
-    mostrarMensajeEliminar(`✅ Renta #${rentaEliminarSeleccionada.numero_renta} eliminada exitosamente (respaldo creado)`, 'exito');
+    mostrarMensajeEliminar(`✅ Renta #${rentaEliminarSeleccionada.numero_renta} eliminada exitosamente`, 'exito');
 
-    // Volver a la lista después de 2 segundos
+    // Resetear silenciosamente y recargar
+    rentaEliminarSeleccionada = null;
+    itemsEliminarSeleccionada = [];
+    document.getElementById('fieldsetListaEliminar').style.display = 'block';
+    document.getElementById('fieldsetDetalleEliminar').style.display = 'none';
+    
+    if (btnEliminar) {
+      btnEliminar.disabled = false;
+      btnEliminar.textContent = '🗑️ Eliminar Renta Permanentemente';
+    }
+
     setTimeout(() => {
-      cancelarEliminacion();
       paginaActualEliminar = 1;
       buscarRentasEliminar();
-    }, 2000);
+    }, 1500);
 
   } catch (err) {
     console.error('Error al eliminar renta:', err);
     mostrarMensajeEliminar('Error al eliminar: ' + err.message, 'error');
-    if (btnEliminar) { btnEliminar.disabled = false; btnEliminar.textContent = '🗑️ Eliminar Renta Permanentemente'; }
+    if (btnEliminar) { 
+      btnEliminar.disabled = false; 
+      btnEliminar.textContent = '🗑️ Eliminar Renta Permanentemente'; 
+    }
   }
 }
 
@@ -432,6 +434,10 @@ async function confirmarEliminacionRenta() {
 // CANCELAR ELIMINACIÓN
 // ==========================================
 function cancelarEliminacion() {
+  if (itemsEliminarSeleccionada.length > 0 && !confirm('¿Cancelar la eliminación?')) {
+    return;
+  }
+
   rentaEliminarSeleccionada = null;
   itemsEliminarSeleccionada = [];
 
@@ -439,7 +445,10 @@ function cancelarEliminacion() {
   document.getElementById('fieldsetDetalleEliminar').style.display = 'none';
 
   const btnEliminar = document.getElementById('btnEliminarRenta');
-  if (btnEliminar) { btnEliminar.disabled = false; btnEliminar.textContent = '🗑️ Eliminar Renta Permanentemente'; }
+  if (btnEliminar) { 
+    btnEliminar.disabled = false; 
+    btnEliminar.textContent = '🗑️ Eliminar Renta Permanentemente'; 
+  }
 
   document.getElementById('fieldsetListaEliminar').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -452,15 +461,9 @@ function mostrarMensajeEliminar(texto, tipo) {
   if (msg) {
     msg.textContent = texto;
     msg.className = `mensaje ${tipo}`;
-    
-    setTimeout(() => {
-      msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
-    
+    setTimeout(() => { msg.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
     if (tipo === 'exito') {
-      setTimeout(() => { 
-        if (msg.classList.contains('exito')) msg.className = 'mensaje'; 
-      }, 5000);
+      setTimeout(() => { if (msg.classList.contains('exito')) msg.className = 'mensaje'; }, 5000);
     }
   }
 }
