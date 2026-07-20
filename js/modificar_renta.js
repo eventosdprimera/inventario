@@ -27,17 +27,13 @@ async function inicializarModificarRenta() {
   }
 
   await cargarUsuarioModificar();
-  
-  // Cargar últimas 20 rentas al iniciar
   await buscarRentasModificar();
 
-  // Enter en búsqueda de equipos
+  // Enter en búsqueda de equipos (Blindado contra duplicados)
   const inputEquipo = document.getElementById('editBuscarEquipo');
   if (inputEquipo) {
-    // Clonar para evitar listeners duplicados al recargar el módulo
     const nuevoInput = inputEquipo.cloneNode(true);
     inputEquipo.parentNode.replaceChild(nuevoInput, inputEquipo);
-    
     nuevoInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -108,7 +104,6 @@ async function buscarRentasModificar() {
     query = query.range(desde, hasta);
 
     const { data, error, count } = await query;
-
     if (error) throw error;
 
     rentasCache = data || [];
@@ -121,7 +116,7 @@ async function buscarRentasModificar() {
 }
 
 // ==========================================
-// ✅ RENDERIZAR TABLA DE RENTAS (CON ESTADO DINÁMICO)
+// RENDERIZAR TABLA DE RENTAS (CON ESTADO DINÁMICO)
 // ==========================================
 function renderizarTablaRentasModificar(totalRegistros) {
   const tbody = document.getElementById('tbodyRentas');
@@ -146,7 +141,7 @@ function renderizarTablaRentasModificar(totalRegistros) {
     const fechaInicio = new Date(renta.fecha_renta + 'T12:00:00').toLocaleDateString('es-ES');
     const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00').toLocaleDateString('es-ES');
     
-    // ✅ LÓGICA PARA DETERMINAR EL ESTADO REAL
+    // Lógica para determinar el estado real
     let estadoReal = renta.estado;
     if (renta.estado === 'activa' && renta.fecha_devolucion < hoy) {
       estadoReal = 'vencida';
@@ -197,7 +192,6 @@ function renderizarPaginacionModificar(totalRegistros) {
   if (!cont) return;
 
   const totalPaginas = Math.ceil(totalRegistros / POR_PAGINA_MODIFICAR);
-  
   if (totalPaginas <= 1) {
     cont.innerHTML = `<span style="color: #6b7280; font-size: 13px;">Total: ${totalRegistros} renta(s)</span>`;
     return;
@@ -207,20 +201,16 @@ function renderizarPaginacionModificar(totalRegistros) {
   html += `<button type="button" onclick="cambiarPaginaModificar(${paginaActualModificar - 1})" 
            style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px;"
            ${paginaActualModificar === 1 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>‹ Anterior</button>`;
-  
   html += `<span style="color: #374151; font-size: 13px; font-weight: 600;">Página ${paginaActualModificar} de ${totalPaginas}</span>`;
-  
   html += `<button type="button" onclick="cambiarPaginaModificar(${paginaActualModificar + 1})" 
            style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px;"
            ${paginaActualModificar === totalPaginas ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>Siguiente ›</button>`;
-  
   html += `<span style="color: #6b7280; font-size: 13px;">Total: ${totalRegistros}</span>`;
 
   cont.innerHTML = html;
 }
 
 async function cambiarPaginaModificar(nuevaPagina) {
-  // Necesitamos volver a consultar para obtener el count exacto
   await buscarRentasModificar();
   document.getElementById('fieldsetLista')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -238,7 +228,7 @@ function limpiarFiltrosModificar() {
 }
 
 // ==========================================
-// SELECCIONAR RENTA PARA EDITAR
+// ✅ SELECCIONAR RENTA PARA EDITAR (FECHAS CORREGIDAS)
 // ==========================================
 async function seleccionarRentaModificar(numeroRenta) {
   try {
@@ -269,32 +259,28 @@ async function seleccionarRentaModificar(numeroRenta) {
     document.getElementById('editClienteTelefono').value = renta.cliente_telefono || '';
     document.getElementById('editClienteEmail').value = renta.cliente_email || '';
     document.getElementById('editClienteDireccion').value = renta.cliente_direccion || '';
-    
-    // ✅ Aquí aplicamos la lógica: si está vencida, sugerimos actualizar la fecha de inicio a hoy
-    const hoy = new Date().toISOString().split('T')[0];
-    const elFechaRenta = document.getElementById('editFechaRenta');
-    const elFechaDevolucion = document.getElementById('editFechaDevolucion');
-
-    if (renta.estado === 'activa' && renta.fecha_devolucion < hoy) {
-      // Si está vencida, ponemos la fecha de hoy como nueva fecha de inicio por defecto
-      elFechaRenta.value = hoy;
-      // Y sumamos 7 días a la devolución (o puedes dejar la original si prefieres)
-      const nuevaDev = new Date();
-      nuevaDev.setDate(nuevaDev.getDate() + 7);
-      elFechaDevolucion.value = nuevaDev.toISOString().split('T')[0];
-    } else {
-      elFechaRenta.value = renta.fecha_renta || '';
-      elFechaDevolucion.value = renta.fecha_devolucion || '';
-    }
-
-    if (elFechaRenta) elFechaRenta.min = fechaHoyStrModificar;
-    if (elFechaDevolucion) elFechaDevolucion.min = fechaHoyStrModificar;
-
     document.getElementById('editIngenieroNombre').value = renta.ingeniero_nombre || '';
     document.getElementById('editIngenieroContacto').value = renta.ingeniero_contacto || '';
     document.getElementById('editEstado').value = renta.estado || 'activa';
     document.getElementById('editObservaciones').value = renta.observaciones || '';
     document.getElementById('editDescuento').value = renta.descuento || 0;
+
+    // ✅ CORRECCIÓN DE FECHAS: Permitir desde hoy en adelante
+    const elFechaRenta = document.getElementById('editFechaRenta');
+    const elFechaDevolucion = document.getElementById('editFechaDevolucion');
+    const hoy = new Date().toISOString().split('T')[0];
+
+    if (elFechaRenta) {
+      elFechaRenta.min = hoy; // Fuerza que el calendario empiece en hoy
+      elFechaRenta.value = hoy; // Establece hoy como valor por defecto al editar
+    }
+    if (elFechaDevolucion) {
+      elFechaDevolucion.min = hoy;
+      // Si la renta estaba vencida, sugerimos +7 días desde hoy
+      const nuevaDev = new Date();
+      nuevaDev.setDate(nuevaDev.getDate() + 7);
+      elFechaDevolucion.value = nuevaDev.toISOString().split('T')[0];
+    }
 
     if (elFechaRenta && elFechaDevolucion) {
       elFechaRenta.addEventListener('change', () => {
@@ -310,7 +296,6 @@ async function seleccionarRentaModificar(numeroRenta) {
 
     document.getElementById('fieldsetLista').style.display = 'none';
     document.getElementById('fieldsetEdicion').style.display = 'block';
-
     document.getElementById('fieldsetEdicion').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   } catch (err) {
@@ -450,7 +435,6 @@ async function agregarEquipoEdicion() {
 
     input.value = '';
     input.focus();
-
     renderizarItemsEdicion();
     calcularTotalesEdicion();
     mostrarMensajeModificar(`Equipo agregado: ${data.nombre_equipo}`, 'exito');
@@ -462,7 +446,7 @@ async function agregarEquipoEdicion() {
 }
 
 // ==========================================
-// GUARDAR CAMBIOS
+// ✅ GUARDAR CAMBIOS (SIN MENSAJES MOLESTOS Y BOTÓN SEGURO)
 // ==========================================
 async function guardarCambiosRenta() {
   if (!rentaEditando) return;
@@ -493,7 +477,10 @@ async function guardarCambiosRenta() {
   }
 
   const btnGuardar = document.getElementById('btnGuardarCambios');
-  if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = '⏳ Guardando...'; }
+  if (btnGuardar) { 
+    btnGuardar.disabled = true; 
+    btnGuardar.textContent = '⏳ Guardando...'; 
+  }
 
   try {
     const subtotal = itemsEdicion.reduce((sum, item) => sum + parseFloat(item.subtotal), 0);
@@ -553,21 +540,38 @@ async function guardarCambiosRenta() {
 
     mostrarMensajeModificar(`✅ Renta #${rentaEditando.numero_renta} modificada exitosamente`, 'exito');
 
+    // ✅ CORRECCIÓN: Resetear el formulario SILENCIOSAMENTE sin usar cancelarEdicion()
+    rentaEditando = null;
+    itemsEdicion = [];
+    document.getElementById('fieldsetLista').style.display = 'block';
+    document.getElementById('fieldsetEdicion').style.display = 'none';
+    
+    // Reactivar el botón inmediatamente
+    if (btnGuardar) {
+      btnGuardar.disabled = false;
+      btnGuardar.textContent = '💾 Guardar Cambios';
+    }
+
+    // Recargar la lista después de un breve momento
     setTimeout(() => {
-      cancelarEdicion();
       paginaActualModificar = 1;
       buscarRentasModificar();
-    }, 2000);
+    }, 1500);
 
   } catch (err) {
     console.error('Error al guardar cambios:', err);
     mostrarMensajeModificar('Error al guardar: ' + err.message, 'error');
-    if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Guardar Cambios'; }
+    
+    // ✅ CORRECCIÓN: Asegurar que el botón se reactive SIEMPRE en caso de error
+    if (btnGuardar) { 
+      btnGuardar.disabled = false; 
+      btnGuardar.textContent = '💾 Guardar Cambios'; 
+    }
   }
 }
 
 // ==========================================
-// CANCELAR EDICIÓN
+// CANCELAR EDICIÓN (Solo se usa si el usuario hace clic en "Cancelar")
 // ==========================================
 function cancelarEdicion() {
   if (itemsEdicion.length > 0 && !confirm('¿Cancelar la edición? Los cambios no guardados se perderán.')) {
@@ -580,6 +584,13 @@ function cancelarEdicion() {
   document.getElementById('fieldsetLista').style.display = 'block';
   document.getElementById('fieldsetEdicion').style.display = 'none';
 
+  // Reactivar el botón por si acaso
+  const btnGuardar = document.getElementById('btnGuardarCambios');
+  if (btnGuardar) {
+    btnGuardar.disabled = false;
+    btnGuardar.textContent = '💾 Guardar Cambios';
+  }
+
   document.getElementById('fieldsetLista').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -591,15 +602,9 @@ function mostrarMensajeModificar(texto, tipo) {
   if (msg) {
     msg.textContent = texto;
     msg.className = `mensaje ${tipo}`;
-    
-    setTimeout(() => {
-      msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
-    
+    setTimeout(() => { msg.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
     if (tipo === 'exito') {
-      setTimeout(() => { 
-        if (msg.classList.contains('exito')) msg.className = 'mensaje'; 
-      }, 5000);
+      setTimeout(() => { if (msg.classList.contains('exito')) msg.className = 'mensaje'; }, 5000);
     }
   }
 }
