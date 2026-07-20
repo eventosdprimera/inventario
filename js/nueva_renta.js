@@ -1,5 +1,5 @@
 // ==========================================
-// VARIABLES GLOBALES (ÚNICAS PARA ESTE MÓDULO)
+// VARIABLES GLOBALES
 // ==========================================
 let numeroRentaActual = null;
 let itemsRenta = [];
@@ -13,12 +13,26 @@ let autocompleteIndexActivo = -1;
 let fechaHoyStr = '';
 
 // ==========================================
-// INICIALIZACIÓN (LIMPIA Y BLINDADA)
+// ✅ FUNCIÓN PARA OBTENER LA FECHA DE HOY EN CARACAS (UTC-4)
+// ==========================================
+function obtenerFechaHoyCaracas() {
+  const opciones = { 
+    timeZone: 'America/Caracas', 
+    year: 'numeric', 
+    month: '2-digit', 
+    day: '2-digit' 
+  };
+  // El locale 'en-CA' garantiza que el formato de salida sea siempre YYYY-MM-DD
+  return new Date().toLocaleDateString('en-CA', opciones);
+}
+
+// ==========================================
+// INICIALIZACIÓN
 // ==========================================
 async function inicializarNuevaRenta() {
-  console.log('🤝 === INICIANDO NUEVA RENTA (LIMPIA) ===');
+  console.log('🤝 === INICIANDO NUEVA RENTA ===');
 
-  // 1. Resetear variables globales por seguridad
+  // 1. Resetear variables
   itemsRenta = [];
   rentaGuardadaId = null;
   autocompleteFiltro = '';
@@ -40,8 +54,8 @@ async function inicializarNuevaRenta() {
   await generarNumeroRenta();
   await cargarClientesExistentes();
   
-  const hoy = new Date();
-  fechaHoyStr = hoy.toISOString().split('T')[0];
+  // ✅ Usar la fecha de Caracas, ignorando la zona horaria de la computadora
+  fechaHoyStr = obtenerFechaHoyCaracas();
   
   const elFechaRenta = document.getElementById('fechaRenta');
   const elFechaDevolucion = document.getElementById('fechaDevolucion');
@@ -53,52 +67,46 @@ async function inicializarNuevaRenta() {
   }
   
   if (elFechaDevolucion) {
-    const fechaDev = new Date();
+    // Calcular fecha de devolución (+7 días) basada en la fecha de Caracas
+    const fechaDev = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"}));
     fechaDev.setDate(fechaDev.getDate() + 7);
-    elFechaDevolucion.value = fechaDev.toISOString().split('T')[0];
+    const devYear = fechaDev.getFullYear();
+    const devMonth = String(fechaDev.getMonth() + 1).padStart(2, '0');
+    const devDay = String(fechaDev.getDate()).padStart(2, '0');
+    elFechaDevolucion.value = `${devYear}-${devMonth}-${devDay}`;
     elFechaDevolucion.min = fechaHoyStr;
   }
   
   if (elFechaEmision) {
-    elFechaEmision.textContent = hoy.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+    const fechaCaracasObj = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"}));
+    elFechaEmision.textContent = fechaCaracasObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
   }
 
   if (elFechaRenta && elFechaDevolucion) {
-    // Eliminar listeners previos clonando el nodo (previene acumulación)
-    const nuevoFechaRenta = elFechaRenta.cloneNode(true);
-    elFechaRenta.parentNode.replaceChild(nuevoFechaRenta, elFechaRenta);
-    
-    nuevoFechaRenta.addEventListener('change', () => {
-      const elDev = document.getElementById('fechaDevolucion');
-      if (elDev) {
-        elDev.min = nuevoFechaRenta.value;
-        if (elDev.value && elDev.value < nuevoFechaRenta.value) {
-          elDev.value = nuevoFechaRenta.value;
-        }
+    elFechaRenta.addEventListener('change', () => {
+      elFechaDevolucion.min = elFechaRenta.value;
+      if (elFechaDevolucion.value && elFechaDevolucion.value < elFechaRenta.value) {
+        elFechaDevolucion.value = elFechaRenta.value;
       }
     });
   }
 
-  // 2. Configurar input de búsqueda (UN SOLO BLOQUE, SIN DUPLICADOS)
+  // 2. Configurar input de búsqueda (SIN FOCO AUTOMÁTICO para que el usuario empiece por el cliente)
   const inputBusqueda = document.getElementById('buscarEquipoInput');
   if (inputBusqueda) {
-    // Clonar para eliminar listeners antiguos acumulados
     const nuevoInput = inputBusqueda.cloneNode(true);
     inputBusqueda.parentNode.replaceChild(nuevoInput, inputBusqueda);
     
-    // Convertir a mayúsculas mientras se escribe
     nuevoInput.addEventListener('input', (e) => {
       const cursorPos = e.target.selectionStart;
       e.target.value = e.target.value.toUpperCase();
       e.target.setSelectionRange(cursorPos, cursorPos);
     });
     
-    // Formatear al perder el foco
     nuevoInput.addEventListener('blur', (e) => {
       formatearCodigoBarras(e.target);
     });
     
-    // Formatear y buscar al presionar Enter
     nuevoInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -106,12 +114,9 @@ async function inicializarNuevaRenta() {
         agregarEquipo();
       }
     });
-    
-    // Foco automático al cargar
-    setTimeout(() => nuevoInput.focus(), 100);
   }
 
-  // 3. Filtrar solo números en teléfono
+  // Filtrar solo números en teléfono
   const inputTelefono = document.getElementById('clienteTelefono');
   if (inputTelefono) {
     const nuevoTel = inputTelefono.cloneNode(true);
@@ -126,12 +131,10 @@ async function inicializarNuevaRenta() {
   }
 
   configurarAutocompleteCliente();
-  
-  // Renderizar tabla vacía al inicio
   renderizarTablaItems();
   calcularTotales();
 
-  console.log('✅ === NUEVA RENTA INICIALIZADA CORRECTAMENTE ===');
+  console.log('✅ === NUEVA RENTA INICIALIZADA ===');
 }
 
 // ==========================================
@@ -186,7 +189,9 @@ async function cargarUsuario() {
 // ==========================================
 async function generarNumeroRenta() {
   try {
-    const año = new Date().getFullYear();
+    // Usamos el año de Caracas para generar el número de renta
+    const fechaCaracas = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"}));
+    const año = fechaCaracas.getFullYear();
     const serie = 'RENT';
     
     const { data, error } = await supabaseClient
@@ -223,10 +228,7 @@ async function cargarClientesExistentes() {
       .not('cliente_nombre', 'is', null)
       .order('cliente_nombre', { ascending: true });
 
-    if (error) {
-      console.error('Error al cargar clientes:', error);
-      return;
-    }
+    if (error) return;
 
     const unicos = new Map();
     (data || []).forEach(r => {
@@ -262,7 +264,6 @@ function configurarAutocompleteCliente() {
     autocompleteIndexActivo = -1;
   };
 
-  // Clonar para evitar listeners duplicados
   const nuevoInput = input.cloneNode(true);
   input.parentNode.replaceChild(nuevoInput, input);
 
@@ -329,10 +330,7 @@ function renderizarAutocomplete() {
     return;
   }
 
-  const filtrados = clientesCache.filter(c => 
-    c.nombre.toLowerCase().startsWith(autocompleteFiltro)
-  );
-
+  const filtrados = clientesCache.filter(c => c.nombre.toLowerCase().startsWith(autocompleteFiltro));
   if (filtrados.length === 0) {
     lista.classList.remove('visible');
     lista.innerHTML = '';
@@ -374,9 +372,7 @@ function renderizarAutocomplete() {
 }
 
 function cambiarPaginaAutocomplete(nuevaPagina) {
-  const filtrados = clientesCache.filter(c => 
-    c.nombre.toLowerCase().startsWith(autocompleteFiltro)
-  );
+  const filtrados = clientesCache.filter(c => c.nombre.toLowerCase().startsWith(autocompleteFiltro));
   const totalPaginas = Math.ceil(filtrados.length / AUTOCOMPLETE_POR_PAGINA);
   if (nuevaPagina < 1 || nuevaPagina > totalPaginas) return;
   autocompletePagina = nuevaPagina;
@@ -447,7 +443,7 @@ if (!document.getElementById('toastStyles')) {
 }
 
 // ==========================================
-// AGREGAR EQUIPO (BLINDADO)
+// AGREGAR EQUIPO
 // ==========================================
 async function agregarEquipo() {
   const input = document.getElementById('buscarEquipoInput');
@@ -460,7 +456,6 @@ async function agregarEquipo() {
     return;
   }
 
-  // Formatear
   let codigoLimpio = codigo.replace(/-/g, '').toUpperCase();
   let codigoFormateado = '';
   if (codigoLimpio.length > 0) codigoFormateado = codigoLimpio.substring(0, 2);
@@ -484,7 +479,6 @@ async function agregarEquipo() {
       return;
     }
 
-    // Verificar si ya está en la lista (comparación robusta)
     const existe = itemsRenta.some(item => item.codigo_barras === data.codigo_barras);
     if (existe) {
       mostrarToast('⚠️ Este equipo ya está en la lista de esta renta', 'error');
@@ -510,7 +504,6 @@ async function agregarEquipo() {
 
     renderizarTablaItems();
     calcularTotales();
-    
     mostrarToast(`✅ Equipo agregado: ${data.nombre_equipo}`, 'exito');
 
   } catch (err) {
@@ -621,7 +614,7 @@ async function guardarRenta() {
   }
   
   if (fechaRenta < fechaHoyStr) {
-    mostrarMensaje('La fecha de inicio no puede ser anterior al día actual', 'error');
+    mostrarMensaje('La fecha de inicio no puede ser anterior al día actual (Caracas)', 'error');
     return;
   }
   
@@ -902,25 +895,29 @@ function limpiarFormulario() {
   const btnGuardar = document.getElementById('btnGuardar');
   if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Guardar Renta'; }
   
-  const hoy = new Date();
-  const fechaHoy = hoy.toISOString().split('T')[0];
+  // ✅ CORRECCIÓN: Usar la misma lógica de fecha de Caracas al limpiar
+  const fechaHoyCaracas = obtenerFechaHoyCaracas();
   
   const elFechaRenta = document.getElementById('fechaRenta');
   const elFechaDevolucion = document.getElementById('fechaDevolucion');
   const fechaEmision = document.getElementById('fechaEmision');
   
   if (elFechaRenta) {
-    elFechaRenta.value = fechaHoy;
-    elFechaRenta.min = fechaHoy;
+    elFechaRenta.value = fechaHoyCaracas;
+    elFechaRenta.min = fechaHoyCaracas;
   }
   if (elFechaDevolucion) {
-    const fechaDev = new Date();
+    const fechaDev = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"}));
     fechaDev.setDate(fechaDev.getDate() + 7);
-    elFechaDevolucion.value = fechaDev.toISOString().split('T')[0];
-    elFechaDevolucion.min = fechaHoy;
+    const devYear = fechaDev.getFullYear();
+    const devMonth = String(fechaDev.getMonth() + 1).padStart(2, '0');
+    const devDay = String(fechaDev.getDate()).padStart(2, '0');
+    elFechaDevolucion.value = `${devYear}-${devMonth}-${devDay}`;
+    elFechaDevolucion.min = fechaHoyCaracas;
   }
   if (fechaEmision) {
-    fechaEmision.textContent = hoy.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+    const fechaCaracasObj = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"}));
+    fechaEmision.textContent = fechaCaracasObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
   }
   
   const lista = document.getElementById('autocompleteList');
