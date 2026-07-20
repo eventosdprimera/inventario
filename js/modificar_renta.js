@@ -10,7 +10,7 @@ let usuarioActualModificarRenta = null;
 let fechaHoyStrModificar = '';
 
 // ==========================================
-// ✅ FUNCIÓN  OBTENER LA FECHA DE HOY EN CARACAS (UTC-4)
+// ✅ FUNCIÓN PARA OBTENER LA FECHA DE HOY EN CARACAS (UTC-4)
 // ==========================================
 function obtenerFechaHoyCaracas() {
   const opciones = { 
@@ -26,7 +26,7 @@ function obtenerFechaHoyCaracas() {
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarModificarRenta() {
-  console.log(' === INICIANDO MODIFICAR RENTA ===');
+  console.log('📝 === INICIANDO MODIFICAR RENTA ===');
 
   fechaHoyStrModificar = obtenerFechaHoyCaracas();
   console.log('📅 Fecha de hoy (Caracas):', fechaHoyStrModificar);
@@ -94,7 +94,7 @@ async function cargarUsuarioModificar() {
 }
 
 // ==========================================
-// BUSCAR RENTAS CON FILTROS
+// ✅ BUSCAR RENTAS (EXCLUYENDO TERMINADAS/DEVUELTAS)
 // ==========================================
 async function buscarRentasModificar() {
   const filtroCliente = document.getElementById('filtroCliente')?.value.trim() || '';
@@ -103,9 +103,13 @@ async function buscarRentasModificar() {
   const filtroHasta = document.getElementById('filtroFechaHasta')?.value || '';
 
   try {
+    // ✅ CAPA DE SEGURIDAD 1: Excluir explícitamente estados cerrados
     let query = supabaseClient
       .from('rentas')
       .select('*', { count: 'exact' })
+      .neq('estado', 'devuelta')
+      .neq('estado', 'cancelada')
+      .neq('estado', 'terminada')
       .order('fecha_creacion', { ascending: false });
 
     if (filtroCliente) query = query.ilike('cliente_nombre', `%${filtroCliente}%`);
@@ -141,7 +145,7 @@ function renderizarTablaRentasModificar(totalRegistros) {
       <tr>
         <td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">
           <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
-          <div>No se encontraron rentas con los filtros aplicados</div>
+          <div>No se encontraron rentas modificables con los filtros aplicados</div>
         </td>
       </tr>`;
     document.getElementById('paginacion').innerHTML = '';
@@ -241,18 +245,20 @@ function limpiarFiltrosModificar() {
 }
 
 // ==========================================
-// ✅ SELECCIONAR RENTA PARA EDITAR (MUESTRA FECHAS ORIGINALES)
+// ✅ SELECCIONAR RENTA PARA EDITAR (CON VALIDACIÓN DE ESTADO)
 // ==========================================
 async function seleccionarRentaModificar(numeroRenta) {
   try {
+    // ✅ CAPA DE SEGURIDAD 2: Solo permitir cargar si el estado es 'activa' o 'vencida'
     const { data: renta, error } = await supabaseClient
       .from('rentas')
       .select('*')
       .eq('numero_renta', numeroRenta)
+      .in('estado', ['activa', 'vencida']) // Bloquea 'devuelta', 'cancelada' o 'terminada'
       .single();
 
     if (error || !renta) {
-      mostrarMensajeModificar('No se pudo cargar la renta', 'error');
+      mostrarMensajeModificar('No se pudo cargar la renta o ya ha sido terminada/devuelta', 'error');
       return;
     }
 
@@ -267,7 +273,6 @@ async function seleccionarRentaModificar(numeroRenta) {
     rentaEditando = renta;
     itemsEdicion = items || [];
 
-    // ✅ Cargar TODOS los datos originales de la renta
     document.getElementById('editNumeroRenta').textContent = ` - ${renta.numero_renta}`;
     document.getElementById('editClienteNombre').value = renta.cliente_nombre || '';
     document.getElementById('editClienteTelefono').value = renta.cliente_telefono || '';
@@ -279,18 +284,16 @@ async function seleccionarRentaModificar(numeroRenta) {
     document.getElementById('editObservaciones').value = renta.observaciones || '';
     document.getElementById('editDescuento').value = renta.descuento || 0;
 
-    // ✅ MOSTRAR LAS FECHAS ORIGINALES CON LAS QUE SE GUARDÓ
     const elFechaRenta = document.getElementById('editFechaRenta');
     const elFechaDevolucion = document.getElementById('editFechaDevolucion');
 
     if (elFechaRenta && renta.fecha_renta) {
-      elFechaRenta.value = renta.fecha_renta; // Fecha original guardada
+      elFechaRenta.value = renta.fecha_renta;
     }
     if (elFechaDevolucion && renta.fecha_devolucion) {
-      elFechaDevolucion.value = renta.fecha_devolucion; // Fecha original guardada
+      elFechaDevolucion.value = renta.fecha_devolucion;
     }
 
-    // Configurar evento de cambio de fecha
     if (elFechaRenta && elFechaDevolucion) {
       elFechaRenta.addEventListener('change', () => {
         elFechaDevolucion.min = elFechaRenta.value;
@@ -618,7 +621,7 @@ function mostrarMensajeModificar(texto, tipo) {
 }
 
 // ==========================================
-// ✅ IMPRIMIR COMPROBANTE (CON ESTADO CORRECTO SEGÚN FECHAS)
+// IMPRIMIR COMPROBANTE DE RENTA MODIFICADA
 // ==========================================
 function imprimirComprobanteModificacion() {
   if (!rentaEditando) {
@@ -639,17 +642,11 @@ function imprimirComprobanteModificacion() {
   const descuento = document.getElementById('editDescuento')?.value || '0';
   const total = document.getElementById('editTotal')?.textContent || '$0.00';
   
-  // ✅ Leer estado de la BD
   let estado = document.getElementById('editEstado')?.value || 'activa';
-  
-  // ✅ CALCULAR ESTADO REAL BASADO EN FECHAS (Zona Horaria Caracas)
   const hoyCaracas = obtenerFechaHoyCaracas();
-  console.log('🖨️ Imprimiendo - Hoy Caracas:', hoyCaracas);
-  console.log('📅 Fecha devolución:', fechaDevolucion, '| Estado BD:', estado);
   
   if (estado === 'activa' && fechaDevolucion && fechaDevolucion <= hoyCaracas) {
     estado = 'vencida';
-    console.log('⚠️ Comprobante mostrará: VENCIDA');
   }
 
   const logoUrl = new URL('img/logo.png', window.location.href).href;
