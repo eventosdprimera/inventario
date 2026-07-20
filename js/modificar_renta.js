@@ -634,7 +634,7 @@ function mostrarMensajeModificar(texto, tipo) {
 }
 
 // ==========================================
-// IMPRIMIR COMPROBANTE DE RENTA MODIFICADA
+// IMPRIMIR COMPROBANTE DE RENTA MODIFICADA (CORREGIDO)
 // ==========================================
 function imprimirComprobanteModificacion() {
   if (!rentaEditando) {
@@ -654,7 +654,15 @@ function imprimirComprobanteModificacion() {
   const subtotal = document.getElementById('editSubtotal')?.textContent || '$0.00';
   const descuento = document.getElementById('editDescuento')?.value || '0';
   const total = document.getElementById('editTotal')?.textContent || '$0.00';
-  const estado = document.getElementById('editEstado')?.value || 'activa';
+  
+  // ✅ CORRECCIÓN: Leer el estado de la base de datos
+  let estado = document.getElementById('editEstado')?.value || 'activa';
+  
+  // ✅ APLICAR LÓGICA DE VENCIDO (Caracas) PARA LA IMPRESIÓN
+  const hoyCaracas = obtenerFechaHoyCaracas();
+  if (estado === 'activa' && fechaDevolucion && fechaDevolucion <= hoyCaracas) {
+    estado = 'vencida';
+  }
 
   const logoUrl = new URL('img/logo.png', window.location.href).href;
 
@@ -726,12 +734,12 @@ function imprimirComprobanteModificacion() {
   </div>
 
   <div class="reimpresion-aviso">
-    📄 Documento reimpreso el ${new Date().toLocaleString('es-ES')}
+     Documento reimpreso el ${new Date().toLocaleString('es-ES')}
   </div>
 
   <div class="info-grid">
     <div class="info-box">
-      <h3>👤 Cliente / Responsable</h3>
+      <h3> Cliente / Responsable</h3>
       <p><strong>Nombre:</strong> ${clienteNombre}</p>
       <p><strong>Teléfono:</strong> ${clienteTel}</p>
       <p><strong>Email:</strong> ${clienteEmail}</p>
@@ -753,7 +761,7 @@ function imprimirComprobanteModificacion() {
     </div>
   </div>
 
-  <h3 style="margin: 20px 0 10px 0; color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 5px;">📦 Equipos Rentados (${itemsEdicion.length})</h3>
+  <h3 style="margin: 20px 0 10px 0; color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 5px;"> Equipos Rentados (${itemsEdicion.length})</h3>
   <table>
     <thead>
       <tr>
