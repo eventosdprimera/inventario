@@ -9,6 +9,19 @@ let itemsEliminarSeleccionada = [];
 let usuarioActualEliminarRenta = null;
 
 // ==========================================
+// ✅ FUNCIÓN PARA OBTENER LA FECHA DE HOY EN CARACAS (UTC-4)
+// ==========================================
+function obtenerFechaHoyCaracas() {
+  const opciones = { 
+    timeZone: 'America/Caracas', 
+    year: 'numeric', 
+    month: '2-digit', 
+    day: '2-digit' 
+  };
+  return new Date().toLocaleDateString('en-CA', opciones); // Retorna "YYYY-MM-DD"
+}
+
+// ==========================================
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarEliminarRenta() {
@@ -68,7 +81,7 @@ async function buscarRentasEliminar() {
     let query = supabaseClient
       .from('rentas')
       .select('*', { count: 'exact' })
-      .order('fecha_renta', { ascending: false });
+      .order('fecha_creacion', { ascending: false });
 
     if (filtroCliente) query = query.ilike('cliente_nombre', `%${filtroCliente}%`);
     if (filtroNumero) query = query.ilike('numero_renta', `%${filtroNumero}%`);
@@ -92,7 +105,7 @@ async function buscarRentasEliminar() {
 }
 
 // ==========================================
-// ✅ RENDERIZAR TABLA DE RENTAS (CON ESTADO DINÁMICO)
+// ✅ RENDERIZAR TABLA DE RENTAS (CON ESTADO DINÁMICO EN TIEMPO REAL)
 // ==========================================
 function renderizarTablaRentasEliminar(totalRegistros) {
   const tbody = document.getElementById('tbodyRentasEliminar');
@@ -110,17 +123,26 @@ function renderizarTablaRentasEliminar(totalRegistros) {
     return;
   }
 
-  const hoy = new Date().toISOString().split('T')[0];
+  // ✅ Obtener fecha de hoy en Caracas para comparación en tiempo real
+  const hoyCaracas = obtenerFechaHoyCaracas();
+  console.log('🔍 Evaluando fechas. Hoy en Caracas es:', hoyCaracas);
 
   tbody.innerHTML = rentasCacheEliminar.map((renta, index) => {
     const globalIndex = (paginaActualEliminar - 1) * POR_PAGINA_ELIMINAR + index + 1;
     const fechaInicio = new Date(renta.fecha_renta + 'T12:00:00').toLocaleDateString('es-ES');
     const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00').toLocaleDateString('es-ES');
     
-    // ✅ LÓGICA PARA DETERMINAR EL ESTADO REAL (Igual que en Modificar)
+    // ✅ LÓGICA CLAVE: Normalizar la fecha de la BD a "YYYY-MM-DD" puro para comparar con seguridad
+    const fechaDevStr = renta.fecha_devolucion ? renta.fecha_devolucion.split('T')[0] : '';
+    
     let estadoReal = renta.estado;
-    if (renta.estado === 'activa' && renta.fecha_devolucion < hoy) {
+    
+    // Mensaje de depuración en consola para cada renta
+    console.log(`📌 Renta: ${renta.numero_renta} | Estado BD: "${renta.estado}" | Devolución BD: "${fechaDevStr}" | ¿Es <= hoy (${hoyCaracas})? ${fechaDevStr <= hoyCaracas}`);
+
+    if (renta.estado === 'activa' && fechaDevStr && fechaDevStr <= hoyCaracas) {
       estadoReal = 'vencida';
+      console.log(`⚠️ ALERTA VISUAL: ${renta.numero_renta} forzada a mostrarse como VENCIDA`);
     }
 
     const estadoColors = {
