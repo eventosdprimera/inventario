@@ -655,14 +655,20 @@ function imprimirComprobanteModificacion() {
   const descuento = document.getElementById('editDescuento')?.value || '0';
   const total = document.getElementById('editTotal')?.textContent || '$0.00';
   
-  // ✅ CORRECCIÓN: Leer el estado de la base de datos
-  let estado = document.getElementById('editEstado')?.value || 'activa';
-  
-  // ✅ APLICAR LÓGICA DE VENCIDO (Caracas) PARA LA IMPRESIÓN
-  const hoyCaracas = obtenerFechaHoyCaracas();
-  if (estado === 'activa' && fechaDevolucion && fechaDevolucion <= hoyCaracas) {
-    estado = 'vencida';
-  }
+// ✅ Leer el estado de la base de datos
+let estado = document.getElementById('editEstado')?.value || 'activa';
+
+// ✅ APLICAR LÓGICA DE VENCIDO (Caracas) PARA LA IMPRESIÓN
+const hoyCaracas = obtenerFechaHoyCaracas();
+console.log('️ Imprimiendo comprobante - Hoy Caracas:', hoyCaracas);
+console.log('🖨️ Fecha devolución:', fechaDevolucion, '| Estado BD:', estado);
+
+if (estado === 'activa' && fechaDevolucion && fechaDevolucion <= hoyCaracas) {
+  estado = 'vencida';
+  console.log('️ Comprobante mostrará estado: VENCIDA');
+} else {
+  console.log('✅ Comprobante mostrará estado:', estado);
+}
 
   const logoUrl = new URL('img/logo.png', window.location.href).href;
 
