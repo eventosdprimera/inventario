@@ -1,5 +1,5 @@
 // ==========================================
-// VARIABLES GLOBALES
+// VARIABLES GLOBALES (ÚNICAS PARA ESTE MÓDULO)
 // ==========================================
 let numeroRentaActual = null;
 let itemsRenta = [];
@@ -13,10 +13,17 @@ let autocompleteIndexActivo = -1;
 let fechaHoyStr = '';
 
 // ==========================================
-// INICIALIZACIÓN
+// INICIALIZACIÓN (LIMPIA Y BLINDADA)
 // ==========================================
 async function inicializarNuevaRenta() {
-  console.log('🤝 === INICIANDO NUEVA RENTA ===');
+  console.log('🤝 === INICIANDO NUEVA RENTA (LIMPIA) ===');
+
+  // 1. Resetear variables globales por seguridad
+  itemsRenta = [];
+  rentaGuardadaId = null;
+  autocompleteFiltro = '';
+  autocompletePagina = 1;
+  autocompleteIndexActivo = -1;
 
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
@@ -57,119 +64,97 @@ async function inicializarNuevaRenta() {
   }
 
   if (elFechaRenta && elFechaDevolucion) {
-    elFechaRenta.addEventListener('change', () => {
-      elFechaDevolucion.min = elFechaRenta.value;
-      if (elFechaDevolucion.value && elFechaDevolucion.value < elFechaRenta.value) {
-        elFechaDevolucion.value = elFechaRenta.value;
+    // Eliminar listeners previos clonando el nodo (previene acumulación)
+    const nuevoFechaRenta = elFechaRenta.cloneNode(true);
+    elFechaRenta.parentNode.replaceChild(nuevoFechaRenta, elFechaRenta);
+    
+    nuevoFechaRenta.addEventListener('change', () => {
+      const elDev = document.getElementById('fechaDevolucion');
+      if (elDev) {
+        elDev.min = nuevoFechaRenta.value;
+        if (elDev.value && elDev.value < nuevoFechaRenta.value) {
+          elDev.value = nuevoFechaRenta.value;
+        }
       }
     });
   }
 
-  // ✅ NUEVO: Formateo automático del código de barras (mayúsculas + guiones automáticos)
+  // 2. Configurar input de búsqueda (UN SOLO BLOQUE, SIN DUPLICADOS)
   const inputBusqueda = document.getElementById('buscarEquipoInput');
   if (inputBusqueda) {
-    // Event listener para formatear en tiempo real
-    inputBusqueda.addEventListener('input', (e) => {
+    // Clonar para eliminar listeners antiguos acumulados
+    const nuevoInput = inputBusqueda.cloneNode(true);
+    inputBusqueda.parentNode.replaceChild(nuevoInput, inputBusqueda);
+    
+    // Convertir a mayúsculas mientras se escribe
+    nuevoInput.addEventListener('input', (e) => {
+      const cursorPos = e.target.selectionStart;
+      e.target.value = e.target.value.toUpperCase();
+      e.target.setSelectionRange(cursorPos, cursorPos);
+    });
+    
+    // Formatear al perder el foco
+    nuevoInput.addEventListener('blur', (e) => {
       formatearCodigoBarras(e.target);
     });
     
-    // Event listener para Enter
-    inputBusqueda.addEventListener('keypress', (e) => {
+    // Formatear y buscar al presionar Enter
+    nuevoInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
+        formatearCodigoBarras(e.target);
         agregarEquipo();
       }
     });
+    
+    // Foco automático al cargar
+    setTimeout(() => nuevoInput.focus(), 100);
   }
 
-  // Filtrar solo números en teléfono (11 dígitos)
+  // 3. Filtrar solo números en teléfono
   const inputTelefono = document.getElementById('clienteTelefono');
   if (inputTelefono) {
-    inputTelefono.addEventListener('input', (e) => {
+    const nuevoTel = inputTelefono.cloneNode(true);
+    inputTelefono.parentNode.replaceChild(nuevoTel, inputTelefono);
+    
+    nuevoTel.addEventListener('input', (e) => {
       e.target.value = e.target.value.replace(/[^0-9]/g, '');
       if (e.target.value.length > 11) {
         e.target.value = e.target.value.slice(0, 11);
       }
     });
-    inputTelefono.addEventListener('keypress', (e) => {
-      if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
-        e.preventDefault();
-      }
-    });
   }
 
   configurarAutocompleteCliente();
+  
+  // Renderizar tabla vacía al inicio
+  renderizarTablaItems();
+  calcularTotales();
 
-  console.log('✅ === NUEVA RENTA INICIALIZADA ===');
+  console.log('✅ === NUEVA RENTA INICIALIZADA CORRECTAMENTE ===');
 }
 
 // ==========================================
-// FORMATEAR CÓDIGO DE BARRAS (solo al perder foco o Enter)
+// FORMATEAR CÓDIGO DE BARRAS
 // ==========================================
 function formatearCodigoBarras(input) {
   let valor = input.value.trim();
   if (!valor) return;
   
-  // 1. Eliminar cualquier guion existente
-  valor = valor.replace(/-/g, '');
+  valor = valor.replace(/-/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   
-  // 2. Convertir a mayúsculas
-  valor = valor.toUpperCase();
-  
-  // 3. Eliminar cualquier carácter que no sea letra o número
-  valor = valor.replace(/[^A-Z0-9]/g, '');
-  
-  // 4. Insertar guiones automáticamente en las posiciones correctas
-  // Formato: XX-XXXXXXXX-XXXXXX-XXXXXX (2-8-6-6)
   let formateado = '';
+  if (valor.length > 0) formateado = valor.substring(0, 2);
+  if (valor.length > 2) formateado += '-' + valor.substring(2, 10);
+  if (valor.length > 10) formateado += '-' + valor.substring(10, 16);
+  if (valor.length > 16) formateado += '-' + valor.substring(16, 22);
   
-  if (valor.length > 0) {
-    formateado = valor.substring(0, 2);
-  }
-  if (valor.length > 2) {
-    formateado += '-' + valor.substring(2, 10);
-  }
-  if (valor.length > 10) {
-    formateado += '-' + valor.substring(10, 16);
-  }
-  if (valor.length > 16) {
-    formateado += '-' + valor.substring(16, 22);
-  }
-  
-  // Limitar a 22 caracteres sin guiones
   if (valor.length > 22) {
     valor = valor.substring(0, 22);
     formateado = valor.substring(0, 2) + '-' + valor.substring(2, 10) + '-' + valor.substring(10, 16) + '-' + valor.substring(16, 22);
   }
   
   input.value = formateado;
-}
-
-// En la inicialización, reemplaza los event listeners del inputBusqueda por estos:
-const inputBusqueda = document.getElementById('buscarEquipoInput');
-if (inputBusqueda) {
-  // Convertir a mayúsculas mientras se escribe (sin formatear aún)
-  inputBusqueda.addEventListener('input', (e) => {
-    // Solo convertir a mayúsculas, no formatear
-    const cursorPos = e.target.selectionStart;
-    e.target.value = e.target.value.toUpperCase();
-    // Mantener posición del cursor
-    e.target.setSelectionRange(cursorPos, cursorPos);
-  });
-  
-  // Formatear al perder el foco
-  inputBusqueda.addEventListener('blur', (e) => {
-    formatearCodigoBarras(e.target);
-  });
-  
-  // Formatear al presionar Enter (antes de buscar)
-  inputBusqueda.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      formatearCodigoBarras(e.target);
-      agregarEquipo();
-    }
-  });
 }
 
 // ==========================================
@@ -224,8 +209,6 @@ async function generarNumeroRenta() {
     
   } catch (err) {
     console.error('Error al generar número:', err);
-    const elNumero = document.getElementById('numeroRenta');
-    if (elNumero) elNumero.textContent = 'Error';
   }
 }
 
@@ -258,7 +241,6 @@ async function cargarClientesExistentes() {
     });
 
     clientesCache = Array.from(unicos.values());
-    console.log(`✅ ${clientesCache.length} clientes cargados para autocomplete`);
   } catch (err) {
     console.error('Error al cargar clientes:', err);
   }
@@ -280,7 +262,11 @@ function configurarAutocompleteCliente() {
     autocompleteIndexActivo = -1;
   };
 
-  input.addEventListener('input', (e) => {
+  // Clonar para evitar listeners duplicados
+  const nuevoInput = input.cloneNode(true);
+  input.parentNode.replaceChild(nuevoInput, input);
+
+  nuevoInput.addEventListener('input', (e) => {
     const valor = e.target.value.trim();
     if (!valor) {
       ocultarLista();
@@ -292,7 +278,7 @@ function configurarAutocompleteCliente() {
     renderizarAutocomplete();
   });
 
-  input.addEventListener('focus', (e) => {
+  nuevoInput.addEventListener('focus', (e) => {
     const valor = e.target.value.trim();
     if (valor) {
       autocompleteFiltro = valor.toLowerCase();
@@ -301,7 +287,7 @@ function configurarAutocompleteCliente() {
     }
   });
 
-  input.addEventListener('keydown', (e) => {
+  nuevoInput.addEventListener('keydown', (e) => {
     const items = lista.querySelectorAll('.autocomplete-item');
     if (!lista.classList.contains('visible') || items.length === 0) {
       if (e.key === 'Escape') ocultarLista();
@@ -327,7 +313,7 @@ function configurarAutocompleteCliente() {
   });
 
   document.addEventListener('click', (e) => {
-    if (!input.contains(e.target) && !lista.contains(e.target)) {
+    if (!nuevoInput.contains(e.target) && !lista.contains(e.target)) {
       ocultarLista();
     }
   });
@@ -408,9 +394,13 @@ function actualizarItemActivo(items) {
 }
 
 function seleccionarCliente(nombre, telefono, email) {
-  document.getElementById('clienteNombre').value = nombre;
-  if (telefono) document.getElementById('clienteTelefono').value = telefono;
-  if (email) document.getElementById('clienteEmail').value = email;
+  const inputNombre = document.getElementById('clienteNombre');
+  const inputTel = document.getElementById('clienteTelefono');
+  const inputEmail = document.getElementById('clienteEmail');
+  
+  if (inputNombre) inputNombre.value = nombre;
+  if (inputTel && telefono) inputTel.value = telefono;
+  if (inputEmail && email) inputEmail.value = email;
   
   const lista = document.getElementById('autocompleteList');
   if (lista) {
@@ -427,10 +417,7 @@ function mostrarToast(texto, tipo) {
   if (!toastContainer) {
     toastContainer = document.createElement('div');
     toastContainer.id = 'toastContainer';
-    toastContainer.style.cssText = `
-      position: fixed; top: 80px; right: 20px; z-index: 9999;
-      display: flex; flex-direction: column; gap: 10px; max-width: 350px;
-    `;
+    toastContainer.style.cssText = `position: fixed; top: 80px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 350px;`;
     document.body.appendChild(toastContainer);
   }
 
@@ -439,21 +426,11 @@ function mostrarToast(texto, tipo) {
   const borderColor = tipo === 'exito' ? '#10b981' : (tipo === 'error' ? '#dc2626' : '#f59e0b');
   const textColor = tipo === 'exito' ? '#065f46' : (tipo === 'error' ? '#991b1b' : '#92400e');
   
-  toast.style.cssText = `
-    background: ${bgColor}; border-left: 4px solid ${borderColor}; color: ${textColor};
-    padding: 14px 18px; border-radius: 8px; font-size: 14px; font-family: 'Poppins', sans-serif;
-    font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: toastSlideIn 0.3s ease;
-    display: flex; align-items: center; gap: 10px;
-  `;
+  toast.style.cssText = `background: ${bgColor}; border-left: 4px solid ${borderColor}; color: ${textColor}; padding: 14px 18px; border-radius: 8px; font-size: 14px; font-family: 'Poppins', sans-serif; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: toastSlideIn 0.3s ease; display: flex; align-items: center; gap: 10px;`;
   
-  toast.innerHTML = `
-    <span style="font-size: 18px;">${tipo === 'exito' ? '✅' : (tipo === 'error' ? '️' : 'ℹ️')}</span>
-    <span style="flex: 1;">${texto}</span>
-    <span onclick="this.parentElement.remove()" style="cursor: pointer; font-size: 18px; opacity: 0.6;"></span>
-  `;
+  toast.innerHTML = `<span style="font-size: 18px;">${tipo === 'exito' ? '✅' : (tipo === 'error' ? '⚠️' : 'ℹ️')}</span><span style="flex: 1;">${texto}</span><span onclick="this.parentElement.remove()" style="cursor: pointer; font-size: 18px; opacity: 0.6;">✕</span>`;
 
   toastContainer.appendChild(toast);
-
   setTimeout(() => {
     if (toast.parentElement) {
       toast.style.animation = 'toastSlideOut 0.3s ease forwards';
@@ -465,15 +442,12 @@ function mostrarToast(texto, tipo) {
 if (!document.getElementById('toastStyles')) {
   const style = document.createElement('style');
   style.id = 'toastStyles';
-  style.textContent = `
-    @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    @keyframes toastSlideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
-  `;
+  style.textContent = `@keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } } @keyframes toastSlideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }`;
   document.head.appendChild(style);
 }
 
-/// ==========================================
-// AGREGAR EQUIPO (CORREGIDO - mantiene guiones)
+// ==========================================
+// AGREGAR EQUIPO (BLINDADO)
 // ==========================================
 async function agregarEquipo() {
   const input = document.getElementById('buscarEquipoInput');
@@ -482,35 +456,21 @@ async function agregarEquipo() {
   let codigo = input.value.trim();
   if (!codigo) {
     mostrarToast('Por favor ingrese un código de barras o serial', 'error');
-    input.value = '';
     input.focus();
     return;
   }
 
-  // ✅ CORRECCIÓN: Formatear el código (agregar guiones si faltan)
-  // Primero eliminamos guiones existentes para normalizar
+  // Formatear
   let codigoLimpio = codigo.replace(/-/g, '').toUpperCase();
-  
-  // Luego aplicamos el formateo para agregar guiones en las posiciones correctas
   let codigoFormateado = '';
-  if (codigoLimpio.length > 0) {
-    codigoFormateado = codigoLimpio.substring(0, 2);
-  }
-  if (codigoLimpio.length > 2) {
-    codigoFormateado += '-' + codigoLimpio.substring(2, 10);
-  }
-  if (codigoLimpio.length > 10) {
-    codigoFormateado += '-' + codigoLimpio.substring(10, 16);
-  }
-  if (codigoLimpio.length > 16) {
-    codigoFormateado += '-' + codigoLimpio.substring(16, 22);
-  }
+  if (codigoLimpio.length > 0) codigoFormateado = codigoLimpio.substring(0, 2);
+  if (codigoLimpio.length > 2) codigoFormateado += '-' + codigoLimpio.substring(2, 10);
+  if (codigoLimpio.length > 10) codigoFormateado += '-' + codigoLimpio.substring(10, 16);
+  if (codigoLimpio.length > 16) codigoFormateado += '-' + codigoLimpio.substring(16, 22);
   
-  // Mostrar el código formateado en el input
   input.value = codigoFormateado;
   
   try {
-    // ✅ Buscar con el código formateado (CON guiones)
     const { data, error } = await supabaseClient
       .from('equipos')
       .select('*')
@@ -524,9 +484,10 @@ async function agregarEquipo() {
       return;
     }
 
-    const existe = itemsRenta.find(item => item.codigo_barras === data.codigo_barras);
+    // Verificar si ya está en la lista (comparación robusta)
+    const existe = itemsRenta.some(item => item.codigo_barras === data.codigo_barras);
     if (existe) {
-      mostrarToast('Este equipo ya está en la renta', 'error');
+      mostrarToast('⚠️ Este equipo ya está en la lista de esta renta', 'error');
       input.value = '';
       input.focus();
       return;
@@ -550,7 +511,7 @@ async function agregarEquipo() {
     renderizarTablaItems();
     calcularTotales();
     
-    mostrarToast(`Equipo agregado: ${data.nombre_equipo}`, 'exito');
+    mostrarToast(`✅ Equipo agregado: ${data.nombre_equipo}`, 'exito');
 
   } catch (err) {
     console.error('Error al agregar equipo:', err);
@@ -559,6 +520,7 @@ async function agregarEquipo() {
     input.focus();
   }
 }
+
 // ==========================================
 // RENDERIZAR TABLA
 // ==========================================
@@ -590,20 +552,20 @@ function renderizarTablaItems() {
                onchange="actualizarCantidad(${index}, this.value)">
       </td>
       <td style="text-align: right;"><strong>$${item.subtotal.toFixed(2)}</strong></td>
-  <td style="text-align: center;">
-  <button type="button" onclick="eliminarItem(${index})" 
-          style="background: #fee2e2; color: #dc2626; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
-          onmouseover="this.style.background='#dc2626'; this.style.color='white';"
-          onmouseout="this.style.background='#fee2e2'; this.style.color='#dc2626';"
-          title="Eliminar equipo">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="3 6 5 6 21 6"></polyline>
-      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-      <line x1="10" y1="11" x2="10" y2="17"></line>
-      <line x1="14" y1="11" x2="14" y2="17"></line>
-    </svg>
-  </button>
-</td>
+      <td style="text-align: center;">
+        <button type="button" onclick="eliminarItem(${index})" 
+                style="background: #fee2e2; color: #dc2626; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
+                onmouseover="this.style.background='#dc2626'; this.style.color='white';"
+                onmouseout="this.style.background='#fee2e2'; this.style.color='#dc2626';"
+                title="Eliminar equipo">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+        </button>
+      </td>
     </tr>
   `).join('');
 }
@@ -792,170 +754,34 @@ function imprimirComprobante() {
   <style>
     @page { size: letter; margin: 15mm; }
     * { box-sizing: border-box; }
-    body { 
-      font-family: Arial, sans-serif; 
-      font-size: 12px; 
-      color: #333; 
-      max-width: 216mm; 
-      margin: 0 auto; 
-      padding: 10mm;
-    }
-    .header { 
-      text-align: center; 
-      border-bottom: 3px solid #1e3a8a; 
-      padding-bottom: 15px; 
-      margin-bottom: 20px; 
-    }
-    .logo-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .logo-img { 
-      max-width: 250px;
-      max-height: 250px;
-      object-fit: contain;
-    }
-    .brand h1 { 
-      color: #1e3a8a; 
-      margin: 10px 0 5px 0; 
-      font-size: 26px; 
-      font-family: 'Libre Caslon Text', serif;
-    }
-    .brand p { 
-      margin: 3px 0 0 0; 
-      color: #666; 
-      font-size: 12px; 
-    }
-    .numero-renta-box {
-      background: linear-gradient(135deg, #eff6ff, #dbeafe);
-      padding: 12px 20px;
-      border-radius: 8px;
-      margin: 15px auto;
-      display: inline-block;
-      border: 2px dashed #3b82f6;
-    }
-    .numero-renta-box .label { 
-      font-size: 10px; 
-      color: #666; 
-      text-transform: uppercase; 
-      letter-spacing: 1px; 
-    }
-    .numero-renta-box .valor { 
-      font-size: 22px; 
-      font-weight: bold; 
-      color: #1e3a8a; 
-      font-family: monospace; 
-      margin-top: 3px; 
-    }
-    .info-grid { 
-      display: grid; 
-      grid-template-columns: 1fr 1fr; 
-      gap: 20px; 
-      margin-bottom: 20px; 
-    }
-    .info-box { 
-      background: #f9fafb; 
-      padding: 15px; 
-      border-radius: 8px; 
-      border-left: 4px solid #3b82f6; 
-    }
-    .info-box h3 { 
-      margin: 0 0 10px 0; 
-      color: #1e3a8a; 
-      font-size: 13px; 
-      text-transform: uppercase; 
-      letter-spacing: 1px; 
-      border-bottom: 1px solid #e5e7eb;
-      padding-bottom: 5px;
-    }
-    .info-box p { 
-      margin: 5px 0; 
-      font-size: 12px; 
-    }
+    body { font-family: Arial, sans-serif; font-size: 12px; color: #333; max-width: 216mm; margin: 0 auto; padding: 10mm; }
+    .header { text-align: center; border-bottom: 3px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; }
+    .logo-container { display: flex; justify-content: center; align-items: center; margin-bottom: 10px; }
+    .logo-img { max-width: 250px; max-height: 250px; object-fit: contain; }
+    .brand h1 { color: #1e3a8a; margin: 10px 0 5px 0; font-size: 26px; font-family: 'Libre Caslon Text', serif; }
+    .brand p { margin: 3px 0 0 0; color: #666; font-size: 12px; }
+    .numero-renta-box { background: linear-gradient(135deg, #eff6ff, #dbeafe); padding: 12px 20px; border-radius: 8px; margin: 15px auto; display: inline-block; border: 2px dashed #3b82f6; }
+    .numero-renta-box .label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+    .numero-renta-box .valor { font-size: 22px; font-weight: bold; color: #1e3a8a; font-family: monospace; margin-top: 3px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .info-box { background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; }
+    .info-box h3 { margin: 0 0 10px 0; color: #1e3a8a; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+    .info-box p { margin: 5px 0; font-size: 12px; }
     .info-box p strong { color: #374151; }
-    table { 
-      width: 100%; 
-      border-collapse: collapse; 
-      margin: 20px 0; 
-    }
-    th { 
-      background: #1e3a8a; 
-      color: white; 
-      padding: 10px 8px; 
-      text-align: left; 
-      font-size: 11px; 
-      text-transform: uppercase;
-    }
-    td { 
-      padding: 8px; 
-      border-bottom: 1px solid #e5e7eb; 
-      font-size: 11px; 
-    }
-    .totales { 
-      text-align: right; 
-      margin-top: 20px; 
-      padding: 15px; 
-      background: #eff6ff; 
-      border-radius: 8px; 
-    }
-    .totales p { 
-      margin: 5px 0; 
-      font-size: 13px; 
-    }
-    .totales .total { 
-      font-size: 20px; 
-      font-weight: bold; 
-      color: #1e3a8a; 
-      border-top: 2px solid #1e3a8a; 
-      padding-top: 10px; 
-      margin-top: 10px; 
-    }
-    .observaciones { 
-      margin-top: 20px; 
-      padding: 15px; 
-      background: #fef3c7; 
-      border-left: 4px solid #f59e0b; 
-      border-radius: 4px; 
-    }
-    .observaciones h4 { 
-      margin: 0 0 5px 0; 
-      color: #92400e; 
-      font-size: 12px; 
-    }
-    .observaciones p { 
-      margin: 0; 
-      font-size: 12px; 
-    }
-    .firmas { 
-      margin-top: 50px; 
-      display: grid; 
-      grid-template-columns: 1fr 1fr; 
-      gap: 50px; 
-      text-align: center; 
-    }
-    .firma-line { 
-      border-top: 1px solid #333; 
-      margin-top: 40px; 
-      padding-top: 5px; 
-    }
-    .firma-line p { 
-      margin: 3px 0; 
-      font-size: 12px; 
-    }
-    .footer { 
-      margin-top: 30px; 
-      text-align: center; 
-      font-size: 10px; 
-      color: #9ca3af; 
-      border-top: 1px solid #e5e7eb; 
-      padding-top: 10px; 
-    }
-    @media print { 
-      .no-print { display: none !important; } 
-      body { padding: 0; }
-    }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th { background: #1e3a8a; color: white; padding: 10px 8px; text-align: left; font-size: 11px; text-transform: uppercase; }
+    td { padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 11px; }
+    .totales { text-align: right; margin-top: 20px; padding: 15px; background: #eff6ff; border-radius: 8px; }
+    .totales p { margin: 5px 0; font-size: 13px; }
+    .totales .total { font-size: 20px; font-weight: bold; color: #1e3a8a; border-top: 2px solid #1e3a8a; padding-top: 10px; margin-top: 10px; }
+    .observaciones { margin-top: 20px; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; }
+    .observaciones h4 { margin: 0 0 5px 0; color: #92400e; font-size: 12px; }
+    .observaciones p { margin: 0; font-size: 12px; }
+    .firmas { margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; text-align: center; }
+    .firma-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 5px; }
+    .firma-line p { margin: 3px 0; font-size: 12px; }
+    .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 10px; }
+    @media print { .no-print { display: none !important; } body { padding: 0; } }
   </style>
 </head>
 <body>
@@ -975,7 +801,7 @@ function imprimirComprobante() {
 
   <div class="info-grid">
     <div class="info-box">
-      <h3> Cliente / Responsable</h3>
+      <h3>👤 Cliente / Responsable</h3>
       <p><strong>Nombre:</strong> ${clienteNombre}</p>
       <p><strong>Teléfono:</strong> ${clienteTel}</p>
       <p><strong>Email:</strong> ${clienteEmail}</p>
@@ -1043,12 +869,8 @@ function imprimirComprobante() {
   </div>
 
   <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
-    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">
-      🖨️ Imprimir Comprobante
-    </button>
-    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
-      ❌ Cerrar
-    </button>
+    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">🖨️ Imprimir Comprobante</button>
+    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">❌ Cerrar</button>
   </div>
 </body>
 </html>`;
@@ -1122,15 +944,9 @@ function mostrarMensaje(texto, tipo) {
   if (msg) {
     msg.textContent = texto;
     msg.className = `mensaje ${tipo}`;
-    
-    setTimeout(() => {
-      msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
-    
+    setTimeout(() => { msg.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
     if (tipo === 'exito') {
-      setTimeout(() => { 
-        if (msg.classList.contains('exito')) msg.className = 'mensaje'; 
-      }, 5000);
+      setTimeout(() => { if (msg.classList.contains('exito')) msg.className = 'mensaje'; }, 5000);
     }
   }
 }
