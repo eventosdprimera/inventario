@@ -690,7 +690,8 @@ async function guardarRenta() {
       imprimirComprobante();
       
       // 2. Esperar un momento y luego limpiar todo para la siguiente renta
-      setTimeout(() => {
+      // ✅ CORREGIDO: Se agrega 'async' aquí para poder usar 'await' dentro
+      setTimeout(async () => {
         itemsRenta = [];
         rentaGuardadaId = null;
         
