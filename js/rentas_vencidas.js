@@ -5,10 +5,76 @@ let rentasVencidasCache = [];
 let usuarioActualVencidas = null;
 
 // ==========================================
+// INYECTAR ESTILOS ESPECÍFICOS (Solución al problema de visualización)
+// ==========================================
+function inyectarEstilosVencidas() {
+  if (document.getElementById('estilos-rentas-vencidas')) return;
+  
+  const style = document.createElement('style');
+  style.id = 'estilos-rentas-vencidas';
+  style.textContent = `
+    .btn-recibida {
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+      color: white !important;
+      padding: 6px 12px !important;
+      border: none !important;
+      border-radius: 6px !important;
+      cursor: pointer !important;
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      transition: all 0.3s !important;
+      white-space: nowrap !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+    }
+    .btn-recibida:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 4px 12px rgba(5,150,105,0.3) !important;
+    }
+    .btn-imprimir-vencida {
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%) !important;
+      color: white !important;
+      padding: 6px 12px !important;
+      border: none !important;
+      border-radius: 6px !important;
+      cursor: pointer !important;
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      transition: all 0.3s !important;
+      margin-right: 5px !important;
+      white-space: nowrap !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+    }
+    .btn-imprimir-vencida:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 4px 12px rgba(30,58,138,0.3) !important;
+    }
+    .vencida-badge {
+      background: #ef4444 !important;
+      color: white !important;
+      padding: 4px 10px !important;
+      border-radius: 12px !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      display: inline-block !important;
+      letter-spacing: 0.5px !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+// ==========================================
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarRentasVencidas() {
   console.log('⚠️ === INICIANDO RENTAS VENCIDAS ===');
+
+  // 1. Inyectar estilos para que se vean bien dentro del dashboard
+  inyectarEstilosVencidas();
 
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
@@ -56,13 +122,12 @@ async function cargarUsuarioVencidas() {
 // ==========================================
 async function cargarRentasVencidas() {
   try {
-    // Obtiene la fecha de hoy en formato 'YYYY-MM-DD' (ej: '2026-07-17')
     const hoy = new Date().toISOString().split('T')[0];
 
     const { data, error } = await supabaseClient
       .from('rentas')
       .select('*')
-      .lte('fecha_devolucion', hoy) // ✅ CAMBIADO: .lte (Less Than or Equal) en lugar de .lt
+      .lte('fecha_devolucion', hoy)
       .neq('estado', 'devuelta')
       .neq('estado', 'cancelada')
       .order('fecha_devolucion', { ascending: true });
@@ -106,7 +171,6 @@ function renderizarTablaVencidas() {
     const fechaInicio = new Date(renta.fecha_renta + 'T12:00:00').toLocaleDateString('es-ES');
     const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00').toLocaleDateString('es-ES');
     
-    // Calcular días vencida
     const fechaDevDate = new Date(renta.fecha_devolucion + 'T12:00:00');
     const diffTime = Math.abs(hoy - fechaDevDate);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -123,16 +187,14 @@ function renderizarTablaVencidas() {
           <span class="vencida-badge">${diffDays} día${diffDays !== 1 ? 's' : ''}</span>
         </td>
         <td style="text-align: right; font-weight: 600;">$${parseFloat(renta.total).toFixed(2)}</td>
-<td style="text-align: center;">
-  <button type="button" class="btn-imprimir-vencida" onclick="imprimirRentaVencida('${renta.numero_renta}')" 
-          title="Imprimir comprobante">
-    🖨️ Imprimir
-  </button>
-  <button type="button" class="btn-recibida" onclick="marcarComoRecibida('${renta.numero_renta}')" 
-          title="Marcar como recibida">
-    ✅ Recibida
-  </button>
-</td>
+        <td style="text-align: center;">
+          <button type="button" class="btn-imprimir-vencida" onclick="imprimirRentaVencida('${renta.numero_renta}')" title="Imprimir comprobante">
+            🖨️ Imprimir
+          </button>
+          <button type="button" class="btn-recibida" onclick="marcarComoRecibida('${renta.numero_renta}')" title="Marcar como recibida">
+            ✅ Recibida
+          </button>
+        </td>
       </tr>
     `;
   }).join('');
@@ -143,11 +205,9 @@ function renderizarTablaVencidas() {
 // ==========================================
 async function marcarComoRecibida(numeroRenta) {
   const confirmacion = confirm(`¿Confirmar que la renta #${numeroRenta} ha sido recibida?\n\nEsta acción cambiará el estado a "Devuelta" y desaparecerá de la lista de vencidas.`);
-  
   if (!confirmacion) return;
 
   try {
-    // Actualizar estado a "devuelta"
     const { error } = await supabaseClient
       .from('rentas')
       .update({ estado: 'devuelta' })
@@ -155,7 +215,6 @@ async function marcarComoRecibida(numeroRenta) {
 
     if (error) throw error;
 
-    // Registrar en logs
     if (typeof registrarLog === 'function') {
       const descripcion = `Marcó como recibida la Renta #${numeroRenta} | Recibido por: ${usuarioActualVencidas?.email || 'Desconocido'}`;
       await registrarLog('rentar', 'Renta recibida', descripcion, 'success');
@@ -163,7 +222,6 @@ async function marcarComoRecibida(numeroRenta) {
 
     mostrarMensajeVencidas(`✅ Renta #${numeroRenta} marcada como recibida`, 'exito');
 
-    // Recargar lista
     setTimeout(() => {
       cargarRentasVencidas();
     }, 1000);
@@ -179,7 +237,6 @@ async function marcarComoRecibida(numeroRenta) {
 // ==========================================
 async function imprimirRentaVencida(numeroRenta) {
   try {
-    // Cargar datos de la renta
     const { data: renta, error } = await supabaseClient
       .from('rentas')
       .select('*')
@@ -191,7 +248,6 @@ async function imprimirRentaVencida(numeroRenta) {
       return;
     }
 
-    // Cargar items
     const { data: items, error: errorItems } = await supabaseClient
       .from('rentas_items')
       .select('*')
@@ -289,7 +345,7 @@ async function imprimirRentaVencida(numeroRenta) {
 
   <div class="info-grid">
     <div class="info-box">
-      <h3> Cliente / Responsable</h3>
+      <h3>👤 Cliente / Responsable</h3>
       <p><strong>Nombre:</strong> ${clienteNombre}</p>
       <p><strong>Teléfono:</strong> ${clienteTel}</p>
       <p><strong>Email:</strong> ${clienteEmail}</p>
@@ -311,7 +367,7 @@ async function imprimirRentaVencida(numeroRenta) {
     </div>
   </div>
 
-  <h3 style="margin: 20px 0 10px 0; color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 5px;"> Equipos Rentados (${(items || []).length})</h3>
+  <h3 style="margin: 20px 0 10px 0; color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 5px;">📦 Equipos Rentados (${(items || []).length})</h3>
   <table>
     <thead>
       <tr>
@@ -364,12 +420,8 @@ async function imprimirRentaVencida(numeroRenta) {
   </div>
 
   <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
-    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">
-      ️ Imprimir Comprobante
-    </button>
-    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
-      ❌ Cerrar
-    </button>
+    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">🖨️ Imprimir Comprobante</button>
+    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">❌ Cerrar</button>
   </div>
 </body>
 </html>`;
