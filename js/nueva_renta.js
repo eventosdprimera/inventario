@@ -236,6 +236,7 @@ async function cargarClientesExistentes() {
     });
 
     clientesCache = Array.from(unicos.values());
+    console.log(`✅ Lista de clientes actualizada: ${clientesCache.length} clientes únicos`);
   } catch (err) {
     console.error('Error al cargar clientes:', err);
   }
@@ -583,7 +584,7 @@ function calcularTotales() {
 }
 
 // ==========================================
-// ✅ GUARDAR RENTA (CON LIMPIEZA AUTOMÁTICA Y SIGUIENTE NÚMERO)
+// ✅ GUARDAR RENTA (CON ACTUALIZACIÓN DE CLIENTES EN TIEMPO REAL)
 // ==========================================
 async function guardarRenta() {
   const clienteNombre = document.getElementById('clienteNombre')?.value.trim() || '';
@@ -690,8 +691,10 @@ async function guardarRenta() {
       imprimirComprobante();
       
       // 2. Esperar un momento y luego limpiar todo para la siguiente renta
-      // ✅ CORREGIDO: Se agrega 'async' aquí para poder usar 'await' dentro
       setTimeout(async () => {
+        // ✅ CORRECCIÓN CLAVE: Actualizar la lista de clientes en tiempo real
+        await cargarClientesExistentes();
+        
         itemsRenta = [];
         rentaGuardadaId = null;
         
