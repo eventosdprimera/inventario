@@ -162,10 +162,10 @@ function renderizarTablaRentasModificar(totalRegistros) {
     // Debug en consola para verificar qué está pasando
     console.log(`Renta: ${renta.numero_renta} | Estado BD: ${renta.estado} | Devolución: ${renta.fecha_devolucion} | ¿Es menor a hoy (${hoy})? ${renta.fecha_devolucion < hoy}`);
 
-    if (renta.estado === 'activa' && renta.fecha_devolucion && renta.fecha_devolucion < hoy) {
-      estadoReal = 'vencida';
-      console.log(`⚠️ ALERTA: ${renta.numero_renta} cambiada visualmente a VENCIDA`);
-    }
+  if (renta.estado === 'activa' && renta.fecha_devolucion && renta.fecha_devolucion <= hoy) {
+  estadoReal = 'vencida';
+  console.log(`⚠️ ALERTA: ${renta.numero_renta} cambiada visualmente a VENCIDA (fecha_devolucion: ${renta.fecha_devolucion} <= hoy: ${hoy})`);
+}
 
     const estadoColors = {
       'activa': '#10b981',
