@@ -19,7 +19,7 @@ function obtenerFechaHoyCaracas() {
     month: '2-digit', 
     day: '2-digit' 
   };
-  return new Date().toLocaleDateString('en-CA', opciones); // Formato YYYY-MM-DD
+  return new Date().toLocaleDateString('en-CA', opciones); // Retorna "YYYY-MM-DD"
 }
 
 // ==========================================
@@ -28,8 +28,8 @@ function obtenerFechaHoyCaracas() {
 async function inicializarModificarRenta() {
   console.log('📝 === INICIANDO MODIFICAR RENTA ===');
 
-  // Inicializar fecha de Caracas
   fechaHoyStrModificar = obtenerFechaHoyCaracas();
+  console.log('📅 Fecha de hoy (Caracas) establecida en:', fechaHoyStrModificar);
 
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
@@ -45,7 +45,6 @@ async function inicializarModificarRenta() {
   await cargarUsuarioModificar();
   await buscarRentasModificar();
 
-  // Enter en búsqueda de equipos (Blindado contra duplicados)
   const inputEquipo = document.getElementById('editBuscarEquipo');
   if (inputEquipo) {
     const nuevoInput = inputEquipo.cloneNode(true);
@@ -58,7 +57,6 @@ async function inicializarModificarRenta() {
     });
   }
 
-  // Solo números en teléfono
   const telInput = document.getElementById('editClienteTelefono');
   if (telInput) {
     const nuevoTel = telInput.cloneNode(true);
@@ -108,7 +106,7 @@ async function buscarRentasModificar() {
     let query = supabaseClient
       .from('rentas')
       .select('*', { count: 'exact' })
-      .order('fecha_creacion', { ascending: false }); // ✅ ORDENADO POR FECHA DE CREACIÓN
+      .order('fecha_creacion', { ascending: false });
 
     if (filtroCliente) query = query.ilike('cliente_nombre', `%${filtroCliente}%`);
     if (filtroNumero) query = query.ilike('numero_renta', `%${filtroNumero}%`);
@@ -132,7 +130,7 @@ async function buscarRentasModificar() {
 }
 
 // ==========================================
-// RENDERIZAR TABLA DE RENTAS (CON ESTADO DINÁMICO Y FECHA CARACAS)
+// RENDERIZAR TABLA DE RENTAS (CON ESTADO DINÁMICO Y LOGS)
 // ==========================================
 function renderizarTablaRentasModificar(totalRegistros) {
   const tbody = document.getElementById('tbodyRentas');
@@ -150,18 +148,23 @@ function renderizarTablaRentasModificar(totalRegistros) {
     return;
   }
 
-  // ✅ Usar fecha de Caracas para evaluar vencimiento
   const hoy = obtenerFechaHoyCaracas();
+  console.log('🔍 Evaluando fechas. Hoy es:', hoy);
 
   tbody.innerHTML = rentasCache.map((renta, index) => {
     const globalIndex = (paginaActualModificar - 1) * POR_PAGINA_MODIFICAR + index + 1;
     const fechaInicio = new Date(renta.fecha_renta + 'T12:00:00').toLocaleDateString('es-ES');
     const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00').toLocaleDateString('es-ES');
     
-    // ✅ Lógica para determinar el estado real visualmente
+    // ✅ Lógica estricta para determinar el estado real
     let estadoReal = renta.estado;
-    if (renta.estado === 'activa' && renta.fecha_devolucion < hoy) {
+    
+    // Debug en consola para verificar qué está pasando
+    console.log(`Renta: ${renta.numero_renta} | Estado BD: ${renta.estado} | Devolución: ${renta.fecha_devolucion} | ¿Es menor a hoy (${hoy})? ${renta.fecha_devolucion < hoy}`);
+
+    if (renta.estado === 'activa' && renta.fecha_devolucion && renta.fecha_devolucion < hoy) {
       estadoReal = 'vencida';
+      console.log(`⚠️ ALERTA: ${renta.numero_renta} cambiada visualmente a VENCIDA`);
     }
 
     const estadoColors = {
@@ -245,7 +248,7 @@ function limpiarFiltrosModificar() {
 }
 
 // ==========================================
-// ✅ SELECCIONAR RENTA PARA EDITAR (FECHAS EN CARACAS)
+// SELECCIONAR RENTA PARA EDITAR
 // ==========================================
 async function seleccionarRentaModificar(numeroRenta) {
   try {
@@ -282,7 +285,6 @@ async function seleccionarRentaModificar(numeroRenta) {
     document.getElementById('editObservaciones').value = renta.observaciones || '';
     document.getElementById('editDescuento').value = renta.descuento || 0;
 
-    // ✅ CORRECCIÓN DE FECHAS: Usar zona horaria de Caracas
     const hoyCaracas = obtenerFechaHoyCaracas();
     const elFechaRenta = document.getElementById('editFechaRenta');
     const elFechaDevolucion = document.getElementById('editFechaDevolucion');
@@ -293,7 +295,6 @@ async function seleccionarRentaModificar(numeroRenta) {
     }
     if (elFechaDevolucion) {
       elFechaDevolucion.min = hoyCaracas;
-      // Calcular +7 días desde la fecha de Caracas
       const fechaDev = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"}));
       fechaDev.setDate(fechaDev.getDate() + 7);
       const devYear = fechaDev.getFullYear();
@@ -466,7 +467,7 @@ async function agregarEquipoEdicion() {
 }
 
 // ==========================================
-// ✅ GUARDAR CAMBIOS (CON LIMPIEZA AUTOMÁTICA)
+// GUARDAR CAMBIOS (CON LIMPIEZA AUTOMÁTICA)
 // ==========================================
 async function guardarCambiosRenta() {
   if (!rentaEditando) return;
@@ -560,11 +561,9 @@ async function guardarCambiosRenta() {
 
     mostrarMensajeModificar(`✅ Renta #${rentaEditando.numero_renta} modificada exitosamente`, 'exito');
 
-    // ✅ CORRECCIÓN: Limpieza automática y silenciosa del formulario
     rentaEditando = null;
     itemsEdicion = [];
     
-    // Limpiar campos explícitamente
     ['editClienteNombre', 'editClienteTelefono', 'editClienteEmail', 'editClienteDireccion', 'editIngenieroNombre', 'editIngenieroContacto', 'editObservaciones'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
@@ -572,17 +571,14 @@ async function guardarCambiosRenta() {
     const editDescuento = document.getElementById('editDescuento');
     if (editDescuento) editDescuento.value = '0';
 
-    // Volver a la vista de lista
     document.getElementById('fieldsetLista').style.display = 'block';
     document.getElementById('fieldsetEdicion').style.display = 'none';
     
-    // Reactivar el botón inmediatamente
     if (btnGuardar) {
       btnGuardar.disabled = false;
       btnGuardar.textContent = '💾 Guardar Cambios';
     }
 
-    // Recargar la lista después de un breve momento
     setTimeout(() => {
       paginaActualModificar = 1;
       buscarRentasModificar();
@@ -592,7 +588,6 @@ async function guardarCambiosRenta() {
     console.error('Error al guardar cambios:', err);
     mostrarMensajeModificar('Error al guardar: ' + err.message, 'error');
     
-    // ✅ CORRECCIÓN: Asegurar que el botón se reactive SIEMPRE en caso de error
     if (btnGuardar) { 
       btnGuardar.disabled = false; 
       btnGuardar.textContent = '💾 Guardar Cambios'; 
