@@ -1,5 +1,5 @@
 // ==========================================
-// VARIABLES GLOBALES (con nombres únicos para evitar conflictos)
+// VARIABLES GLOBALES
 // ==========================================
 let rentasCache = [];
 let paginaActualModificar = 1;
@@ -7,7 +7,7 @@ const POR_PAGINA_MODIFICAR = 20;
 let rentaEditando = null;
 let itemsEdicion = [];
 let usuarioActualModificarRenta = null;
-let fechaHoyStrModificar = '';
+let fechaHoyStrModificar = new Date().toISOString().split('T')[0];
 
 // ==========================================
 // INICIALIZACIÓN
@@ -28,45 +28,17 @@ async function inicializarModificarRenta() {
 
   await cargarUsuarioModificar();
   
-// ==========================================
-// AL CARGAR LOS DATOS DE LA RENTA EN EL FORMULARIO
-// ==========================================
-
-// 1. Obtener la fecha de hoy
-const hoy = new Date();
-const fechaHoyStr = hoy.toISOString().split('T')[0];
-
-// ... (resto de tu código que carga cliente, teléfono, etc.) ...
-
-// 2. Asignar fechas (MODIFICADO PARA FORZAR EL DÍA ACTUAL)
-const elFechaRenta = document.getElementById('fechaRenta');
-const elFechaDevolucion = document.getElementById('fechaDevolucion');
-
-if (elFechaRenta) {
-  // ✅ CAMBIO: Forzar que la fecha de inicio sea siempre el día actual
-  elFechaRenta.value = fechaHoyStr;
-  elFechaRenta.min = fechaHoyStr; // Evita que seleccionen fechas pasadas
-}
-
-if (elFechaDevolucion) {
-  // La fecha de devolución se mantiene con la original de la renta, 
-  // o puedes calcularla a partir de hoy (ej: +7 días) si lo prefieres:
-  // const fechaDev = new Date();
-  // fechaDev.setDate(fechaDev.getDate() + 7);
-  // elFechaDevolucion.value = fechaDev.toISOString().split('T')[0];
-  
-  // Si prefieres mantener la fecha de devolución original de la base de datos:
-  elFechaDevolucion.value = renta.fecha_devolucion; 
-  elFechaDevolucion.min = fechaHoyStr;
-}
-  
   // Cargar últimas 20 rentas al iniciar
   await buscarRentasModificar();
 
   // Enter en búsqueda de equipos
   const inputEquipo = document.getElementById('editBuscarEquipo');
   if (inputEquipo) {
-    inputEquipo.addEventListener('keypress', (e) => {
+    // Clonar para evitar listeners duplicados al recargar el módulo
+    const nuevoInput = inputEquipo.cloneNode(true);
+    inputEquipo.parentNode.replaceChild(nuevoInput, inputEquipo);
+    
+    nuevoInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
         agregarEquipoEdicion();
@@ -77,7 +49,9 @@ if (elFechaDevolucion) {
   // Solo números en teléfono
   const telInput = document.getElementById('editClienteTelefono');
   if (telInput) {
-    telInput.addEventListener('input', (e) => {
+    const nuevoTel = telInput.cloneNode(true);
+    telInput.parentNode.replaceChild(nuevoTel, telInput);
+    nuevoTel.addEventListener('input', (e) => {
       e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 11);
     });
   }
@@ -124,20 +98,11 @@ async function buscarRentasModificar() {
       .select('*', { count: 'exact' })
       .order('fecha_renta', { ascending: false });
 
-    if (filtroCliente) {
-      query = query.ilike('cliente_nombre', `%${filtroCliente}%`);
-    }
-    if (filtroNumero) {
-      query = query.ilike('numero_renta', `%${filtroNumero}%`);
-    }
-    if (filtroDesde) {
-      query = query.gte('fecha_renta', filtroDesde);
-    }
-    if (filtroHasta) {
-      query = query.lte('fecha_renta', filtroHasta);
-    }
+    if (filtroCliente) query = query.ilike('cliente_nombre', `%${filtroCliente}%`);
+    if (filtroNumero) query = query.ilike('numero_renta', `%${filtroNumero}%`);
+    if (filtroDesde) query = query.gte('fecha_renta', filtroDesde);
+    if (filtroHasta) query = query.lte('fecha_renta', filtroHasta);
 
-    // Paginación
     const desde = (paginaActualModificar - 1) * POR_PAGINA_MODIFICAR;
     const hasta = desde + POR_PAGINA_MODIFICAR - 1;
     query = query.range(desde, hasta);
@@ -156,7 +121,7 @@ async function buscarRentasModificar() {
 }
 
 // ==========================================
-// RENDERIZAR TABLA DE RENTAS
+// ✅ RENDERIZAR TABLA DE RENTAS (CON ESTADO DINÁMICO)
 // ==========================================
 function renderizarTablaRentasModificar(totalRegistros) {
   const tbody = document.getElementById('tbodyRentas');
@@ -166,7 +131,7 @@ function renderizarTablaRentasModificar(totalRegistros) {
     tbody.innerHTML = `
       <tr>
         <td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">
-          <div style="font-size: 40px; margin-bottom: 10px;"></div>
+          <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
           <div>No se encontraron rentas con los filtros aplicados</div>
         </td>
       </tr>`;
@@ -174,18 +139,26 @@ function renderizarTablaRentasModificar(totalRegistros) {
     return;
   }
 
+  const hoy = new Date().toISOString().split('T')[0];
+
   tbody.innerHTML = rentasCache.map((renta, index) => {
     const globalIndex = (paginaActualModificar - 1) * POR_PAGINA_MODIFICAR + index + 1;
     const fechaInicio = new Date(renta.fecha_renta + 'T12:00:00').toLocaleDateString('es-ES');
     const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00').toLocaleDateString('es-ES');
     
+    // ✅ LÓGICA PARA DETERMINAR EL ESTADO REAL
+    let estadoReal = renta.estado;
+    if (renta.estado === 'activa' && renta.fecha_devolucion < hoy) {
+      estadoReal = 'vencida';
+    }
+
     const estadoColors = {
       'activa': '#10b981',
       'devuelta': '#3b82f6',
       'vencida': '#ef4444',
       'cancelada': '#6b7280'
     };
-    const colorEstado = estadoColors[renta.estado] || '#6b7280';
+    const colorEstado = estadoColors[estadoReal] || '#6b7280';
 
     return `
       <tr>
@@ -196,13 +169,15 @@ function renderizarTablaRentasModificar(totalRegistros) {
         <td>${fechaDev}</td>
         <td style="text-align: right; font-weight: 600;">$${parseFloat(renta.total).toFixed(2)}</td>
         <td style="text-align: center;">
-          <span style="background: ${colorEstado}; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; text-transform: capitalize;">
-            ${renta.estado}
+          <span style="background: ${colorEstado}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">
+            ${estadoReal}
           </span>
         </td>
         <td style="text-align: center;">
           <button type="button" onclick="seleccionarRentaModificar('${renta.numero_renta}')" 
-                  style="background: #dbeafe; color: #1e3a8a; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;"
+                  style="background: #dbeafe; color: #1e3a8a; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;"
+                  onmouseover="this.style.background='#1e3a8a'; this.style.color='white';"
+                  onmouseout="this.style.background='#dbeafe'; this.style.color='#1e3a8a';"
                   title="Editar esta renta">
             ✏️ Editar
           </button>
@@ -231,28 +206,22 @@ function renderizarPaginacionModificar(totalRegistros) {
   let html = '';
   html += `<button type="button" onclick="cambiarPaginaModificar(${paginaActualModificar - 1})" 
            style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px;"
-           ${paginaActualModificar === 1 ? 'style="opacity: 0.4; cursor: not-allowed;"' : ''}>‹ Anterior</button>`;
+           ${paginaActualModificar === 1 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>‹ Anterior</button>`;
   
   html += `<span style="color: #374151; font-size: 13px; font-weight: 600;">Página ${paginaActualModificar} de ${totalPaginas}</span>`;
   
   html += `<button type="button" onclick="cambiarPaginaModificar(${paginaActualModificar + 1})" 
            style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px;"
-           ${paginaActualModificar === totalPaginas ? 'style="opacity: 0.4; cursor: not-allowed;"' : ''}>Siguiente ›</button>`;
+           ${paginaActualModificar === totalPaginas ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>Siguiente ›</button>`;
   
-  html += `<span style="color: #6b7280; font-size: 13px;">Total: ${totalRegistros} renta(s)</span>`;
+  html += `<span style="color: #6b7280; font-size: 13px;">Total: ${totalRegistros}</span>`;
 
   cont.innerHTML = html;
 }
 
 async function cambiarPaginaModificar(nuevaPagina) {
-  const totalRegistros = rentasCache.length;
-  const totalPaginas = Math.ceil(totalRegistros / POR_PAGINA_MODIFICAR);
-  
-  if (nuevaPagina < 1 || nuevaPagina > totalPaginas) return;
-  
-  paginaActualModificar = nuevaPagina;
+  // Necesitamos volver a consultar para obtener el count exacto
   await buscarRentasModificar();
-  
   document.getElementById('fieldsetLista')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -300,18 +269,32 @@ async function seleccionarRentaModificar(numeroRenta) {
     document.getElementById('editClienteTelefono').value = renta.cliente_telefono || '';
     document.getElementById('editClienteEmail').value = renta.cliente_email || '';
     document.getElementById('editClienteDireccion').value = renta.cliente_direccion || '';
-    document.getElementById('editFechaRenta').value = renta.fecha_renta || '';
-    document.getElementById('editFechaDevolucion').value = renta.fecha_devolucion || '';
+    
+    // ✅ Aquí aplicamos la lógica: si está vencida, sugerimos actualizar la fecha de inicio a hoy
+    const hoy = new Date().toISOString().split('T')[0];
+    const elFechaRenta = document.getElementById('editFechaRenta');
+    const elFechaDevolucion = document.getElementById('editFechaDevolucion');
+
+    if (renta.estado === 'activa' && renta.fecha_devolucion < hoy) {
+      // Si está vencida, ponemos la fecha de hoy como nueva fecha de inicio por defecto
+      elFechaRenta.value = hoy;
+      // Y sumamos 7 días a la devolución (o puedes dejar la original si prefieres)
+      const nuevaDev = new Date();
+      nuevaDev.setDate(nuevaDev.getDate() + 7);
+      elFechaDevolucion.value = nuevaDev.toISOString().split('T')[0];
+    } else {
+      elFechaRenta.value = renta.fecha_renta || '';
+      elFechaDevolucion.value = renta.fecha_devolucion || '';
+    }
+
+    if (elFechaRenta) elFechaRenta.min = fechaHoyStrModificar;
+    if (elFechaDevolucion) elFechaDevolucion.min = fechaHoyStrModificar;
+
     document.getElementById('editIngenieroNombre').value = renta.ingeniero_nombre || '';
     document.getElementById('editIngenieroContacto').value = renta.ingeniero_contacto || '';
     document.getElementById('editEstado').value = renta.estado || 'activa';
     document.getElementById('editObservaciones').value = renta.observaciones || '';
     document.getElementById('editDescuento').value = renta.descuento || 0;
-
-    const elFechaRenta = document.getElementById('editFechaRenta');
-    const elFechaDevolucion = document.getElementById('editFechaDevolucion');
-    if (elFechaRenta) elFechaRenta.min = fechaHoyStrModificar;
-    if (elFechaDevolucion) elFechaDevolucion.min = fechaHoyStrModificar;
 
     if (elFechaRenta && elFechaDevolucion) {
       elFechaRenta.addEventListener('change', () => {
@@ -368,7 +351,9 @@ function renderizarItemsEdicion() {
       <td style="text-align: right;"><strong>$${parseFloat(item.subtotal).toFixed(2)}</strong></td>
       <td style="text-align: center;">
         <button type="button" onclick="eliminarItemEdicion(${index})" 
-                style="background: #fee2e2; color: #dc2626; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center;"
+                style="background: #fee2e2; color: #dc2626; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
+                onmouseover="this.style.background='#dc2626'; this.style.color='white';"
+                onmouseout="this.style.background='#fee2e2'; this.style.color='#dc2626';"
                 title="Eliminar equipo">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3 6 5 6 21 6"></polyline>
@@ -418,7 +403,7 @@ async function agregarEquipoEdicion() {
 
   let codigo = input.value.trim();
   if (!codigo) {
-    alert('Por favor ingrese un código de barras');
+    mostrarMensajeModificar('Por favor ingrese un código de barras', 'error');
     return;
   }
 
@@ -437,7 +422,7 @@ async function agregarEquipoEdicion() {
       .maybeSingle();
 
     if (error || !data) {
-      alert(`Equipo no encontrado: ${codigoFormateado}`);
+      mostrarMensajeModificar(`Equipo no encontrado: ${codigoFormateado}`, 'error');
       input.value = '';
       input.focus();
       return;
@@ -445,7 +430,7 @@ async function agregarEquipoEdicion() {
 
     const existe = itemsEdicion.find(item => item.codigo_barras === data.codigo_barras);
     if (existe) {
-      alert('Este equipo ya está en la renta');
+      mostrarMensajeModificar('Este equipo ya está en la renta', 'error');
       input.value = '';
       input.focus();
       return;
@@ -468,10 +453,11 @@ async function agregarEquipoEdicion() {
 
     renderizarItemsEdicion();
     calcularTotalesEdicion();
+    mostrarMensajeModificar(`Equipo agregado: ${data.nombre_equipo}`, 'exito');
 
   } catch (err) {
     console.error('Error al agregar equipo:', err);
-    alert('Error al buscar equipo');
+    mostrarMensajeModificar('Error al buscar equipo', 'error');
   }
 }
 
@@ -617,16 +603,16 @@ function mostrarMensajeModificar(texto, tipo) {
     }
   }
 }
+
 // ==========================================
 // IMPRIMIR COMPROBANTE DE RENTA MODIFICADA
 // ==========================================
 function imprimirComprobanteModificacion() {
   if (!rentaEditando) {
-    alert('No hay ninguna renta seleccionada para imprimir');
+    mostrarMensajeModificar('No hay ninguna renta seleccionada para imprimir', 'error');
     return;
   }
 
-  // Tomar los valores ACTUALES del formulario (no los originales de la BD)
   const clienteNombre = document.getElementById('editClienteNombre')?.value || 'N/A';
   const clienteTel = document.getElementById('editClienteTelefono')?.value || 'N/A';
   const clienteEmail = document.getElementById('editClienteEmail')?.value || 'N/A';
@@ -641,10 +627,8 @@ function imprimirComprobanteModificacion() {
   const total = document.getElementById('editTotal')?.textContent || '$0.00';
   const estado = document.getElementById('editEstado')?.value || 'activa';
 
-  // Ruta del logo
   const logoUrl = new URL('img/logo.png', window.location.href).href;
 
-  // Generar HTML de los items
   const itemsHTML = itemsEdicion.map((item, i) => `
     <tr>
       <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center;">${i + 1}</td>
@@ -665,190 +649,36 @@ function imprimirComprobanteModificacion() {
   <style>
     @page { size: letter; margin: 15mm; }
     * { box-sizing: border-box; }
-    body { 
-      font-family: Arial, sans-serif; 
-      font-size: 12px; 
-      color: #333; 
-      max-width: 216mm; 
-      margin: 0 auto; 
-      padding: 10mm;
-    }
-    .header { 
-      text-align: center; 
-      border-bottom: 3px solid #1e3a8a; 
-      padding-bottom: 15px; 
-      margin-bottom: 20px; 
-    }
-    .logo-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .logo-img { 
-      max-width: 200px;
-      max-height: 200px;
-      object-fit: contain;
-    }
-    .brand h1 { 
-      color: #1e3a8a; 
-      margin: 10px 0 5px 0; 
-      font-size: 26px; 
-      font-family: 'Libre Caslon Text', serif;
-    }
-    .brand p { 
-      margin: 3px 0 0 0; 
-      color: #666; 
-      font-size: 12px; 
-    }
-    .numero-renta-box {
-      background: linear-gradient(135deg, #eff6ff, #dbeafe);
-      padding: 12px 20px;
-      border-radius: 8px;
-      margin: 15px auto;
-      display: inline-block;
-      border: 2px dashed #3b82f6;
-    }
-    .numero-renta-box .label { 
-      font-size: 10px; 
-      color: #666; 
-      text-transform: uppercase; 
-      letter-spacing: 1px; 
-    }
-    .numero-renta-box .valor { 
-      font-size: 22px; 
-      font-weight: bold; 
-      color: #1e3a8a; 
-      font-family: monospace; 
-      margin-top: 3px; 
-    }
-    .info-grid { 
-      display: grid; 
-      grid-template-columns: 1fr 1fr; 
-      gap: 20px; 
-      margin-bottom: 20px; 
-    }
-    .info-box { 
-      background: #f9fafb; 
-      padding: 15px; 
-      border-radius: 8px; 
-      border-left: 4px solid #3b82f6; 
-    }
-    .info-box h3 { 
-      margin: 0 0 10px 0; 
-      color: #1e3a8a; 
-      font-size: 13px; 
-      text-transform: uppercase; 
-      letter-spacing: 1px; 
-      border-bottom: 1px solid #e5e7eb;
-      padding-bottom: 5px;
-    }
-    .info-box p { 
-      margin: 5px 0; 
-      font-size: 12px; 
-    }
+    body { font-family: Arial, sans-serif; font-size: 12px; color: #333; max-width: 216mm; margin: 0 auto; padding: 10mm; }
+    .header { text-align: center; border-bottom: 3px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; }
+    .logo-container { display: flex; justify-content: center; align-items: center; margin-bottom: 10px; }
+    .logo-img { max-width: 200px; max-height: 200px; object-fit: contain; }
+    .brand h1 { color: #1e3a8a; margin: 10px 0 5px 0; font-size: 26px; font-family: 'Libre Caslon Text', serif; }
+    .brand p { margin: 3px 0 0 0; color: #666; font-size: 12px; }
+    .numero-renta-box { background: linear-gradient(135deg, #eff6ff, #dbeafe); padding: 12px 20px; border-radius: 8px; margin: 15px auto; display: inline-block; border: 2px dashed #3b82f6; }
+    .numero-renta-box .label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+    .numero-renta-box .valor { font-size: 22px; font-weight: bold; color: #1e3a8a; font-family: monospace; margin-top: 3px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .info-box { background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; }
+    .info-box h3 { margin: 0 0 10px 0; color: #1e3a8a; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+    .info-box p { margin: 5px 0; font-size: 12px; }
     .info-box p strong { color: #374151; }
-    table { 
-      width: 100%; 
-      border-collapse: collapse; 
-      margin: 20px 0; 
-    }
-    th { 
-      background: #1e3a8a; 
-      color: white; 
-      padding: 10px 8px; 
-      text-align: left; 
-      font-size: 11px; 
-      text-transform: uppercase;
-    }
-    td { 
-      padding: 8px; 
-      border-bottom: 1px solid #e5e7eb; 
-      font-size: 11px; 
-    }
-    .totales { 
-      text-align: right; 
-      margin-top: 20px; 
-      padding: 15px; 
-      background: #eff6ff; 
-      border-radius: 8px; 
-    }
-    .totales p { 
-      margin: 5px 0; 
-      font-size: 13px; 
-    }
-    .totales .total { 
-      font-size: 20px; 
-      font-weight: bold; 
-      color: #1e3a8a; 
-      border-top: 2px solid #1e3a8a; 
-      padding-top: 10px; 
-      margin-top: 10px; 
-    }
-    .observaciones { 
-      margin-top: 20px; 
-      padding: 15px; 
-      background: #fef3c7; 
-      border-left: 4px solid #f59e0b; 
-      border-radius: 4px; 
-    }
-    .observaciones h4 { 
-      margin: 0 0 5px 0; 
-      color: #92400e; 
-      font-size: 12px; 
-    }
-    .observaciones p { 
-      margin: 0; 
-      font-size: 12px; 
-    }
-    .estado-badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      color: white;
-      margin-top: 5px;
-    }
-    .firmas { 
-      margin-top: 50px; 
-      display: grid; 
-      grid-template-columns: 1fr 1fr; 
-      gap: 50px; 
-      text-align: center; 
-    }
-    .firma-line { 
-      border-top: 1px solid #333; 
-      margin-top: 40px; 
-      padding-top: 5px; 
-    }
-    .firma-line p { 
-      margin: 3px 0; 
-      font-size: 12px; 
-    }
-    .footer { 
-      margin-top: 30px; 
-      text-align: center; 
-      font-size: 10px; 
-      color: #9ca3af; 
-      border-top: 1px solid #e5e7eb; 
-      padding-top: 10px; 
-    }
-    .reimpresion-aviso {
-      background: #fef3c7;
-      border-left: 4px solid #f59e0b;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 11px;
-      color: #92400e;
-      margin-bottom: 15px;
-      text-align: center;
-    }
-    @media print { 
-      .no-print { display: none !important; } 
-      body { padding: 0; }
-    }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th { background: #1e3a8a; color: white; padding: 10px 8px; text-align: left; font-size: 11px; text-transform: uppercase; }
+    td { padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 11px; }
+    .totales { text-align: right; margin-top: 20px; padding: 15px; background: #eff6ff; border-radius: 8px; }
+    .totales p { margin: 5px 0; font-size: 13px; }
+    .totales .total { font-size: 20px; font-weight: bold; color: #1e3a8a; border-top: 2px solid #1e3a8a; padding-top: 10px; margin-top: 10px; }
+    .observaciones { margin-top: 20px; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; }
+    .observaciones h4 { margin: 0 0 5px 0; color: #92400e; font-size: 12px; }
+    .observaciones p { margin: 0; font-size: 12px; }
+    .estado-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; color: white; margin-top: 5px; }
+    .firmas { margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; text-align: center; }
+    .firma-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 5px; }
+    .firma-line p { margin: 3px 0; font-size: 12px; }
+    .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 10px; }
+    .reimpresion-aviso { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 8px 12px; border-radius: 6px; font-size: 11px; color: #92400e; margin-bottom: 15px; text-align: center; }
+    @media print { .no-print { display: none !important; } body { padding: 0; } }
   </style>
 </head>
 <body>
@@ -866,7 +696,7 @@ function imprimirComprobanteModificacion() {
     </div>
   </div>
 
-  <div class="reimpresion-avisos">
+  <div class="reimpresion-aviso">
     📄 Documento reimpreso el ${new Date().toLocaleString('es-ES')}
   </div>
 
@@ -947,12 +777,8 @@ function imprimirComprobanteModificacion() {
   </div>
 
   <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
-    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">
-      🖨️ Imprimir Comprobante
-    </button>
-    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
-      ❌ Cerrar
-    </button>
+    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">🖨️ Imprimir Comprobante</button>
+    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">❌ Cerrar</button>
   </div>
 </body>
 </html>`;
@@ -960,6 +786,7 @@ function imprimirComprobanteModificacion() {
   ventana.document.write(html);
   ventana.document.close();
 }
+
 // ==========================================
 // INICIALIZAR
 // ==========================================
