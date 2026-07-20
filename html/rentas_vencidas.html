@@ -7,92 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-.section-subtitle {
-  font-family: 'Libre Caslon Text', serif;
-  color: #1e3a8a;
-  font-size: 16px;
-  font-weight: 700;
-  margin: 25px 0 15px 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #e5e7eb;
-}
-.btn-recibida {
-  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-  color: white;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.3s;
-}
-.btn-recibida:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(5,150,105,0.3);
-}
-.btn-imprimir-vencida {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-  color: white;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.3s;
-  margin-right: 5px;
-}
-.btn-imprimir-vencida:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(30,58,138,0.3);
-}
-.vencida-badge {
-  background: #ef4444;
-  color: white;
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-  /* ✅ ESTILOS ESPECÍFICOS PARA LOS BOTONES (con mayor prioridad) */
-.btn-imprimir-vencida,
-.btn-recibida {
-  padding: 6px 12px !important;
-  border: none !important;
-  border-radius: 6px !important;
-  cursor: pointer !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  transition: all 0.3s !important;
-  margin: 0 !important;
-  white-space: nowrap !important;
-  min-width: auto !important;
-}
-
-.btn-imprimir-vencida {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%) !important;
-  color: white !important;
-  margin-right: 5px !important;
-}
-
-.btn-imprimir-vencida:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px rgba(30,58,138,0.3) !important;
-}
-
-.btn-recibida {
-  background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
-  color: white !important;
-}
-
-.btn-recibida:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px rgba(5,150,105,0.3) !important;
-}
-</style>
 </head>
 <body>
 
@@ -126,7 +40,7 @@
         <tbody id="tbodyVencidas">
           <tr>
             <td colspan="9" style="text-align: center; padding: 40px; color: #6b7280;">
-              <div style="font-size: 40px; margin-bottom: 10px;"></div>
+              <div style="font-size: 40px; margin-bottom: 10px;">⏳</div>
               <div>Cargando rentas vencidas...</div>
             </td>
           </tr>
