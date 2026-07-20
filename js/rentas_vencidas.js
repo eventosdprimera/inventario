@@ -201,14 +201,14 @@ function renderizarTablaVencidas() {
 }
 
 // ==========================================
-// ✅ MARCAR COMO RECIBIDA (MOVER A TERMINADAS)
+// ✅ MARCAR COMO RECIBIDA (MUEVE A TERMINADAS Y ELIMINA DE ACTIVA)
 // ==========================================
 async function marcarComoRecibida(numeroRenta) {
-  const confirmacion = confirm(`¿Confirmar que la renta #${numeroRenta} ha sido recibida?\n\nEsta acción moverá la renta a "Terminadas" y desaparecerá de la lista de vencidas.`);
+  const confirmacion = confirm(`¿Confirmar que la renta #${numeroRenta} ha sido recibida?\n\nEsta acción moverá la renta a "Terminadas" y la eliminará de la lista de vencidas.`);
   if (!confirmacion) return;
 
   try {
-    // 1. Obtener los datos completos de la renta
+    // 1. Obtener datos completos de la renta
     const { data: renta, error: errorFetch } = await supabaseClient
       .from('rentas')
       .select('*')
@@ -217,16 +217,15 @@ async function marcarComoRecibida(numeroRenta) {
 
     if (errorFetch || !renta) throw new Error('No se pudo obtener los datos de la renta');
 
-    // 2. Calcular días de retraso (Zona horaria Caracas)
-    const hoy = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"}));
+    // 2. Calcular días de retraso (Zona Horaria Caracas)
+    const hoyCaracas = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"}));
+    const fechaHoyStr = hoyCaracas.toISOString().split('T')[0];
     const fechaDevolucion = new Date(renta.fecha_devolucion + 'T12:00:00');
-    const diffTime = hoy - fechaDevolucion;
+    const diffTime = hoyCaracas - fechaDevolucion;
     const diasRetraso = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
-    
-    const fechaHoyStr = hoy.toISOString().split('T')[0];
 
-    // 3. Insertar en la tabla de rentas_terminadas
-    const { error: errorTerminada } = await supabaseClient
+    // 3. Insertar en rentas_terminadas
+    const { data: rentaTerminada, error: errorTerminada } = await supabaseClient
       .from('rentas_terminadas')
       .insert({
         numero_renta: renta.numero_renta,
@@ -254,25 +253,60 @@ async function marcarComoRecibida(numeroRenta) {
         dias_anticipados: 0,
         dias_retraso: diasRetraso,
         observaciones_terminacion: `Recibida con ${diasRetraso} día(s) de retraso.`
-      });
+      })
+      .select()
+      .single();
 
     if (errorTerminada) throw new Error('Error al guardar en rentas_terminadas: ' + errorTerminada.message);
 
-    // 4. Actualizar el estado en la tabla original de rentas
-    const { error: errorUpdate } = await supabaseClient
+    // 4. Cargar y mover items a terminadas
+    const { data: items, error: errorItems } = await supabaseClient
+      .from('rentas_items')
+      .select('*')
+      .eq('renta_id', renta.id);
+
+    if (errorItems) throw errorItems;
+
+    if (items && items.length > 0) {
+      for (const item of items) {
+        await supabaseClient.from('rentas_items_terminadas').insert({
+          renta_terminada_id: rentaTerminada.id,
+          renta_id_original: item.renta_id,
+          codigo_barras: item.codigo_barras,
+          nombre_equipo: item.nombre_equipo,
+          marca: item.marca,
+          modelo: item.modelo,
+          serial: item.serial,
+          cantidad: item.cantidad,
+          precio_unitario: item.precio_unitario,
+          subtotal: item.subtotal
+        });
+      }
+    }
+
+    // 5. ✅ ELIMINAR items de rentas_items
+    const { error: errorDeleteItems } = await supabaseClient
+      .from('rentas_items')
+      .delete()
+      .eq('renta_id', renta.id);
+
+    if (errorDeleteItems) throw new Error('Error al eliminar items: ' + errorDeleteItems.message);
+
+    // 6. ✅ ELIMINAR renta de rentas
+    const { error: errorDeleteRenta } = await supabaseClient
       .from('rentas')
-      .update({ estado: 'devuelta' })
-      .eq('numero_renta', numeroRenta);
+      .delete()
+      .eq('id', renta.id);
 
-    if (errorUpdate) throw new Error('Error al actualizar estado en rentas: ' + errorUpdate.message);
+    if (errorDeleteRenta) throw new Error('Error al eliminar renta: ' + errorDeleteRenta.message);
 
-    // 5. Registrar en logs
+    // 7. Registrar en logs
     if (typeof registrarLog === 'function') {
       const descripcion = `Marcó como recibida la Renta #${numeroRenta} | Cliente: ${renta.cliente_nombre} | Retraso: ${diasRetraso} días | Recibido por: ${usuarioActualVencidas?.email || 'Desconocido'}`;
       await registrarLog('rentar', 'Renta recibida (terminada)', descripcion, 'success');
     }
 
-    mostrarMensajeVencidas(`✅ Renta #${numeroRenta} marcada como recibida y movida a terminadas`, 'exito');
+    mostrarMensajeVencidas(`✅ Renta #${numeroRenta} movida a terminadas`, 'exito');
 
     setTimeout(() => {
       cargarRentasVencidas();
