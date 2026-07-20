@@ -1,40 +1,31 @@
 // ==========================================
 // VARIABLES GLOBALES
 // ==========================================
-let equipoEncontrado = null;
-let usuarioActual = null;
+let rentasCacheEliminar = [];
+let paginaActualEliminar = 1;
+const POR_PAGINA_ELIMINAR = 20;
+let rentaEliminarSeleccionada = null;
+let itemsEliminarSeleccionada = [];
+let usuarioActualEliminarRenta = null;
 
 // ==========================================
-// SISTEMA DE MENSAJES (100% SEGURO)
+// ✅ FUNCIÓN PARA OBTENER LA FECHA DE HOY EN CARACAS (UTC-4)
 // ==========================================
-function mostrarMensaje(texto, tipo) {
-  const mensajeDiv = document.getElementById('mensaje');
-  if (!mensajeDiv) {
-    console.warn('⚠️ Elemento #mensaje no encontrado en el DOM');
-    return;
-  }
-
-  // Usamos textContent por seguridad, evita errores de inyección y null
-  mensajeDiv.textContent = texto;
-  mensajeDiv.className = `mensaje ${tipo}`;
-  mensajeDiv.style.display = 'block';
-
-  if (tipo === 'exito') {
-    setTimeout(() => {
-      const msg = document.getElementById('mensaje');
-      if (msg) msg.style.display = 'none';
-    }, 4000);
-  }
+function obtenerFechaHoyCaracas() {
+  const opciones = { 
+    timeZone: 'America/Caracas', 
+    year: 'numeric', 
+    month: '2-digit', 
+    day: '2-digit' 
+  };
+  return new Date().toLocaleDateString('en-CA', opciones); // Retorna "YYYY-MM-DD"
 }
 
 // ==========================================
 // INICIALIZACIÓN
 // ==========================================
-async function inicializarEliminacion() {
-  console.log('🗑️ Inicializando módulo de eliminación...');
-  
-  equipoEncontrado = null;
-  usuarioActual = null;
+async function inicializarEliminarRenta() {
+  console.log('🗑️ === INICIANDO ELIMINAR RENTA ===');
 
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
@@ -43,278 +34,463 @@ async function inicializarEliminacion() {
   }
 
   if (typeof supabaseClient === 'undefined') {
-    mostrarMensaje('Error: Supabase no está disponible', 'error');
+    mostrarMensajeEliminar('Error: Supabase no está disponible', 'error');
     return;
   }
 
-  try {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (session) {
-      const { data } = await supabaseClient.from('usuarios').select('*').eq('email', session.user.email).maybeSingle();
-      usuarioActual = data || { email: session.user.email, id: session.user.id };
-    }
-  } catch (err) {
-    console.error('Error al obtener usuario:', err);
-  }
+  await cargarUsuarioEliminar();
+  await buscarRentasEliminar();
 
-  const inputBusqueda = document.getElementById('buscarEquipoInput');
-  if (inputBusqueda) {
-    if (!inputBusqueda.dataset.listenerAttached) {
-      inputBusqueda.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          buscarEquipo();
-        }
-      });
-      inputBusqueda.dataset.listenerAttached = 'true';
-    }
-    setTimeout(() => inputBusqueda.focus(), 100);
-  }
-
-  await cargarHistorialEliminados();
+  console.log('✅ === ELIMINAR RENTA INICIALIZADO ===');
 }
 
 // ==========================================
-// BUSCAR EQUIPO
+// CARGAR USUARIO
 // ==========================================
-async function buscarEquipo() {
-  const input = document.getElementById('buscarEquipoInput');
-  const btnBuscar = document.querySelector('button[onclick="buscarEquipo()"]');
-  
-  if (!input) return;
+async function cargarUsuarioEliminar() {
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
 
-  const codigoOriginal = input.value.trim();
-  if (!codigoOriginal) {
-    mostrarMensaje('⚠️ Por favor ingrese un código de barras o serial', 'warning');
-    input.focus();
+    const { data, error } = await supabaseClient
+      .from('usuarios')
+      .select('*')
+      .eq('email', session.user.email)
+      .maybeSingle();
+
+    if (data && !error) {
+      usuarioActualEliminarRenta = data;
+    } else {
+      usuarioActualEliminarRenta = { email: session.user.email, id: session.user.id };
+    }
+  } catch (err) {
+    console.error('Error al cargar usuario:', err);
+  }
+}
+
+// ==========================================
+// BUSCAR RENTAS CON FILTROS (ORDENADO POR CREACIÓN)
+// ==========================================
+async function buscarRentasEliminar() {
+  const filtroCliente = document.getElementById('filtroClienteEliminar')?.value.trim() || '';
+  const filtroNumero = document.getElementById('filtroNumeroEliminar')?.value.trim() || '';
+  const filtroDesde = document.getElementById('filtroFechaDesdeEliminar')?.value || '';
+  const filtroHasta = document.getElementById('filtroFechaHastaEliminar')?.value || '';
+
+  try {
+    let query = supabaseClient
+      .from('rentas')
+      .select('*', { count: 'exact' })
+      .order('fecha_creacion', { ascending: false }); // ✅ Ordenado por fecha de creación
+
+    if (filtroCliente) query = query.ilike('cliente_nombre', `%${filtroCliente}%`);
+    if (filtroNumero) query = query.ilike('numero_renta', `%${filtroNumero}%`);
+    if (filtroDesde) query = query.gte('fecha_renta', filtroDesde);
+    if (filtroHasta) query = query.lte('fecha_renta', filtroHasta);
+
+    const desde = (paginaActualEliminar - 1) * POR_PAGINA_ELIMINAR;
+    const hasta = desde + POR_PAGINA_ELIMINAR - 1;
+    query = query.range(desde, hasta);
+
+    const { data, error, count } = await query;
+    if (error) throw error;
+
+    rentasCacheEliminar = data || [];
+    renderizarTablaRentasEliminar(count || 0);
+
+  } catch (err) {
+    console.error('Error al buscar rentas:', err);
+    mostrarMensajeEliminar('Error al buscar rentas: ' + err.message, 'error');
+  }
+}
+
+// ==========================================
+// ✅ RENDERIZAR TABLA DE RENTAS (CON ESTADO DINÁMICO EN TIEMPO REAL)
+// ==========================================
+function renderizarTablaRentasEliminar(totalRegistros) {
+  const tbody = document.getElementById('tbodyRentasEliminar');
+  if (!tbody) return;
+
+  if (rentasCacheEliminar.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">
+          <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
+          <div>No se encontraron rentas con los filtros aplicados</div>
+        </td>
+      </tr>`;
+    document.getElementById('paginacionEliminar').innerHTML = '';
     return;
   }
 
-  if (btnBuscar) {
-    btnBuscar.disabled = true;
-    btnBuscar.textContent = '⏳ Buscando...';
+  // ✅ Obtener fecha de hoy en Caracas para comparación en tiempo real
+  const hoyCaracas = obtenerFechaHoyCaracas();
+  console.log('🔍 Evaluando fechas. Hoy en Caracas es:', hoyCaracas);
+
+  tbody.innerHTML = rentasCacheEliminar.map((renta, index) => {
+    const globalIndex = (paginaActualEliminar - 1) * POR_PAGINA_ELIMINAR + index + 1;
+    const fechaInicio = new Date(renta.fecha_renta + 'T12:00:00').toLocaleDateString('es-ES');
+    const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00').toLocaleDateString('es-ES');
+    
+    // ✅ LÓGICA CLAVE: Si está "activa" PERO la fecha de devolución es hoy o anterior, es "vencida"
+    let estadoReal = renta.estado;
+    
+    console.log(`Renta: ${renta.numero_renta} | Estado BD: ${renta.estado} | Devolución: ${renta.fecha_devolucion} | ¿Es <= hoy (${hoyCaracas})? ${renta.fecha_devolucion <= hoyCaracas}`);
+
+    if (renta.estado === 'activa' && renta.fecha_devolucion && renta.fecha_devolucion <= hoyCaracas) {
+      estadoReal = 'vencida';
+      console.log(`⚠️ ALERTA: ${renta.numero_renta} mostrada como VENCIDA en la lista`);
+    }
+
+    const estadoColors = {
+      'activa': '#10b981',
+      'devuelta': '#3b82f6',
+      'vencida': '#ef4444',
+      'cancelada': '#6b7280'
+    };
+    const colorEstado = estadoColors[estadoReal] || '#6b7280';
+
+    return `
+      <tr>
+        <td>${globalIndex}</td>
+        <td style="font-family: monospace; font-weight: 600; color: #1e3a8a;">${renta.numero_renta}</td>
+        <td><strong>${renta.cliente_nombre}</strong></td>
+        <td>${fechaInicio}</td>
+        <td>${fechaDev}</td>
+        <td style="text-align: right; font-weight: 600;">$${parseFloat(renta.total).toFixed(2)}</td>
+        <td style="text-align: center;">
+          <span style="background: ${colorEstado}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">
+            ${estadoReal}
+          </span>
+        </td>
+        <td style="text-align: center;">
+          <button type="button" onclick="seleccionarRentaEliminar('${renta.numero_renta}')" 
+                  style="background: #fee2e2; color: #dc2626; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s;"
+                  onmouseover="this.style.background='#dc2626'; this.style.color='white';"
+                  onmouseout="this.style.background='#fee2e2'; this.style.color='#dc2626';"
+                  title="Eliminar esta renta">
+            🗑️ Eliminar
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  renderizarPaginacionEliminar(totalRegistros);
+}
+
+// ==========================================
+// PAGINACIÓN
+// ==========================================
+function renderizarPaginacionEliminar(totalRegistros) {
+  const cont = document.getElementById('paginacionEliminar');
+  if (!cont) return;
+
+  const totalPaginas = Math.ceil(totalRegistros / POR_PAGINA_ELIMINAR);
+  
+  if (totalPaginas <= 1) {
+    cont.innerHTML = `<span style="color: #6b7280; font-size: 13px;">Total: ${totalRegistros} renta(s)</span>`;
+    return;
   }
 
+  let html = '';
+  html += `<button type="button" onclick="cambiarPaginaEliminar(${paginaActualEliminar - 1})" 
+           style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px;"
+           ${paginaActualEliminar === 1 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>‹ Anterior</button>`;
+  
+  html += `<span style="color: #374151; font-size: 13px; font-weight: 600;">Página ${paginaActualEliminar} de ${totalPaginas}</span>`;
+  
+  html += `<button type="button" onclick="cambiarPaginaEliminar(${paginaActualEliminar + 1})" 
+           style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px;"
+           ${paginaActualEliminar === totalPaginas ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>Siguiente ›</button>`;
+  
+  html += `<span style="color: #6b7280; font-size: 13px;">Total: ${totalRegistros}</span>`;
+
+  cont.innerHTML = html;
+}
+
+async function cambiarPaginaEliminar(nuevaPagina) {
+  await buscarRentasEliminar();
+  document.getElementById('fieldsetListaEliminar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ==========================================
+// LIMPIAR FILTROS
+// ==========================================
+function limpiarFiltrosEliminar() {
+  document.getElementById('filtroClienteEliminar').value = '';
+  document.getElementById('filtroNumeroEliminar').value = '';
+  document.getElementById('filtroFechaDesdeEliminar').value = '';
+  document.getElementById('filtroFechaHastaEliminar').value = '';
+  paginaActualEliminar = 1;
+  buscarRentasEliminar();
+}
+
+// ==========================================
+// SELECCIONAR RENTA PARA ELIMINAR
+// ==========================================
+async function seleccionarRentaEliminar(numeroRenta) {
   try {
-    const codigoBusqueda = codigoOriginal.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
-
-    const { data, error } = await supabaseClient
-      .from('equipos')
+    const { data: renta, error } = await supabaseClient
+      .from('rentas')
       .select('*')
-      .or(`codigo_barras.eq.${codigoBusqueda},serial.eq.${codigoBusqueda}`)
-      .maybeSingle();
+      .eq('numero_renta', numeroRenta)
+      .single();
 
-    if (error || !data) {
-      mostrarMensaje(`❌ No se encontró ningún equipo con: "${codigoBusqueda}"`, 'error');
-      input.value = '';
-      input.focus();
+    if (error || !renta) {
+      mostrarMensajeEliminar('No se pudo cargar la renta', 'error');
       return;
     }
 
-    equipoEncontrado = data;
-    mostrarDatosEquipo(data);
-    mostrarMensaje(`✅ Equipo encontrado: ${data.nombre_equipo}`, 'exito');
+    const { data: items, error: errorItems } = await supabaseClient
+      .from('rentas_items')
+      .select('*')
+      .eq('renta_id', renta.id)
+      .order('id', { ascending: true });
+
+    if (errorItems) throw errorItems;
+
+    rentaEliminarSeleccionada = renta;
+    itemsEliminarSeleccionada = items || [];
+
+    document.getElementById('eliminarNumeroRenta').textContent = ` - ${renta.numero_renta}`;
+    document.getElementById('eliminarClienteNombre').value = renta.cliente_nombre || '';
+    document.getElementById('eliminarClienteTelefono').value = renta.cliente_telefono || '';
+    document.getElementById('eliminarClienteEmail').value = renta.cliente_email || '';
+    document.getElementById('eliminarClienteDireccion').value = renta.cliente_direccion || '';
+    document.getElementById('eliminarFechaRenta').value = renta.fecha_renta || '';
+    document.getElementById('eliminarFechaDevolucion').value = renta.fecha_devolucion || '';
+    document.getElementById('eliminarIngenieroNombre').value = renta.ingeniero_nombre || '';
+    document.getElementById('eliminarIngenieroContacto').value = renta.ingeniero_contacto || '';
+    document.getElementById('eliminarEstado').value = renta.estado || 'activa';
+    document.getElementById('eliminarObservaciones').value = renta.observaciones || '';
+
+    renderizarItemsEliminar();
+    calcularTotalesEliminar();
+
+    document.getElementById('eliminarMotivo').value = '';
+
+    document.getElementById('fieldsetListaEliminar').style.display = 'none';
+    document.getElementById('fieldsetDetalleEliminar').style.display = 'block';
+
+    document.getElementById('fieldsetDetalleEliminar').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   } catch (err) {
-    console.error('Error al buscar:', err);
-    mostrarMensaje('Error al buscar: ' + err.message, 'error');
-  } finally {
-    if (btnBuscar) {
-      btnBuscar.disabled = false;
-      btnBuscar.textContent = '🔎 Buscar';
-    }
+    console.error('Error al seleccionar renta:', err);
+    mostrarMensajeEliminar('Error al cargar la renta: ' + err.message, 'error');
   }
 }
 
 // ==========================================
-// MOSTRAR DATOS DEL EQUIPO (BLINDADO)
+// RENDERIZAR ITEMS
 // ==========================================
-function mostrarDatosEquipo(equipo) {
-  const campos = [
-    { id: 'fichaCodigo', valor: equipo.codigo_barras },
-    { id: 'fichaNombre', valor: equipo.nombre_equipo },
-    { id: 'fichaMarca', valor: equipo.marca },
-    { id: 'fichaModelo', valor: equipo.modelo },
-    { id: 'fichaSerial', valor: equipo.serial },
-    { id: 'fichaEstatus', valor: equipo.estatus }
-  ];
+function renderizarItemsEliminar() {
+  const tbody = document.getElementById('eliminarTbodyItems');
+  if (!tbody) return;
 
-  campos.forEach(campo => {
-    const el = document.getElementById(campo.id);
-    if (el) {
-      el.textContent = campo.valor || 'N/A';
-    } else {
-      console.warn(`⚠️ Elemento #${campo.id} no encontrado en el HTML`);
-    }
-  });
-
-  const elEncontrado = document.getElementById('equipoEncontrado');
-  if (elEncontrado) {
-    elEncontrado.style.display = 'block';
-    setTimeout(() => {
-      elEncontrado.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
+  if (itemsEliminarSeleccionada.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 30px; color: #6b7280;">
+          No hay equipos en esta renta.
+        </td>
+      </tr>`;
+    return;
   }
+
+  tbody.innerHTML = itemsEliminarSeleccionada.map((item, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td style="font-family: monospace; font-size: 11px;">${item.codigo_barras}</td>
+      <td><strong>${item.nombre_equipo}</strong></td>
+      <td>${item.serial || '-'}</td>
+      <td style="text-align: right;">$${parseFloat(item.precio_unitario).toFixed(2)}</td>
+      <td style="text-align: center;">${item.cantidad}</td>
+      <td style="text-align: right;"><strong>$${parseFloat(item.subtotal).toFixed(2)}</strong></td>
+    </tr>
+  `).join('');
+}
+
+function calcularTotalesEliminar() {
+  const subtotal = itemsEliminarSeleccionada.reduce((sum, item) => sum + parseFloat(item.subtotal), 0);
+  const descuento = parseFloat(rentaEliminarSeleccionada?.descuento) || 0;
+  const total = Math.max(0, subtotal - descuento);
+
+  const elSubtotal = document.getElementById('eliminarSubtotal');
+  const elDescuento = document.getElementById('eliminarDescuento');
+  const elTotal = document.getElementById('eliminarTotal');
+  if (elSubtotal) elSubtotal.textContent = `$${subtotal.toFixed(2)}`;
+  if (elDescuento) elDescuento.textContent = `$${descuento.toFixed(2)}`;
+  if (elTotal) elTotal.textContent = `$${total.toFixed(2)}`;
 }
 
 // ==========================================
 // CONFIRMAR ELIMINACIÓN
 // ==========================================
-async function confirmarEliminacion() {
-  if (!equipoEncontrado) return;
+async function confirmarEliminacionRenta() {
+  if (!rentaEliminarSeleccionada) return;
 
-  const motivoInput = document.getElementById('motivoEliminacion');
-  const motivo = motivoInput ? motivoInput.value.trim() : '';
+  const motivo = document.getElementById('eliminarMotivo')?.value.trim() || '';
   
-  const confirmacion = confirm(
-    `⚠️ ¿Estás SEGURO de que deseas eliminar permanentemente este equipo?\n\n` +
-    `Código: ${equipoEncontrado.codigo_barras}\n` +
-    `Nombre: ${equipoEncontrado.nombre_equipo}\n\n` +
-    `Esta acción no se puede deshacer.`
-  );
-
-  if (!confirmacion) return;
-
-  const btnEliminar = document.querySelector('.btn-danger');
-  if (btnEliminar) {
-    btnEliminar.disabled = true;
-    btnEliminar.textContent = '⏳ Eliminando...';
-  }
-
-  try {
-    const { error: errorRespaldo } = await supabaseClient
-      .from('equipos_eliminados')
-      .insert({
-        equipo_id_original: equipoEncontrado.id,
-        codigo_barras: equipoEncontrado.codigo_barras,
-        nombre_equipo: equipoEncontrado.nombre_equipo,
-        marca: equipoEncontrado.marca,
-        modelo: equipoEncontrado.modelo,
-        serial: equipoEncontrado.serial,
-        costo: equipoEncontrado.costo || 0,
-        estatus: equipoEncontrado.estatus,
-        motivo_eliminacion: motivo || 'Sin motivo especificado',
-        eliminado_por_email: usuarioActual?.email || 'unknown',
-        eliminado_por_id: usuarioActual?.id || null,
-        fecha_eliminacion: new Date().toISOString()
-      });
-
-    if (errorRespaldo) throw new Error('Error al guardar respaldo: ' + errorRespaldo.message);
-
-    const { error: errorEliminacion } = await supabaseClient
-      .from('equipos')
-      .delete()
-      .eq('id', equipoEncontrado.id);
-
-    if (errorEliminacion) throw new Error('Error al eliminar: ' + errorEliminacion.message);
-
-    if (typeof registrarLog === 'function') {
-      await registrarLog(
-        'inventario', 
-        'Equipo eliminado', 
-        `Equipo eliminado: ${equipoEncontrado.codigo_barras} (${equipoEncontrado.nombre_equipo}) | Motivo: ${motivo || 'N/A'} | Eliminado por: ${usuarioActual?.email || 'Desconocido'}`, 
-        'error'
-      );
-    }
-
-    mostrarMensaje('✅ Equipo eliminado y movido al historial exitosamente', 'exito');
-    
-    setTimeout(() => {
-      cancelarBusqueda();
-      cargarHistorialEliminados();
-    }, 1500);
-
-  } catch (err) {
-    console.error('Error al eliminar:', err);
-    mostrarMensaje('❌ Error al eliminar: ' + err.message, 'error');
-  } finally {
-    const btn = document.querySelector('.btn-danger');
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = '🗑️ Eliminar Equipo Permanentemente';
-    }
-  }
-}
-
-// ==========================================
-// CANCELAR BÚSQUEDA
-// ==========================================
-function cancelarBusqueda() {
-  equipoEncontrado = null;
-  
-  const input = document.getElementById('buscarEquipoInput');
-  if (input) {
-    input.value = '';
-    input.focus();
-  }
-  
-  const motivo = document.getElementById('motivoEliminacion');
-  if (motivo) motivo.value = '';
-  
-  const encontrado = document.getElementById('equipoEncontrado');
-  if (encontrado) encontrado.style.display = 'none';
-  
-  const mensaje = document.getElementById('mensaje');
-  if (mensaje) mensaje.style.display = 'none';
-}
-
-// ==========================================
-// CARGAR HISTORIAL DE ELIMINADOS
-// ==========================================
-async function cargarHistorialEliminados() {
-  const tbody = document.getElementById('tbodyEliminados');
-  if (!tbody) {
-    console.warn('⚠️ Elemento #tbodyEliminados no encontrado');
+  if (!motivo) {
+    mostrarMensajeEliminar('Por favor ingrese el motivo de la eliminación', 'error');
+    document.getElementById('eliminarMotivo').focus();
     return;
   }
 
+  const confirmacion = confirm(`⚠️ ¿Está seguro de eliminar la renta #${rentaEliminarSeleccionada.numero_renta}?\n\nCliente: ${rentaEliminarSeleccionada.cliente_nombre}\nTotal: $${parseFloat(rentaEliminarSeleccionada.total).toFixed(2)}\n\nEsta acción no se puede deshacer (se guardará respaldo).`);
+  
+  if (!confirmacion) return;
+
+  const btnEliminar = document.getElementById('btnEliminarRenta');
+  if (btnEliminar) { 
+    btnEliminar.disabled = true; 
+    btnEliminar.textContent = '⏳ Eliminando...'; 
+  }
+
   try {
-    const { data, error } = await supabaseClient
-      .from('equipos_eliminados')
-      .select('*')
-      .order('fecha_eliminacion', { ascending: false })
-      .limit(10);
+    // 1. Insertar en tabla de respaldo
+    const { data: rentaEliminada, error: errorRespaldoRenta } = await supabaseClient
+      .from('rentas_eliminadas')
+      .insert({
+        numero_renta: rentaEliminarSeleccionada.numero_renta,
+        serie: rentaEliminarSeleccionada.serie || 'RENT',
+        fecha_renta: rentaEliminarSeleccionada.fecha_renta,
+        fecha_devolucion: rentaEliminarSeleccionada.fecha_devolucion,
+        cliente_nombre: rentaEliminarSeleccionada.cliente_nombre,
+        cliente_telefono: rentaEliminarSeleccionada.cliente_telefono,
+        cliente_email: rentaEliminarSeleccionada.cliente_email,
+        cliente_direccion: rentaEliminarSeleccionada.cliente_direccion,
+        ingeniero_nombre: rentaEliminarSeleccionada.ingeniero_nombre,
+        ingeniero_contacto: rentaEliminarSeleccionada.ingeniero_contacto,
+        subtotal: rentaEliminarSeleccionada.subtotal,
+        descuento: rentaEliminarSeleccionada.descuento,
+        total: rentaEliminarSeleccionada.total,
+        estado: rentaEliminarSeleccionada.estado,
+        observaciones: rentaEliminarSeleccionada.observaciones,
+        usuario_registro: rentaEliminarSeleccionada.usuario_registro,
+        usuario_registro_id: rentaEliminarSeleccionada.usuario_registro_id,
+        eliminado_por_email: usuarioActualEliminarRenta?.email || 'unknown',
+        eliminado_por_id: usuarioActualEliminarRenta?.id || null,
+        motivo_eliminacion: motivo
+      })
+      .select()
+      .single();
 
-    if (error) throw error;
+    if (errorRespaldoRenta) throw new Error('Error al crear respaldo de renta: ' + errorRespaldoRenta.message);
 
-    if (!data || data.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="5" style="text-align: center; padding: 40px; color: #6b7280;">
-            No hay equipos eliminados recientemente
-          </td>
-        </tr>`;
-      return;
+    // 2. Insertar items en tabla de respaldo
+    for (const item of itemsEliminarSeleccionada) {
+      const { error: errorRespaldoItem } = await supabaseClient
+        .from('rentas_items_eliminadas')
+        .insert({
+          renta_eliminada_id: rentaEliminada.id,
+          renta_id_original: item.renta_id,
+          codigo_barras: item.codigo_barras,
+          nombre_equipo: item.nombre_equipo,
+          marca: item.marca,
+          modelo: item.modelo,
+          serial: item.serial,
+          cantidad: item.cantidad,
+          precio_unitario: item.precio_unitario,
+          subtotal: item.subtotal
+        });
+
+      if (errorRespaldoItem) throw new Error('Error al crear respaldo de item: ' + errorRespaldoItem.message);
     }
 
-    tbody.innerHTML = data.map(item => {
-      const fecha = item.fecha_eliminacion ? new Date(item.fecha_eliminacion).toLocaleDateString('es-ES') : '-';
-      const eliminadoPor = item.eliminado_por_email || item.eliminado_por || 'N/A'; 
-      return `
-        <tr>
-          <td>${fecha}</td>
-          <td style="font-family: monospace; font-weight: 600;">${item.codigo_barras}</td>
-          <td>${item.nombre_equipo}</td>
-          <td>${item.serial || '-'}</td>
-          <td>${eliminadoPor}</td>
-        </tr>
-      `;
-    }).join('');
+    // 3. Eliminar items de la tabla original
+    const { error: errorDeleteItems } = await supabaseClient
+      .from('rentas_items')
+      .delete()
+      .eq('renta_id', rentaEliminarSeleccionada.id);
+
+    if (errorDeleteItems) throw new Error('Error al eliminar items: ' + errorDeleteItems.message);
+
+    // 4. Eliminar renta de la tabla original
+    const { error: errorDeleteRenta } = await supabaseClient
+      .from('rentas')
+      .delete()
+      .eq('id', rentaEliminarSeleccionada.id);
+
+    if (errorDeleteRenta) throw new Error('Error al eliminar renta: ' + errorDeleteRenta.message);
+
+    // 5. Registrar en logs
+    if (typeof registrarLog === 'function') {
+      const descripcion = `Eliminó Renta #${rentaEliminarSeleccionada.numero_renta} | Cliente: ${rentaEliminarSeleccionada.cliente_nombre} | Total: $${parseFloat(rentaEliminarSeleccionada.total).toFixed(2)} | Equipos: ${itemsEliminarSeleccionada.length} | Motivo: ${motivo} | Eliminado por: ${usuarioActualEliminarRenta?.email || 'Desconocido'}`;
+      await registrarLog('rentar', 'Renta eliminada', descripcion, 'error');
+    }
+
+    mostrarMensajeEliminar(`✅ Renta #${rentaEliminarSeleccionada.numero_renta} eliminada exitosamente`, 'exito');
+
+    // Resetear silenciosamente y recargar
+    rentaEliminarSeleccionada = null;
+    itemsEliminarSeleccionada = [];
+    document.getElementById('fieldsetListaEliminar').style.display = 'block';
+    document.getElementById('fieldsetDetalleEliminar').style.display = 'none';
+    
+    if (btnEliminar) {
+      btnEliminar.disabled = false;
+      btnEliminar.textContent = '🗑️ Eliminar Renta Permanentemente';
+    }
+
+    setTimeout(() => {
+      paginaActualEliminar = 1;
+      buscarRentasEliminar();
+    }, 1500);
 
   } catch (err) {
-    console.error('Error al cargar historial:', err);
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="5" style="text-align: center; padding: 40px; color: #ef4444;">
-          Error al cargar historial: ${err.message}
-        </td>
-      </tr>`;
+    console.error('Error al eliminar renta:', err);
+    mostrarMensajeEliminar('Error al eliminar: ' + err.message, 'error');
+    if (btnEliminar) { 
+      btnEliminar.disabled = false; 
+      btnEliminar.textContent = '🗑️ Eliminar Renta Permanentemente'; 
+    }
   }
 }
 
 // ==========================================
-// INICIALIZAR AL CARGAR
+// CANCELAR ELIMINACIÓN
+// ==========================================
+function cancelarEliminacion() {
+  if (itemsEliminarSeleccionada.length > 0 && !confirm('¿Cancelar la eliminación?')) {
+    return;
+  }
+
+  rentaEliminarSeleccionada = null;
+  itemsEliminarSeleccionada = [];
+
+  document.getElementById('fieldsetListaEliminar').style.display = 'block';
+  document.getElementById('fieldsetDetalleEliminar').style.display = 'none';
+
+  const btnEliminar = document.getElementById('btnEliminarRenta');
+  if (btnEliminar) { 
+    btnEliminar.disabled = false; 
+    btnEliminar.textContent = '🗑️ Eliminar Renta Permanentemente'; 
+  }
+
+  document.getElementById('fieldsetListaEliminar').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ==========================================
+// MOSTRAR MENSAJE
+// ==========================================
+function mostrarMensajeEliminar(texto, tipo) {
+  const msg = document.getElementById('mensaje');
+  if (msg) {
+    msg.textContent = texto;
+    msg.className = `mensaje ${tipo}`;
+    setTimeout(() => { msg.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
+    if (tipo === 'exito') {
+      setTimeout(() => { if (msg.classList.contains('exito')) msg.className = 'mensaje'; }, 5000);
+    }
+  }
+}
+
+// ==========================================
+// INICIALIZAR
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
-  inicializarEliminacion();
+  console.log('📄 Eliminar Renta DOM cargado');
+  inicializarEliminarRenta();
 });
