@@ -19,7 +19,7 @@ function obtenerFechaHoyCaracas() {
     month: '2-digit', 
     day: '2-digit' 
   };
-  return new Date().toLocaleDateString('en-CA', opciones);
+  return new Date().toLocaleDateString('en-CA', opciones); // Formato YYYY-MM-DD
 }
 
 // ==========================================
@@ -96,7 +96,7 @@ async function cargarUsuarioModificar() {
 }
 
 // ==========================================
-// BUSCAR RENTAS CON FILTROS
+// BUSCAR RENTAS CON FILTROS (ORDENADO POR FECHA DE CREACIÓN)
 // ==========================================
 async function buscarRentasModificar() {
   const filtroCliente = document.getElementById('filtroCliente')?.value.trim() || '';
@@ -108,7 +108,7 @@ async function buscarRentasModificar() {
     let query = supabaseClient
       .from('rentas')
       .select('*', { count: 'exact' })
-      .order('fecha_renta', { ascending: false });
+      .order('fecha_creacion', { ascending: false }); // ✅ ORDENADO POR FECHA DE CREACIÓN
 
     if (filtroCliente) query = query.ilike('cliente_nombre', `%${filtroCliente}%`);
     if (filtroNumero) query = query.ilike('numero_renta', `%${filtroNumero}%`);
@@ -158,7 +158,7 @@ function renderizarTablaRentasModificar(totalRegistros) {
     const fechaInicio = new Date(renta.fecha_renta + 'T12:00:00').toLocaleDateString('es-ES');
     const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00').toLocaleDateString('es-ES');
     
-    // Lógica para determinar el estado real
+    // ✅ Lógica para determinar el estado real visualmente
     let estadoReal = renta.estado;
     if (renta.estado === 'activa' && renta.fecha_devolucion < hoy) {
       estadoReal = 'vencida';
