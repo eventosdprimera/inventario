@@ -42,7 +42,7 @@ if (!document.getElementById('toastStylesMod')) {
 }
 
 // ==========================================
-//  FUNCIÓN INFALIBLE PARA ABRIR ZOOM (Reutilizada)
+// FUNCIÓN INFALIBLE PARA ABRIR ZOOM
 // ==========================================
 function abrirZoomInfalible(url) {
   const modal = document.createElement('div');
@@ -118,6 +118,40 @@ async function inicializarModificarAveria() {
 }
 
 // ==========================================
+// ✅ ASEGURAR CONTENEDOR DE FOTOS DEL EQUIPO (SOLO LECTURA)
+// ==========================================
+function asegurarContenedorFotosEquipo() {
+  let contenedor = document.getElementById('previewFotosEquipoMod');
+  if (!contenedor) {
+    const fieldset = document.createElement('fieldset');
+    fieldset.id = 'fieldsetFotosEquipoOriginalMod';
+    fieldset.style.display = 'none';
+    fieldset.style.marginBottom = '20px';
+    
+    const legend = document.createElement('legend');
+    legend.textContent = '🖼️ Fotos del Equipo (Registro Original)';
+    legend.style.cssText = 'background: #1e3a8a; color: white; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 600;';
+    fieldset.appendChild(legend);
+    
+    const grid = document.createElement('div');
+    grid.className = 'fotos-grid';
+    grid.id = 'previewFotosEquipoMod';
+    grid.style.cssText = 'display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 15px;';
+    fieldset.appendChild(grid);
+    
+    const fieldsetFotosMod = document.getElementById('fieldsetFotosMod');
+    if (fieldsetFotosMod && fieldsetFotosMod.parentNode) {
+      fieldsetFotosMod.parentNode.insertBefore(fieldset, fieldsetFotosMod);
+    } else {
+      document.body.appendChild(fieldset);
+    }
+    
+    contenedor = grid;
+  }
+  return contenedor;
+}
+
+// ==========================================
 // BUSCAR AVERÍA
 // ==========================================
 async function buscarAveriaParaModificar() {
@@ -133,23 +167,23 @@ async function buscarAveriaParaModificar() {
   codigo = codigo.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
 
   try {
+    // 1. Buscar la avería
     const { data, error } = await supabaseClient
       .from('equipos_averiados')
       .select('*')
       .or(`codigo_barras.eq.${codigo},serial.eq.${codigo}`)
       .maybeSingle();
 
-    // ✅ CORRECCIÓN 2: Si no encuentra, limpiar el campo para buscar otro
     if (error || !data) {
       mostrarToastMod('Avería no encontrada para este equipo', 'error');
-      input.value = ''; // ✅ Limpia el campo
-      input.focus();    // ✅ Devuelve el foco
+      input.value = '';
+      input.focus();
       return;
     }
 
     averiaSeleccionada = data;
     
-    // Mostrar ficha (solo lectura)
+    // 2. Mostrar ficha del equipo (solo lectura)
     document.getElementById('modFichaCodigo').textContent = data.codigo_barras || '-';
     document.getElementById('modFichaNombre').textContent = data.nombre_equipo || '-';
     document.getElementById('modFichaMarca').textContent = data.marca || '-';
@@ -157,7 +191,10 @@ async function buscarAveriaParaModificar() {
     document.getElementById('modFichaSerial').textContent = data.serial || '-';
     document.getElementById('fieldsetFichaEquipoMod').style.display = 'block';
 
-    // Cargar datos editables
+    // 3. ✅ Cargar y mostrar las fotos ORIGINALES del equipo (desde la tabla equipos)
+    await cargarYMostrarFotosEquipoOriginal(data.codigo_barras);
+
+    // 4. Cargar datos editables de la avería
     document.getElementById('modReportanteNombres').value = data.reportante_nombre || '';
     document.getElementById('modReportanteApellidos').value = data.reportante_apellidos || '';
     document.getElementById('modReportanteCedula').value = data.reportante_cedula || '';
@@ -170,13 +207,12 @@ async function buscarAveriaParaModificar() {
     document.getElementById('fieldsetFotosMod').style.display = 'block';
     document.getElementById('botonesAccionMod').style.display = 'flex';
 
-    // ✅ CORRECCIÓN 1: Cargar fotos existentes correctamente
+    // 5. Cargar fotos de evidencia existentes (estas SÍ se pueden modificar)
     fotosEvidenciaMod = [];
     if (data.fotos_evidencia && Array.isArray(data.fotos_evidencia)) {
       fotosEvidenciaMod = data.fotos_evidencia.filter(url => url && url.trim() !== '');
     }
     
-    console.log(' Fotos cargadas:', fotosEvidenciaMod);
     renderizarPreviewFotosMod();
 
   } catch (err) {
@@ -185,7 +221,64 @@ async function buscarAveriaParaModificar() {
 }
 
 // ==========================================
-// RENDERIZAR FOTOS
+// ✅ CARGAR Y MOSTRAR FOTOS DEL EQUIPO ORIGINAL (SOLO LECTURA)
+// ==========================================
+async function cargarYMostrarFotosEquipoOriginal(codigoBarras) {
+  const contenedor = asegurarContenedorFotosEquipo();
+  const fieldset = document.getElementById('fieldsetFotosEquipoOriginalMod');
+  if (fieldset) fieldset.style.display = 'block';
+
+  contenedor.innerHTML = '';
+  
+  try {
+    const { data: equipo, error } = await supabaseClient
+      .from('equipos')
+      .select('foto_url, foto2_url, foto3_url, foto4_url')
+      .eq('codigo_barras', codigoBarras)
+      .maybeSingle();
+
+    if (!error && equipo) {
+      const fotos = [equipo.foto_url, equipo.foto2_url, equipo.foto3_url, equipo.foto4_url].filter(url => url && url.trim() !== '');
+      
+      if (fotos.length === 0) {
+        contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>El equipo no tiene fotos registradas</div></div>`;
+        return;
+      }
+
+      fotos.forEach((fotoUrl, index) => {
+        const div = document.createElement('div');
+        div.className = 'foto-preview';
+        div.style.cursor = 'pointer';
+        div.style.position = 'relative';
+        div.onclick = function() { abrirZoomInfalible(fotoUrl); };
+        
+        const img = document.createElement('img');
+        img.src = fotoUrl;
+        img.alt = `Foto del equipo ${index + 1}`;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        
+        // Etiqueta de solo lectura
+        const badge = document.createElement('div');
+        badge.textContent = 'Original';
+        badge.style.cssText = 'position: absolute; top: 5px; left: 5px; background: rgba(30, 58, 138, 0.85); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 10;';
+        
+        div.appendChild(img);
+        div.appendChild(badge);
+        contenedor.appendChild(div);
+      });
+    } else {
+      contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">⚠️</div><div>No se pudieron cargar las fotos del equipo</div></div>`;
+    }
+  } catch (err) {
+    console.error('Error al cargar fotos del equipo:', err);
+    contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">❌</div><div>Error al cargar</div></div>`;
+  }
+}
+
+// ==========================================
+// RENDERIZAR FOTOS DE EVIDENCIA (EDITABLES)
 // ==========================================
 function renderizarPreviewFotosMod() {
   const contenedor = document.getElementById('previewFotosMod');
@@ -201,29 +294,38 @@ function renderizarPreviewFotosMod() {
   fotosEvidenciaMod.forEach((fotoUrl, index) => {
     const div = document.createElement('div');
     div.className = 'foto-preview';
+    div.style.position = 'relative';
     
     const img = document.createElement('img');
     img.src = fotoUrl;
     img.alt = `Evidencia ${index + 1}`;
     img.style.cursor = 'pointer';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
     img.onclick = function() { abrirZoomInfalible(fotoUrl); };
     img.onerror = function() { 
-      // Si la imagen falla al cargar, mostrar placeholder
       this.parentElement.innerHTML = '<div style="color: #ef4444; font-size: 11px; text-align: center; padding: 10px;">❌ Error al cargar</div>';
     };
     
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
     removeBtn.className = 'foto-remove';
-    removeBtn.innerHTML = '';
-    removeBtn.title = 'Eliminar foto';
+    removeBtn.innerHTML = '✕';
+    removeBtn.title = 'Eliminar foto de evidencia';
     removeBtn.onclick = function(event) { 
       event.stopPropagation(); 
       eliminarFotoMod(index); 
     };
     
+    // Etiqueta de evidencia
+    const badge = document.createElement('div');
+    badge.textContent = 'Evidencia';
+    badge.style.cssText = 'position: absolute; top: 5px; right: 5px; background: rgba(220, 38, 38, 0.85); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 10;';
+    
     div.appendChild(img);
     div.appendChild(removeBtn);
+    div.appendChild(badge);
     contenedor.appendChild(div);
   });
 }
@@ -234,14 +336,14 @@ function eliminarFotoMod(index) {
 }
 
 // ==========================================
-// PROCESAR NUEVAS FOTOS
+// PROCESAR NUEVAS FOTOS DE EVIDENCIA
 // ==========================================
 async function procesarFotosMod(event) {
   const files = event.target.files;
   if (!files || files.length === 0) return;
 
   if (fotosEvidenciaMod.length + files.length > 4) {
-    mostrarToastMod(`Máximo 4 fotos permitidas. Ya tiene ${fotosEvidenciaMod.length}.`, 'error');
+    mostrarToastMod(`Máximo 4 fotos de evidencia permitidas. Ya tiene ${fotosEvidenciaMod.length}.`, 'error');
     event.target.value = '';
     return;
   }
@@ -263,7 +365,7 @@ async function procesarFotosMod(event) {
 
   renderizarPreviewFotosMod();
   event.target.value = '';
-  mostrarToastMod('✅ Fotos agregadas exitosamente', 'exito');
+  mostrarToastMod('✅ Fotos de evidencia agregadas exitosamente', 'exito');
 }
 
 // ==========================================
@@ -307,7 +409,6 @@ async function guardarCambiosAveria() {
 
     if (error) throw error;
 
-    // ✅ REGISTRAR EN LOGS
     if (typeof registrarLog === 'function') {
       const descripcion = `Avería modificada | Equipo: ${averiaSeleccionada.codigo_barras} (${averiaSeleccionada.nombre_equipo}) | Nuevos datos: Reportante: ${reportanteNombres} ${reportanteApellidos}, Detalles: ${detallesAveria.substring(0, 60)}... | Modificado por: ${usuarioActualMod?.email || 'Desconocido'}`;
       await registrarLog('averias', 'Avería modificada', descripcion, 'warning');
@@ -340,9 +441,19 @@ function limpiarFormularioModAveria() {
   document.getElementById('modHoraAveria').value = '';
   document.getElementById('modDetallesAveria').value = '';
   document.getElementById('modObservacionesAveria').value = '';
-  document.getElementById('previewFotosMod').innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>No hay fotos de evidencia</div></div>`;
+  
+  const contenedorEvidencia = document.getElementById('previewFotosMod');
+  if (contenedorEvidencia) {
+    contenedorEvidencia.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>No hay fotos de evidencia</div></div>`;
+  }
+
+  const contenedorEquipo = document.getElementById('previewFotosEquipoMod');
+  if (contenedorEquipo) contenedorEquipo.innerHTML = '';
 
   document.getElementById('fieldsetFichaEquipoMod').style.display = 'none';
+  const fieldsetFotosEq = document.getElementById('fieldsetFotosEquipoOriginalMod');
+  if (fieldsetFotosEq) fieldsetFotosEq.style.display = 'none';
+  
   document.getElementById('fieldsetDatosAveriaMod').style.display = 'none';
   document.getElementById('fieldsetFotosMod').style.display = 'none';
   document.getElementById('botonesAccionMod').style.display = 'none';
@@ -350,7 +461,6 @@ function limpiarFormularioModAveria() {
   const btnGuardar = document.getElementById('btnGuardarCambios');
   if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Guardar Cambios'; }
   
-  // Devolver foco al campo de búsqueda
   document.getElementById('buscarAveriaMod').focus();
 }
 
