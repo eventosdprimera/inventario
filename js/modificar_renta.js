@@ -7,13 +7,29 @@ const POR_PAGINA_MODIFICAR = 20;
 let rentaEditando = null;
 let itemsEdicion = [];
 let usuarioActualModificarRenta = null;
-let fechaHoyStrModificar = new Date().toISOString().split('T')[0];
+let fechaHoyStrModificar = '';
+
+// ==========================================
+// ✅ FUNCIÓN PARA OBTENER LA FECHA DE HOY EN CARACAS (UTC-4)
+// ==========================================
+function obtenerFechaHoyCaracas() {
+  const opciones = { 
+    timeZone: 'America/Caracas', 
+    year: 'numeric', 
+    month: '2-digit', 
+    day: '2-digit' 
+  };
+  return new Date().toLocaleDateString('en-CA', opciones);
+}
 
 // ==========================================
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarModificarRenta() {
   console.log('📝 === INICIANDO MODIFICAR RENTA ===');
+
+  // Inicializar fecha de Caracas
+  fechaHoyStrModificar = obtenerFechaHoyCaracas();
 
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
@@ -116,7 +132,7 @@ async function buscarRentasModificar() {
 }
 
 // ==========================================
-// RENDERIZAR TABLA DE RENTAS (CON ESTADO DINÁMICO)
+// RENDERIZAR TABLA DE RENTAS (CON ESTADO DINÁMICO Y FECHA CARACAS)
 // ==========================================
 function renderizarTablaRentasModificar(totalRegistros) {
   const tbody = document.getElementById('tbodyRentas');
@@ -134,7 +150,8 @@ function renderizarTablaRentasModificar(totalRegistros) {
     return;
   }
 
-  const hoy = new Date().toISOString().split('T')[0];
+  // ✅ Usar fecha de Caracas para evaluar vencimiento
+  const hoy = obtenerFechaHoyCaracas();
 
   tbody.innerHTML = rentasCache.map((renta, index) => {
     const globalIndex = (paginaActualModificar - 1) * POR_PAGINA_MODIFICAR + index + 1;
@@ -228,7 +245,7 @@ function limpiarFiltrosModificar() {
 }
 
 // ==========================================
-// ✅ SELECCIONAR RENTA PARA EDITAR (FECHAS CORREGIDAS)
+// ✅ SELECCIONAR RENTA PARA EDITAR (FECHAS EN CARACAS)
 // ==========================================
 async function seleccionarRentaModificar(numeroRenta) {
   try {
@@ -265,21 +282,24 @@ async function seleccionarRentaModificar(numeroRenta) {
     document.getElementById('editObservaciones').value = renta.observaciones || '';
     document.getElementById('editDescuento').value = renta.descuento || 0;
 
-    // ✅ CORRECCIÓN DE FECHAS: Permitir desde hoy en adelante
+    // ✅ CORRECCIÓN DE FECHAS: Usar zona horaria de Caracas
+    const hoyCaracas = obtenerFechaHoyCaracas();
     const elFechaRenta = document.getElementById('editFechaRenta');
     const elFechaDevolucion = document.getElementById('editFechaDevolucion');
-    const hoy = new Date().toISOString().split('T')[0];
 
     if (elFechaRenta) {
-      elFechaRenta.min = hoy; // Fuerza que el calendario empiece en hoy
-      elFechaRenta.value = hoy; // Establece hoy como valor por defecto al editar
+      elFechaRenta.min = hoyCaracas; 
+      elFechaRenta.value = hoyCaracas; 
     }
     if (elFechaDevolucion) {
-      elFechaDevolucion.min = hoy;
-      // Si la renta estaba vencida, sugerimos +7 días desde hoy
-      const nuevaDev = new Date();
-      nuevaDev.setDate(nuevaDev.getDate() + 7);
-      elFechaDevolucion.value = nuevaDev.toISOString().split('T')[0];
+      elFechaDevolucion.min = hoyCaracas;
+      // Calcular +7 días desde la fecha de Caracas
+      const fechaDev = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"}));
+      fechaDev.setDate(fechaDev.getDate() + 7);
+      const devYear = fechaDev.getFullYear();
+      const devMonth = String(fechaDev.getMonth() + 1).padStart(2, '0');
+      const devDay = String(fechaDev.getDate()).padStart(2, '0');
+      elFechaDevolucion.value = `${devYear}-${devMonth}-${devDay}`;
     }
 
     if (elFechaRenta && elFechaDevolucion) {
@@ -446,7 +466,7 @@ async function agregarEquipoEdicion() {
 }
 
 // ==========================================
-// ✅ GUARDAR CAMBIOS (SIN MENSAJES MOLESTOS Y BOTÓN SEGURO)
+// ✅ GUARDAR CAMBIOS (CON LIMPIEZA AUTOMÁTICA)
 // ==========================================
 async function guardarCambiosRenta() {
   if (!rentaEditando) return;
@@ -464,7 +484,7 @@ async function guardarCambiosRenta() {
     return;
   }
   if (fechaRenta < fechaHoyStrModificar) {
-    mostrarMensajeModificar('La fecha de inicio no puede ser anterior al día actual', 'error');
+    mostrarMensajeModificar('La fecha de inicio no puede ser anterior al día actual (Caracas)', 'error');
     return;
   }
   if (fechaDevolucion < fechaRenta) {
@@ -540,9 +560,19 @@ async function guardarCambiosRenta() {
 
     mostrarMensajeModificar(`✅ Renta #${rentaEditando.numero_renta} modificada exitosamente`, 'exito');
 
-    // ✅ CORRECCIÓN: Resetear el formulario SILENCIOSAMENTE sin usar cancelarEdicion()
+    // ✅ CORRECCIÓN: Limpieza automática y silenciosa del formulario
     rentaEditando = null;
     itemsEdicion = [];
+    
+    // Limpiar campos explícitamente
+    ['editClienteNombre', 'editClienteTelefono', 'editClienteEmail', 'editClienteDireccion', 'editIngenieroNombre', 'editIngenieroContacto', 'editObservaciones'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const editDescuento = document.getElementById('editDescuento');
+    if (editDescuento) editDescuento.value = '0';
+
+    // Volver a la vista de lista
     document.getElementById('fieldsetLista').style.display = 'block';
     document.getElementById('fieldsetEdicion').style.display = 'none';
     
@@ -571,7 +601,7 @@ async function guardarCambiosRenta() {
 }
 
 // ==========================================
-// CANCELAR EDICIÓN (Solo se usa si el usuario hace clic en "Cancelar")
+// CANCELAR EDICIÓN
 // ==========================================
 function cancelarEdicion() {
   if (itemsEdicion.length > 0 && !confirm('¿Cancelar la edición? Los cambios no guardados se perderán.')) {
@@ -584,7 +614,6 @@ function cancelarEdicion() {
   document.getElementById('fieldsetLista').style.display = 'block';
   document.getElementById('fieldsetEdicion').style.display = 'none';
 
-  // Reactivar el botón por si acaso
   const btnGuardar = document.getElementById('btnGuardarCambios');
   if (btnGuardar) {
     btnGuardar.disabled = false;
