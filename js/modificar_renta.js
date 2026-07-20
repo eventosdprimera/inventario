@@ -10,7 +10,7 @@ let usuarioActualModificarRenta = null;
 let fechaHoyStrModificar = '';
 
 // ==========================================
-// ✅ FUNCIÓN PARA OBTENER LA FECHA DE HOY EN CARACAS (UTC-4)
+// ✅ FUNCIÓN  OBTENER LA FECHA DE HOY EN CARACAS (UTC-4)
 // ==========================================
 function obtenerFechaHoyCaracas() {
   const opciones = { 
