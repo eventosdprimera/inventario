@@ -7,10 +7,23 @@ const POR_PAGINA_HIST = 20;
 let usuarioActualHist = null;
 
 // ==========================================
+// ✅ FUNCIÓN PARA OBTENER LA FECHA DE HOY EN CARACAS (UTC-4)
+// ==========================================
+function obtenerFechaHoyCaracas() {
+  const opciones = { 
+    timeZone: 'America/Caracas', 
+    year: 'numeric', 
+    month: '2-digit', 
+    day: '2-digit' 
+  };
+  return new Date().toLocaleDateString('en-CA', opciones); // Retorna "YYYY-MM-DD"
+}
+
+// ==========================================
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarHistorialRentas() {
-  console.log('📜 === INICIANDO HISTORIAL DE RENTAS ===');
+  console.log('📜 === INICIANDO HISTORIAL DE RENTAS (SOLO ACTIVAS) ===');
 
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
@@ -24,8 +37,6 @@ async function inicializarHistorialRentas() {
   }
 
   await cargarUsuarioHist();
-  
-  // ✅ Cargar automáticamente todas las rentas activas y vencidas al iniciar
   await buscarRentasHistorial();
 
   console.log('✅ === HISTORIAL DE RENTAS INICIALIZADO ===');
@@ -56,7 +67,7 @@ async function cargarUsuarioHist() {
 }
 
 // ==========================================
-// BUSCAR RENTAS (Activas y Vencidas)
+// ✅ BUSCAR SOLO RENTAS ACTIVAS (NO VENCIDAS)
 // ==========================================
 async function buscarRentasHistorial() {
   const filtroCliente = document.getElementById('filtroClienteHist')?.value.trim() || '';
@@ -65,14 +76,16 @@ async function buscarRentasHistorial() {
   const filtroHasta = document.getElementById('filtroFechaHastaHist')?.value || '';
 
   try {
-    const hoy = new Date().toISOString().split('T')[0];
+    // ✅ CLAVE: Usar fecha de Caracas para filtrar solo rentas NO vencidas
+    const hoyCaracas = obtenerFechaHoyCaracas();
+    console.log('🔍 Buscando solo rentas activas (devolución >', hoyCaracas, ')');
 
-    // Consulta base: solo rentas activas o vencidas (excluye devueltas y canceladas)
+    // Consulta: estado activo + fecha_devolucion POSTERIOR a hoy (no vencidas)
     let query = supabaseClient
       .from('rentas')
       .select('*', { count: 'exact' })
-      .neq('estado', 'devuelta')
-      .neq('estado', 'cancelada')
+      .eq('estado', 'activa')                 // Solo activas en BD
+      .gt('fecha_devolucion', hoyCaracas)     // ✅ Y cuya devolución sea DESPUÉS de hoy
       .order('fecha_renta', { ascending: false });
 
     // Aplicar filtros
@@ -99,6 +112,7 @@ async function buscarRentasHistorial() {
     if (error) throw error;
 
     rentasHistCache = data || [];
+    console.log(`✅ Encontradas ${rentasHistCache.length} rentas activas`);
     renderizarTablaHist(count || 0);
 
   } catch (err) {
@@ -108,7 +122,7 @@ async function buscarRentasHistorial() {
 }
 
 // ==========================================
-// RENDERIZAR TABLA
+// ✅ RENDERIZAR TABLA (Solo activas - sin etiqueta de vencida)
 // ==========================================
 function renderizarTablaHist(totalRegistros) {
   const tbody = document.getElementById('tbodyRentasHist');
@@ -119,8 +133,8 @@ function renderizarTablaHist(totalRegistros) {
       <tr>
         <td colspan="8" style="text-align: center; padding: 40px; color: #10b981;">
           <div style="font-size: 40px; margin-bottom: 10px;">✅</div>
-          <div style="font-weight: 600;">¡No hay rentas activas o vencidas!</div>
-          <div style="font-size: 13px; margin-top: 5px;">Todas las rentas han sido terminadas</div>
+          <div style="font-weight: 600;">¡No hay rentas activas!</div>
+          <div style="font-size: 13px; margin-top: 5px;">Todas las rentas están vencidas o terminadas</div>
         </td>
       </tr>`;
     document.getElementById('paginacionHist').innerHTML = '';
@@ -132,17 +146,7 @@ function renderizarTablaHist(totalRegistros) {
     const fechaInicio = new Date(renta.fecha_renta + 'T12:00:00').toLocaleDateString('es-ES');
     const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00').toLocaleDateString('es-ES');
     
-    // Determinar estado (activa o vencida)
-    const hoy = new Date().toISOString().split('T')[0];
-    const estadoReal = (renta.fecha_devolucion < hoy && renta.estado !== 'devuelta') ? 'vencida' : 'activa';
-    
-    const estadoColors = {
-      'activa': '#10b981',
-      'vencida': '#ef4444'
-    };
-    const colorEstado = estadoColors[estadoReal];
-    const estadoDisplay = estadoReal === 'activa' ? 'Activa' : 'Vencida';
-
+    // Todas son activas aquí (ya filtradas por la consulta)
     return `
       <tr>
         <td>${globalIndex}</td>
@@ -151,8 +155,8 @@ function renderizarTablaHist(totalRegistros) {
         <td>${fechaInicio}</td>
         <td>${fechaDev}</td>
         <td style="text-align: center;">
-          <span style="background: ${colorEstado}; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; text-transform: capitalize;">
-            ${estadoDisplay}
+          <span style="background: #10b981; color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; text-transform: capitalize; font-weight: 600;">
+            Activa
           </span>
         </td>
         <td style="text-align: right; font-weight: 600;">$${parseFloat(renta.total).toFixed(2)}</td>
@@ -163,7 +167,7 @@ function renderizarTablaHist(totalRegistros) {
               🖨️ Imprimir
             </button>
             <button type="button" class="btn-action btn-print" onclick="marcarRecibidaHist('${renta.numero_renta}')" 
-                    title="Marcar como recibida y mover a terminadas" style="padding: 6px 12px; font-size: 12px;">
+                    title="Marcar como recibida y mover a terminadas" style="padding: 6px 12px; font-size: 12px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer;">
               ✅ Recibido
             </button>
           </div>
@@ -206,7 +210,7 @@ function renderizarPaginacionHist(totalRegistros) {
 }
 
 async function cambiarPaginaHist(nuevaPagina) {
-  const totalRegistros = rentasHistCache.length;
+  const totalRegistros = rentasHistCache.length; // Nota: Para paginación real con filtros, se debería usar el count de la consulta
   const totalPaginas = Math.ceil(totalRegistros / POR_PAGINA_HIST);
   
   if (nuevaPagina < 1 || nuevaPagina > totalPaginas) return;
@@ -360,6 +364,7 @@ async function marcarRecibidaHist(numeroRenta) {
     mostrarMensajeHist('Error al procesar: ' + err.message, 'error');
   }
 }
+
 // ==========================================
 // IMPRIMIR RENTA
 // ==========================================
