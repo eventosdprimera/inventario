@@ -19,17 +19,17 @@ function obtenerFechaHoyCaracas() {
     month: '2-digit', 
     day: '2-digit' 
   };
-  return new Date().toLocaleDateString('en-CA', opciones); // Retorna "YYYY-MM-DD"
+  return new Date().toLocaleDateString('en-CA', opciones);
 }
 
 // ==========================================
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarModificarRenta() {
-  console.log('📝 === INICIANDO MODIFICAR RENTA ===');
+  console.log(' === INICIANDO MODIFICAR RENTA ===');
 
   fechaHoyStrModificar = obtenerFechaHoyCaracas();
-  console.log('📅 Fecha de hoy (Caracas) establecida en:', fechaHoyStrModificar);
+  console.log('📅 Fecha de hoy (Caracas):', fechaHoyStrModificar);
 
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
@@ -94,7 +94,7 @@ async function cargarUsuarioModificar() {
 }
 
 // ==========================================
-// BUSCAR RENTAS CON FILTROS (ORDENADO POR FECHA DE CREACIÓN)
+// BUSCAR RENTAS CON FILTROS
 // ==========================================
 async function buscarRentasModificar() {
   const filtroCliente = document.getElementById('filtroCliente')?.value.trim() || '';
@@ -130,7 +130,7 @@ async function buscarRentasModificar() {
 }
 
 // ==========================================
-// RENDERIZAR TABLA DE RENTAS (CON ESTADO DINÁMICO Y LOGS)
+// RENDERIZAR TABLA DE RENTAS (CON ESTADO DINÁMICO)
 // ==========================================
 function renderizarTablaRentasModificar(totalRegistros) {
   const tbody = document.getElementById('tbodyRentas');
@@ -149,23 +149,16 @@ function renderizarTablaRentasModificar(totalRegistros) {
   }
 
   const hoy = obtenerFechaHoyCaracas();
-  console.log('🔍 Evaluando fechas. Hoy es:', hoy);
 
   tbody.innerHTML = rentasCache.map((renta, index) => {
     const globalIndex = (paginaActualModificar - 1) * POR_PAGINA_MODIFICAR + index + 1;
     const fechaInicio = new Date(renta.fecha_renta + 'T12:00:00').toLocaleDateString('es-ES');
     const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00').toLocaleDateString('es-ES');
     
-    // ✅ Lógica estricta para determinar el estado real
     let estadoReal = renta.estado;
-    
-    // Debug en consola para verificar qué está pasando
-    console.log(`Renta: ${renta.numero_renta} | Estado BD: ${renta.estado} | Devolución: ${renta.fecha_devolucion} | ¿Es menor a hoy (${hoy})? ${renta.fecha_devolucion < hoy}`);
-
-  if (renta.estado === 'activa' && renta.fecha_devolucion && renta.fecha_devolucion <= hoy) {
-  estadoReal = 'vencida';
-  console.log(`⚠️ ALERTA: ${renta.numero_renta} cambiada visualmente a VENCIDA (fecha_devolucion: ${renta.fecha_devolucion} <= hoy: ${hoy})`);
-}
+    if (renta.estado === 'activa' && renta.fecha_devolucion && renta.fecha_devolucion <= hoy) {
+      estadoReal = 'vencida';
+    }
 
     const estadoColors = {
       'activa': '#10b981',
@@ -248,7 +241,7 @@ function limpiarFiltrosModificar() {
 }
 
 // ==========================================
-// SELECCIONAR RENTA PARA EDITAR
+// ✅ SELECCIONAR RENTA PARA EDITAR (MUESTRA FECHAS ORIGINALES)
 // ==========================================
 async function seleccionarRentaModificar(numeroRenta) {
   try {
@@ -274,6 +267,7 @@ async function seleccionarRentaModificar(numeroRenta) {
     rentaEditando = renta;
     itemsEdicion = items || [];
 
+    // ✅ Cargar TODOS los datos originales de la renta
     document.getElementById('editNumeroRenta').textContent = ` - ${renta.numero_renta}`;
     document.getElementById('editClienteNombre').value = renta.cliente_nombre || '';
     document.getElementById('editClienteTelefono').value = renta.cliente_telefono || '';
@@ -285,24 +279,18 @@ async function seleccionarRentaModificar(numeroRenta) {
     document.getElementById('editObservaciones').value = renta.observaciones || '';
     document.getElementById('editDescuento').value = renta.descuento || 0;
 
-    const hoyCaracas = obtenerFechaHoyCaracas();
+    // ✅ MOSTRAR LAS FECHAS ORIGINALES CON LAS QUE SE GUARDÓ
     const elFechaRenta = document.getElementById('editFechaRenta');
     const elFechaDevolucion = document.getElementById('editFechaDevolucion');
 
-    if (elFechaRenta) {
-      elFechaRenta.min = hoyCaracas; 
-      elFechaRenta.value = hoyCaracas; 
+    if (elFechaRenta && renta.fecha_renta) {
+      elFechaRenta.value = renta.fecha_renta; // Fecha original guardada
     }
-    if (elFechaDevolucion) {
-      elFechaDevolucion.min = hoyCaracas;
-      const fechaDev = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"}));
-      fechaDev.setDate(fechaDev.getDate() + 7);
-      const devYear = fechaDev.getFullYear();
-      const devMonth = String(fechaDev.getMonth() + 1).padStart(2, '0');
-      const devDay = String(fechaDev.getDate()).padStart(2, '0');
-      elFechaDevolucion.value = `${devYear}-${devMonth}-${devDay}`;
+    if (elFechaDevolucion && renta.fecha_devolucion) {
+      elFechaDevolucion.value = renta.fecha_devolucion; // Fecha original guardada
     }
 
+    // Configurar evento de cambio de fecha
     if (elFechaRenta && elFechaDevolucion) {
       elFechaRenta.addEventListener('change', () => {
         elFechaDevolucion.min = elFechaRenta.value;
@@ -484,10 +472,6 @@ async function guardarCambiosRenta() {
     mostrarMensajeModificar('Por favor ingrese las fechas de renta y devolución', 'error');
     return;
   }
-  if (fechaRenta < fechaHoyStrModificar) {
-    mostrarMensajeModificar('La fecha de inicio no puede ser anterior al día actual (Caracas)', 'error');
-    return;
-  }
   if (fechaDevolucion < fechaRenta) {
     mostrarMensajeModificar('La fecha de devolución no puede ser anterior a la fecha de inicio', 'error');
     return;
@@ -634,7 +618,7 @@ function mostrarMensajeModificar(texto, tipo) {
 }
 
 // ==========================================
-// IMPRIMIR COMPROBANTE DE RENTA MODIFICADA (CORREGIDO)
+// ✅ IMPRIMIR COMPROBANTE (CON ESTADO CORRECTO SEGÚN FECHAS)
 // ==========================================
 function imprimirComprobanteModificacion() {
   if (!rentaEditando) {
@@ -655,20 +639,18 @@ function imprimirComprobanteModificacion() {
   const descuento = document.getElementById('editDescuento')?.value || '0';
   const total = document.getElementById('editTotal')?.textContent || '$0.00';
   
-// ✅ Leer el estado de la base de datos
-let estado = document.getElementById('editEstado')?.value || 'activa';
-
-// ✅ APLICAR LÓGICA DE VENCIDO (Caracas) PARA LA IMPRESIÓN
-const hoyCaracas = obtenerFechaHoyCaracas();
-console.log('️ Imprimiendo comprobante - Hoy Caracas:', hoyCaracas);
-console.log('🖨️ Fecha devolución:', fechaDevolucion, '| Estado BD:', estado);
-
-if (estado === 'activa' && fechaDevolucion && fechaDevolucion <= hoyCaracas) {
-  estado = 'vencida';
-  console.log('️ Comprobante mostrará estado: VENCIDA');
-} else {
-  console.log('✅ Comprobante mostrará estado:', estado);
-}
+  // ✅ Leer estado de la BD
+  let estado = document.getElementById('editEstado')?.value || 'activa';
+  
+  // ✅ CALCULAR ESTADO REAL BASADO EN FECHAS (Zona Horaria Caracas)
+  const hoyCaracas = obtenerFechaHoyCaracas();
+  console.log('🖨️ Imprimiendo - Hoy Caracas:', hoyCaracas);
+  console.log('📅 Fecha devolución:', fechaDevolucion, '| Estado BD:', estado);
+  
+  if (estado === 'activa' && fechaDevolucion && fechaDevolucion <= hoyCaracas) {
+    estado = 'vencida';
+    console.log('⚠️ Comprobante mostrará: VENCIDA');
+  }
 
   const logoUrl = new URL('img/logo.png', window.location.href).href;
 
