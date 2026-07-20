@@ -5,7 +5,7 @@ let rentasVencidasCache = [];
 let usuarioActualVencidas = null;
 
 // ==========================================
-// INYECTAR ESTILOS ESPECÍFICOS (Solución al problema de visualización)
+// INYECTAR ESTILOS ESPECÍFICOS
 // ==========================================
 function inyectarEstilosVencidas() {
   if (document.getElementById('estilos-rentas-vencidas')) return;
@@ -73,7 +73,6 @@ function inyectarEstilosVencidas() {
 async function inicializarRentasVencidas() {
   console.log('⚠️ === INICIANDO RENTAS VENCIDAS ===');
 
-  // 1. Inyectar estilos para que se vean bien dentro del dashboard
   inyectarEstilosVencidas();
 
   let intentos = 0;
@@ -122,7 +121,8 @@ async function cargarUsuarioVencidas() {
 // ==========================================
 async function cargarRentasVencidas() {
   try {
-    const hoy = new Date().toISOString().split('T')[0];
+    // Usamos la fecha de Caracas para consistencia
+    const hoy = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"})).toISOString().split('T')[0];
 
     const { data, error } = await supabaseClient
       .from('rentas')
@@ -165,7 +165,7 @@ function renderizarTablaVencidas() {
     return;
   }
 
-  const hoy = new Date();
+  const hoy = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"}));
 
   tbody.innerHTML = rentasVencidasCache.map((renta, index) => {
     const fechaInicio = new Date(renta.fecha_renta + 'T12:00:00').toLocaleDateString('es-ES');
@@ -201,26 +201,78 @@ function renderizarTablaVencidas() {
 }
 
 // ==========================================
-// MARCAR COMO RECIBIDA
+// ✅ MARCAR COMO RECIBIDA (MOVER A TERMINADAS)
 // ==========================================
 async function marcarComoRecibida(numeroRenta) {
-  const confirmacion = confirm(`¿Confirmar que la renta #${numeroRenta} ha sido recibida?\n\nEsta acción cambiará el estado a "Devuelta" y desaparecerá de la lista de vencidas.`);
+  const confirmacion = confirm(`¿Confirmar que la renta #${numeroRenta} ha sido recibida?\n\nEsta acción moverá la renta a "Terminadas" y desaparecerá de la lista de vencidas.`);
   if (!confirmacion) return;
 
   try {
-    const { error } = await supabaseClient
+    // 1. Obtener los datos completos de la renta
+    const { data: renta, error: errorFetch } = await supabaseClient
+      .from('rentas')
+      .select('*')
+      .eq('numero_renta', numeroRenta)
+      .single();
+
+    if (errorFetch || !renta) throw new Error('No se pudo obtener los datos de la renta');
+
+    // 2. Calcular días de retraso (Zona horaria Caracas)
+    const hoy = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"}));
+    const fechaDevolucion = new Date(renta.fecha_devolucion + 'T12:00:00');
+    const diffTime = hoy - fechaDevolucion;
+    const diasRetraso = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+    
+    const fechaHoyStr = hoy.toISOString().split('T')[0];
+
+    // 3. Insertar en la tabla de rentas_terminadas
+    const { error: errorTerminada } = await supabaseClient
+      .from('rentas_terminadas')
+      .insert({
+        numero_renta: renta.numero_renta,
+        serie: renta.serie || 'RENT',
+        fecha_creacion: renta.fecha_creacion,
+        fecha_renta: renta.fecha_renta,
+        fecha_devolucion_programada: renta.fecha_devolucion,
+        fecha_devolucion_real: fechaHoyStr,
+        cliente_nombre: renta.cliente_nombre,
+        cliente_telefono: renta.cliente_telefono,
+        cliente_email: renta.cliente_email,
+        cliente_direccion: renta.cliente_direccion,
+        ingeniero_nombre: renta.ingeniero_nombre,
+        ingeniero_contacto: renta.ingeniero_contacto,
+        subtotal: renta.subtotal,
+        descuento: renta.descuento,
+        total: renta.total,
+        estado: 'devuelta',
+        observaciones: renta.observaciones,
+        usuario_registro: renta.usuario_registro,
+        usuario_registro_id: renta.usuario_registro_id,
+        fecha_terminacion: new Date().toISOString(),
+        recibido_por_email: usuarioActualVencidas?.email || 'unknown',
+        recibido_por_id: usuarioActualVencidas?.id || null,
+        dias_anticipados: 0,
+        dias_retraso: diasRetraso,
+        observaciones_terminacion: `Recibida con ${diasRetraso} día(s) de retraso.`
+      });
+
+    if (errorTerminada) throw new Error('Error al guardar en rentas_terminadas: ' + errorTerminada.message);
+
+    // 4. Actualizar el estado en la tabla original de rentas
+    const { error: errorUpdate } = await supabaseClient
       .from('rentas')
       .update({ estado: 'devuelta' })
       .eq('numero_renta', numeroRenta);
 
-    if (error) throw error;
+    if (errorUpdate) throw new Error('Error al actualizar estado en rentas: ' + errorUpdate.message);
 
+    // 5. Registrar en logs
     if (typeof registrarLog === 'function') {
-      const descripcion = `Marcó como recibida la Renta #${numeroRenta} | Recibido por: ${usuarioActualVencidas?.email || 'Desconocido'}`;
-      await registrarLog('rentar', 'Renta recibida', descripcion, 'success');
+      const descripcion = `Marcó como recibida la Renta #${numeroRenta} | Cliente: ${renta.cliente_nombre} | Retraso: ${diasRetraso} días | Recibido por: ${usuarioActualVencidas?.email || 'Desconocido'}`;
+      await registrarLog('rentar', 'Renta recibida (terminada)', descripcion, 'success');
     }
 
-    mostrarMensajeVencidas(`✅ Renta #${numeroRenta} marcada como recibida`, 'exito');
+    mostrarMensajeVencidas(`✅ Renta #${numeroRenta} marcada como recibida y movida a terminadas`, 'exito');
 
     setTimeout(() => {
       cargarRentasVencidas();
