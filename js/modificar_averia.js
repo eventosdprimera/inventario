@@ -152,7 +152,7 @@ function asegurarContenedorFotosEquipo() {
 }
 
 // ==========================================
-// BUSCAR AVERÍA
+// BUSCAR AVERÍA (CON LECTURA DE DATOS BLINDADA)
 // ==========================================
 async function buscarAveriaParaModificar() {
   const input = document.getElementById('buscarAveriaMod');
@@ -203,22 +203,32 @@ async function buscarAveriaParaModificar() {
     document.getElementById('fieldsetFotosMod').style.display = 'block';
     document.getElementById('botonesAccionMod').style.display = 'flex';
 
-    // Cargar fotos de evidencia existentes
+    // ✅ LECTURA BLINDADA DE FOTOS DE EVIDENCIA
     fotosEvidenciaMod = [null, null, null, null];
     if (data.fotos_evidencia) {
-      try {
-        const evidencias = typeof data.fotos_evidencia === 'string' ? JSON.parse(data.fotos_evidencia) : data.fotos_evidencia;
-        if (Array.isArray(evidencias)) {
-          for (let i = 0; i < Math.min(evidencias.length, 4); i++) {
-            if (evidencias[i]) fotosEvidenciaMod[i] = evidencias[i];
-          }
+      let evidencias = [];
+      
+      if (Array.isArray(data.fotos_evidencia)) {
+        evidencias = data.fotos_evidencia;
+      } else if (typeof data.fotos_evidencia === 'string') {
+        try {
+          const parsed = JSON.parse(data.fotos_evidencia);
+          evidencias = Array.isArray(parsed) ? parsed : [data.fotos_evidencia];
+        } catch (e) {
+          evidencias = [data.fotos_evidencia]; // Si es un string plano, lo tratamos como 1 foto
         }
-      } catch (e) {
-        console.warn('Error al parsear fotos_evidencia:', e);
+      } else {
+        evidencias = [data.fotos_evidencia];
+      }
+
+      for (let i = 0; i < Math.min(evidencias.length, 4); i++) {
+        if (evidencias[i] && String(evidencias[i]).trim() !== '' && String(evidencias[i]) !== 'null') {
+          fotosEvidenciaMod[i] = String(evidencias[i]);
+        }
       }
     }
     
-    console.log("📸 Fotos de evidencia cargadas:", fotosEvidenciaMod);
+    console.log("📸 FOTOS PROCESADAS PARA MOSTRAR:", fotosEvidenciaMod);
     renderizarFotosEvidenciaMod();
 
   } catch (err) {
@@ -238,7 +248,7 @@ async function cargarYMostrarFotosEquipoOriginal() {
 
   let fotos = [];
   if (averiaSeleccionada.foto_url) {
-    fotos = [averiaSeleccionada.foto_url, averiaSeleccionada.foto2_url, averiaSeleccionada.foto3_url, averiaSeleccionada.foto4_url].filter(url => url && url.trim() !== '');
+    fotos = [averiaSeleccionada.foto_url, averiaSeleccionada.foto2_url, averiaSeleccionada.foto3_url, averiaSeleccionada.foto4_url].filter(url => url && String(url).trim() !== '');
   } 
   
   if (fotos.length === 0) {
@@ -249,7 +259,7 @@ async function cargarYMostrarFotosEquipoOriginal() {
       .maybeSingle();
       
     if (equipoOrig) {
-      fotos = [equipoOrig.foto_url, equipoOrig.foto2_url, equipoOrig.foto3_url, equipoOrig.foto4_url].filter(url => url && url.trim() !== '');
+      fotos = [equipoOrig.foto_url, equipoOrig.foto2_url, equipoOrig.foto3_url, equipoOrig.foto4_url].filter(url => url && String(url).trim() !== '');
     }
   }
 
@@ -282,10 +292,10 @@ async function cargarYMostrarFotosEquipoOriginal() {
 }
 
 // ==========================================
-// ✅ RENDERIZAR FOTOS DE EVIDENCIA (CONTROL TOTAL)
+// ✅ RENDERIZAR FOTOS DE EVIDENCIA (CON DIAGNÓSTICO)
 // ==========================================
 function renderizarFotosEvidenciaMod() {
-  console.log("🎨 Renderizando slots de evidencia. Estado:", fotosEvidenciaMod);
+  console.log("🎨 Renderizando slots. Estado del array:", fotosEvidenciaMod);
   
   for (let i = 1; i <= 4; i++) {
     const url = fotosEvidenciaMod[i - 1];
@@ -295,82 +305,69 @@ function renderizarFotosEvidenciaMod() {
     const removeBtn = document.getElementById(`mod_remove_evidencia_${i}`);
     const input = document.getElementById(`mod_foto_evidencia_${i}`);
     
-    // Limpiar badges y eventos anteriores
-    if (slot) {
-      const badgesAnteriores = slot.querySelectorAll('.badge-evidencia');
-      badgesAnteriores.forEach(b => b.remove());
-      slot.onclick = null;
+    console.log(`🔍 Slot ${i}: url = "${url}" (tipo: ${typeof url})`);
+
+    if (!slot || !preview || !placeholder || !removeBtn || !input) {
+      console.error(`❌ Faltan elementos del DOM para el slot ${i}`);
+      continue;
     }
-    
-    if (url && String(url).trim() !== '') {
-      // === HAY FOTO ===
-      if (preview) {
-        preview.src = url;
-        preview.style.display = 'block';
-      }
-      if (placeholder) placeholder.style.display = 'none';
+
+    // Limpiar badges y eventos anteriores
+    const badgesAnteriores = slot.querySelectorAll('.badge-evidencia');
+    badgesAnteriores.forEach(b => b.remove());
+    slot.onclick = null;
+
+    // Verificación estricta
+    const tieneFoto = url && typeof url === 'string' && url.trim() !== '' && url !== 'null' && url !== 'undefined';
+    console.log(`✅ Slot ${i} tieneFoto =`, tieneFoto);
+
+    if (tieneFoto) {
+      preview.src = url;
+      preview.style.display = 'block';
+      placeholder.style.display = 'none';
       
-      // Mostrar botón X
-      if (removeBtn) {
-        removeBtn.style.cssText = `
-          position: absolute !important; top: 5px !important; right: 5px !important;
-          background: #dc2626 !important; color: white !important; border: none !important;
-          border-radius: 50% !important; width: 24px !important; height: 24px !important;
-          cursor: pointer !important; font-size: 14px !important; display: flex !important;
-          align-items: center !important; justify-content: center !important; z-index: 30 !important;
-        `;
-      }
+      removeBtn.style.cssText = `
+        position: absolute !important; top: 5px !important; right: 5px !important;
+        background: #dc2626 !important; color: white !important; border: none !important;
+        border-radius: 50% !important; width: 24px !important; height: 24px !important;
+        cursor: pointer !important; font-size: 14px !important; display: flex !important;
+        align-items: center !important; justify-content: center !important; z-index: 9999 !important;
+      `;
       
-      // Agregar etiqueta "Evidencia"
-      if (slot) {
-        const badge = document.createElement('div');
-        badge.className = 'badge-evidencia';
-        badge.textContent = 'Evidencia';
-        badge.style.cssText = `
-          position: absolute !important; top: 5px !important; left: 5px !important;
-          background: #dc2626 !important; color: white !important; font-size: 10px !important;
-          padding: 3px 8px !important; border-radius: 4px !important; font-weight: 600 !important;
-          z-index: 25 !important; pointer-events: none !important;
-        `;
-        slot.appendChild(badge);
-        
-        // Clic en el slot abre el zoom
-        slot.onclick = function(e) {
-          if (e.target === removeBtn || (removeBtn && removeBtn.contains(e.target))) return;
-          e.preventDefault();
-          abrirZoomInfalible(url);
-        };
-      }
+      const badge = document.createElement('div');
+      badge.className = 'badge-evidencia';
+      badge.textContent = 'Evidencia';
+      badge.style.cssText = `
+        position: absolute !important; top: 5px !important; left: 5px !important;
+        background: #dc2626 !important; color: white !important; font-size: 10px !important;
+        padding: 3px 8px !important; border-radius: 4px !important; font-weight: 600 !important;
+        z-index: 9998 !important; pointer-events: none !important;
+      `;
+      slot.appendChild(badge);
       
+      slot.onclick = function(e) {
+        if (e.target === removeBtn || removeBtn.contains(e.target)) return;
+        e.preventDefault();
+        abrirZoomInfalible(url);
+      };
     } else {
-      // === NO HAY FOTO ===
-      if (preview) {
-        preview.style.display = 'none';
-        preview.src = '';
-      }
-      if (placeholder) {
-        placeholder.style.display = 'flex';
-        placeholder.innerHTML = `<div class="foto-preview-placeholder-icon">📷</div><div>Clic para agregar foto ${i}</div>`;
-      }
+      preview.style.display = 'none';
+      preview.src = '';
+      placeholder.style.display = 'flex';
+      placeholder.innerHTML = `<div class="foto-preview-placeholder-icon">📷</div><div>Clic para agregar foto ${i}</div>`;
       
-      // Ocultar botón X
-      if (removeBtn) {
-        removeBtn.style.cssText = `
-          position: absolute !important; top: 5px !important; right: 5px !important;
-          background: #dc2626 !important; color: white !important; border: none !important;
-          border-radius: 50% !important; width: 24px !important; height: 24px !important;
-          cursor: pointer !important; font-size: 14px !important; display: none !important;
-          align-items: center !important; justify-content: center !important; z-index: 30 !important;
-        `;
-      }
+      removeBtn.style.cssText = `
+        position: absolute !important; top: 5px !important; right: 5px !important;
+        background: #dc2626 !important; color: white !important; border: none !important;
+        border-radius: 50% !important; width: 24px !important; height: 24px !important;
+        cursor: pointer !important; font-size: 14px !important; display: none !important;
+        align-items: center !important; justify-content: center !important; z-index: 9999 !important;
+      `;
       
-      // Clic en el slot vacío abre el selector de archivos
-      if (slot && input) {
-        slot.onclick = function(e) {
-          e.preventDefault();
-          input.click();
-        };
-      }
+      slot.onclick = function(e) {
+        e.preventDefault();
+        input.click();
+      };
     }
   }
 }
