@@ -189,7 +189,6 @@ async function buscarAveriaParaModificar() {
     document.getElementById('modFichaSerial').textContent = data.serial || '-';
     document.getElementById('fieldsetFichaEquipoMod').style.display = 'block';
 
-    // Cargar fotos originales (solo lectura)
     await cargarYMostrarFotosEquipoOriginal();
 
     document.getElementById('modReportanteNombres').value = data.reportante_nombre || '';
@@ -214,7 +213,7 @@ async function buscarAveriaParaModificar() {
       }
     }
     
-    renderizarPreviewFotosMod();
+    renderizarFotosEvidenciaMod();
 
   } catch (err) {
     mostrarToastMod('Error al buscar: ' + err.message, 'error');
@@ -249,7 +248,7 @@ async function cargarYMostrarFotosEquipoOriginal() {
 
   fotos.forEach((fotoUrl, index) => {
     const div = document.createElement('div');
-    div.className = 'foto-slot';
+    div.className = 'foto-preview';
     div.style.cursor = 'pointer';
     div.style.position = 'relative';
     div.onclick = function() { abrirZoomInfalible(fotoUrl); };
@@ -274,23 +273,23 @@ async function cargarYMostrarFotosEquipoOriginal() {
 // ==========================================
 // ✅ RENDERIZAR FOTOS DE EVIDENCIA (4 SLOTS INDEPENDIENTES)
 // ==========================================
-function renderizarPreviewFotosMod() {
+function renderizarFotosEvidenciaMod() {
   for (let i = 1; i <= 4; i++) {
     const url = fotosEvidenciaMod[i - 1];
     const preview = document.getElementById(`mod_preview_evidencia_${i}`);
     const placeholder = document.getElementById(`mod_placeholder_evidencia_${i}`);
-    const removeBtn = placeholder.nextElementSibling; // El botón está justo después del placeholder
+    const removeBtn = document.getElementById(`mod_remove_evidencia_${i}`);
     
     if (url) {
       preview.src = url;
       preview.style.display = 'block';
       placeholder.style.display = 'none';
-      removeBtn.style.display = 'flex';
+      removeBtn.style.display = 'flex'; // ✅ Muestra la X
     } else {
       preview.style.display = 'none';
       preview.src = '';
       placeholder.style.display = 'flex';
-      removeBtn.style.display = 'none';
+      removeBtn.style.display = 'none'; // ✅ Oculta la X
     }
   }
 }
@@ -298,22 +297,19 @@ function renderizarPreviewFotosMod() {
 // ==========================================
 // ✅ ELIMINAR FOTO DE UN SLOT ESPECÍFICO
 // ==========================================
-window.removerFotoEvidenciaMod = function(numero) {
+window.eliminarFotoEvidenciaMod = function(numero) {
   if (confirm(`¿Eliminar la foto de evidencia ${numero}?`)) {
     fotosEvidenciaMod[numero - 1] = null;
-    
-    // Limpiar también el input file por si acaso
     const input = document.getElementById(`mod_foto_evidencia_${numero}`);
     if (input) input.value = '';
-    
-    renderizarPreviewFotosMod();
+    renderizarFotosEvidenciaMod();
   }
 };
 
 // ==========================================
-// ✅ PROCESAR Y REEMPLAZAR FOTO EN UN SLOT ESPECÍFICO
+// ✅ CAMBIAR FOTO EN UN SLOT ESPECÍFICO
 // ==========================================
-window.previsualizarFotoEvidenciaMod = async function(numero, event) {
+window.cambiarFotoEvidenciaMod = async function(numero, event) {
   const file = event.target.files[0];
   if (!file) return;
 
@@ -350,13 +346,12 @@ window.previsualizarFotoEvidenciaMod = async function(numero, event) {
     // Actualizar el array en la posición correcta (reemplaza la anterior si existía)
     fotosEvidenciaMod[numero - 1] = urlData.publicUrl;
     
-    renderizarPreviewFotosMod();
+    renderizarFotosEvidenciaMod();
     mostrarToastMod(`✅ Foto ${numero} actualizada exitosamente`, 'exito');
   } catch (err) {
     console.error('Error al subir foto:', err);
     mostrarToastMod('Error al subir foto: ' + err.message, 'error');
   } finally {
-    // Limpiar el input para permitir seleccionar la misma foto de nuevo si se desea
     event.target.value = ''; 
     const btn = document.getElementById('btnGuardarCambios');
     if (btn) {
@@ -367,7 +362,7 @@ window.previsualizarFotoEvidenciaMod = async function(numero, event) {
 };
 
 // ==========================================
-// GUARDAR CAMBIOS (INCLUYE LAS FOTOS DE EVIDENCIA ACTUALIZADAS)
+// GUARDAR CAMBIOS
 // ==========================================
 async function guardarCambiosAveria() {
   if (!averiaSeleccionada) return;
@@ -389,7 +384,6 @@ async function guardarCambiosAveria() {
   btnGuardar.textContent = '⏳ Guardando...';
 
   try {
-    // Filtrar solo las URLs no nulas para guardar en la BD (máximo 4)
     const fotosParaGuardar = fotosEvidenciaMod.filter(url => url !== null);
     
     const updateData = {
@@ -400,7 +394,6 @@ async function guardarCambiosAveria() {
       hora_averia: horaAveria,
       detalles_averia: detallesAveria,
       observaciones: document.getElementById('modObservacionesAveria').value.trim(),
-      // ✅ Aquí se guardan las fotos de evidencia modificadas
       fotos_evidencia: fotosParaGuardar.length > 0 ? fotosParaGuardar : null
     };
 
@@ -418,7 +411,6 @@ async function guardarCambiosAveria() {
 
     mostrarToastMod('✅ Cambios guardados exitosamente', 'exito');
     
-    // Limpieza automática después de 1.5 segundos
     setTimeout(() => {
       limpiarFormularioModAveria();
     }, 1500);
@@ -448,9 +440,8 @@ function limpiarFormularioModAveria() {
   document.getElementById('modDetallesAveria').value = '';
   document.getElementById('modObservacionesAveria').value = '';
   
-  renderizarPreviewFotosMod();
+  renderizarFotosEvidenciaMod();
   
-  // Limpiar inputs de archivo
   for (let i = 1; i <= 4; i++) {
     const input = document.getElementById(`mod_foto_evidencia_${i}`);
     if (input) input.value = '';
