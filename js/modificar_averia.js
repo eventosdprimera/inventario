@@ -262,7 +262,7 @@ async function cargarYMostrarFotosEquipoOriginal() {
 }
 
 // ==========================================
-// ✅ RENDERIZAR FOTOS DE EVIDENCIA (DINÁMICO E INFALIBLE)
+// ✅ RENDERIZAR FOTOS DE EVIDENCIA (PERMITE REEMPLAZO DIRECTO)
 // ==========================================
 function renderizarFotosEvidenciaMod() {
   console.log("🎨 Renderizando slots de evidencia...");
@@ -273,18 +273,18 @@ function renderizarFotosEvidenciaMod() {
     const preview = document.getElementById(`mod_preview_evidencia_${i}`);
     const placeholder = document.getElementById(`mod_placeholder_evidencia_${i}`);
     const input = document.getElementById(`mod_foto_evidencia_${i}`);
-    const htmlRemoveBtn = document.getElementById(`mod_remove_evidencia_${i}`); // Botón del HTML
-    
+    const htmlRemoveBtn = document.getElementById(`mod_remove_evidencia_${i}`);
+
     if (!slot || !preview || !placeholder || !input) {
       console.error(`❌ Faltan elementos para slot ${i}`);
       continue;
     }
 
-    // Ocultar el botón X del HTML para evitar duplicados y conflictos de CSS
+    // Ocultar el botón X del HTML original para evitar duplicados y conflictos
     if (htmlRemoveBtn) htmlRemoveBtn.style.display = 'none';
 
     // Limpiar elementos dinámicos anteriores
-    const elementosDinamicos = slot.querySelectorAll('.badge-evidencia-dinamico, .boton-x-dinamico');
+    const elementosDinamicos = slot.querySelectorAll('.badge-evidencia-dinamico, .boton-x-dinamico, .btn-zoom-dinamico');
     elementosDinamicos.forEach(el => el.remove());
 
     const tieneFoto = url && typeof url === 'string' && url.trim() !== '' && url !== 'null';
@@ -294,7 +294,7 @@ function renderizarFotosEvidenciaMod() {
       preview.style.display = 'block';
       placeholder.style.display = 'none';
       
-      // 1. CREAR BADGE "EVIDENCIA" DINÁMICAMENTE (IMPOSIBLE DE OCULTAR)
+      // 1. BADGE "EVIDENCIA"
       const badge = document.createElement('div');
       badge.className = 'badge-evidencia-dinamico';
       badge.textContent = 'Evidencia';
@@ -306,11 +306,11 @@ function renderizarFotosEvidenciaMod() {
       `;
       slot.appendChild(badge);
       
-      // 2. CREAR BOTÓN "X" DINÁMICAMENTE (VISIBLE Y FUNCIONAL)
+      // 2. BOTÓN "X" PARA ELIMINAR
       const btnX = document.createElement('button');
       btnX.className = 'boton-x-dinamico';
       btnX.innerHTML = '✕';
-      btnX.title = 'Eliminar para reemplazar';
+      btnX.title = 'Eliminar foto';
       btnX.style.cssText = `
         position: absolute !important; top: 5px !important; right: 5px !important;
         background: #dc2626 !important; color: white !important; border: 2px solid white !important;
@@ -325,16 +325,38 @@ function renderizarFotosEvidenciaMod() {
         eliminarFotoEvidenciaMod(i);
       };
       slot.appendChild(btnX);
-      
-      // 3. CLIC EN EL SLOT: ABRIR ZOOM
-      slot.style.cursor = 'zoom-in';
-      slot.onclick = function(e) {
-        if (e.target === btnX || btnX.contains(e.target)) return;
+
+      // 3. BOTÓN "ZOOM" (Para ver la foto en grande)
+      const btnZoom = document.createElement('button');
+      btnZoom.className = 'btn-zoom-dinamico';
+      btnZoom.innerHTML = '🔍';
+      btnZoom.title = 'Ver en zoom';
+      btnZoom.style.cssText = `
+        position: absolute !important; bottom: 5px !important; right: 5px !important;
+        background: rgba(0, 0, 0, 0.6) !important; color: white !important; border: none !important;
+        border-radius: 50% !important; width: 28px !important; height: 28px !important;
+        cursor: pointer !important; font-size: 14px !important;
+        display: flex !important; align-items: center !important; justify-content: center !important;
+        z-index: 10000 !important;
+      `;
+      btnZoom.onclick = function(e) {
+        e.stopPropagation();
         e.preventDefault();
         abrirZoomInfalible(url);
       };
+      slot.appendChild(btnZoom);
       
-      console.log(`✅ Slot ${i}: Foto mostrada con badge y botón X dinámicos`);
+      // 4. CLIC EN EL SLOT: ABRIR SELECTOR DE ARCHIVOS PARA REEMPLAZAR DIRECTAMENTE
+      slot.style.cursor = 'pointer';
+      slot.title = 'Clic para reemplazar la foto';
+      slot.onclick = function(e) {
+        // Ignorar si se hizo clic en los botones de acción
+        if (e.target === btnX || btnX.contains(e.target) || e.target === btnZoom || btnZoom.contains(e.target)) return;
+        e.preventDefault();
+        input.click();
+      };
+      
+      console.log(`✅ Slot ${i}: Foto mostrada con opciones de reemplazo, eliminar y zoom`);
       
     } else {
       preview.style.display = 'none';
@@ -342,8 +364,8 @@ function renderizarFotosEvidenciaMod() {
       placeholder.style.display = 'flex';
       placeholder.innerHTML = `<div class="foto-preview-placeholder-icon">📷</div><div>Clic para agregar foto ${i}</div>`;
       
-      // 4. CLIC EN EL SLOT VACÍO: ABRIR SELECTOR DE ARCHIVOS
       slot.style.cursor = 'pointer';
+      slot.title = 'Clic para agregar foto';
       slot.onclick = function(e) {
         e.preventDefault();
         input.click();
@@ -367,7 +389,7 @@ function eliminarFotoEvidenciaMod(numero) {
 }
 
 // ==========================================
-// ✅ CAMBIAR FOTO
+// ✅ CAMBIAR FOTO (REEMPLAZO DIRECTO)
 // ==========================================
 async function cambiarFotoEvidenciaMod(numero, event) {
   const file = event.target.files[0];
