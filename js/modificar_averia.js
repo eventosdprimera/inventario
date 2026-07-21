@@ -290,37 +290,76 @@ async function cargarYMostrarFotosEquipoOriginal() {
 }
 
 // ==========================================
-// ✅ RENDERIZAR FOTOS DE EVIDENCIA (4 SLOTS CON "X" FORZADA)
+// ✅ RENDERIZAR FOTOS DE EVIDENCIA (CON ZOOM Y ETIQUETA)
 // ==========================================
 function renderizarFotosEvidenciaMod() {
   console.log("🎨 Renderizando slots de evidencia:", fotosEvidenciaMod);
+  
   for (let i = 1; i <= 4; i++) {
     const url = fotosEvidenciaMod[i - 1];
     const preview = document.getElementById(`mod_preview_evidencia_${i}`);
     const placeholder = document.getElementById(`mod_placeholder_evidencia_${i}`);
     const removeBtn = document.getElementById(`mod_remove_evidencia_${i}`);
+    const slot = preview?.parentElement; // El contenedor .foto-preview
     
     if (url && url.trim() !== '') {
+      // Hay foto: mostrar imagen con zoom
       if (preview) {
         preview.src = url;
         preview.style.display = 'block';
+        preview.style.cursor = 'pointer';
+        
+        // ✅ Agregar funcionalidad de zoom
+        preview.onclick = function(e) {
+          e.stopPropagation(); // Evitar que dispare el input file
+          abrirZoomInfalible(url);
+        };
       }
+      
       if (placeholder) placeholder.style.display = 'none';
+      
       if (removeBtn) {
-        removeBtn.style.display = 'flex'; // ✅ Forzar visualización de la X
-        removeBtn.style.zIndex = '10';
+        removeBtn.style.display = 'flex';
+        removeBtn.style.zIndex = '20';
       }
+      
+      // ✅ Agregar etiqueta "Evidencia" si no existe
+      let badge = slot?.querySelector('.badge-evidencia');
+      if (!badge && slot) {
+        badge = document.createElement('div');
+        badge.className = 'badge-evidencia';
+        badge.textContent = 'Evidencia';
+        badge.style.cssText = 'position: absolute; top: 5px; right: 5px; background: rgba(220, 38, 38, 0.85); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 15;';
+        slot.appendChild(badge);
+      }
+      
+      // Mover el botón X encima de la etiqueta
+      if (removeBtn) {
+        removeBtn.style.top = '30px'; // Debajo de la etiqueta
+      }
+      
     } else {
+      // No hay foto: mostrar placeholder
       if (preview) {
         preview.style.display = 'none';
         preview.src = '';
+        preview.onclick = null; // Remover evento de zoom
       }
-      if (placeholder) placeholder.style.display = 'flex';
-      if (removeBtn) removeBtn.style.display = 'none';
+      
+      if (placeholder) {
+        placeholder.style.display = 'flex';
+      }
+      
+      if (removeBtn) {
+        removeBtn.style.display = 'none';
+      }
+      
+      // Remover etiqueta si existe
+      const badge = slot?.querySelector('.badge-evidencia');
+      if (badge) badge.remove();
     }
   }
 }
-
 // ==========================================
 // ✅ ELIMINAR FOTO DE UN SLOT ESPECÍFICO
 // ==========================================
