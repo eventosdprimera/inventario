@@ -268,16 +268,14 @@ async function cargarYMostrarFotosEquipoOriginal() {
   fotos.forEach((fotoUrl, index) => {
     const div = document.createElement('div');
     div.className = 'foto-preview';
-    div.style.cursor = 'pointer';
+    div.style.cursor = 'zoom-in';
     div.style.position = 'relative';
     div.onclick = function() { abrirZoomInfalible(fotoUrl); };
     
     const img = document.createElement('img');
     img.src = fotoUrl;
     img.alt = `Foto original ${index + 1}`;
-    img.style.width = '100%';
-    img.style.height = '100%';
-    img.style.objectFit = 'cover';
+    img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
     
     const badge = document.createElement('div');
     badge.textContent = 'Original';
@@ -290,7 +288,7 @@ async function cargarYMostrarFotosEquipoOriginal() {
 }
 
 // ==========================================
-// ✅ RENDERIZAR FOTOS DE EVIDENCIA (CON ZOOM Y ETIQUETA)
+// ✅ RENDERIZAR FOTOS DE EVIDENCIA (CON ZOOM, ETIQUETA Y X FORZADOS)
 // ==========================================
 function renderizarFotosEvidenciaMod() {
   console.log("🎨 Renderizando slots de evidencia:", fotosEvidenciaMod);
@@ -300,66 +298,108 @@ function renderizarFotosEvidenciaMod() {
     const preview = document.getElementById(`mod_preview_evidencia_${i}`);
     const placeholder = document.getElementById(`mod_placeholder_evidencia_${i}`);
     const removeBtn = document.getElementById(`mod_remove_evidencia_${i}`);
-    const slot = preview?.parentElement; // El contenedor .foto-preview
+    const slot = preview ? preview.parentElement : null;
+    
+    // Limpiar badges anteriores para evitar duplicados
+    if (slot) {
+      const badgesAnteriores = slot.querySelectorAll('.badge-evidencia');
+      badgesAnteriores.forEach(b => b.remove());
+    }
     
     if (url && url.trim() !== '') {
-      // Hay foto: mostrar imagen con zoom
+      // === HAY FOTO ===
       if (preview) {
         preview.src = url;
         preview.style.display = 'block';
-        preview.style.cursor = 'pointer';
+        preview.style.cursor = 'zoom-in';
         
-        // ✅ Agregar funcionalidad de zoom
+        // ✅ Zoom al hacer clic en la imagen
         preview.onclick = function(e) {
-          e.stopPropagation(); // Evitar que dispare el input file
+          e.stopPropagation(); // Evitar que dispare el input file del padre
           abrirZoomInfalible(url);
         };
       }
       
       if (placeholder) placeholder.style.display = 'none';
       
+      // ✅ Forzar visibilidad del botón X con !important
       if (removeBtn) {
-        removeBtn.style.display = 'flex';
-        removeBtn.style.zIndex = '20';
+        removeBtn.style.cssText = `
+          position: absolute !important;
+          top: 5px !important;
+          right: 5px !important;
+          background: rgba(220, 38, 38, 0.9) !important;
+          color: white !important;
+          border: none !important;
+          border-radius: 50% !important;
+          width: 24px !important;
+          height: 24px !important;
+          cursor: pointer !important;
+          font-size: 14px !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          z-index: 20 !important;
+        `;
       }
       
-      // ✅ Agregar etiqueta "Evidencia" si no existe
-      let badge = slot?.querySelector('.badge-evidencia');
-      if (!badge && slot) {
-        badge = document.createElement('div');
+      // ✅ Agregar etiqueta "Evidencia" en la esquina superior izquierda
+      if (slot) {
+        const badge = document.createElement('div');
         badge.className = 'badge-evidencia';
         badge.textContent = 'Evidencia';
-        badge.style.cssText = 'position: absolute; top: 5px; right: 5px; background: rgba(220, 38, 38, 0.85); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 15;';
+        badge.style.cssText = `
+          position: absolute !important;
+          top: 5px !important;
+          left: 5px !important;
+          background: rgba(220, 38, 38, 0.85) !important;
+          color: white !important;
+          font-size: 10px !important;
+          padding: 3px 8px !important;
+          border-radius: 4px !important;
+          font-weight: 600 !important;
+          z-index: 15 !important;
+          pointer-events: none !important;
+        `;
         slot.appendChild(badge);
       }
       
-      // Mover el botón X encima de la etiqueta
-      if (removeBtn) {
-        removeBtn.style.top = '30px'; // Debajo de la etiqueta
-      }
-      
     } else {
-      // No hay foto: mostrar placeholder
+      // === NO HAY FOTO ===
       if (preview) {
         preview.style.display = 'none';
         preview.src = '';
-        preview.onclick = null; // Remover evento de zoom
+        preview.onclick = null;
       }
       
       if (placeholder) {
         placeholder.style.display = 'flex';
       }
       
+      // ✅ Ocultar botón X
       if (removeBtn) {
-        removeBtn.style.display = 'none';
+        removeBtn.style.cssText = `
+          position: absolute !important;
+          top: 5px !important;
+          right: 5px !important;
+          background: rgba(220, 38, 38, 0.9) !important;
+          color: white !important;
+          border: none !important;
+          border-radius: 50% !important;
+          width: 24px !important;
+          height: 24px !important;
+          cursor: pointer !important;
+          font-size: 14px !important;
+          display: none !important;
+          align-items: center !important;
+          justify-content: center !important;
+          z-index: 20 !important;
+        `;
       }
-      
-      // Remover etiqueta si existe
-      const badge = slot?.querySelector('.badge-evidencia');
-      if (badge) badge.remove();
     }
   }
 }
+
 // ==========================================
 // ✅ ELIMINAR FOTO DE UN SLOT ESPECÍFICO
 // ==========================================
