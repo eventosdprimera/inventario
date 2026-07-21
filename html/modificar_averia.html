@@ -9,24 +9,22 @@
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 .fotos-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 10px; }
-.foto-preview {
+.foto-slot {
   width: 100%; height: 140px; border: 2px dashed #e5e7eb; border-radius: 8px;
   display: flex; align-items: center; justify-content: center; background-color: #f9fafb;
   overflow: hidden; cursor: pointer; transition: all 0.3s; position: relative;
 }
-.foto-preview:hover { border-color: #1e3a8a; background-color: #eff6ff; transform: scale(1.02); }
-.foto-preview img { width: 100%; height: 100%; object-fit: cover; }
-.foto-preview-placeholder { text-align: center; color: #9ca3af; font-size: 11px; grid-column: 1 / -1; padding: 20px; }
+.foto-slot:hover { border-color: #1e3a8a; background-color: #eff6ff; transform: scale(1.02); }
+.foto-slot img { width: 100%; height: 100%; object-fit: cover; }
+.foto-preview-placeholder { text-align: center; color: #9ca3af; font-size: 11px; padding: 10px; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .foto-preview-placeholder-icon { font-size: 32px; margin-bottom: 4px; }
 
 .foto-remove {
   position: absolute; top: 5px; right: 5px; background: rgba(220, 38, 38, 0.9); color: white;
   border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px;
-  display: flex; align-items: center; justify-content: center; transition: all 0.3s; z-index: 2;
+  display: none; align-items: center; justify-content: center; transition: all 0.3s; z-index: 2;
 }
 .foto-remove:hover { background: rgba(185, 28, 28, 1); transform: scale(1.1); }
-
-.botones-fotos { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
 </style>
 </head>
 <body>
@@ -57,32 +55,26 @@
     <div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #6b7280; margin-bottom: 20px;">
       <h3 style="color: #374151; margin: 0 0 20px 0; font-size: 16px;">Información del Equipo</h3>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-        
         <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
           <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Código de Barras</label>
           <strong id="modFichaCodigo" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
         </div>
-        
         <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
           <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Nombre del Equipo</label>
           <strong id="modFichaNombre" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
         </div>
-        
         <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
           <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Marca</label>
           <strong id="modFichaMarca" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
         </div>
-        
         <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
           <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Modelo</label>
           <strong id="modFichaModelo" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
         </div>
-        
         <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
           <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Serial</label>
           <strong id="modFichaSerial" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
         </div>
-        
       </div>
     </div>
   </fieldset>
@@ -90,7 +82,6 @@
   <!-- SECCIÓN 3: DATOS EDITABLES DE LA AVERÍA -->
   <fieldset id="fieldsetDatosAveriaMod" style="display: none;">
     <legend>📝 Datos de la Avería (Editables)</legend>
-    
     <div class="form-grid-registro">
       <div class="form-group-registro"><label>Nombres del Reportante <span class="required">*</span></label><input type="text" id="modReportanteNombres"></div>
       <div class="form-group-registro"><label>Apellidos del Reportante <span class="required">*</span></label><input type="text" id="modReportanteApellidos"></div>
@@ -98,37 +89,62 @@
       <div class="form-group-registro"><label>Fecha de la Avería <span class="required">*</span></label><input type="date" id="modFechaAveria"></div>
       <div class="form-group-registro"><label>Hora de la Avería <span class="required">*</span></label><input type="time" id="modHoraAveria"></div>
     </div>
-
     <div class="form-group-registro full-width" style="margin-top: 15px;">
       <label>Detalles / Explicación de la Avería <span class="required">*</span></label>
       <textarea id="modDetallesAveria" rows="4"></textarea>
     </div>
-
     <div class="form-group-registro full-width" style="margin-top: 15px;">
       <label>Observaciones Adicionales</label>
       <textarea id="modObservacionesAveria" rows="3"></textarea>
     </div>
   </fieldset>
 
-  <!-- ✅ SECCIÓN 4: FOTOS DE EVIDENCIA EDITABLES (LIMPIA Y SIN DUPLICADOS) -->
+  <!-- ✅ SECCIÓN 4: FOTOS DE EVIDENCIA (ESTILO MODIFICAR EQUIPO: 4 SLOTS INDEPENDIENTES) -->
   <fieldset id="fieldsetFotosMod" style="display: none;">
     <legend>📷 Fotos de Evidencia (Máximo 4)</legend>
     <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 2px dashed #d1d5db;">
-      <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">Agregar o eliminar fotos</label>
+      <label style="display: block; margin-bottom: 15px; color: #374151; font-weight: 600;">Haga clic en un espacio para cambiar la foto, o en la ✕ para eliminarla</label>
       
-      <!-- Input oculto que hace el trabajo real -->
-      <input type="file" id="inputNuevasFotosMod" accept="image/*" multiple onchange="procesarFotosMod(event)" style="display: none;">
-      
-      <!-- Botón visible para el usuario -->
-      <button type="button" onclick="document.getElementById('inputNuevasFotosMod').click()" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; margin-bottom: 15px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
-        📁 Agregar / Cambiar Fotos de Evidencia
-      </button>
-
-      <!-- Contenedor donde se muestran las fotos (único y limpio) -->
-      <div id="previewFotosMod" class="fotos-grid">
-        <div class="foto-preview-placeholder">
-          <div class="foto-preview-placeholder-icon">📷</div>
-          <div>No hay fotos de evidencia</div>
+      <div class="fotos-grid">
+        <!-- Slot 1 -->
+        <div class="foto-slot" onclick="document.getElementById('mod_foto_evidencia_1').click()">
+          <img id="mod_preview_evidencia_1" src="" alt="Evidencia 1" style="display: none;">
+          <div id="mod_placeholder_evidencia_1" class="foto-preview-placeholder">
+            <div class="foto-preview-placeholder-icon">📷</div>
+            <div>Foto 1</div>
+          </div>
+          <button type="button" class="foto-remove" onclick="event.stopPropagation(); removerFotoEvidenciaMod(1)">✕</button>
+          <input type="file" id="mod_foto_evidencia_1" accept="image/*" style="display: none;" onchange="previsualizarFotoEvidenciaMod(1, event)">
+        </div>
+        <!-- Slot 2 -->
+        <div class="foto-slot" onclick="document.getElementById('mod_foto_evidencia_2').click()">
+          <img id="mod_preview_evidencia_2" src="" alt="Evidencia 2" style="display: none;">
+          <div id="mod_placeholder_evidencia_2" class="foto-preview-placeholder">
+            <div class="foto-preview-placeholder-icon">📷</div>
+            <div>Foto 2</div>
+          </div>
+          <button type="button" class="foto-remove" onclick="event.stopPropagation(); removerFotoEvidenciaMod(2)">✕</button>
+          <input type="file" id="mod_foto_evidencia_2" accept="image/*" style="display: none;" onchange="previsualizarFotoEvidenciaMod(2, event)">
+        </div>
+        <!-- Slot 3 -->
+        <div class="foto-slot" onclick="document.getElementById('mod_foto_evidencia_3').click()">
+          <img id="mod_preview_evidencia_3" src="" alt="Evidencia 3" style="display: none;">
+          <div id="mod_placeholder_evidencia_3" class="foto-preview-placeholder">
+            <div class="foto-preview-placeholder-icon">📷</div>
+            <div>Foto 3</div>
+          </div>
+          <button type="button" class="foto-remove" onclick="event.stopPropagation(); removerFotoEvidenciaMod(3)">✕</button>
+          <input type="file" id="mod_foto_evidencia_3" accept="image/*" style="display: none;" onchange="previsualizarFotoEvidenciaMod(3, event)">
+        </div>
+        <!-- Slot 4 -->
+        <div class="foto-slot" onclick="document.getElementById('mod_foto_evidencia_4').click()">
+          <img id="mod_preview_evidencia_4" src="" alt="Evidencia 4" style="display: none;">
+          <div id="mod_placeholder_evidencia_4" class="foto-preview-placeholder">
+            <div class="foto-preview-placeholder-icon">📷</div>
+            <div>Foto 4</div>
+          </div>
+          <button type="button" class="foto-remove" onclick="event.stopPropagation(); removerFotoEvidenciaMod(4)">✕</button>
+          <input type="file" id="mod_foto_evidencia_4" accept="image/*" style="display: none;" onchange="previsualizarFotoEvidenciaMod(4, event)">
         </div>
       </div>
     </div>
