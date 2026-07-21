@@ -120,10 +120,21 @@
         <input type="file" id="inputFotosMod" accept="image/*" multiple style="display: none;" onchange="procesarFotosMod(event)">
         <button type="button" class="btn-action btn-secondary" onclick="document.getElementById('inputFotosMod').click()">📁 Agregar Fotos</button>
       </div>
+      <!-- Botón visible para el usuario -->
+<button type="button" onclick="document.getElementById('inputNuevasFotosMod').click()" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; margin-bottom: 10px;">
+  📷 Agregar / Cambiar Fotos de Evidencia
+</button>
+
+<!-- Input oculto que hace el trabajo real -->
+<input type="file" id="inputNuevasFotosMod" accept="image/*" multiple onchange="procesarFotosMod(event)" style="display: none;">
+
+<!-- Contenedor donde se muestran las fotos (ya existente en tu HTML) -->
+<div id="previewFotosMod" class="fotos-grid"></div>
       <div id="previewFotosMod" class="fotos-grid">
         <div class="foto-preview-placeholder">
           <div class="foto-preview-placeholder-icon">📷</div>
           <div>No hay fotos de evidencia</div>
+          
         </div>
       </div>
     </div>
