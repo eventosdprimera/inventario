@@ -262,10 +262,10 @@ async function cargarYMostrarFotosEquipoOriginal() {
 }
 
 // ==========================================
-// ✅ RENDERIZAR FOTOS DE EVIDENCIA (VERSIÓN A PRUEBA DE CACHÉ Y FALLOS)
+// ✅ RENDERIZAR FOTOS DE EVIDENCIA (SIMPLE Y INFALIBLE)
 // ==========================================
 function renderizarFotosEvidenciaMod() {
-  console.log("🚀 [VERSIÓN NUEVA] Renderizando slots de evidencia...");
+  console.log("🎨 Renderizando slots de evidencia...");
   
   for (let i = 1; i <= 4; i++) {
     const url = fotosEvidenciaMod[i - 1];
@@ -274,80 +274,62 @@ function renderizarFotosEvidenciaMod() {
     const placeholder = document.getElementById(`mod_placeholder_evidencia_${i}`);
     const input = document.getElementById(`mod_foto_evidencia_${i}`);
     
-    if (!slot || !preview || !placeholder || !input) {
-      console.error(`❌ Faltan elementos para slot ${i}`);
-      continue;
-    }
-
-    // Limpiar cualquier botón o badge previo para evitar duplicados
-    const elementosViejos = slot.querySelectorAll('.btn-x-forzado, .badge-evidencia-forzado, .btn-accion-foto');
-    elementosViejos.forEach(el => el.remove());
+    if (!slot || !preview || !placeholder || !input) continue;
 
     const tieneFoto = url && typeof url === 'string' && url.trim() !== '' && url !== 'null';
 
     if (tieneFoto) {
-      console.log(`✅ Slot ${i} TIENE FOTO:`, url);
       preview.src = url;
       preview.style.display = 'block';
       placeholder.style.display = 'none';
       
-      // 1. CREAR BADGE "EVIDENCIA" FORZADO (IGNORA EL CSS DEL HTML)
-      const badge = document.createElement('div');
-      badge.className = 'badge-evidencia-forzado';
-      badge.textContent = 'EVIDENCIA';
-      badge.style.cssText = `
-        position: absolute !important; top: 5px !important; left: 5px !important;
-        background: #dc2626 !important; color: white !important; font-size: 10px !important;
-        padding: 4px 8px !important; border-radius: 4px !important; font-weight: 800 !important;
-        z-index: 9999 !important; pointer-events: none !important; text-transform: uppercase;
-      `;
-      slot.appendChild(badge);
+      // 1. Agregar clase para mostrar el botón X (que ya está en el HTML)
+      slot.classList.add('con-foto');
       
-      // 2. CREAR BOTÓN "X" FORZADO (IGNORA EL CSS DEL HTML)
-      const btnX = document.createElement('button');
-      btnX.className = 'btn-x-forzado';
-      btnX.innerHTML = '✕';
-      btnX.title = 'Eliminar esta foto';
-      btnX.style.cssText = `
-        position: absolute !important; top: 5px !important; right: 5px !important;
-        background: #dc2626 !important; color: white !important; border: 2px solid white !important;
-        border-radius: 50% !important; width: 28px !important; height: 28px !important;
-        cursor: pointer !important; font-size: 16px !important; font-weight: bold !important;
-        display: flex !important; align-items: center !important; justify-content: center !important;
-        z-index: 10000 !important; box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-      `;
-      btnX.onclick = function(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        eliminarFotoEvidenciaMod(i);
-      };
-      slot.appendChild(btnX);
+      // 2. Agregar badge "EVIDENCIA" si no existe
+      if (!slot.querySelector('.badge-evidencia')) {
+        const badge = document.createElement('div');
+        badge.className = 'badge-evidencia';
+        badge.textContent = 'Evidencia';
+        slot.appendChild(badge);
+      }
       
-      // 3. CLIC EN EL SLOT: ABRIR INPUT FILE PARA REEMPLAZAR DIRECTAMENTE
-      slot.style.cursor = 'pointer';
-      slot.title = 'Clic para reemplazar esta foto';
-      slot.onclick = function(e) {
-        // Si el clic fue en el botón X, no hacer nada (ya tiene su propio evento)
-        if (e.target === btnX || btnX.contains(e.target)) return;
-        e.preventDefault();
+      // 3. Clic en la imagen = abrir selector de archivos para reemplazar
+      preview.style.cursor = 'pointer';
+      preview.onclick = function(e) {
         e.stopPropagation();
         input.click();
       };
       
+      // 4. Clic en el slot (fuera de la imagen) = abrir zoom
+      slot.onclick = function(e) {
+        if (e.target.classList.contains('foto-remove')) return; // Ignorar si es el botón X
+        e.preventDefault();
+        abrirZoomInfalible(url);
+      };
+      
+      console.log(`✅ Slot ${i}: Foto mostrada con X y badge Evidencia`);
     } else {
-      console.log(`⚪ Slot ${i} VACÍO`);
       preview.style.display = 'none';
       preview.src = '';
       placeholder.style.display = 'flex';
       placeholder.innerHTML = `<div class="foto-preview-placeholder-icon">📷</div><div>Clic para agregar foto ${i}</div>`;
       
+      // Quitar clase para ocultar el botón X
+      slot.classList.remove('con-foto');
+      
+      // Remover badge si existe
+      const badge = slot.querySelector('.badge-evidencia');
+      if (badge) badge.remove();
+      
+      // Clic en el slot vacío = abrir selector de archivos
       slot.style.cursor = 'pointer';
-      slot.title = 'Clic para agregar foto';
       slot.onclick = function(e) {
         e.preventDefault();
-        e.stopPropagation();
         input.click();
       };
+      
+      console.log(`⚪ Slot ${i}: Vacío, listo para agregar`);
     }
   }
 }
@@ -356,7 +338,7 @@ function renderizarFotosEvidenciaMod() {
 // ✅ ELIMINAR FOTO
 // ==========================================
 function eliminarFotoEvidenciaMod(numero) {
-  if (!confirm(`¿Eliminar la foto de evidencia ${numero}?\n\nPodrás agregar una nueva haciendo clic en el recuadro o en el botón 🔄.`)) return;
+  if (!confirm(`¿Eliminar la foto de evidencia ${numero}?\n\nPodrás agregar una nueva haciendo clic en el recuadro.`)) return;
   fotosEvidenciaMod[numero - 1] = null;
   const input = document.getElementById(`mod_foto_evidencia_${numero}`);
   if (input) input.value = '';
