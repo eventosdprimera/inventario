@@ -139,12 +139,10 @@ function asegurarContenedorFotosEquipo() {
     grid.style.cssText = 'display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 15px;';
     fieldset.appendChild(grid);
     
-    // ✅ CORRECCIÓN: Insertar justo DESPUÉS de la ficha del equipo
     const fieldsetFicha = document.getElementById('fieldsetFichaEquipoMod');
     if (fieldsetFicha && fieldsetFicha.parentNode) {
       fieldsetFicha.parentNode.insertBefore(fieldset, fieldsetFicha.nextSibling);
     } else {
-      // Fallback por si acaso
       document.body.appendChild(fieldset);
     }
     
@@ -169,7 +167,6 @@ async function buscarAveriaParaModificar() {
   codigo = codigo.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
 
   try {
-    // 1. Buscar la avería
     const { data, error } = await supabaseClient
       .from('equipos_averiados')
       .select('*')
@@ -185,7 +182,6 @@ async function buscarAveriaParaModificar() {
 
     averiaSeleccionada = data;
     
-    // 2. Mostrar ficha del equipo (solo lectura)
     document.getElementById('modFichaCodigo').textContent = data.codigo_barras || '-';
     document.getElementById('modFichaNombre').textContent = data.nombre_equipo || '-';
     document.getElementById('modFichaMarca').textContent = data.marca || '-';
@@ -193,10 +189,9 @@ async function buscarAveriaParaModificar() {
     document.getElementById('modFichaSerial').textContent = data.serial || '-';
     document.getElementById('fieldsetFichaEquipoMod').style.display = 'block';
 
-    // 3. ✅ Cargar y mostrar las fotos ORIGINALES del equipo (debajo de la ficha)
+    // ✅ Cargar fotos originales con búsqueda inteligente
     await cargarYMostrarFotosEquipoOriginal(data.codigo_barras, data.serial);
 
-    // 4. Cargar datos editables de la avería
     document.getElementById('modReportanteNombres').value = data.reportante_nombre || '';
     document.getElementById('modReportanteApellidos').value = data.reportante_apellidos || '';
     document.getElementById('modReportanteCedula').value = data.reportante_cedula || '';
@@ -209,7 +204,6 @@ async function buscarAveriaParaModificar() {
     document.getElementById('fieldsetFotosMod').style.display = 'block';
     document.getElementById('botonesAccionMod').style.display = 'flex';
 
-    // 5. Cargar fotos de evidencia existentes (estas SÍ se pueden modificar)
     fotosEvidenciaMod = [];
     if (data.fotos_evidencia && Array.isArray(data.fotos_evidencia)) {
       fotosEvidenciaMod = data.fotos_evidencia.filter(url => url && url.trim() !== '');
@@ -223,7 +217,7 @@ async function buscarAveriaParaModificar() {
 }
 
 // ==========================================
-// ✅ CARGAR Y MOSTRAR FOTOS DEL EQUIPO ORIGINAL (MEJORADO Y ROBUSTO)
+// ✅ BÚSQUEDA INTELIGENTE DE FOTOS (equipos → equipos_eliminados)
 // ==========================================
 async function cargarYMostrarFotosEquipoOriginal(codigoBarras, serial) {
   const contenedor = asegurarContenedorFotosEquipo();
@@ -233,35 +227,54 @@ async function cargarYMostrarFotosEquipoOriginal(codigoBarras, serial) {
   contenedor.innerHTML = '<div style="text-align: center; padding: 20px; color: #6b7280;">Cargando fotos del equipo...</div>';
   
   try {
-    console.log('🔍 Buscando equipo original con código:', codigoBarras, 'o serial:', serial);
+    console.log('🔍 Buscando fotos del equipo:', codigoBarras, '/', serial);
     
-    // Intentamos buscar por código de barras o por serial para mayor tolerancia
-    const { data: equipo, error } = await supabaseClient
+    // PASO 1: Buscar en la tabla activa "equipos"
+    let { data: equipo, error } = await supabaseClient
       .from('equipos')
       .select('foto_url, foto2_url, foto3_url, foto4_url')
       .or(`codigo_barras.eq.${codigoBarras},serial.eq.${serial}`)
       .maybeSingle();
 
-    if (error) {
-      console.error('❌ Error de Supabase al buscar equipo:', error);
-      contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">❌</div><div>Error de base de datos</div></div>`;
-      return;
+    // PASO 2: Si no está en equipos, buscar en equipos_eliminados (respaldo)
+    if (!equipo && !error) {
+      console.log('🔍 No encontrado en "equipos". Buscando en "equipos_eliminados"...');
+      const { data: equipoEliminado, error: errorElim } = await supabaseClient
+        .from('equipos_eliminados')
+        .select('foto_url, foto2_url, foto3_url, foto4_url')
+        .or(`codigo_barras.eq.${codigoBarras},serial.eq.${serial}`)
+        .maybeSingle();
+      
+      if (!errorElim) {
+        equipo = equipoEliminado;
+        if (equipo) {
+          console.log('✅ Fotos encontradas en el respaldo de equipos eliminados');
+        }
+      }
     }
 
+    // PASO 3: Si aún no hay fotos, mostrar mensaje
     if (!equipo) {
-      console.warn('⚠️ No se encontró el equipo en la tabla "equipos". Posiblemente fue eliminado del inventario.');
-      contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">⚠️</div><div>Equipo no encontrado en inventario</div></div>`;
+      console.warn('⚠️ No se encontró el equipo en ninguna tabla. Las fotos originales no están disponibles.');
+      contenedor.innerHTML = `
+        <div class="foto-preview-placeholder">
+          <div class="foto-preview-placeholder-icon">⚠️</div>
+          <div>No se encontraron fotos originales</div>
+          <div style="font-size: 10px; margin-top: 5px; color: #9ca3af;">
+            El equipo fue eliminado antes de ser averiado o no tenía fotos al registrarse
+          </div>
+        </div>`;
       return;
     }
 
     const fotos = [equipo.foto_url, equipo.foto2_url, equipo.foto3_url, equipo.foto4_url].filter(url => url && url.trim() !== '');
     
     if (fotos.length === 0) {
-      contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>El equipo no tiene fotos registradas</div></div>`;
+      contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>El equipo no tenía fotos al registrarse</div></div>`;
       return;
     }
 
-    contenedor.innerHTML = ''; // Limpiar mensaje de carga
+    contenedor.innerHTML = '';
 
     fotos.forEach((fotoUrl, index) => {
       const div = document.createElement('div');
@@ -277,7 +290,6 @@ async function cargarYMostrarFotosEquipoOriginal(codigoBarras, serial) {
       img.style.height = '100%';
       img.style.objectFit = 'cover';
       
-      // Etiqueta de solo lectura
       const badge = document.createElement('div');
       badge.textContent = 'Original';
       badge.style.cssText = 'position: absolute; top: 5px; left: 5px; background: rgba(30, 58, 138, 0.85); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 10;';
@@ -289,7 +301,7 @@ async function cargarYMostrarFotosEquipoOriginal(codigoBarras, serial) {
 
   } catch (err) {
     console.error('❌ Error inesperado al cargar fotos del equipo:', err);
-    contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">❌</div><div>Error inesperado</div></div>`;
+    contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">❌</div><div>Error al cargar fotos</div></div>`;
   }
 }
 
@@ -334,7 +346,6 @@ function renderizarPreviewFotosMod() {
       eliminarFotoMod(index); 
     };
     
-    // Etiqueta de evidencia
     const badge = document.createElement('div');
     badge.textContent = 'Evidencia';
     badge.style.cssText = 'position: absolute; top: 5px; right: 5px; background: rgba(220, 38, 38, 0.85); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 10;';
