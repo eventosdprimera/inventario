@@ -8,26 +8,34 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* Base & Reset */
+  * { box-sizing: border-box; }
   body { font-family: 'Poppins', sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 20px; }
+  
+  /* Layout */
   .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
   .page-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e5e7eb; padding-bottom: 20px; }
   .page-title { font-family: 'Libre Caslon Text', serif; color: #1e3a8a; font-size: 28px; margin: 0; }
   .page-subtitle { color: #6b7280; font-size: 14px; margin-top: 5px; }
   
+  /* Fieldsets & Legends */
   fieldset { border: 1px solid #d1d5db; border-radius: 8px; padding: 20px; margin-bottom: 20px; background: #fafafa; }
   legend { background: #1e3a8a; color: white; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; }
   
-  .form-grid-registro { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+  /* Forms */
+  .form-grid-registro { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
   .form-group-registro { display: flex; flex-direction: column; }
   .form-group-registro.full-width { grid-column: 1 / -1; }
   .form-group-registro label { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px; }
   .form-group-registro input, .form-group-registro select, .form-group-registro textarea {
-    padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; font-family: 'Poppins', sans-serif;
+    padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; font-family: 'Poppins', sans-serif; transition: all 0.2s;
   }
   .form-group-registro input:focus, .form-group-registro select:focus, .form-group-registro textarea:focus {
     outline: none; border-color: #1e3a8a; box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
   }
-  
+  .required { color: #ef4444; }
+
+  /* Buttons */
   .btn-action { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
   .btn-primary { background: #1e3a8a; color: white; }
   .btn-primary:hover { background: #1e40af; }
@@ -36,52 +44,42 @@
   .btn-success { background: #10b981; color: white; }
   .btn-success:hover { background: #059669; }
   
-  .button-group { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+  .button-group { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; flex-wrap: wrap; }
   
-  table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
-  th { background: #1e3a8a; color: white; padding: 12px 10px; text-align: left; font-size: 12px; text-transform: uppercase; }
-  td { padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+  /* Tables */
+  .table-responsive { overflow-x: auto; margin-top: 15px; border-radius: 8px; border: 1px solid #e5e7eb; }
+  table { width: 100%; border-collapse: collapse; background: white; min-width: 800px; }
+  th { background: #1e3a8a; color: white; padding: 12px 10px; text-align: left; font-size: 12px; text-transform: uppercase; font-weight: 600; }
+  td { padding: 12px 10px; border-bottom: 1px solid #e5e7eb; font-size: 13px; color: #374151; }
+  tr:last-child td { border-bottom: none; }
   tr:hover { background: #f9fafb; }
   
-  .mensaje { padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; font-weight: 500; display: none; }
+  /* Messages */
+  .mensaje { padding: 12px 16px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; font-weight: 500; display: none; animation: fadeIn 0.3s ease; }
   .mensaje.exito { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; display: block; }
   .mensaje.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; display: block; }
   .mensaje.info { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
-  /* ✅ NUEVO DISEÑO DE TOTALES (Estilo Nueva Renta) */
-  .totales-container {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 20px;
-  }
+  /* Totals Box (Estilo Nueva Renta) */
+  .totales-container { display: flex; justify-content: flex-end; margin-top: 20px; }
   .totales-box {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 15px 25px;
-    min-width: 280px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px 25px; min-width: 280px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   }
-  .total-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    font-size: 14px;
-    color: #475569;
-  }
-  .total-row.final {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 2px dashed #cbd5e1;
-    font-size: 16px;
-    font-weight: 600;
-    color: #059669; /* Verde éxito */
-  }
-  .total-row.final strong {
-    font-size: 24px;
-    font-weight: 700;
-  }
+  .total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 14px; color: #475569; }
+  .total-row.final { margin-top: 12px; padding-top: 12px; border-top: 2px dashed #cbd5e1; font-size: 16px; font-weight: 600; color: #059669; }
+  .total-row.final strong { font-size: 24px; font-weight: 700; }
+
+  /* Pagination */
+  .paginacion-container { margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 15px; }
+  .paginacion-container button { padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+  .paginacion-container button:hover:not(:disabled) { background: #f3f4f6; border-color: #9ca3af; }
+  .paginacion-container button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .paginacion-container span { color: #374151; font-size: 13px; font-weight: 600; }
+
+  /* Section dividers */
+  .section-divider { margin-top: 25px; padding-top: 20px; border-top: 2px dashed #d1d5db; }
+  .section-title { font-size: 14px; font-weight: 600; color: #374151; display: block; margin-bottom: 10px; }
 </style>
 </head>
 <body>
@@ -123,7 +121,7 @@
       </div>
     </div>
 
-    <div style="overflow-x: auto;">
+    <div class="table-responsive">
       <table>
         <thead>
           <tr>
@@ -134,7 +132,7 @@
             <th>Fecha Devolución</th>
             <th style="text-align: right;">Total</th>
             <th style="text-align: center;">Estado</th>
-            <th style="text-align: center;">Acción</th>
+            <th style="text-align: center; width: 100px;">Acción</th>
           </tr>
         </thead>
         <tbody id="tbodyRentas">
@@ -148,7 +146,7 @@
       </table>
     </div>
     
-    <div id="paginacion" style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 15px;"></div>
+    <div id="paginacion" class="paginacion-container"></div>
   </fieldset>
 
   <!-- ========================================== -->
@@ -159,7 +157,7 @@
     
     <div class="form-grid-registro">
       <div class="form-group-registro full-width">
-        <label>Nombre del Cliente <span style="color: #ef4444;">*</span></label>
+        <label>Nombre del Cliente <span class="required">*</span></label>
         <input type="text" id="editClienteNombre" placeholder="Nombre completo">
       </div>
       <div class="form-group-registro">
@@ -176,11 +174,11 @@
       </div>
       
       <div class="form-group-registro">
-        <label>Fecha de Renta <span style="color: #ef4444;">*</span></label>
+        <label>Fecha de Renta <span class="required">*</span></label>
         <input type="date" id="editFechaRenta">
       </div>
       <div class="form-group-registro">
-        <label>Fecha de Devolución <span style="color: #ef4444;">*</span></label>
+        <label>Fecha de Devolución <span class="required">*</span></label>
         <input type="date" id="editFechaDevolucion">
       </div>
       <div class="form-group-registro">
@@ -200,7 +198,7 @@
       </div>
       <div class="form-group-registro">
         <label>Descuento ($)</label>
-        <input type="number" id="editDescuento" value="0" min="0" step="0.01" onchange="calcularTotalesEdicion()">
+        <input type="number" id="editDescuento" value="0" min="0" step="0.01">
       </div>
       <div class="form-group-registro full-width">
         <label>Observaciones</label>
@@ -209,8 +207,8 @@
     </div>
 
     <!-- Buscador de equipos para agregar a la edición -->
-    <div style="margin-top: 25px; padding-top: 20px; border-top: 2px dashed #d1d5db;">
-      <label style="font-size: 14px; font-weight: 600; color: #374151; display: block; margin-bottom: 10px;">➕ Agregar Equipo a esta Renta</label>
+    <div class="section-divider">
+      <label class="section-title">➕ Agregar Equipo a esta Renta</label>
       <div style="display: flex; gap: 10px;">
         <input type="text" id="editBuscarEquipo" placeholder="Escanee o escriba el código de barras / serial del equipo" style="flex: 1; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
         <button type="button" class="btn-action btn-success" onclick="agregarEquipoEdicion()">Agregar Equipo</button>
@@ -218,7 +216,7 @@
     </div>
 
     <!-- Tabla de items en edición -->
-    <div style="overflow-x: auto; margin-top: 15px;">
+    <div class="table-responsive" style="margin-top: 15px;">
       <table>
         <thead>
           <tr>
@@ -238,16 +236,12 @@
       </table>
     </div>
 
-    <!-- ✅ TOTALES CON NUEVO DISEÑO -->
+    <!-- Totales (Diseño profesional alineado a la derecha) -->
     <div class="totales-container">
       <div class="totales-box">
         <div class="total-row">
           <span>Subtotal:</span>
           <span id="editSubtotal">$0.00</span>
-        </div>
-        <div class="total-row">
-          <span>Descuento:</span>
-          <span id="editDescuentoDisplay">-$0.00</span>
         </div>
         <div class="total-row final">
           <span>Total a Pagar:</span>
@@ -269,6 +263,6 @@
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
-<script src="../js/modificar.js"></script> <!-- Asegúrate de que este sea el nombre correcto de tu archivo JS -->
+<script src="../js/modificar_renta.js"></script>
 </body>
 </html>
