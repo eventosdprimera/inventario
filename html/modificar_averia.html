@@ -22,7 +22,7 @@
 .foto-remove {
   position: absolute; top: 5px; right: 5px; background: rgba(220, 38, 38, 0.9); color: white;
   border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px;
-  display: none; align-items: center; justify-content: center; transition: all 0.3s; z-index: 2;
+  display: none; align-items: center; justify-content: center; transition: all 0.3s; z-index: 30;
 }
 .foto-remove:hover { background: rgba(185, 28, 28, 1); transform: scale(1.1); }
 </style>
@@ -99,49 +99,49 @@
     </div>
   </fieldset>
 
-  <!-- ✅ SECCIÓN 4: FOTOS DE EVIDENCIA (4 SLOTS INDEPENDIENTES COMO MODIFICAR EQUIPO) -->
+  <!-- ✅ SECCIÓN 4: FOTOS DE EVIDENCIA (CONTROL TOTAL DESDE JS) -->
   <fieldset id="fieldsetFotosMod" style="display: none;">
     <legend>📷 Fotos de Evidencia (Máximo 4)</legend>
     <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 2px dashed #d1d5db;">
-      <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">Haga clic en un recuadro para cambiar la foto, o en la ✕ para eliminarla</label>
+      <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">Haga clic en un recuadro vacío para agregar, o en la ✕ para eliminar</label>
       
       <div class="fotos-grid">
         <!-- Slot 1 -->
-        <div class="foto-preview" onclick="document.getElementById('mod_foto_evidencia_1').click()">
+        <div class="foto-preview" id="slot_evidencia_1">
           <img id="mod_preview_evidencia_1" src="" alt="Evidencia 1" style="display: none;">
           <div id="mod_placeholder_evidencia_1" class="foto-preview-placeholder">
             <div class="foto-preview-placeholder-icon">📷</div>
-            <div>Foto 1</div>
+            <div>Clic para agregar foto 1</div>
           </div>
           <button type="button" class="foto-remove" id="mod_remove_evidencia_1" onclick="event.stopPropagation(); eliminarFotoEvidenciaMod(1)">✕</button>
           <input type="file" id="mod_foto_evidencia_1" accept="image/*" style="display: none;" onchange="cambiarFotoEvidenciaMod(1, event)">
         </div>
         <!-- Slot 2 -->
-        <div class="foto-preview" onclick="document.getElementById('mod_foto_evidencia_2').click()">
+        <div class="foto-preview" id="slot_evidencia_2">
           <img id="mod_preview_evidencia_2" src="" alt="Evidencia 2" style="display: none;">
           <div id="mod_placeholder_evidencia_2" class="foto-preview-placeholder">
             <div class="foto-preview-placeholder-icon">📷</div>
-            <div>Foto 2</div>
+            <div>Clic para agregar foto 2</div>
           </div>
           <button type="button" class="foto-remove" id="mod_remove_evidencia_2" onclick="event.stopPropagation(); eliminarFotoEvidenciaMod(2)">✕</button>
           <input type="file" id="mod_foto_evidencia_2" accept="image/*" style="display: none;" onchange="cambiarFotoEvidenciaMod(2, event)">
         </div>
         <!-- Slot 3 -->
-        <div class="foto-preview" onclick="document.getElementById('mod_foto_evidencia_3').click()">
+        <div class="foto-preview" id="slot_evidencia_3">
           <img id="mod_preview_evidencia_3" src="" alt="Evidencia 3" style="display: none;">
           <div id="mod_placeholder_evidencia_3" class="foto-preview-placeholder">
             <div class="foto-preview-placeholder-icon">📷</div>
-            <div>Foto 3</div>
+            <div>Clic para agregar foto 3</div>
           </div>
           <button type="button" class="foto-remove" id="mod_remove_evidencia_3" onclick="event.stopPropagation(); eliminarFotoEvidenciaMod(3)">✕</button>
           <input type="file" id="mod_foto_evidencia_3" accept="image/*" style="display: none;" onchange="cambiarFotoEvidenciaMod(3, event)">
         </div>
         <!-- Slot 4 -->
-        <div class="foto-preview" onclick="document.getElementById('mod_foto_evidencia_4').click()">
+        <div class="foto-preview" id="slot_evidencia_4">
           <img id="mod_preview_evidencia_4" src="" alt="Evidencia 4" style="display: none;">
           <div id="mod_placeholder_evidencia_4" class="foto-preview-placeholder">
             <div class="foto-preview-placeholder-icon">📷</div>
-            <div>Foto 4</div>
+            <div>Clic para agregar foto 4</div>
           </div>
           <button type="button" class="foto-remove" id="mod_remove_evidencia_4" onclick="event.stopPropagation(); eliminarFotoEvidenciaMod(4)">✕</button>
           <input type="file" id="mod_foto_evidencia_4" accept="image/*" style="display: none;" onchange="cambiarFotoEvidenciaMod(4, event)">
