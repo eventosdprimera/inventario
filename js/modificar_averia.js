@@ -289,7 +289,7 @@ async function cargarYMostrarFotosEquipoOriginal() {
 }
 
 // ==========================================
-// ✅ RENDERIZAR FOTOS DE EVIDENCIA (CREACIÓN DINÁMICA)
+// ✅ RENDERIZAR FOTOS DE EVIDENCIA (CON PRUEBA DE DOM)
 // ==========================================
 function renderizarFotosEvidenciaMod() {
   console.log("🎨 Renderizando slots:", fotosEvidenciaMod);
@@ -314,50 +314,32 @@ function renderizarFotosEvidenciaMod() {
     const tieneFoto = url && typeof url === 'string' && url.trim() !== '' && url !== 'null';
 
     if (tieneFoto) {
-      // MOSTRAR FOTO
       preview.src = url;
       preview.style.display = 'block';
       placeholder.style.display = 'none';
       
-      // CREAR ETIQUETA "EVIDENCIA" DINÁMICAMENTE
+      // CREAR ETIQUETA "EVIDENCIA"
       const badge = document.createElement('div');
       badge.className = 'badge-evidencia';
       badge.textContent = 'Evidencia';
       badge.style.cssText = `
-        position: absolute !important;
-        top: 5px !important;
-        left: 5px !important;
-        background: #dc2626 !important;
-        color: white !important;
-        font-size: 10px !important;
-        padding: 3px 8px !important;
-        border-radius: 4px !important;
-        font-weight: 600 !important;
-        z-index: 9999 !important;
-        pointer-events: none !important;
+        position: absolute !important; top: 5px !important; left: 5px !important;
+        background: #dc2626 !important; color: white !important; font-size: 10px !important;
+        padding: 3px 8px !important; border-radius: 4px !important; font-weight: 600 !important;
+        z-index: 9999 !important; pointer-events: none !important;
       `;
       slot.appendChild(badge);
       
-      // CREAR BOTÓN X DINÁMICAMENTE
+      // CREAR BOTÓN X
       const btnX = document.createElement('button');
       btnX.className = 'boton-x-dinamico';
       btnX.innerHTML = '✕';
       btnX.style.cssText = `
-        position: absolute !important;
-        top: 5px !important;
-        right: 5px !important;
-        background: #dc2626 !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 50% !important;
-        width: 24px !important;
-        height: 24px !important;
-        cursor: pointer !important;
-        font-size: 14px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        z-index: 10000 !important;
+        position: absolute !important; top: 5px !important; right: 5px !important;
+        background: #dc2626 !important; color: white !important; border: none !important;
+        border-radius: 50% !important; width: 24px !important; height: 24px !important;
+        cursor: pointer !important; font-size: 14px !important; display: flex !important;
+        align-items: center !important; justify-content: center !important; z-index: 10000 !important;
       `;
       btnX.onclick = function(e) {
         e.stopPropagation();
@@ -365,7 +347,6 @@ function renderizarFotosEvidenciaMod() {
       };
       slot.appendChild(btnX);
       
-      // Clic en el slot abre zoom
       slot.onclick = function(e) {
         if (e.target === btnX || btnX.contains(e.target)) return;
         e.preventDefault();
@@ -373,20 +354,19 @@ function renderizarFotosEvidenciaMod() {
       };
       
       console.log(`✅ Slot ${i}: Foto mostrada con etiqueta y X`);
+      // 🔍 PRUEBA DE FUEGO: Despliega este objeto en la consola y verás los elementos dentro
+      console.log(`🔍 Inspecciona este elemento Slot ${i}:`, slot); 
       
     } else {
-      // MOSTRAR PLACEHOLDER
       preview.style.display = 'none';
       preview.src = '';
       placeholder.style.display = 'flex';
       placeholder.innerHTML = `<div class="foto-preview-placeholder-icon">📷</div><div>Clic para agregar foto ${i}</div>`;
       
-      // Clic en el slot vacío abre selector
       slot.onclick = function(e) {
         e.preventDefault();
         input.click();
       };
-      
       console.log(`⚪ Slot ${i}: Vacío`);
     }
   }
