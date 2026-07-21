@@ -20,24 +20,76 @@
 .foto-preview-placeholder:hover { color: #1e3a8a; }
 .foto-preview-placeholder-icon { font-size: 32px; margin-bottom: 4px; }
 
-/* ✅ BOTÓN X: oculto por defecto, se muestra cuando el slot tiene la clase .con-foto */
+/* ✅ ESTILOS PARA BOTONES DE FOTOS */
 .foto-remove {
-  position: absolute; top: 5px; right: 5px; background: rgba(220, 38, 38, 0.95); color: white;
-  border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 14px;
-  display: none; align-items: center; justify-content: center; transition: all 0.3s; z-index: 10000;
-  font-weight: bold; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  position: absolute !important; 
+  top: 5px !important; 
+  right: 5px !important; 
+  background: rgba(220, 38, 38, 0.95) !important; 
+  color: white !important;
+  border: 2px solid white !important;
+  border-radius: 50% !important; 
+  width: 28px !important; 
+  height: 28px !important; 
+  cursor: pointer !important; 
+  font-size: 16px !important;
+  font-weight: bold !important;
+  display: flex !important; 
+  align-items: center !important; 
+  justify-content: center !important; 
+  z-index: 100 !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
 }
 .foto-preview.con-foto .foto-remove { display: flex !important; }
 .foto-remove:hover { background: rgba(185, 28, 28, 1); transform: scale(1.15); }
 
-/* ✅ BADGE "EVIDENCIA" */
+/* ✅ ESTILOS PARA BADGE "EVIDENCIA" */
 .badge-evidencia {
-  position: absolute !important; top: 5px !important; left: 5px !important;
-  background: #dc2626 !important; color: white !important; font-size: 10px !important;
-  padding: 3px 8px !important; border-radius: 4px !important; font-weight: 600 !important;
-  z-index: 9999 !important; pointer-events: none !important;
+  position: absolute !important; 
+  top: 5px !important; 
+  left: 5px !important;
+  background: #dc2626 !important; 
+  color: white !important; 
+  font-size: 10px !important;
+  padding: 3px 8px !important; 
+  border-radius: 4px !important; 
+  font-weight: 600 !important;
+  z-index: 9999 !important; 
+  pointer-events: none !important;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
+
+/* Estilos generales */
+.fotos-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 10px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 30px; }
+.page-header { text-align: center; margin-bottom: 30px; }
+.page-title { font-family: 'Libre Caslon Text', serif; color: #1e3a8a; font-size: 28px; }
+.page-subtitle { color: #6b7280; font-size: 14px; }
+
+/* Formularios */
+.form-grid-registro { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 10px; }
+.form-group-registro { display: flex; flex-direction: column; }
+.form-group-registro label { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+.form-group-registro input, .form-group-registro textarea, .form-group-registro select {
+  padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;
+}
+.form-group-registro input:focus, .form-group-registro textarea:focus, .form-group-registro select:focus {
+  outline: none; border-color: #1e3a8a; box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+}
+
+/* Botones */
+.btn-action { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
+.btn-primary { background: #1e3a8a; color: white; }
+.btn-primary:hover { background: #1e40af; }
+.btn-secondary { background: #6b7280; color: white; }
+.btn-secondary:hover { background: #4b5563; }
+.button-group { display: flex; gap: 10px; margin-top: 20px; }
+
+/* Mensajes */
+.mensaje { padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; font-weight: 500; display: none; }
+.mensaje.exito { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; display: block; }
+.mensaje.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; display: block; }
+.mensaje.info { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; display: block; }
 </style>
 </head>
 <body>
@@ -112,11 +164,11 @@
     </div>
   </fieldset>
 
-  <!-- ✅ SECCIÓN 4: FOTOS DE EVIDENCIA -->
+  <!-- SECCIÓN 4: FOTOS DE EVIDENCIA -->
   <fieldset id="fieldsetFotosMod" style="display: none;">
     <legend>📷 Fotos de Evidencia (Máximo 4)</legend>
     <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 2px dashed #d1d5db;">
-      <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">Clic en la foto para reemplazarla, en la ✕ roja para eliminarla, o fuera de la foto para ver Zoom</label>
+      <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">Use los botones sobre la foto para Eliminar (✕), Reemplazar (🔄) o ver Zoom (🔍)</label>
       
       <div class="fotos-grid">
         <!-- Slot 1 -->
