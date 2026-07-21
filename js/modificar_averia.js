@@ -306,38 +306,73 @@ async function cargarYMostrarFotosEquipoOriginal() {
 }
 
 // ==========================================
-// ✅ RENDERIZAR FOTOS DE EVIDENCIA (SIMPLE: SOLO AGREGAR/QUITAR CLASE)
+// ✅ RENDERIZAR FOTOS DE EVIDENCIA (CON ZOOM Y ETIQUETA)
 // ==========================================
 function renderizarFotosEvidenciaMod() {
-  console.log("🎨 Renderizando slots:", fotosEvidenciaMod);
+  console.log("🎨 Renderizando slots de evidencia:", fotosEvidenciaMod);
+  
   for (let i = 1; i <= 4; i++) {
     const url = fotosEvidenciaMod[i - 1];
-    const slot = document.getElementById(`slot_evidencia_${i}`);
     const preview = document.getElementById(`mod_preview_evidencia_${i}`);
     const placeholder = document.getElementById(`mod_placeholder_evidencia_${i}`);
-
-    if (!slot || !preview || !placeholder) {
-      console.error(`❌ Faltan elementos para slot ${i}`);
-      continue;
-    }
-
-    const tieneFoto = url && typeof url === 'string' && url.trim() !== '' && url !== 'null';
-
-    if (tieneFoto) {
-      // ✅ Agregar clase .con-foto para que el CSS muestre el botón X y el badge
-      slot.classList.add('con-foto');
-      preview.src = url;
-      preview.style.display = 'block';
-      placeholder.style.display = 'none';
-      console.log(`✅ Slot ${i}: Foto mostrada con clase .con-foto`);
+    const removeBtn = document.getElementById(`mod_remove_evidencia_${i}`);
+    const slot = preview?.parentElement; // El contenedor .foto-preview
+    
+    if (url && url.trim() !== '') {
+      // Hay foto: mostrar imagen con zoom
+      if (preview) {
+        preview.src = url;
+        preview.style.display = 'block';
+        preview.style.cursor = 'pointer';
+        
+        // ✅ Agregar funcionalidad de zoom
+        preview.onclick = function(e) {
+          e.stopPropagation(); // Evitar que dispare el input file
+          abrirZoomInfalible(url);
+        };
+      }
+      
+      if (placeholder) placeholder.style.display = 'none';
+      
+      if (removeBtn) {
+        removeBtn.style.display = 'flex';
+        removeBtn.style.zIndex = '20';
+      }
+      
+      // ✅ Agregar etiqueta "Evidencia" si no existe
+      let badge = slot?.querySelector('.badge-evidencia');
+      if (!badge && slot) {
+        badge = document.createElement('div');
+        badge.className = 'badge-evidencia';
+        badge.textContent = 'Evidencia';
+        badge.style.cssText = 'position: absolute; top: 5px; right: 5px; background: rgba(220, 38, 38, 0.85); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 15;';
+        slot.appendChild(badge);
+      }
+      
+      // Mover el botón X encima de la etiqueta
+      if (removeBtn) {
+        removeBtn.style.top = '30px'; // Debajo de la etiqueta
+      }
+      
     } else {
-      // ✅ Quitar clase .con-foto para ocultar el botón X y el badge
-      slot.classList.remove('con-foto');
-      preview.style.display = 'none';
-      preview.src = '';
-      placeholder.style.display = 'flex';
-      placeholder.innerHTML = `<div class="foto-preview-placeholder-icon">📷</div><div>Clic para agregar foto ${i}</div>`;
-      console.log(`⚪ Slot ${i}: Vacío`);
+      // No hay foto: mostrar placeholder
+      if (preview) {
+        preview.style.display = 'none';
+        preview.src = '';
+        preview.onclick = null; // Remover evento de zoom
+      }
+      
+      if (placeholder) {
+        placeholder.style.display = 'flex';
+      }
+      
+      if (removeBtn) {
+        removeBtn.style.display = 'none';
+      }
+      
+      // Remover etiqueta si existe
+      const badge = slot?.querySelector('.badge-evidencia');
+      if (badge) badge.remove();
     }
   }
 }
