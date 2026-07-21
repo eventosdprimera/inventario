@@ -62,7 +62,7 @@ async function cargarUsuarioMod() {
 function configurarEventListeners() {
   const inputBuscar = document.getElementById('buscarEquipoInput');
   if (inputBuscar) {
-    // ✅ CORRECCIÓN 1: Forzar mayúsculas en tiempo real manteniendo la posición del cursor
+    // ✅ Forzar mayúsculas en tiempo real manteniendo la posición del cursor
     inputBuscar.addEventListener('input', (e) => {
       const cursorPos = e.target.selectionStart;
       e.target.value = e.target.value.toUpperCase();
@@ -78,7 +78,7 @@ function configurarEventListeners() {
     });
   }
 
-  // Detectar cambios en el formulario
+  // Detectar cambios en el formulario para saber si hay datos sin guardar
   const campos = document.querySelectorAll('#fieldsetModificacion input, #fieldsetModificacion select, #fieldsetModificacion textarea');
   campos.forEach(campo => {
     campo.addEventListener('input', () => { formularioModModificado = true; });
@@ -97,7 +97,7 @@ async function buscarEquipo() {
     return;
   }
 
-  // Sanitizar el código
+  // Sanitizar el código (reemplazar comillas por guiones)
   codigo = codigo.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
   document.getElementById('buscarEquipoInput').value = codigo;
 
@@ -120,8 +120,10 @@ async function buscarEquipo() {
       return;
     }
 
+    // Equipo encontrado: reiniciar estado
     equipoEnModificacion = data;
     fotosModificacion = [null, null, null, null];
+    formularioModModificado = false;
 
     const infoDiv = document.getElementById('equipoEncontradoInfo');
     infoDiv.innerHTML = `
@@ -165,9 +167,8 @@ async function buscarEquipo() {
 
     document.getElementById('fieldsetModificacion').style.display = 'block';
     document.getElementById('buttonGroupModificacion').style.display = 'flex';
-    formularioModModificado = false;
 
-    // ✅ CORRECCIÓN 2: Asegurar que el botón de guardar esté habilitado al buscar un nuevo equipo
+    // ✅ Asegurar que el botón de guardar esté habilitado y con el texto correcto
     const btnGuardar = document.getElementById('btnGuardarMod');
     if (btnGuardar) {
       btnGuardar.disabled = false;
@@ -243,7 +244,7 @@ window.removerFotoModificacion = function(numero) {
 };
 
 // ==========================================
-// ✅ CANCELAR MODIFICACIÓN (CON RESET DE BOTÓN)
+// ✅ CANCELAR MODIFICACIÓN (REINICIO COMPLETO Y SEGURO)
 // ==========================================
 window.cancelarModificacion = function() {
   if (formularioModModificado) {
@@ -254,17 +255,26 @@ window.cancelarModificacion = function() {
   fotosModificacion = [null, null, null, null];
   formularioModModificado = false;
 
-  document.getElementById('buscarEquipoInput').value = '';
+  const inputBuscar = document.getElementById('buscarEquipoInput');
+  if (inputBuscar) inputBuscar.value = '';
   
   const equipoEncontradoDiv = document.getElementById('equipoEncontrado');
-  equipoEncontradoDiv.classList.remove('activo');
-  document.getElementById('equipoEncontradoInfo').innerHTML = '';
-
-  document.getElementById('fieldsetModificacion').style.display = 'none';
-  document.getElementById('buttonGroupModificacion').style.display = 'none';
+  if (equipoEncontradoDiv) equipoEncontradoDiv.classList.remove('activo');
   
-  document.getElementById('mensaje').className = 'mensaje';
-  document.getElementById('mensaje').textContent = '';
+  const infoDiv = document.getElementById('equipoEncontradoInfo');
+  if (infoDiv) infoDiv.innerHTML = '';
+
+  const fieldsetMod = document.getElementById('fieldsetModificacion');
+  if (fieldsetMod) fieldsetMod.style.display = 'none';
+  
+  const btnGroup = document.getElementById('buttonGroupModificacion');
+  if (btnGroup) btnGroup.style.display = 'none';
+  
+  const msg = document.getElementById('mensaje');
+  if (msg) {
+    msg.className = 'mensaje';
+    msg.textContent = '';
+  }
 
   for (let i = 1; i <= 4; i++) {
     const preview = document.getElementById(`mod_preview${i}`);
@@ -278,18 +288,18 @@ window.cancelarModificacion = function() {
     if (input) input.value = '';
   }
 
-  // ✅ CORRECCIÓN 2: Asegurar que el botón de guardar se reinicie completamente
+  // ✅ Reiniciar el botón de guardar a su estado original
   const btnGuardar = document.getElementById('btnGuardarMod');
   if (btnGuardar) {
     btnGuardar.disabled = false;
     btnGuardar.textContent = '💾 Guardar Cambios';
   }
 
-  document.getElementById('buscarEquipoInput').focus();
+  if (inputBuscar) inputBuscar.focus();
 };
 
 // ==========================================
-// ✅ GUARDAR MODIFICACIÓN (CON RESET DE BOTÓN GARANTIZADO)
+// ✅ GUARDAR MODIFICACIÓN (SIN CONFIRM, CON REINICIO AUTOMÁTICO)
 // ==========================================
 window.guardarModificacion = async function() {
   if (!equipoEnModificacion) {
@@ -328,7 +338,7 @@ window.guardarModificacion = async function() {
 
   const btnGuardar = document.getElementById('btnGuardarMod');
   btnGuardar.disabled = true;
-  btnGuardar.textContent = '💾 Guardando...';
+  btnGuardar.textContent = '⏳ Guardando...';
 
   try {
     let fotoUrls = [
@@ -394,19 +404,15 @@ window.guardarModificacion = async function() {
       }
     }
 
-    // ✅ CORRECCIÓN 2: Reactivar el botón INMEDIATAMENTE después del éxito
-    btnGuardar.disabled = false;
-    btnGuardar.textContent = '💾 Guardar Cambios';
-
+    // ✅ REINICIO AUTOMÁTICO: Limpia el formulario y reinicia el botón después de 1.5 segundos
     setTimeout(() => {
-      if (confirm('✅ Cambios guardados exitosamente.\n\n¿Deseas buscar otro equipo para modificar?')) {
-        cancelarModificacion();
-      }
-    }, 500);
+      cancelarModificacion();
+    }, 1500);
 
   } catch (err) {
     console.error('❌ Error al guardar:', err);
     mostrarMensajeMod('❌ Error al guardar: ' + err.message, 'error');
+    
     // Asegurar que el botón se reactive también en caso de error
     btnGuardar.disabled = false;
     btnGuardar.textContent = '💾 Guardar Cambios';
@@ -426,7 +432,7 @@ function mostrarMensajeMod(texto, tipo) {
     if (tipo === 'exito') {
       setTimeout(() => {
         if (msg.classList.contains('exito')) msg.className = 'mensaje';
-      }, 8000);
+      }, 3000); // Reducido a 3 segundos para que no estorbe
     }
   }
 }
