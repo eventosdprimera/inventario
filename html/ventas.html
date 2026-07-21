@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ventas - Eventos D' Primera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+.fotos-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 10px; }
+.foto-preview { width: 100%; height: 140px; border: 2px solid #e5e7eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; background-color: #f9fafb; overflow: hidden; position: relative; }
+.foto-preview img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
+.foto-preview-placeholder { text-align: center; color: #9ca3af; font-size: 11px; grid-column: 1 / -1; padding: 20px; }
+.foto-preview-placeholder-icon { font-size: 32px; margin-bottom: 4px; }
+.table-container { overflow-x: auto; margin-top: 15px; }
+table { width: 100%; border-collapse: collapse; background: white; }
+th { background: #1e3a8a; color: white; padding: 12px 10px; text-align: left; font-size: 12px; text-transform: uppercase; }
+td { padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+tr:hover { background: #f9fafb; }
+.badge-venta { background: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">💰 Registro de Ventas</h1>
+    <p class="page-subtitle">Venda equipos del inventario y genere notas de entrega</p>
+  </div>
+
+  <div id="mensaje" class="mensaje"></div>
+
+  <!-- SECCIÓN 1: BÚSQUEDA -->
+  <fieldset>
+    <legend>🔍 Buscar Equipo en Inventario</legend>
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+      <input type="text" id="buscarEquipoVenta" placeholder="Escanee o escriba código de barras o serial" style="flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;" autofocus>
+      <button type="button" class="btn-action btn-primary" onclick="buscarEquipoParaVenta()">🔎 Buscar</button>
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 2: FICHA DEL EQUIPO -->
+  <fieldset id="fieldsetEquipoVenta" style="display: none;">
+    <legend>📦 Equipo Seleccionado</legend>
+    <div style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #10b981; margin-bottom: 20px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+        <div><label style="font-size: 11px; color: #065f46; font-weight: 600;">CÓDIGO</label><strong id="ventaCodigo" style="display: block; font-size: 15px;">-</strong></div>
+        <div><label style="font-size: 11px; color: #065f46; font-weight: 600;">NOMBRE</label><strong id="ventaNombre" style="display: block; font-size: 15px;">-</strong></div>
+        <div><label style="font-size: 11px; color: #065f46; font-weight: 600;">MARCA/MODELO</label><strong id="ventaMarcaModelo" style="display: block; font-size: 15px;">-</strong></div>
+        <div><label style="font-size: 11px; color: #065f46; font-weight: 600;">SERIAL</label><strong id="ventaSerial" style="display: block; font-size: 15px;">-</strong></div>
+        <div><label style="font-size: 11px; color: #065f46; font-weight: 600;">COSTO EN INVENTARIO</label><strong id="ventaCosto" style="display: block; font-size: 18px; color: #047857;">-</strong></div>
+      </div>
+      <div id="fotosEquipoVenta" class="fotos-grid" style="margin-top: 15px;"></div>
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 3: DATOS DEL COMPRADOR -->
+  <fieldset id="fieldsetComprador" style="display: none;">
+    <legend>👤 Datos del Comprador</legend>
+    <div class="form-grid-registro">
+      <div class="form-group-registro"><label>Nombre <span class="required">*</span></label><input type="text" id="compradorNombre"></div>
+      <div class="form-group-registro"><label>Apellido <span class="required">*</span></label><input type="text" id="compradorApellido"></div>
+      <div class="form-group-registro">
+        <label>Cédula (7 u 8 dígitos) <span class="required">*</span></label>
+        <input type="text" id="compradorCedula" maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Ej: 12345678">
+      </div>
+      <div class="form-group-registro">
+        <label>Teléfono (11 dígitos) <span class="required">*</span></label>
+        <input type="text" id="compradorTelefono" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Ej: 04121234567">
+      </div>
+      <div class="form-group-registro"><label>Correo Electrónico</label><input type="email" id="compradorEmail"></div>
+      <div class="form-group-registro full-width"><label>Dirección</label><input type="text" id="compradorDireccion"></div>
+      <div class="form-group-registro">
+        <label>Precio de Venta ($) <span class="required">*</span></label>
+        <input type="number" id="precioVenta" step="0.01" min="0" placeholder="0.00">
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- BOTÓN DE ACCIÓN -->
+  <div class="button-group" id="botonesVenta" style="display: none; margin-top: 20px;">
+    <button type="button" class="btn-action btn-primary" onclick="procesarVenta()" id="btnVender" style="background: #10b981;">✅ Confirmar Venta y Generar Nota</button>
+    <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioVenta()">🔄 Cancelar</button>
+  </div>
+
+  <!-- SECCIÓN 4: HISTORIAL DE VENTAS -->
+  <fieldset style="margin-top: 40px;">
+    <legend>📜 Historial de Equipos Vendidos</legend>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>N° Venta</th>
+            <th>Fecha</th>
+            <th>Equipo</th>
+            <th>Serial</th>
+            <th>Comprador</th>
+            <th>Cédula</th>
+            <th>Precio Venta</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyVentas">
+          <tr><td colspan="8" style="text-align: center; padding: 20px;">Cargando historial...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="paginacionVentas" style="margin-top: 15px; display: flex; justify-content: center; gap: 10px;"></div>
+  </fieldset>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/ventas.js"></script>
+</body>
+</html>
