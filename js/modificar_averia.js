@@ -190,7 +190,7 @@ async function buscarAveriaParaModificar() {
     document.getElementById('fieldsetFichaEquipoMod').style.display = 'block';
 
     // ✅ Cargar fotos originales con búsqueda inteligente
-    await cargarYMostrarFotosEquipoOriginal(data.codigo_barras, data.serial);
+ await cargarYMostrarFotosEquipoOriginal();
 
     document.getElementById('modReportanteNombres').value = data.reportante_nombre || '';
     document.getElementById('modReportanteApellidos').value = data.reportante_apellidos || '';
