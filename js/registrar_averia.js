@@ -401,7 +401,7 @@ function eliminarFotoEvidencia(index) {
 }
 
 // ==========================================
-// ✅ GUARDAR AVERÍA (BLINDADA CONTRA ELEMENTOS NULOS)
+// ✅ GUARDAR AVERÍA (CON TRASLADO Y ELIMINACIÓN DEL INVENTARIO ACTIVO)
 // ==========================================
 async function guardarAveria() {
   if (!equipoSeleccionadoAveria) {
@@ -409,15 +409,13 @@ async function guardarAveria() {
     return;
   }
 
-  // ✅ CORRECCIÓN: Usar optional chaining (?.) para evitar el error "Cannot read properties of null"
   const reportanteNombres = document.getElementById('reportanteNombres')?.value?.trim() || '';
   const reportanteApellidos = document.getElementById('reportanteApellidos')?.value?.trim() || '';
   const reportanteCedula = document.getElementById('reportanteCedula')?.value?.trim() || '';
   const fechaAveria = document.getElementById('fechaAveria')?.value || '';
   const horaAveria = document.getElementById('horaAveria')?.value || '';
   const detallesAveria = document.getElementById('detallesAveria')?.value?.trim() || '';
-  const observaciones = document.getElementById('observaciones')?.value?.trim() || ''; 
-  // Nota: Si tu HTML usa id="observacion" (sin la 'es' al final), cámbialo aquí a 'observacion'
+  const observaciones = document.getElementById('observaciones')?.value?.trim() || '';
 
   if (!reportanteNombres || !reportanteApellidos || !reportanteCedula || !fechaAveria || !horaAveria || !detallesAveria) {
     mostrarToast('Complete todos los campos obligatorios', 'error');
@@ -432,7 +430,7 @@ async function guardarAveria() {
   const btnGuardar = document.getElementById('btnGuardarAveria');
   if (btnGuardar) {
     btnGuardar.disabled = true;
-    btnGuardar.textContent = '⏳ Guardando...';
+    btnGuardar.textContent = '⏳ Procesando...';
   }
 
   try {
@@ -450,7 +448,7 @@ async function guardarAveria() {
       detalles_averia: detallesAveria,
       observaciones: observaciones,
       fotos_evidencia: fotosEvidencia,
-      // ✅ Fotos originales del equipo respaldadas
+      // Fotos originales del equipo respaldadas
       foto_url: equipoSeleccionadoAveria.foto_url || null,
       foto2_url: equipoSeleccionadoAveria.foto2_url || null,
       foto3_url: equipoSeleccionadoAveria.foto3_url || null,
@@ -459,6 +457,7 @@ async function guardarAveria() {
       usuario_registro_id: usuarioActualAveria?.id || null
     };
 
+    // 1. Registrar la avería en la tabla de respaldo
     const { data, error } = await supabaseClient
       .from('equipos_averiados')
       .insert(insertData)
@@ -467,12 +466,28 @@ async function guardarAveria() {
 
     if (error) throw error;
 
-    if (typeof registrarLog === 'function') {
-      const descripcion = `Avería registrada | Equipo: ${equipoSeleccionadoAveria.codigo_barras} (${equipoSeleccionadoAveria.nombre_equipo}) | Reportante: ${reportanteNombres} ${reportanteApellidos} | Detalles: ${detallesAveria.substring(0, 60)}... | Fotos evidencia: ${fotosEvidencia.length} | Fotos originales respaldadas: ${[equipoSeleccionadoAveria.foto_url, equipoSeleccionadoAveria.foto2_url, equipoSeleccionadoAveria.foto3_url, equipoSeleccionadoAveria.foto4_url].filter(f => f).length}`;
-      await registrarLog('averias', 'Avería registrada', descripcion, 'warning');
+    // 2. ✅ SACAR EL EQUIPO DE LA TABLA DE EQUIPOS ACTIVA
+    const { error: errorDelete } = await supabaseClient
+      .from('equipos')
+      .delete()
+      .eq('codigo_barras', equipoSeleccionadoAveria.codigo_barras);
+
+    if (errorDelete) {
+      console.warn('⚠️ No se pudo eliminar el equipo de la tabla activa (posiblemente por restricciones). Se marcará como "averiado" como respaldo.');
+      // Respaldo: Si no se puede eliminar, al menos cambiamos su estatus para que no se pueda rentar
+      await supabaseClient
+        .from('equipos')
+        .update({ estatus: 'averiado' })
+        .eq('codigo_barras', equipoSeleccionadoAveria.codigo_barras);
     }
 
-    mostrarToast('✅ Avería registrada exitosamente', 'exito');
+    // 3. Registrar en logs
+    if (typeof registrarLog === 'function') {
+      const descripcion = `Avería registrada | Equipo: ${equipoSeleccionadoAveria.codigo_barras} (${equipoSeleccionadoAveria.nombre_equipo}) RETIRADO del inventario activo | Reportante: ${reportanteNombres} ${reportanteApellidos} | Detalles: ${detallesAveria.substring(0, 60)}...`;
+      await registrarLog('averias', 'Equipo averiado y retirado', descripcion, 'error');
+    }
+
+    mostrarToast('✅ Avería registrada y equipo retirado del inventario activo', 'exito');
     
     // Limpieza automática después de 1.5 segundos
     setTimeout(() => {
@@ -490,7 +505,6 @@ async function guardarAveria() {
     }
   }
 }
-
 // ==========================================
 // LIMPIAR FORMULARIO
 // ==========================================
