@@ -152,7 +152,7 @@ function asegurarContenedorFotosEquipo() {
 }
 
 // ==========================================
-// BUSCAR AVERÍA (CON LECTURA DE DATOS BLINDADA)
+// BUSCAR AVERÍA
 // ==========================================
 async function buscarAveriaParaModificar() {
   const input = document.getElementById('buscarAveriaMod');
@@ -203,11 +203,10 @@ async function buscarAveriaParaModificar() {
     document.getElementById('fieldsetFotosMod').style.display = 'block';
     document.getElementById('botonesAccionMod').style.display = 'flex';
 
-    // ✅ LECTURA BLINDADA DE FOTOS DE EVIDENCIA
+    // Cargar fotos de evidencia
     fotosEvidenciaMod = [null, null, null, null];
     if (data.fotos_evidencia) {
       let evidencias = [];
-      
       if (Array.isArray(data.fotos_evidencia)) {
         evidencias = data.fotos_evidencia;
       } else if (typeof data.fotos_evidencia === 'string') {
@@ -215,20 +214,18 @@ async function buscarAveriaParaModificar() {
           const parsed = JSON.parse(data.fotos_evidencia);
           evidencias = Array.isArray(parsed) ? parsed : [data.fotos_evidencia];
         } catch (e) {
-          evidencias = [data.fotos_evidencia]; // Si es un string plano, lo tratamos como 1 foto
+          evidencias = [data.fotos_evidencia];
         }
-      } else {
-        evidencias = [data.fotos_evidencia];
       }
 
       for (let i = 0; i < Math.min(evidencias.length, 4); i++) {
-        if (evidencias[i] && String(evidencias[i]).trim() !== '' && String(evidencias[i]) !== 'null') {
+        if (evidencias[i] && String(evidencias[i]).trim() !== '') {
           fotosEvidenciaMod[i] = String(evidencias[i]);
         }
       }
     }
     
-    console.log("📸 FOTOS PROCESADAS PARA MOSTRAR:", fotosEvidenciaMod);
+    console.log("📸 FOTOS DE EVIDENCIA:", fotosEvidenciaMod);
     renderizarFotosEvidenciaMod();
 
   } catch (err) {
@@ -292,10 +289,10 @@ async function cargarYMostrarFotosEquipoOriginal() {
 }
 
 // ==========================================
-// ✅ RENDERIZAR FOTOS DE EVIDENCIA (CON DIAGNÓSTICO)
+// ✅ RENDERIZAR FOTOS DE EVIDENCIA (CREACIÓN DINÁMICA)
 // ==========================================
 function renderizarFotosEvidenciaMod() {
-  console.log("🎨 Renderizando slots. Estado del array:", fotosEvidenciaMod);
+  console.log("🎨 Renderizando slots:", fotosEvidenciaMod);
   
   for (let i = 1; i <= 4; i++) {
     const url = fotosEvidenciaMod[i - 1];
@@ -305,75 +302,98 @@ function renderizarFotosEvidenciaMod() {
     const removeBtn = document.getElementById(`mod_remove_evidencia_${i}`);
     const input = document.getElementById(`mod_foto_evidencia_${i}`);
     
-    console.log(`🔍 Slot ${i}: url = "${url}" (tipo: ${typeof url})`);
-
     if (!slot || !preview || !placeholder || !removeBtn || !input) {
-      console.error(`❌ Faltan elementos del DOM para el slot ${i}`);
+      console.error(`❌ Faltan elementos para slot ${i}`);
       continue;
     }
 
-    // Limpiar badges y eventos anteriores
-    const badgesAnteriores = slot.querySelectorAll('.badge-evidencia');
-    badgesAnteriores.forEach(b => b.remove());
-    slot.onclick = null;
+    // Limpiar elementos dinámicos anteriores
+    const elementosDinamicos = slot.querySelectorAll('.badge-evidencia, .boton-x-dinamico');
+    elementosDinamicos.forEach(el => el.remove());
 
-    // Verificación estricta
-    const tieneFoto = url && typeof url === 'string' && url.trim() !== '' && url !== 'null' && url !== 'undefined';
-    console.log(`✅ Slot ${i} tieneFoto =`, tieneFoto);
+    const tieneFoto = url && typeof url === 'string' && url.trim() !== '' && url !== 'null';
 
     if (tieneFoto) {
+      // MOSTRAR FOTO
       preview.src = url;
       preview.style.display = 'block';
       placeholder.style.display = 'none';
       
-      removeBtn.style.cssText = `
-        position: absolute !important; top: 5px !important; right: 5px !important;
-        background: #dc2626 !important; color: white !important; border: none !important;
-        border-radius: 50% !important; width: 24px !important; height: 24px !important;
-        cursor: pointer !important; font-size: 14px !important; display: flex !important;
-        align-items: center !important; justify-content: center !important; z-index: 9999 !important;
-      `;
-      
+      // CREAR ETIQUETA "EVIDENCIA" DINÁMICAMENTE
       const badge = document.createElement('div');
       badge.className = 'badge-evidencia';
       badge.textContent = 'Evidencia';
       badge.style.cssText = `
-        position: absolute !important; top: 5px !important; left: 5px !important;
-        background: #dc2626 !important; color: white !important; font-size: 10px !important;
-        padding: 3px 8px !important; border-radius: 4px !important; font-weight: 600 !important;
-        z-index: 9998 !important; pointer-events: none !important;
+        position: absolute !important;
+        top: 5px !important;
+        left: 5px !important;
+        background: #dc2626 !important;
+        color: white !important;
+        font-size: 10px !important;
+        padding: 3px 8px !important;
+        border-radius: 4px !important;
+        font-weight: 600 !important;
+        z-index: 9999 !important;
+        pointer-events: none !important;
       `;
       slot.appendChild(badge);
       
+      // CREAR BOTÓN X DINÁMICAMENTE
+      const btnX = document.createElement('button');
+      btnX.className = 'boton-x-dinamico';
+      btnX.innerHTML = '✕';
+      btnX.style.cssText = `
+        position: absolute !important;
+        top: 5px !important;
+        right: 5px !important;
+        background: #dc2626 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 50% !important;
+        width: 24px !important;
+        height: 24px !important;
+        cursor: pointer !important;
+        font-size: 14px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        z-index: 10000 !important;
+      `;
+      btnX.onclick = function(e) {
+        e.stopPropagation();
+        eliminarFotoEvidenciaMod(i);
+      };
+      slot.appendChild(btnX);
+      
+      // Clic en el slot abre zoom
       slot.onclick = function(e) {
-        if (e.target === removeBtn || removeBtn.contains(e.target)) return;
+        if (e.target === btnX || btnX.contains(e.target)) return;
         e.preventDefault();
         abrirZoomInfalible(url);
       };
+      
+      console.log(`✅ Slot ${i}: Foto mostrada con etiqueta y X`);
+      
     } else {
+      // MOSTRAR PLACEHOLDER
       preview.style.display = 'none';
       preview.src = '';
       placeholder.style.display = 'flex';
       placeholder.innerHTML = `<div class="foto-preview-placeholder-icon">📷</div><div>Clic para agregar foto ${i}</div>`;
       
-      removeBtn.style.cssText = `
-        position: absolute !important; top: 5px !important; right: 5px !important;
-        background: #dc2626 !important; color: white !important; border: none !important;
-        border-radius: 50% !important; width: 24px !important; height: 24px !important;
-        cursor: pointer !important; font-size: 14px !important; display: none !important;
-        align-items: center !important; justify-content: center !important; z-index: 9999 !important;
-      `;
-      
+      // Clic en el slot vacío abre selector
       slot.onclick = function(e) {
         e.preventDefault();
         input.click();
       };
+      
+      console.log(`⚪ Slot ${i}: Vacío`);
     }
   }
 }
 
 // ==========================================
-// ✅ ELIMINAR FOTO DE UN SLOT ESPECÍFICO
+// ✅ ELIMINAR FOTO
 // ==========================================
 window.eliminarFotoEvidenciaMod = function(numero) {
   if (confirm(`¿Eliminar la foto de evidencia ${numero}?`)) {
@@ -385,7 +405,7 @@ window.eliminarFotoEvidenciaMod = function(numero) {
 };
 
 // ==========================================
-// ✅ CAMBIAR FOTO EN UN SLOT ESPECÍFICO
+// ✅ CAMBIAR FOTO
 // ==========================================
 window.cambiarFotoEvidenciaMod = async function(numero, event) {
   const file = event.target.files[0];
