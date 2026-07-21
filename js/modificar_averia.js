@@ -129,7 +129,7 @@ function asegurarContenedorFotosEquipo() {
     fieldset.style.marginBottom = '20px';
     
     const legend = document.createElement('legend');
-    legend.textContent = '🖼️ Fotos del Equipo (Registro Original)';
+    legend.textContent = '🖼️ Fotos del Equipo (Registro Original - Solo Lectura)';
     legend.style.cssText = 'background: #1e3a8a; color: white; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 600;';
     fieldset.appendChild(legend);
     
@@ -189,8 +189,8 @@ async function buscarAveriaParaModificar() {
     document.getElementById('modFichaSerial').textContent = data.serial || '-';
     document.getElementById('fieldsetFichaEquipoMod').style.display = 'block';
 
-    // ✅ Cargar fotos originales con búsqueda inteligente
- await cargarYMostrarFotosEquipoOriginal();
+    // Cargar fotos originales (solo lectura)
+    await cargarYMostrarFotosEquipoOriginal();
 
     document.getElementById('modReportanteNombres').value = data.reportante_nombre || '';
     document.getElementById('modReportanteApellidos').value = data.reportante_apellidos || '';
@@ -204,6 +204,7 @@ async function buscarAveriaParaModificar() {
     document.getElementById('fieldsetFotosMod').style.display = 'block';
     document.getElementById('botonesAccionMod').style.display = 'flex';
 
+    // Cargar fotos de evidencia existentes (estas SÍ se pueden cambiar)
     fotosEvidenciaMod = [];
     if (data.fotos_evidencia && Array.isArray(data.fotos_evidencia)) {
       fotosEvidenciaMod = data.fotos_evidencia.filter(url => url && url.trim() !== '');
@@ -217,7 +218,7 @@ async function buscarAveriaParaModificar() {
 }
 
 // ==========================================
-// ✅ CARGAR Y MOSTRAR FOTOS ORIGINALES (AHORA DESDE LA MISMA AVERÍA)
+// ✅ CARGAR Y MOSTRAR FOTOS ORIGINALES (SOLO LECTURA)
 // ==========================================
 async function cargarYMostrarFotosEquipoOriginal() {
   const contenedor = asegurarContenedorFotosEquipo();
@@ -226,7 +227,6 @@ async function cargarYMostrarFotosEquipoOriginal() {
 
   contenedor.innerHTML = '';
 
-  // ✅ Las fotos originales YA ESTÁN en averiaSeleccionada (gracias al paso 2)
   const fotos = [
     averiaSeleccionada.foto_url, 
     averiaSeleccionada.foto2_url, 
@@ -242,8 +242,6 @@ async function cargarYMostrarFotosEquipoOriginal() {
       </div>`;
     return;
   }
-
-  console.log(`✅ Mostrando ${fotos.length} fotos originales respaldadas en la avería`);
 
   fotos.forEach((fotoUrl, index) => {
     const div = document.createElement('div');
@@ -270,7 +268,7 @@ async function cargarYMostrarFotosEquipoOriginal() {
 }
 
 // ==========================================
-// RENDERIZAR FOTOS DE EVIDENCIA (EDITABLES)
+// RENDERIZAR FOTOS DE EVIDENCIA (EDITABLES: SE PUEDEN ELIMINAR)
 // ==========================================
 function renderizarPreviewFotosMod() {
   const contenedor = document.getElementById('previewFotosMod');
@@ -279,7 +277,7 @@ function renderizarPreviewFotosMod() {
   contenedor.innerHTML = '';
 
   if (fotosEvidenciaMod.length === 0) {
-    contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>No hay fotos de evidencia</div></div>`;
+    contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>No hay fotos de evidencia. Agregue nuevas si es necesario.</div></div>`;
     return;
   }
 
@@ -304,7 +302,7 @@ function renderizarPreviewFotosMod() {
     removeBtn.type = 'button';
     removeBtn.className = 'foto-remove';
     removeBtn.innerHTML = '✕';
-    removeBtn.title = 'Eliminar foto de evidencia';
+    removeBtn.title = 'Eliminar esta foto de evidencia';
     removeBtn.onclick = function(event) { 
       event.stopPropagation(); 
       eliminarFotoMod(index); 
@@ -322,12 +320,14 @@ function renderizarPreviewFotosMod() {
 }
 
 function eliminarFotoMod(index) {
-  fotosEvidenciaMod.splice(index, 1);
-  renderizarPreviewFotosMod();
+  if (confirm('¿Eliminar esta foto de evidencia?')) {
+    fotosEvidenciaMod.splice(index, 1);
+    renderizarPreviewFotosMod();
+  }
 }
 
 // ==========================================
-// PROCESAR NUEVAS FOTOS DE EVIDENCIA
+// ✅ PROCESAR NUEVAS FOTOS DE EVIDENCIA (PERMITE CAMBIAR/AGREGAR)
 // ==========================================
 async function procesarFotosMod(event) {
   const files = event.target.files;
@@ -340,27 +340,42 @@ async function procesarFotosMod(event) {
   }
 
   const codigoEquipo = averiaSeleccionada?.codigo_barras || 'sin_codigo';
-
-  for (let i = 0; i < files.length; i++) {
-    const fileName = `${codigoEquipo}/mod_${Date.now()}_${i}_${files[i].name}`;
-    const { error: uploadError } = await supabaseClient.storage.from('fotos-averias').upload(fileName, files[i]);
-
-    if (uploadError) {
-      mostrarToastMod(`Error al subir foto ${i + 1}`, 'error');
-      continue;
-    }
-
-    const { data: urlData } = supabaseClient.storage.from('fotos-averias').getPublicUrl(fileName);
-    fotosEvidenciaMod.push(urlData.publicUrl);
+  const btnGuardar = document.getElementById('btnGuardarCambios');
+  
+  // Feedback visual de carga
+  if (btnGuardar) {
+    btnGuardar.disabled = true;
+    btnGuardar.textContent = '⏳ Subiendo fotos...';
   }
 
-  renderizarPreviewFotosMod();
-  event.target.value = '';
-  mostrarToastMod('✅ Fotos de evidencia agregadas exitosamente', 'exito');
+  try {
+    for (let i = 0; i < files.length; i++) {
+      const fileName = `${codigoEquipo}/mod_${Date.now()}_${i}_${files[i].name}`;
+      const { error: uploadError } = await supabaseClient.storage.from('fotos-averias').upload(fileName, files[i]);
+
+      if (uploadError) {
+        mostrarToastMod(`Error al subir foto ${i + 1}: ${uploadError.message}`, 'error');
+        continue;
+      }
+
+      const { data: urlData } = supabaseClient.storage.from('fotos-averias').getPublicUrl(fileName);
+      fotosEvidenciaMod.push(urlData.publicUrl);
+    }
+
+    renderizarPreviewFotosMod();
+    mostrarToastMod('✅ Fotos de evidencia agregadas exitosamente', 'exito');
+  } finally {
+    // Limpiar el input para permitir seleccionar la misma foto de nuevo si se desea
+    event.target.value = ''; 
+    if (btnGuardar) {
+      btnGuardar.disabled = false;
+      btnGuardar.textContent = '💾 Guardar Cambios';
+    }
+  }
 }
 
 // ==========================================
-// GUARDAR CAMBIOS
+// GUARDAR CAMBIOS (INCLUYE LAS FOTOS DE EVIDENCIA ACTUALIZADAS)
 // ==========================================
 async function guardarCambiosAveria() {
   if (!averiaSeleccionada) return;
@@ -390,6 +405,7 @@ async function guardarCambiosAveria() {
       hora_averia: horaAveria,
       detalles_averia: detallesAveria,
       observaciones: document.getElementById('modObservacionesAveria').value.trim(),
+      // ✅ Aquí se guardan las fotos de evidencia modificadas (las originales no se tocan)
       fotos_evidencia: fotosEvidenciaMod.length > 0 ? fotosEvidenciaMod : null
     };
 
@@ -401,12 +417,16 @@ async function guardarCambiosAveria() {
     if (error) throw error;
 
     if (typeof registrarLog === 'function') {
-      const descripcion = `Avería modificada | Equipo: ${averiaSeleccionada.codigo_barras} (${averiaSeleccionada.nombre_equipo}) | Nuevos datos: Reportante: ${reportanteNombres} ${reportanteApellidos}, Detalles: ${detallesAveria.substring(0, 60)}... | Modificado por: ${usuarioActualMod?.email || 'Desconocido'}`;
+      const descripcion = `Avería modificada | Equipo: ${averiaSeleccionada.codigo_barras} (${averiaSeleccionada.nombre_equipo}) | Nuevos datos: Reportante: ${reportanteNombres} ${reportanteApellidos}, Fotos evidencia actualizadas: ${fotosEvidenciaMod.length} | Modificado por: ${usuarioActualMod?.email || 'Desconocido'}`;
       await registrarLog('averias', 'Avería modificada', descripcion, 'warning');
     }
 
     mostrarToastMod('✅ Cambios guardados exitosamente', 'exito');
-    limpiarFormularioModAveria();
+    
+    // Limpieza automática después de 1.5 segundos
+    setTimeout(() => {
+      limpiarFormularioModAveria();
+    }, 1500);
 
   } catch (err) {
     console.error('Error al guardar cambios:', err);
