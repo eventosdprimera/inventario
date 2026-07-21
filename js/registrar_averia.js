@@ -395,76 +395,81 @@ function eliminarFotoEvidencia(index) {
 }
 
 // ==========================================
-// GUARDAR AVERÍA
+// ✅ GUARDAR AVERÍA (CON FOTOS ORIGINALES DEL EQUIPO)
 // ==========================================
 async function guardarAveria() {
-  if (!equipoSeleccionadoAveria) {
-    mostrarToast('No hay equipo seleccionado', 'error');
+  if (!equipoSeleccionado) {
+    mostrarToast('Primero debe buscar un equipo', 'error');
     return;
   }
 
-  const reportanteNombres = document.getElementById('reportanteNombres')?.value.trim() || '';
-  const reportanteApellidos = document.getElementById('reportanteApellidos')?.value.trim() || '';
-  const reportanteCedula = document.getElementById('reportanteCedula')?.value.trim() || '';
-  const fechaAveria = document.getElementById('fechaAveria')?.value || '';
-  const horaAveria = document.getElementById('horaAveria')?.value || '';
-  const detallesAveria = document.getElementById('detallesAveria')?.value.trim() || '';
-  const observacionesAveria = document.getElementById('observacionesAveria')?.value.trim() || '';
+  const reportanteNombres = document.getElementById('reportanteNombres').value.trim();
+  const reportanteApellidos = document.getElementById('reportanteApellidos').value.trim();
+  const reportanteCedula = document.getElementById('reportanteCedula').value.trim();
+  const fechaAveria = document.getElementById('fechaAveria').value;
+  const horaAveria = document.getElementById('horaAveria').value;
+  const detallesAveria = document.getElementById('detallesAveria').value.trim();
 
-  if (!reportanteNombres || !reportanteApellidos || !reportanteCedula) {
-    mostrarToast('Complete los datos del reportante', 'error'); return;
+  if (!reportanteNombres || !reportanteApellidos || !reportanteCedula || !fechaAveria || !horaAveria || !detallesAveria) {
+    mostrarToast('Complete todos los campos obligatorios', 'error');
+    return;
   }
-  if (!fechaAveria || !horaAveria || !detallesAveria) {
-    mostrarToast('Complete la fecha, hora y detalles de la avería', 'error'); return;
+
+  if (fotosEvidencia.length === 0) {
+    mostrarToast('Debe agregar al menos una foto de evidencia', 'error');
+    return;
   }
 
   const btnGuardar = document.getElementById('btnGuardarAveria');
-  if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = '⏳ Registrando...'; }
+  btnGuardar.disabled = true;
+  btnGuardar.textContent = '⏳ Guardando...';
 
   try {
-    const { data: averiaData, error: errorAveria } = await supabaseClient.from('equipos_averiados').insert({
-      equipo_id_original: equipoSeleccionadoAveria.id,
-      codigo_barras: equipoSeleccionadoAveria.codigo_barras,
-      nombre_equipo: equipoSeleccionadoAveria.nombre_equipo,
-      marca: equipoSeleccionadoAveria.marca,
-      modelo: equipoSeleccionadoAveria.modelo,
-      serial: equipoSeleccionadoAveria.serial,
-      categoria: equipoSeleccionadoAveria.categoria,
-      costo: equipoSeleccionadoAveria.costo || 0,
-      estado: 'averiado',
+    const insertData = {
+      codigo_barras: equipoSeleccionado.codigo_barras,
+      nombre_equipo: equipoSeleccionado.nombre_equipo,
+      marca: equipoSeleccionado.marca,
+      modelo: equipoSeleccionado.modelo,
+      serial: equipoSeleccionado.serial,
       reportante_nombre: reportanteNombres,
       reportante_apellidos: reportanteApellidos,
       reportante_cedula: reportanteCedula,
       fecha_averia: fechaAveria,
       hora_averia: horaAveria,
       detalles_averia: detallesAveria,
-      observaciones: observacionesAveria,
-      fotos_evidencia: fotosEvidencia.length > 0 ? fotosEvidencia : null,
-      usuario_registro: usuarioActualAveria?.email || 'unknown',
-      usuario_registro_id: usuarioActualAveria?.id || null
-    }).select().single();
+      observaciones: document.getElementById('observaciones').value.trim(),
+      fotos_evidencia: fotosEvidencia,
+      // ✅ NUEVO: Copiar las fotos originales del equipo al momento de registrar la avería
+      foto_url: equipoSeleccionado.foto_url || null,
+      foto2_url: equipoSeleccionado.foto2_url || null,
+      foto3_url: equipoSeleccionado.foto3_url || null,
+      foto4_url: equipoSeleccionado.foto4_url || null,
+      usuario_registro: usuarioActual?.email || 'unknown',
+      usuario_registro_id: usuarioActual?.id || null
+    };
 
-    if (errorAveria) throw errorAveria;
+    const { data, error } = await supabaseClient
+      .from('equipos_averiados')
+      .insert(insertData)
+      .select()
+      .single();
 
-    await supabaseClient.from('equipos').delete().eq('id', equipoSeleccionadoAveria.id);
+    if (error) throw error;
 
     if (typeof registrarLog === 'function') {
-      await registrarLog('averias', 'Avería registrada', `Equipo: ${equipoSeleccionadoAveria.codigo_barras} | Reportante: ${reportanteNombres} ${reportanteApellidos}`, 'warning');
+      const descripcion = `Avería registrada | Equipo: ${equipoSeleccionado.codigo_barras} (${equipoSeleccionado.nombre_equipo}) | Reportante: ${reportanteNombres} ${reportanteApellidos} | Detalles: ${detallesAveria.substring(0, 60)}... | Fotos evidencia: ${fotosEvidencia.length} | Fotos originales respaldadas: ${[equipoSeleccionado.foto_url, equipoSeleccionado.foto2_url, equipoSeleccionado.foto3_url, equipoSeleccionado.foto4_url].filter(f => f).length}`;
+      await registrarLog('averias', 'Avería registrada', descripcion, 'warning');
     }
 
     mostrarToast('✅ Avería registrada exitosamente', 'exito');
-
-    // ✅ AQUÍ ESTÁ LA CLAVE: forzar = true para que NO pregunte nada
-    limpiarFormularioAveria(true);
-
-    setTimeout(() => {
-      imprimirReciboAveria(averiaData);
-    }, 500);
+    limpiarFormularioAveria();
 
   } catch (err) {
-    console.error('Error al guardar avería:', err);
+    console.error('Error al registrar avería:', err);
     mostrarToast('Error al registrar: ' + err.message, 'error');
-    if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Registrar Avería'; }
+  } finally {
+    btnGuardar.disabled = false;
+    btnGuardar.textContent = '💾 Registrar Avería';
   }
 }
 
