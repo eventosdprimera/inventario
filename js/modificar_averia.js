@@ -2,7 +2,7 @@
 // VARIABLES GLOBALES
 // ==========================================
 let averiaSeleccionada = null;
-let fotosEvidenciaMod = [null, null, null, null]; // Array de 4 posiciones para los slots
+let fotosEvidenciaMod = [null, null, null, null];
 let usuarioActualMod = null;
 
 // ==========================================
@@ -118,7 +118,7 @@ async function inicializarModificarAveria() {
 }
 
 // ==========================================
-// ✅ ASEGURAR CONTENEDOR DE FOTOS DEL EQUIPO (DEBAJO DE LA FICHA)
+// ✅ ASEGURAR CONTENEDOR DE FOTOS DEL EQUIPO
 // ==========================================
 function asegurarContenedorFotosEquipo() {
   let contenedor = document.getElementById('previewFotosEquipoMod');
@@ -189,6 +189,7 @@ async function buscarAveriaParaModificar() {
     document.getElementById('modFichaSerial').textContent = data.serial || '-';
     document.getElementById('fieldsetFichaEquipoMod').style.display = 'block';
 
+    // 1. Cargar fotos originales (con respaldo a tabla equipos)
     await cargarYMostrarFotosEquipoOriginal();
 
     document.getElementById('modReportanteNombres').value = data.reportante_nombre || '';
@@ -203,16 +204,22 @@ async function buscarAveriaParaModificar() {
     document.getElementById('fieldsetFotosMod').style.display = 'block';
     document.getElementById('botonesAccionMod').style.display = 'flex';
 
-    // Cargar fotos de evidencia existentes en los 4 slots
+    // 2. Cargar fotos de evidencia existentes (Parseo seguro de JSON)
     fotosEvidenciaMod = [null, null, null, null];
-    if (data.fotos_evidencia && Array.isArray(data.fotos_evidencia)) {
-      for (let i = 0; i < Math.min(data.fotos_evidencia.length, 4); i++) {
-        if (data.fotos_evidencia[i]) {
-          fotosEvidenciaMod[i] = data.fotos_evidencia[i];
+    if (data.fotos_evidencia) {
+      try {
+        const evidencias = typeof data.fotos_evidencia === 'string' ? JSON.parse(data.fotos_evidencia) : data.fotos_evidencia;
+        if (Array.isArray(evidencias)) {
+          for (let i = 0; i < Math.min(evidencias.length, 4); i++) {
+            if (evidencias[i]) fotosEvidenciaMod[i] = evidencias[i];
+          }
         }
+      } catch (e) {
+        console.warn('Error al parsear fotos_evidencia:', e);
       }
     }
     
+    console.log("📸 Fotos de evidencia cargadas:", fotosEvidenciaMod);
     renderizarFotosEvidenciaMod();
 
   } catch (err) {
@@ -221,31 +228,43 @@ async function buscarAveriaParaModificar() {
 }
 
 // ==========================================
-// ✅ CARGAR Y MOSTRAR FOTOS ORIGINALES (SOLO LECTURA)
+// ✅ CARGAR Y MOSTRAR FOTOS ORIGINALES (CON RESPALDO A TABLA EQUIPOS)
 // ==========================================
 async function cargarYMostrarFotosEquipoOriginal() {
   const contenedor = asegurarContenedorFotosEquipo();
   const fieldset = document.getElementById('fieldsetFotosEquipoOriginalMod');
   if (fieldset) fieldset.style.display = 'block';
+  
+  contenedor.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">Cargando fotos...</div>';
+
+  let fotos = [];
+  
+  // Intento 1: Buscar en la avería
+  if (averiaSeleccionada.foto_url) {
+    fotos = [averiaSeleccionada.foto_url, averiaSeleccionada.foto2_url, averiaSeleccionada.foto3_url, averiaSeleccionada.foto4_url].filter(url => url && url.trim() !== '');
+  } 
+  
+  // Intento 2: Si no hay, buscar en la tabla 'equipos' (Respaldos)
+  if (fotos.length === 0) {
+    console.log("🔄 Fotos no encontradas en la avería, buscando en tabla 'equipos'...");
+    const { data: equipoOrig } = await supabaseClient
+      .from('equipos')
+      .select('foto_url, foto2_url, foto3_url, foto4_url')
+      .eq('codigo_barras', averiaSeleccionada.codigo_barras)
+      .maybeSingle();
+      
+    if (equipoOrig) {
+      fotos = [equipoOrig.foto_url, equipoOrig.foto2_url, equipoOrig.foto3_url, equipoOrig.foto4_url].filter(url => url && url.trim() !== '');
+    }
+  }
 
   contenedor.innerHTML = '';
-
-  const fotos = [
-    averiaSeleccionada.foto_url, 
-    averiaSeleccionada.foto2_url, 
-    averiaSeleccionada.foto3_url, 
-    averiaSeleccionada.foto4_url
-  ].filter(url => url && url.trim() !== '');
-
   if (fotos.length === 0) {
-    contenedor.innerHTML = `
-      <div class="foto-preview-placeholder">
-        <div class="foto-preview-placeholder-icon">📷</div>
-        <div>El equipo no tenía fotos al momento de registrar la avería</div>
-      </div>`;
+    contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>El equipo no tenía fotos registradas</div></div>`;
     return;
   }
 
+  console.log(`✅ Mostrando ${fotos.length} fotos originales`);
   fotos.forEach((fotoUrl, index) => {
     const div = document.createElement('div');
     div.className = 'foto-preview';
@@ -255,7 +274,7 @@ async function cargarYMostrarFotosEquipoOriginal() {
     
     const img = document.createElement('img');
     img.src = fotoUrl;
-    img.alt = `Foto original del equipo ${index + 1}`;
+    img.alt = `Foto original ${index + 1}`;
     img.style.width = '100%';
     img.style.height = '100%';
     img.style.objectFit = 'cover';
@@ -271,25 +290,33 @@ async function cargarYMostrarFotosEquipoOriginal() {
 }
 
 // ==========================================
-// ✅ RENDERIZAR FOTOS DE EVIDENCIA (4 SLOTS INDEPENDIENTES)
+// ✅ RENDERIZAR FOTOS DE EVIDENCIA (4 SLOTS CON "X" FORZADA)
 // ==========================================
 function renderizarFotosEvidenciaMod() {
+  console.log("🎨 Renderizando slots de evidencia:", fotosEvidenciaMod);
   for (let i = 1; i <= 4; i++) {
     const url = fotosEvidenciaMod[i - 1];
     const preview = document.getElementById(`mod_preview_evidencia_${i}`);
     const placeholder = document.getElementById(`mod_placeholder_evidencia_${i}`);
     const removeBtn = document.getElementById(`mod_remove_evidencia_${i}`);
     
-    if (url) {
-      preview.src = url;
-      preview.style.display = 'block';
-      placeholder.style.display = 'none';
-      removeBtn.style.display = 'flex'; // ✅ Muestra la X
+    if (url && url.trim() !== '') {
+      if (preview) {
+        preview.src = url;
+        preview.style.display = 'block';
+      }
+      if (placeholder) placeholder.style.display = 'none';
+      if (removeBtn) {
+        removeBtn.style.display = 'flex'; // ✅ Forzar visualización de la X
+        removeBtn.style.zIndex = '10';
+      }
     } else {
-      preview.style.display = 'none';
-      preview.src = '';
-      placeholder.style.display = 'flex';
-      removeBtn.style.display = 'none'; // ✅ Oculta la X
+      if (preview) {
+        preview.style.display = 'none';
+        preview.src = '';
+      }
+      if (placeholder) placeholder.style.display = 'flex';
+      if (removeBtn) removeBtn.style.display = 'none';
     }
   }
 }
@@ -343,9 +370,7 @@ window.cambiarFotoEvidenciaMod = async function(numero, event) {
 
     const { data: urlData } = supabaseClient.storage.from('fotos-averias').getPublicUrl(fileName);
     
-    // Actualizar el array en la posición correcta (reemplaza la anterior si existía)
     fotosEvidenciaMod[numero - 1] = urlData.publicUrl;
-    
     renderizarFotosEvidenciaMod();
     mostrarToastMod(`✅ Foto ${numero} actualizada exitosamente`, 'exito');
   } catch (err) {
@@ -405,22 +430,22 @@ async function guardarCambiosAveria() {
     if (error) throw error;
 
     if (typeof registrarLog === 'function') {
-      const descripcion = `Avería modificada | Equipo: ${averiaSeleccionada.codigo_barras} (${averiaSeleccionada.nombre_equipo}) | Nuevos datos: Reportante: ${reportanteNombres} ${reportanteApellidos}, Fotos evidencia actualizadas: ${fotosParaGuardar.length} | Modificado por: ${usuarioActualMod?.email || 'Desconocido'}`;
+      const descripcion = `Avería modificada | Equipo: ${averiaSeleccionada.codigo_barras} | Fotos evidencia actualizadas: ${fotosParaGuardar.length} | Modificado por: ${usuarioActualMod?.email || 'Desconocido'}`;
       await registrarLog('averias', 'Avería modificada', descripcion, 'warning');
     }
 
     mostrarToastMod('✅ Cambios guardados exitosamente', 'exito');
-    
-    setTimeout(() => {
-      limpiarFormularioModAveria();
-    }, 1500);
+    setTimeout(() => { limpiarFormularioModAveria(); }, 1500);
 
   } catch (err) {
     console.error('Error al guardar cambios:', err);
     mostrarToastMod('Error al guardar: ' + err.message, 'error');
   } finally {
-    btnGuardar.disabled = false;
-    btnGuardar.textContent = '💾 Guardar Cambios';
+    const btn = document.getElementById('btnGuardarCambios');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '💾 Guardar Cambios';
+    }
   }
 }
 
