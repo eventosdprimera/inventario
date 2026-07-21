@@ -3,204 +3,236 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Modificar Avería - Eventos D' Primera</title>
+<title>Modificar Renta - Eventos D' Primera</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-.fotos-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 10px; }
+  body { font-family: 'Poppins', sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 20px; }
+  .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+  .page-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e5e7eb; padding-bottom: 20px; }
+  .page-title { font-family: 'Libre Caslon Text', serif; color: #1e3a8a; font-size: 28px; margin: 0; }
+  .page-subtitle { color: #6b7280; font-size: 14px; margin-top: 5px; }
+  
+  fieldset { border: 1px solid #d1d5db; border-radius: 8px; padding: 20px; margin-bottom: 20px; background: #fafafa; }
+  legend { background: #1e3a8a; color: white; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; }
+  
+  .form-grid-registro { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+  .form-group-registro { display: flex; flex-direction: column; }
+  .form-group-registro.full-width { grid-column: 1 / -1; }
+  .form-group-registro label { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+  .form-group-registro input, .form-group-registro select, .form-group-registro textarea {
+    padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; font-family: 'Poppins', sans-serif;
+  }
+  .form-group-registro input:focus, .form-group-registro select:focus, .form-group-registro textarea:focus {
+    outline: none; border-color: #1e3a8a; box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+  }
+  
+  .btn-action { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+  .btn-primary { background: #1e3a8a; color: white; }
+  .btn-primary:hover { background: #1e40af; }
+  .btn-secondary { background: #6b7280; color: white; }
+  .btn-secondary:hover { background: #4b5563; }
+  .btn-success { background: #10b981; color: white; }
+  .btn-success:hover { background: #059669; }
+  
+  .button-group { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+  
+  table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+  th { background: #1e3a8a; color: white; padding: 12px 10px; text-align: left; font-size: 12px; text-transform: uppercase; }
+  td { padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+  tr:hover { background: #f9fafb; }
+  
+  .mensaje { padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; font-weight: 500; display: none; }
+  .mensaje.exito { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; display: block; }
+  .mensaje.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; display: block; }
+  .mensaje.info { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; display: block; }
 
-/* ✅ SLOT DE FOTO: contenedor relativo */
-.foto-preview {
-  width: 100%; height: 140px; border: 2px dashed #e5e7eb; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center; background-color: #f9fafb;
-  overflow: hidden; cursor: pointer; transition: all 0.3s; position: relative;
-}
-.foto-preview:hover { border-color: #1e3a8a; background-color: #eff6ff; transform: scale(1.02); }
-
-/* ✅ LA IMAGEN debe estar DEBAJO del botón X y el badge */
-.foto-preview img.foto-img {
-  width: 100%; height: 100%; object-fit: cover;
-  position: relative; z-index: 1;
-}
-
-.foto-preview-placeholder {
-  text-align: center; color: #9ca3af; font-size: 11px; padding: 10px;
-  width: 100%; height: 100%; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; position: relative; z-index: 1;
-}
-.foto-preview-placeholder-icon { font-size: 32px; margin-bottom: 4px; }
-
-/* ✅ BOTÓN X: oculto por defecto, se muestra cuando el slot tiene .con-foto */
-.foto-remove {
-  position: absolute !important; top: 5px !important; right: 5px !important;
-  background: rgba(220, 38, 38, 0.95) !important; color: white !important;
-  border: none !important; border-radius: 50% !important;
-  width: 28px !important; height: 28px !important;
-  cursor: pointer !important; font-size: 16px !important; font-weight: bold !important;
-  display: none !important;
-  align-items: center !important; justify-content: center !important;
-  transition: all 0.3s !important;
-  z-index: 100 !important;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
-}
-/* ✅ MOSTRAR botón X cuando el slot tiene foto */
-.foto-preview.con-foto .foto-remove { display: flex !important; }
-.foto-remove:hover { background: rgba(185, 28, 28, 1) !important; transform: scale(1.15) !important; }
-
-/* ✅ BADGE "EVIDENCIA": oculto por defecto, se muestra cuando el slot tiene .con-foto */
-.badge-evidencia {
-  position: absolute !important; top: 5px !important; left: 5px !important;
-  background: #dc2626 !important; color: white !important;
-  font-size: 10px !important; padding: 3px 8px !important;
-  border-radius: 4px !important; font-weight: 600 !important;
-  display: none !important;
-  z-index: 100 !important;
-  pointer-events: none !important;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
-}
-/* ✅ MOSTRAR badge cuando el slot tiene foto */
-.foto-preview.con-foto .badge-evidencia { display: block !important; }
+  .totales-edicion { display: flex; justify-content: flex-end; gap: 20px; margin-top: 15px; padding: 15px; background: #eff6ff; border-radius: 8px; }
+  .totales-edicion div { text-align: right; }
+  .totales-edicion span { display: block; font-size: 12px; color: #6b7280; }
+  .totales-edicion strong { font-size: 18px; color: #1e3a8a; }
 </style>
 </head>
 <body>
+
 <div class="container">
-<div class="page-header">
-<h1 class="page-title">✏️ Modificar Avería</h1>
-<p class="page-subtitle">Corrija los datos o fotos de una avería registrada</p>
-</div>
-<div id="mensaje" class="mensaje"></div>
+  <div class="page-header">
+    <h1 class="page-title">✏️ Modificar Renta</h1>
+    <p class="page-subtitle">Busca, edita y actualiza los datos de una renta activa o vencida</p>
+  </div>
 
-<!-- SECCIÓN 1: BÚSQUEDA -->
-<fieldset>
-<legend>🔍 Buscar Avería</legend>
-<div class="codigo-barras-section">
-<div class="codigo-barras-label">Escanee o escriba el código de barras / serial del equipo averiado</div>
-<div style="display: flex; gap: 10px; margin-top: 10px;">
-<input type="text" id="buscarAveriaMod" placeholder="Ej: EP-20260714-210042-252452" style="flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;" autofocus>
-<button type="button" class="btn-action btn-primary" onclick="buscarAveriaParaModificar()">🔎 Buscar</button>
-</div>
-</div>
-</fieldset>
+  <div id="mensaje" class="mensaje"></div>
 
-<!-- SECCIÓN 2: FICHA DEL EQUIPO -->
-<fieldset id="fieldsetFichaEquipoMod" style="display: none;">
-<legend>📦 Ficha del Equipo (Solo lectura)</legend>
-<div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #6b7280; margin-bottom: 20px;">
-<h3 style="color: #374151; margin: 0 0 20px 0; font-size: 16px;">Información del Equipo</h3>
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-<div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-<label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Código de Barras</label>
-<strong id="modFichaCodigo" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
-</div>
-<div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-<label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Nombre del Equipo</label>
-<strong id="modFichaNombre" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
-</div>
-<div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-<label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Marca</label>
-<strong id="modFichaMarca" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
-</div>
-<div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-<label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Modelo</label>
-<strong id="modFichaModelo" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
-</div>
-<div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-<label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Serial</label>
-<strong id="modFichaSerial" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
-</div>
-</div>
-</div>
-</fieldset>
+  <!-- ========================================== -->
+  <!-- SECCIÓN 1: LISTA Y FILTROS DE RENTAS       -->
+  <!-- ========================================== -->
+  <fieldset id="fieldsetLista">
+    <legend>🔍 Buscar y Filtrar Rentas</legend>
+    
+    <div class="form-grid-registro" style="margin-bottom: 20px;">
+      <div class="form-group-registro">
+        <label>Cliente</label>
+        <input type="text" id="filtroCliente" placeholder="Nombre del cliente...">
+      </div>
+      <div class="form-group-registro">
+        <label>N° de Renta</label>
+        <input type="text" id="filtroNumero" placeholder="Ej: RENT-2024-0001">
+      </div>
+      <div class="form-group-registro">
+        <label>Desde</label>
+        <input type="date" id="filtroFechaDesde">
+      </div>
+      <div class="form-group-registro">
+        <label>Hasta</label>
+        <input type="date" id="filtroFechaHasta">
+      </div>
+      <div class="form-group-registro" style="display: flex; align-items: flex-end; gap: 10px;">
+        <button type="button" class="btn-action btn-primary" onclick="buscarRentasModificar()">🔎 Buscar</button>
+        <button type="button" class="btn-action btn-secondary" onclick="limpiarFiltrosModificar()">🔄 Limpiar</button>
+      </div>
+    </div>
 
-<!-- SECCIÓN 3: DATOS EDITABLES -->
-<fieldset id="fieldsetDatosAveriaMod" style="display: none;">
-<legend>📝 Datos de la Avería (Editables)</legend>
-<div class="form-grid-registro">
-<div class="form-group-registro"><label>Nombres del Reportante <span class="required">*</span></label><input type="text" id="modReportanteNombres"></div>
-<div class="form-group-registro"><label>Apellidos del Reportante <span class="required">*</span></label><input type="text" id="modReportanteApellidos"></div>
-<div class="form-group-registro"><label>Cédula <span class="required">*</span></label><input type="text" id="modReportanteCedula"></div>
-<div class="form-group-registro"><label>Fecha de la Avería <span class="required">*</span></label><input type="date" id="modFechaAveria"></div>
-<div class="form-group-registro"><label>Hora de la Avería <span class="required">*</span></label><input type="time" id="modHoraAveria"></div>
-</div>
-<div class="form-group-registro full-width" style="margin-top: 15px;">
-<label>Detalles / Explicación de la Avería <span class="required">*</span></label>
-<textarea id="modDetallesAveria" rows="4"></textarea>
-</div>
-<div class="form-group-registro full-width" style="margin-top: 15px;">
-<label>Observaciones Adicionales</label>
-<textarea id="modObservacionesAveria" rows="3"></textarea>
-</div>
-</fieldset>
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 50px;">#</th>
+            <th>N° Renta</th>
+            <th>Cliente</th>
+            <th>Fecha Inicio</th>
+            <th>Fecha Devolución</th>
+            <th style="text-align: right;">Total</th>
+            <th style="text-align: center;">Estado</th>
+            <th style="text-align: center;">Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyRentas">
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">
+              <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
+              <div>Cargando rentas...</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div id="paginacion" style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 15px;"></div>
+  </fieldset>
 
-<!-- ✅ SECCIÓN 4: FOTOS DE EVIDENCIA (TODO EN HTML, SIN ELEMENTOS DINÁMICOS) -->
-<fieldset id="fieldsetFotosMod" style="display: none;">
-<legend>📷 Fotos de Evidencia (Máximo 4)</legend>
-<div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 2px dashed #d1d5db;">
-<label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">Haga clic en un recuadro vacío para agregar, o en la ✕ roja para eliminar</label>
-<div class="fotos-grid">
+  <!-- ========================================== -->
+  <!-- SECCIÓN 2: FORMULARIO DE EDICIÓN           -->
+  <!-- ========================================== -->
+  <fieldset id="fieldsetEdicion" style="display: none;">
+    <legend>✏️ Editando Renta <span id="editNumeroRenta" style="font-weight: 400; opacity: 0.9;"></span></legend>
+    
+    <div class="form-grid-registro">
+      <div class="form-group-registro full-width">
+        <label>Nombre del Cliente <span style="color: #ef4444;">*</span></label>
+        <input type="text" id="editClienteNombre" placeholder="Nombre completo">
+      </div>
+      <div class="form-group-registro">
+        <label>Teléfono</label>
+        <input type="text" id="editClienteTelefono" placeholder="Ej: 04121234567" maxlength="11">
+      </div>
+      <div class="form-group-registro">
+        <label>Correo Electrónico</label>
+        <input type="email" id="editClienteEmail" placeholder="cliente@ejemplo.com">
+      </div>
+      <div class="form-group-registro full-width">
+        <label>Dirección</label>
+        <input type="text" id="editClienteDireccion" placeholder="Dirección completa">
+      </div>
+      
+      <div class="form-group-registro">
+        <label>Fecha de Renta <span style="color: #ef4444;">*</span></label>
+        <input type="date" id="editFechaRenta">
+      </div>
+      <div class="form-group-registro">
+        <label>Fecha de Devolución <span style="color: #ef4444;">*</span></label>
+        <input type="date" id="editFechaDevolucion">
+      </div>
+      <div class="form-group-registro">
+        <label>Nombre del Ingeniero</label>
+        <input type="text" id="editIngenieroNombre" placeholder="Nombre del responsable técnico">
+      </div>
+      <div class="form-group-registro">
+        <label>Contacto del Ingeniero</label>
+        <input type="text" id="editIngenieroContacto" placeholder="Teléfono o correo">
+      </div>
+      <div class="form-group-registro">
+        <label>Estado de la Renta</label>
+        <select id="editEstado">
+          <option value="activa">Activa</option>
+          <option value="vencida">Vencida</option>
+        </select>
+      </div>
+      <div class="form-group-registro">
+        <label>Descuento ($)</label>
+        <input type="number" id="editDescuento" value="0" min="0" step="0.01" onchange="calcularTotalesEdicion()">
+      </div>
+      <div class="form-group-registro full-width">
+        <label>Observaciones</label>
+        <textarea id="editObservaciones" rows="3" placeholder="Notas adicionales sobre la renta..."></textarea>
+      </div>
+    </div>
 
-<!-- Slot 1 -->
-<div class="foto-preview" id="slot_evidencia_1">
-<img class="foto-img" id="mod_preview_evidencia_1" src="" alt="Evidencia 1" style="display: none;">
-<div id="mod_placeholder_evidencia_1" class="foto-preview-placeholder">
-<div class="foto-preview-placeholder-icon">📷</div>
-<div>Clic para agregar foto 1</div>
-</div>
-<div class="badge-evidencia">Evidencia</div>
-<button type="button" class="foto-remove" id="mod_remove_evidencia_1">✕</button>
-<input type="file" id="mod_foto_evidencia_1" accept="image/*" style="display: none;">
+    <!-- Buscador de equipos para agregar a la edición -->
+    <div style="margin-top: 25px; padding-top: 20px; border-top: 2px dashed #d1d5db;">
+      <label style="font-size: 14px; font-weight: 600; color: #374151; display: block; margin-bottom: 10px;">➕ Agregar Equipo a esta Renta</label>
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="editBuscarEquipo" placeholder="Escanee o escriba el código de barras / serial del equipo" style="flex: 1; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+        <button type="button" class="btn-action btn-success" onclick="agregarEquipoEdicion()">Agregar Equipo</button>
+      </div>
+    </div>
+
+    <!-- Tabla de items en edición -->
+    <div style="overflow-x: auto; margin-top: 15px;">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 40px;">#</th>
+            <th>Código</th>
+            <th>Equipo</th>
+            <th>Serial</th>
+            <th style="text-align: right;">Precio Unit.</th>
+            <th style="text-align: center;">Cant.</th>
+            <th style="text-align: right;">Subtotal</th>
+            <th style="text-align: center; width: 80px;">Acción</th>
+          </tr>
+        </thead>
+        <tbody id="editTbodyItems">
+          <!-- Los items se renderizan aquí dinámicamente -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Totales -->
+    <div class="totales-edicion">
+      <div>
+        <span>Subtotal</span>
+        <strong id="editSubtotal">$0.00</strong>
+      </div>
+      <div>
+        <span>Total a Pagar</span>
+        <strong id="editTotal" style="color: #059669;">$0.00</strong>
+      </div>
+    </div>
+
+    <!-- Botones de acción de edición -->
+    <div class="button-group">
+      <button type="button" class="btn-action btn-secondary" onclick="imprimirComprobanteModificacion()">🖨️ Imprimir Comprobante</button>
+      <button type="button" class="btn-action btn-secondary" onclick="cancelarEdicion()">❌ Cancelar</button>
+      <button type="button" class="btn-action btn-primary" onclick="guardarCambiosRenta()" id="btnGuardarCambios">💾 Guardar Cambios</button>
+    </div>
+  </fieldset>
+
 </div>
 
-<!-- Slot 2 -->
-<div class="foto-preview" id="slot_evidencia_2">
-<img class="foto-img" id="mod_preview_evidencia_2" src="" alt="Evidencia 2" style="display: none;">
-<div id="mod_placeholder_evidencia_2" class="foto-preview-placeholder">
-<div class="foto-preview-placeholder-icon">📷</div>
-<div>Clic para agregar foto 2</div>
-</div>
-<div class="badge-evidencia">Evidencia</div>
-<button type="button" class="foto-remove" id="mod_remove_evidencia_2">✕</button>
-<input type="file" id="mod_foto_evidencia_2" accept="image/*" style="display: none;">
-</div>
-
-<!-- Slot 3 -->
-<div class="foto-preview" id="slot_evidencia_3">
-<img class="foto-img" id="mod_preview_evidencia_3" src="" alt="Evidencia 3" style="display: none;">
-<div id="mod_placeholder_evidencia_3" class="foto-preview-placeholder">
-<div class="foto-preview-placeholder-icon">📷</div>
-<div>Clic para agregar foto 3</div>
-</div>
-<div class="badge-evidencia">Evidencia</div>
-<button type="button" class="foto-remove" id="mod_remove_evidencia_3">✕</button>
-<input type="file" id="mod_foto_evidencia_3" accept="image/*" style="display: none;">
-</div>
-
-<!-- Slot 4 -->
-<div class="foto-preview" id="slot_evidencia_4">
-<img class="foto-img" id="mod_preview_evidencia_4" src="" alt="Evidencia 4" style="display: none;">
-<div id="mod_placeholder_evidencia_4" class="foto-preview-placeholder">
-<div class="foto-preview-placeholder-icon">📷</div>
-<div>Clic para agregar foto 4</div>
-</div>
-<div class="badge-evidencia">Evidencia</div>
-<button type="button" class="foto-remove" id="mod_remove_evidencia_4">✕</button>
-<input type="file" id="mod_foto_evidencia_4" accept="image/*" style="display: none;">
-</div>
-
-</div>
-</div>
-</fieldset>
-
-<!-- BOTONES DE ACCIÓN -->
-<div class="button-group" id="botonesAccionMod" style="display: none; margin-top: 20px; gap: 10px;">
-<button type="button" class="btn-action btn-primary" onclick="guardarCambiosAveria()" id="btnGuardarCambios">💾 Guardar Cambios</button>
-<button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioModAveria()">🔄 Cancelar / Nueva Búsqueda</button>
-</div>
-</div>
-
+<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
-<script src="../js/modificar_averia.js"></script>
+<script src="../js/modificar.js"></script> <!-- Asegúrate de que este sea el nombre correcto de tu archivo JS -->
 </body>
 </html>
