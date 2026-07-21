@@ -118,7 +118,7 @@ async function inicializarModificarAveria() {
 }
 
 // ==========================================
-// ✅ ASEGURAR CONTENEDOR DE FOTOS DEL EQUIPO (SOLO LECTURA)
+// ✅ ASEGURAR CONTENEDOR DE FOTOS DEL EQUIPO (DEBAJO DE LA FICHA)
 // ==========================================
 function asegurarContenedorFotosEquipo() {
   let contenedor = document.getElementById('previewFotosEquipoMod');
@@ -139,10 +139,12 @@ function asegurarContenedorFotosEquipo() {
     grid.style.cssText = 'display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 15px;';
     fieldset.appendChild(grid);
     
-    const fieldsetFotosMod = document.getElementById('fieldsetFotosMod');
-    if (fieldsetFotosMod && fieldsetFotosMod.parentNode) {
-      fieldsetFotosMod.parentNode.insertBefore(fieldset, fieldsetFotosMod);
+    // ✅ CORRECCIÓN: Insertar justo DESPUÉS de la ficha del equipo
+    const fieldsetFicha = document.getElementById('fieldsetFichaEquipoMod');
+    if (fieldsetFicha && fieldsetFicha.parentNode) {
+      fieldsetFicha.parentNode.insertBefore(fieldset, fieldsetFicha.nextSibling);
     } else {
+      // Fallback por si acaso
       document.body.appendChild(fieldset);
     }
     
@@ -191,8 +193,8 @@ async function buscarAveriaParaModificar() {
     document.getElementById('modFichaSerial').textContent = data.serial || '-';
     document.getElementById('fieldsetFichaEquipoMod').style.display = 'block';
 
-    // 3. ✅ Cargar y mostrar las fotos ORIGINALES del equipo (desde la tabla equipos)
-    await cargarYMostrarFotosEquipoOriginal(data.codigo_barras);
+    // 3. ✅ Cargar y mostrar las fotos ORIGINALES del equipo (debajo de la ficha)
+    await cargarYMostrarFotosEquipoOriginal(data.codigo_barras, data.serial);
 
     // 4. Cargar datos editables de la avería
     document.getElementById('modReportanteNombres').value = data.reportante_nombre || '';
@@ -221,59 +223,73 @@ async function buscarAveriaParaModificar() {
 }
 
 // ==========================================
-// ✅ CARGAR Y MOSTRAR FOTOS DEL EQUIPO ORIGINAL (SOLO LECTURA)
+// ✅ CARGAR Y MOSTRAR FOTOS DEL EQUIPO ORIGINAL (MEJORADO Y ROBUSTO)
 // ==========================================
-async function cargarYMostrarFotosEquipoOriginal(codigoBarras) {
+async function cargarYMostrarFotosEquipoOriginal(codigoBarras, serial) {
   const contenedor = asegurarContenedorFotosEquipo();
   const fieldset = document.getElementById('fieldsetFotosEquipoOriginalMod');
   if (fieldset) fieldset.style.display = 'block';
 
-  contenedor.innerHTML = '';
+  contenedor.innerHTML = '<div style="text-align: center; padding: 20px; color: #6b7280;">Cargando fotos del equipo...</div>';
   
   try {
+    console.log('🔍 Buscando equipo original con código:', codigoBarras, 'o serial:', serial);
+    
+    // Intentamos buscar por código de barras o por serial para mayor tolerancia
     const { data: equipo, error } = await supabaseClient
       .from('equipos')
       .select('foto_url, foto2_url, foto3_url, foto4_url')
-      .eq('codigo_barras', codigoBarras)
+      .or(`codigo_barras.eq.${codigoBarras},serial.eq.${serial}`)
       .maybeSingle();
 
-    if (!error && equipo) {
-      const fotos = [equipo.foto_url, equipo.foto2_url, equipo.foto3_url, equipo.foto4_url].filter(url => url && url.trim() !== '');
-      
-      if (fotos.length === 0) {
-        contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>El equipo no tiene fotos registradas</div></div>`;
-        return;
-      }
-
-      fotos.forEach((fotoUrl, index) => {
-        const div = document.createElement('div');
-        div.className = 'foto-preview';
-        div.style.cursor = 'pointer';
-        div.style.position = 'relative';
-        div.onclick = function() { abrirZoomInfalible(fotoUrl); };
-        
-        const img = document.createElement('img');
-        img.src = fotoUrl;
-        img.alt = `Foto del equipo ${index + 1}`;
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.objectFit = 'cover';
-        
-        // Etiqueta de solo lectura
-        const badge = document.createElement('div');
-        badge.textContent = 'Original';
-        badge.style.cssText = 'position: absolute; top: 5px; left: 5px; background: rgba(30, 58, 138, 0.85); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 10;';
-        
-        div.appendChild(img);
-        div.appendChild(badge);
-        contenedor.appendChild(div);
-      });
-    } else {
-      contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">⚠️</div><div>No se pudieron cargar las fotos del equipo</div></div>`;
+    if (error) {
+      console.error('❌ Error de Supabase al buscar equipo:', error);
+      contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">❌</div><div>Error de base de datos</div></div>`;
+      return;
     }
+
+    if (!equipo) {
+      console.warn('⚠️ No se encontró el equipo en la tabla "equipos". Posiblemente fue eliminado del inventario.');
+      contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">⚠️</div><div>Equipo no encontrado en inventario</div></div>`;
+      return;
+    }
+
+    const fotos = [equipo.foto_url, equipo.foto2_url, equipo.foto3_url, equipo.foto4_url].filter(url => url && url.trim() !== '');
+    
+    if (fotos.length === 0) {
+      contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>El equipo no tiene fotos registradas</div></div>`;
+      return;
+    }
+
+    contenedor.innerHTML = ''; // Limpiar mensaje de carga
+
+    fotos.forEach((fotoUrl, index) => {
+      const div = document.createElement('div');
+      div.className = 'foto-preview';
+      div.style.cursor = 'pointer';
+      div.style.position = 'relative';
+      div.onclick = function() { abrirZoomInfalible(fotoUrl); };
+      
+      const img = document.createElement('img');
+      img.src = fotoUrl;
+      img.alt = `Foto del equipo ${index + 1}`;
+      img.style.width = '100%';
+      img.style.height = '100%';
+      img.style.objectFit = 'cover';
+      
+      // Etiqueta de solo lectura
+      const badge = document.createElement('div');
+      badge.textContent = 'Original';
+      badge.style.cssText = 'position: absolute; top: 5px; left: 5px; background: rgba(30, 58, 138, 0.85); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 10;';
+      
+      div.appendChild(img);
+      div.appendChild(badge);
+      contenedor.appendChild(div);
+    });
+
   } catch (err) {
-    console.error('Error al cargar fotos del equipo:', err);
-    contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">❌</div><div>Error al cargar</div></div>`;
+    console.error('❌ Error inesperado al cargar fotos del equipo:', err);
+    contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">❌</div><div>Error inesperado</div></div>`;
   }
 }
 
