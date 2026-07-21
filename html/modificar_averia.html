@@ -53,12 +53,11 @@
 
   <!-- SECCIÓN 2: FICHA DEL EQUIPO (SOLO LECTURA) -->
   <fieldset id="fieldsetFichaEquipoMod" style="display: none;">
-    <legend> Ficha del Equipo (Solo lectura)</legend>
+    <legend>📦 Ficha del Equipo (Solo lectura)</legend>
     <div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #6b7280; margin-bottom: 20px;">
-      <h3 style="color: #374151; margin: 0 0 20px 0; font-size: 16px;">📦 Información del Equipo</h3>
+      <h3 style="color: #374151; margin: 0 0 20px 0; font-size: 16px;">Información del Equipo</h3>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
         
-        <!-- ✅ Cada ficha-item con estilos inline para garantizar espaciado -->
         <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
           <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Código de Barras</label>
           <strong id="modFichaCodigo" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
@@ -90,7 +89,7 @@
 
   <!-- SECCIÓN 3: DATOS EDITABLES DE LA AVERÍA -->
   <fieldset id="fieldsetDatosAveriaMod" style="display: none;">
-    <legend>️ Datos de la Avería (Editables)</legend>
+    <legend>📝 Datos de la Avería (Editables)</legend>
     
     <div class="form-grid-registro">
       <div class="form-group-registro"><label>Nombres del Reportante <span class="required">*</span></label><input type="text" id="modReportanteNombres"></div>
@@ -111,37 +110,32 @@
     </div>
   </fieldset>
 
-  <!-- SECCIÓN 4: FOTOS DE EVIDENCIA EDITABLES -->
+  <!-- ✅ SECCIÓN 4: FOTOS DE EVIDENCIA EDITABLES (LIMPIA Y SIN DUPLICADOS) -->
   <fieldset id="fieldsetFotosMod" style="display: none;">
-    <legend> Fotos de Evidencia (Máximo 4)</legend>
+    <legend>📷 Fotos de Evidencia (Máximo 4)</legend>
     <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 2px dashed #d1d5db;">
       <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">Agregar o eliminar fotos</label>
-      <div class="botones-fotos">
-        <input type="file" id="inputFotosMod" accept="image/*" multiple style="display: none;" onchange="procesarFotosMod(event)">
-        <button type="button" class="btn-action btn-secondary" onclick="document.getElementById('inputFotosMod').click()">📁 Agregar Fotos</button>
-      </div>
+      
+      <!-- Input oculto que hace el trabajo real -->
+      <input type="file" id="inputNuevasFotosMod" accept="image/*" multiple onchange="procesarFotosMod(event)" style="display: none;">
+      
       <!-- Botón visible para el usuario -->
-<button type="button" onclick="document.getElementById('inputNuevasFotosMod').click()" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; margin-bottom: 10px;">
-  📷 Agregar / Cambiar Fotos de Evidencia
-</button>
+      <button type="button" onclick="document.getElementById('inputNuevasFotosMod').click()" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; margin-bottom: 15px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+        📁 Agregar / Cambiar Fotos de Evidencia
+      </button>
 
-<!-- Input oculto que hace el trabajo real -->
-<input type="file" id="inputNuevasFotosMod" accept="image/*" multiple onchange="procesarFotosMod(event)" style="display: none;">
-
-<!-- Contenedor donde se muestran las fotos (ya existente en tu HTML) -->
-<div id="previewFotosMod" class="fotos-grid"></div>
+      <!-- Contenedor donde se muestran las fotos (único y limpio) -->
       <div id="previewFotosMod" class="fotos-grid">
         <div class="foto-preview-placeholder">
           <div class="foto-preview-placeholder-icon">📷</div>
           <div>No hay fotos de evidencia</div>
-          
         </div>
       </div>
     </div>
   </fieldset>
 
   <!-- BOTONES DE ACCIÓN -->
-  <div class="button-group" id="botonesAccionMod" style="display: none;">
+  <div class="button-group" id="botonesAccionMod" style="display: none; margin-top: 20px; gap: 10px;">
     <button type="button" class="btn-action btn-primary" onclick="guardarCambiosAveria()" id="btnGuardarCambios">💾 Guardar Cambios</button>
     <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioModAveria()">🔄 Cancelar / Nueva Búsqueda</button>
   </div>
