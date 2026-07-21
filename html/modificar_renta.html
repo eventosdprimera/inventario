@@ -3,221 +3,204 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Modificar Renta - Eventos D' Primera</title>
+<title>Modificar Avería - Eventos D' Primera</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* Estilos específicos para este módulo */
-.section-subtitle {
-  font-family: 'Libre Caslon Text', serif;
-  color: #1e3a8a;
-  font-size: 16px;
-  font-weight: 700;
-  margin: 25px 0 15px 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #e5e7eb;
+.fotos-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 10px; }
+
+/* ✅ SLOT DE FOTO: contenedor relativo */
+.foto-preview {
+  width: 100%; height: 140px; border: 2px dashed #e5e7eb; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; background-color: #f9fafb;
+  overflow: hidden; cursor: pointer; transition: all 0.3s; position: relative;
 }
+.foto-preview:hover { border-color: #1e3a8a; background-color: #eff6ff; transform: scale(1.02); }
+
+/* ✅ LA IMAGEN debe estar DEBAJO del botón X y el badge */
+.foto-preview img.foto-img {
+  width: 100%; height: 100%; object-fit: cover;
+  position: relative; z-index: 1;
+}
+
+.foto-preview-placeholder {
+  text-align: center; color: #9ca3af; font-size: 11px; padding: 10px;
+  width: 100%; height: 100%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; position: relative; z-index: 1;
+}
+.foto-preview-placeholder-icon { font-size: 32px; margin-bottom: 4px; }
+
+/* ✅ BOTÓN X: oculto por defecto, se muestra cuando el slot tiene .con-foto */
+.foto-remove {
+  position: absolute !important; top: 5px !important; right: 5px !important;
+  background: rgba(220, 38, 38, 0.95) !important; color: white !important;
+  border: none !important; border-radius: 50% !important;
+  width: 28px !important; height: 28px !important;
+  cursor: pointer !important; font-size: 16px !important; font-weight: bold !important;
+  display: none !important;
+  align-items: center !important; justify-content: center !important;
+  transition: all 0.3s !important;
+  z-index: 100 !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
+}
+/* ✅ MOSTRAR botón X cuando el slot tiene foto */
+.foto-preview.con-foto .foto-remove { display: flex !important; }
+.foto-remove:hover { background: rgba(185, 28, 28, 1) !important; transform: scale(1.15) !important; }
+
+/* ✅ BADGE "EVIDENCIA": oculto por defecto, se muestra cuando el slot tiene .con-foto */
+.badge-evidencia {
+  position: absolute !important; top: 5px !important; left: 5px !important;
+  background: #dc2626 !important; color: white !important;
+  font-size: 10px !important; padding: 3px 8px !important;
+  border-radius: 4px !important; font-weight: 600 !important;
+  display: none !important;
+  z-index: 100 !important;
+  pointer-events: none !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+}
+/* ✅ MOSTRAR badge cuando el slot tiene foto */
+.foto-preview.con-foto .badge-evidencia { display: block !important; }
 </style>
 </head>
 <body>
-
 <div class="container">
-  <div class="page-header">
-    <h1 class="page-title">📝 Modificar Renta</h1>
-    <p class="page-subtitle">Busque, filtre y edite las rentas existentes</p>
-  </div>
+<div class="page-header">
+<h1 class="page-title">✏️ Modificar Avería</h1>
+<p class="page-subtitle">Corrija los datos o fotos de una avería registrada</p>
+</div>
+<div id="mensaje" class="mensaje"></div>
 
-  <div id="mensaje" class="mensaje"></div>
+<!-- SECCIÓN 1: BÚSQUEDA -->
+<fieldset>
+<legend>🔍 Buscar Avería</legend>
+<div class="codigo-barras-section">
+<div class="codigo-barras-label">Escanee o escriba el código de barras / serial del equipo averiado</div>
+<div style="display: flex; gap: 10px; margin-top: 10px;">
+<input type="text" id="buscarAveriaMod" placeholder="Ej: EP-20260714-210042-252452" style="flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;" autofocus>
+<button type="button" class="btn-action btn-primary" onclick="buscarAveriaParaModificar()">🔎 Buscar</button>
+</div>
+</div>
+</fieldset>
 
-  <!-- SECCIÓN 1: BÚSQUEDA Y FILTROS -->
-  <fieldset>
-    <legend>🔍 Búsqueda y Filtros</legend>
-    
-    <div class="form-grid-registro">
-      <div class="form-group-registro">
-        <label>Buscar por Cliente</label>
-        <input type="text" id="filtroCliente" placeholder="Nombre del cliente...">
-      </div>
-      <div class="form-group-registro">
-        <label>Buscar por Número de Renta</label>
-        <input type="text" id="filtroNumero" placeholder="Ej: RENT-2026-0001">
-      </div>
-      <div class="form-group-registro">
-        <label>Fecha Desde</label>
-        <input type="date" id="filtroFechaDesde">
-      </div>
-      <div class="form-group-registro">
-        <label>Fecha Hasta</label>
-        <input type="date" id="filtroFechaHasta">
-      </div>
-    </div>
+<!-- SECCIÓN 2: FICHA DEL EQUIPO -->
+<fieldset id="fieldsetFichaEquipoMod" style="display: none;">
+<legend>📦 Ficha del Equipo (Solo lectura)</legend>
+<div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #6b7280; margin-bottom: 20px;">
+<h3 style="color: #374151; margin: 0 0 20px 0; font-size: 16px;">Información del Equipo</h3>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+<div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+<label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Código de Barras</label>
+<strong id="modFichaCodigo" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+</div>
+<div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+<label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Nombre del Equipo</label>
+<strong id="modFichaNombre" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+</div>
+<div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+<label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Marca</label>
+<strong id="modFichaMarca" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+</div>
+<div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+<label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Modelo</label>
+<strong id="modFichaModelo" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+</div>
+<div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+<label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Serial</label>
+<strong id="modFichaSerial" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+</div>
+</div>
+</div>
+</fieldset>
 
-    <div style="margin-top: 15px; display: flex; gap: 10px;">
-      <!-- ✅ FUNCIONES ACTUALIZADAS -->
-      <button type="button" class="btn-action btn-primary" onclick="buscarRentasModificar()">🔎 Buscar</button>
-      <button type="button" class="btn-action btn-secondary" onclick="limpiarFiltrosModificar()">Limpiar Filtros</button>
-    </div>
-  </fieldset>
+<!-- SECCIÓN 3: DATOS EDITABLES -->
+<fieldset id="fieldsetDatosAveriaMod" style="display: none;">
+<legend>📝 Datos de la Avería (Editables)</legend>
+<div class="form-grid-registro">
+<div class="form-group-registro"><label>Nombres del Reportante <span class="required">*</span></label><input type="text" id="modReportanteNombres"></div>
+<div class="form-group-registro"><label>Apellidos del Reportante <span class="required">*</span></label><input type="text" id="modReportanteApellidos"></div>
+<div class="form-group-registro"><label>Cédula <span class="required">*</span></label><input type="text" id="modReportanteCedula"></div>
+<div class="form-group-registro"><label>Fecha de la Avería <span class="required">*</span></label><input type="date" id="modFechaAveria"></div>
+<div class="form-group-registro"><label>Hora de la Avería <span class="required">*</span></label><input type="time" id="modHoraAveria"></div>
+</div>
+<div class="form-group-registro full-width" style="margin-top: 15px;">
+<label>Detalles / Explicación de la Avería <span class="required">*</span></label>
+<textarea id="modDetallesAveria" rows="4"></textarea>
+</div>
+<div class="form-group-registro full-width" style="margin-top: 15px;">
+<label>Observaciones Adicionales</label>
+<textarea id="modObservacionesAveria" rows="3"></textarea>
+</div>
+</fieldset>
 
-  <!-- SECCIÓN 2: LISTA DE RENTAS -->
-  <fieldset id="fieldsetLista">
-    <legend>📋 Lista de Rentas</legend>
-    
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 50px;">#</th>
-            <th>N° Renta</th>
-            <th>Cliente</th>
-            <th>Fecha Inicio</th>
-            <th>Fecha Devolución</th>
-            <th style="width: 100px; text-align: right;">Total</th>
-            <th style="width: 100px;">Estado</th>
-            <th style="width: 80px;"></th>
-          </tr>
-        </thead>
-        <tbody id="tbodyRentas">
-          <tr>
-            <td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;">
-              <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
-              <div>Realice una búsqueda para ver las rentas</div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+<!-- ✅ SECCIÓN 4: FOTOS DE EVIDENCIA (TODO EN HTML, SIN ELEMENTOS DINÁMICOS) -->
+<fieldset id="fieldsetFotosMod" style="display: none;">
+<legend>📷 Fotos de Evidencia (Máximo 4)</legend>
+<div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 2px dashed #d1d5db;">
+<label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">Haga clic en un recuadro vacío para agregar, o en la ✕ roja para eliminar</label>
+<div class="fotos-grid">
 
-    <div id="paginacion" style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 10px;">
-    </div>
-  </fieldset>
+<!-- Slot 1 -->
+<div class="foto-preview" id="slot_evidencia_1">
+<img class="foto-img" id="mod_preview_evidencia_1" src="" alt="Evidencia 1" style="display: none;">
+<div id="mod_placeholder_evidencia_1" class="foto-preview-placeholder">
+<div class="foto-preview-placeholder-icon">📷</div>
+<div>Clic para agregar foto 1</div>
+</div>
+<div class="badge-evidencia">Evidencia</div>
+<button type="button" class="foto-remove" id="mod_remove_evidencia_1">✕</button>
+<input type="file" id="mod_foto_evidencia_1" accept="image/*" style="display: none;">
+</div>
 
-  <!-- SECCIÓN 3: FORMULARIO DE EDICIÓN (oculto inicialmente) -->
-  <fieldset id="fieldsetEdicion" style="display: none;">
-    <legend>✏️ Editar Renta <span id="editNumeroRenta" style="color: #fbbf24;"></span></legend>
+<!-- Slot 2 -->
+<div class="foto-preview" id="slot_evidencia_2">
+<img class="foto-img" id="mod_preview_evidencia_2" src="" alt="Evidencia 2" style="display: none;">
+<div id="mod_placeholder_evidencia_2" class="foto-preview-placeholder">
+<div class="foto-preview-placeholder-icon">📷</div>
+<div>Clic para agregar foto 2</div>
+</div>
+<div class="badge-evidencia">Evidencia</div>
+<button type="button" class="foto-remove" id="mod_remove_evidencia_2">✕</button>
+<input type="file" id="mod_foto_evidencia_2" accept="image/*" style="display: none;">
+</div>
 
-    <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 12px 16px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 20px; font-size: 13px; color: #92400e;">
-      ⚠️ El número de renta <strong>NO</strong> se puede modificar. Todos los demás campos son editables.
-    </div>
+<!-- Slot 3 -->
+<div class="foto-preview" id="slot_evidencia_3">
+<img class="foto-img" id="mod_preview_evidencia_3" src="" alt="Evidencia 3" style="display: none;">
+<div id="mod_placeholder_evidencia_3" class="foto-preview-placeholder">
+<div class="foto-preview-placeholder-icon">📷</div>
+<div>Clic para agregar foto 3</div>
+</div>
+<div class="badge-evidencia">Evidencia</div>
+<button type="button" class="foto-remove" id="mod_remove_evidencia_3">✕</button>
+<input type="file" id="mod_foto_evidencia_3" accept="image/*" style="display: none;">
+</div>
 
-    <!-- Información del Cliente -->
-    <div class="section-subtitle">👤 Información del Cliente</div>
-    <div class="form-grid-registro">
-      <div class="form-group-registro full-width">
-        <label>Nombre del Cliente <span class="required">*</span></label>
-        <input type="text" id="editClienteNombre">
-      </div>
-      <div class="form-group-registro">
-        <label>Teléfono</label>
-        <input type="tel" id="editClienteTelefono" maxlength="11" pattern="[0-9]{11}">
-      </div>
-      <div class="form-group-registro">
-        <label>Email</label>
-        <input type="email" id="editClienteEmail">
-      </div>
-      <div class="form-group-registro full-width">
-        <label>Dirección</label>
-        <textarea id="editClienteDireccion" rows="2"></textarea>
-      </div>
-    </div>
+<!-- Slot 4 -->
+<div class="foto-preview" id="slot_evidencia_4">
+<img class="foto-img" id="mod_preview_evidencia_4" src="" alt="Evidencia 4" style="display: none;">
+<div id="mod_placeholder_evidencia_4" class="foto-preview-placeholder">
+<div class="foto-preview-placeholder-icon">📷</div>
+<div>Clic para agregar foto 4</div>
+</div>
+<div class="badge-evidencia">Evidencia</div>
+<button type="button" class="foto-remove" id="mod_remove_evidencia_4">✕</button>
+<input type="file" id="mod_foto_evidencia_4" accept="image/*" style="display: none;">
+</div>
 
-    <!-- Detalles de la Renta -->
-    <div class="section-subtitle">📅 Detalles de la Renta</div>
-    <div class="form-grid-registro">
-      <div class="form-group-registro">
-        <label>Fecha de Inicio <span class="required">*</span></label>
-        <input type="date" id="editFechaRenta">
-      </div>
-      <div class="form-group-registro">
-        <label>Fecha de Devolución <span class="required">*</span></label>
-        <input type="date" id="editFechaDevolucion">
-      </div>
-      <div class="form-group-registro">
-        <label>Ingeniero</label>
-        <input type="text" id="editIngenieroNombre">
-      </div>
-      <div class="form-group-registro">
-        <label>Contacto Ingeniero</label>
-        <input type="text" id="editIngenieroContacto">
-      </div>
-      <div class="form-group-registro">
-        <label>Estado</label>
-        <select id="editEstado">
-          <option value="activa">Activa</option>
-          <option value="devuelta">Devuelta</option>
-          <option value="vencida">Vencida</option>
-          <option value="cancelada">Cancelada</option>
-        </select>
-      </div>
-    </div>
+</div>
+</div>
+</fieldset>
 
-    <!-- Equipos -->
-    <div class="section-subtitle">📦 Equipos en la Renta</div>
-    
-    <div class="codigo-barras-section" style="margin-bottom: 20px;">
-      <div class="codigo-barras-label">➕ Agregar nuevo equipo a la renta</div>
-      <div style="display: flex; gap: 10px; margin-top: 10px;">
-        <input type="text" id="editBuscarEquipo" 
-               placeholder="Escanee o escriba el código de barras..." 
-               style="flex: 1; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
-        <button type="button" class="btn-action btn-primary" onclick="agregarEquipoEdicion()">➕ Agregar</button>
-      </div>
-    </div>
-
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 40px;">#</th>
-            <th>Código</th>
-            <th>Equipo</th>
-            <th>Serial</th>
-            <th style="width: 110px; text-align: right;">Precio</th>
-            <th style="width: 80px; text-align: center;">Cant.</th>
-            <th style="width: 120px; text-align: right;">Subtotal</th>
-            <th style="width: 50px;"></th>
-          </tr>
-        </thead>
-        <tbody id="editTbodyItems">
-        </tbody>
-      </table>
-    </div>
-
-    <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-radius: 12px; border-left: 4px solid #1e3a8a;">
-      <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 15px;">
-        <span>Subtotal:</span>
-        <span id="editSubtotal" style="font-weight: 600;">$0.00</span>
-      </div>
-      <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 15px;">
-        <span>Descuento:</span>
-        <input type="number" id="editDescuento" value="0" min="0" step="0.01" 
-               onchange="calcularTotalesEdicion()"
-               style="width: 120px; padding: 6px 10px; border: 2px solid #e5e7eb; border-radius: 6px; text-align: right;">
-      </div>
-      <div style="display: flex; justify-content: space-between; font-size: 20px; font-weight: 700; color: #1e3a8a; border-top: 2px solid #1e3a8a; padding-top: 10px; margin-top: 10px;">
-        <span>TOTAL:</span>
-        <span id="editTotal">$0.00</span>
-      </div>
-    </div>
-
-    <!-- Observaciones -->
-    <div class="section-subtitle">📝 Observaciones</div>
-    <div class="form-group-registro full-width">
-      <textarea id="editObservaciones" rows="3" placeholder="Notas adicionales..."></textarea>
-    </div>
-
-    <!-- Botones de acción -->
-    <div class="button-group">
-      <button type="button" class="btn-action btn-primary" onclick="guardarCambiosRenta()" id="btnGuardarCambios">💾 Guardar Cambios</button>
-      <button type="button" class="btn-action btn-print" onclick="imprimirComprobanteModificacion()" id="btnImprimirMod">🖨️ Imprimir Comprobante</button>
-      <button type="button" class="btn-action btn-secondary" onclick="cancelarEdicion()">❌ Cancelar y Volver</button>
-    </div>
-  </fieldset>
+<!-- BOTONES DE ACCIÓN -->
+<div class="button-group" id="botonesAccionMod" style="display: none; margin-top: 20px; gap: 10px;">
+<button type="button" class="btn-action btn-primary" onclick="guardarCambiosAveria()" id="btnGuardarCambios">💾 Guardar Cambios</button>
+<button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioModAveria()">🔄 Cancelar / Nueva Búsqueda</button>
+</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
-<script src="../js/modificar_renta.js"></script>
+<script src="../js/modificar_averia.js"></script>
 </body>
 </html>
