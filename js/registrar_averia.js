@@ -130,6 +130,13 @@ async function inicializarRegistrarAveria() {
 
   const inputBusqueda = document.getElementById('buscarEquipoAveria');
   if (inputBusqueda) {
+    // ✅ Forzar mayúsculas automáticas
+    inputBusqueda.addEventListener('input', (e) => {
+      const cursorPos = e.target.selectionStart;
+      e.target.value = e.target.value.toUpperCase();
+      e.target.setSelectionRange(cursorPos, cursorPos);
+    });
+
     inputBusqueda.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); buscarEquipoAveria(); }
     });
@@ -215,7 +222,6 @@ function mostrarFichaEquipoInmediata(equipo) {
   document.getElementById('fichaMarca').textContent = equipo.marca || '-';
   document.getElementById('fichaModelo').textContent = equipo.modelo || '-';
   document.getElementById('fichaSerial').textContent = equipo.serial || '-';
-  // ✅ CORREGIDO: Se eliminó la línea de fichaCategoria que causaba el error
 
   document.getElementById('fichaFotos').innerHTML = '<div class="foto-preview-placeholder">Cargando fotos...</div>';
   document.getElementById('fieldsetFichaEquipo').style.display = 'block';
@@ -395,10 +401,11 @@ function eliminarFotoEvidencia(index) {
 }
 
 // ==========================================
-// ✅ GUARDAR AVERÍA (CON FOTOS ORIGINALES DEL EQUIPO)
+// ✅ GUARDAR AVERÍA (CORREGIDO - VARIABLES COINCIDEN)
 // ==========================================
 async function guardarAveria() {
-  if (!equipoSeleccionado) {
+  // ✅ CORRECCIÓN: usar equipoSeleccionadoAveria (no equipoSeleccionado)
+  if (!equipoSeleccionadoAveria) {
     mostrarToast('Primero debe buscar un equipo', 'error');
     return;
   }
@@ -426,11 +433,11 @@ async function guardarAveria() {
 
   try {
     const insertData = {
-      codigo_barras: equipoSeleccionado.codigo_barras,
-      nombre_equipo: equipoSeleccionado.nombre_equipo,
-      marca: equipoSeleccionado.marca,
-      modelo: equipoSeleccionado.modelo,
-      serial: equipoSeleccionado.serial,
+      codigo_barras: equipoSeleccionadoAveria.codigo_barras,
+      nombre_equipo: equipoSeleccionadoAveria.nombre_equipo,
+      marca: equipoSeleccionadoAveria.marca,
+      modelo: equipoSeleccionadoAveria.modelo,
+      serial: equipoSeleccionadoAveria.serial,
       reportante_nombre: reportanteNombres,
       reportante_apellidos: reportanteApellidos,
       reportante_cedula: reportanteCedula,
@@ -439,13 +446,14 @@ async function guardarAveria() {
       detalles_averia: detallesAveria,
       observaciones: document.getElementById('observaciones').value.trim(),
       fotos_evidencia: fotosEvidencia,
-      // ✅ NUEVO: Copiar las fotos originales del equipo al momento de registrar la avería
-      foto_url: equipoSeleccionado.foto_url || null,
-      foto2_url: equipoSeleccionado.foto2_url || null,
-      foto3_url: equipoSeleccionado.foto3_url || null,
-      foto4_url: equipoSeleccionado.foto4_url || null,
-      usuario_registro: usuarioActual?.email || 'unknown',
-      usuario_registro_id: usuarioActual?.id || null
+      // ✅ Copiar las fotos originales del equipo al momento de registrar la avería
+      foto_url: equipoSeleccionadoAveria.foto_url || null,
+      foto2_url: equipoSeleccionadoAveria.foto2_url || null,
+      foto3_url: equipoSeleccionadoAveria.foto3_url || null,
+      foto4_url: equipoSeleccionadoAveria.foto4_url || null,
+      // ✅ CORRECCIÓN: usar usuarioActualAveria (no usuarioActual)
+      usuario_registro: usuarioActualAveria?.email || 'unknown',
+      usuario_registro_id: usuarioActualAveria?.id || null
     };
 
     const { data, error } = await supabaseClient
@@ -457,12 +465,16 @@ async function guardarAveria() {
     if (error) throw error;
 
     if (typeof registrarLog === 'function') {
-      const descripcion = `Avería registrada | Equipo: ${equipoSeleccionado.codigo_barras} (${equipoSeleccionado.nombre_equipo}) | Reportante: ${reportanteNombres} ${reportanteApellidos} | Detalles: ${detallesAveria.substring(0, 60)}... | Fotos evidencia: ${fotosEvidencia.length} | Fotos originales respaldadas: ${[equipoSeleccionado.foto_url, equipoSeleccionado.foto2_url, equipoSeleccionado.foto3_url, equipoSeleccionado.foto4_url].filter(f => f).length}`;
+      const descripcion = `Avería registrada | Equipo: ${equipoSeleccionadoAveria.codigo_barras} (${equipoSeleccionadoAveria.nombre_equipo}) | Reportante: ${reportanteNombres} ${reportanteApellidos} | Detalles: ${detallesAveria.substring(0, 60)}... | Fotos evidencia: ${fotosEvidencia.length} | Fotos originales respaldadas: ${[equipoSeleccionadoAveria.foto_url, equipoSeleccionadoAveria.foto2_url, equipoSeleccionadoAveria.foto3_url, equipoSeleccionadoAveria.foto4_url].filter(f => f).length}`;
       await registrarLog('averias', 'Avería registrada', descripcion, 'warning');
     }
 
     mostrarToast('✅ Avería registrada exitosamente', 'exito');
-    limpiarFormularioAveria();
+    
+    // Limpieza automática después de 1.5 segundos
+    setTimeout(() => {
+      limpiarFormularioAveria(true);
+    }, 1500);
 
   } catch (err) {
     console.error('Error al registrar avería:', err);
@@ -474,7 +486,7 @@ async function guardarAveria() {
 }
 
 // ==========================================
-// LIMPIAR FORMULARIO (ÚNICA VERSIÓN, SIN DUPLICADOS)
+// LIMPIAR FORMULARIO
 // ==========================================
 function limpiarFormularioAveria(forzar = false) {
   if (!forzar && equipoSeleccionadoAveria) {
@@ -486,164 +498,48 @@ function limpiarFormularioAveria(forzar = false) {
   equipoSeleccionadoAveria = null;
   fotosEvidencia = [];
 
-  document.getElementById('buscarEquipoAveria').value = '';
-  document.getElementById('reportanteNombres').value = '';
-  document.getElementById('reportanteApellidos').value = '';
-  document.getElementById('reportanteCedula').value = '';
-  document.getElementById('detallesAveria').value = '';
-  document.getElementById('observacionesAveria').value = '';
-  
+  // Limpiar campos del formulario
+  const campos = ['reportanteNombres', 'reportanteApellidos', 'reportanteCedula', 'detallesAveria', 'observaciones'];
+  campos.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+
+  // Restablecer fecha y hora actuales
+  const ahora = new Date();
+  const fechaInput = document.getElementById('fechaAveria');
+  const horaInput = document.getElementById('horaAveria');
+  if (fechaInput) fechaInput.value = ahora.toISOString().split('T')[0];
+  if (horaInput) horaInput.value = ahora.toTimeString().slice(0, 5);
+
+  // Limpiar preview de fotos de evidencia
   const previewEvidencia = document.getElementById('previewFotosEvidencia');
   if (previewEvidencia) {
     previewEvidencia.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>No hay fotos de evidencia</div></div>`;
   }
 
-  const ahora = new Date();
-  document.getElementById('fechaAveria').value = ahora.toISOString().split('T')[0];
-  document.getElementById('horaAveria').value = ahora.toTimeString().slice(0, 5);
+  // Ocultar secciones del formulario
+  const fieldsets = ['fieldsetFichaEquipo', 'fieldsetReportante', 'fieldsetAveria', 'fieldsetFotosEvidencia'];
+  fieldsets.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
 
-  document.getElementById('fieldsetFichaEquipo').style.display = 'none';
-  document.getElementById('fieldsetReportante').style.display = 'none';
-  document.getElementById('fieldsetAveria').style.display = 'none';
-  document.getElementById('fieldsetFotosEvidencia').style.display = 'none';
-  document.getElementById('botonesAccion').style.display = 'none';
+  const botones = document.getElementById('botonesAccion');
+  if (botones) botones.style.display = 'none';
 
-  const btnGuardar = document.getElementById('btnGuardarAveria');
-  if (btnGuardar) { 
-    btnGuardar.disabled = false; 
-    btnGuardar.textContent = '💾 Registrar Avería'; 
+  // Enfocar el buscador de nuevo
+  const inputBusqueda = document.getElementById('buscarEquipoAveria');
+  if (inputBusqueda) {
+    inputBusqueda.value = '';
+    inputBusqueda.focus();
   }
-
-  if (!forzar) {
-    mostrarToast('Formulario listo para nuevo reporte', 'exito');
-  }
-}
-
-// ==========================================
-// IMPRIMIR RECIBO DE AVERÍA
-// ==========================================
-function imprimirReciboAveria(averia) {
-  const logoUrl = new URL('img/logo.png', window.location.href).href;
-  
-  const fotosHTML = (averia.fotos_evidencia || []).map((fotoUrl, i) => `
-    <div class="foto-recibo-item">
-      <img src="${fotoUrl}" alt="Evidencia ${i + 1}">
-      <div class="foto-label">Foto ${i + 1}</div>
-    </div>
-  `).join('');
-
-  const ventana = window.open('', '_blank', 'width=900,height=1100');
-  ventana.document.write(`<!DOCTYPE html>
-<html>
-<head>
-  <title>Recibo de Avería - ${averia.codigo_barras}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    @page { size: letter; margin: 15mm; }
-    * { box-sizing: border-box; }
-    body { font-family: 'Poppins', Arial, sans-serif; font-size: 12px; color: #333; max-width: 216mm; margin: 0 auto; padding: 10mm; }
-    .header { text-align: center; border-bottom: 3px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; }
-    .logo-img { max-width: 120px; max-height: 120px; object-fit: contain; }
-    .brand h1 { color: #1e3a8a; margin: 10px 0 5px 0; font-size: 28px; font-family: 'Libre Caslon Text', serif; font-weight: 700; }
-    .brand p { margin: 3px 0 0 0; color: #666; font-size: 12px; }
-    .aviso-averia { background: #fee2e2; border-left: 4px solid #dc2626; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
-    .aviso-averia h2 { color: #dc2626; margin: 0; font-size: 18px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-    .info-box { background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; }
-    .info-box h3 { margin: 0 0 10px 0; color: #1e3a8a; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
-    .info-box p { margin: 5px 0; font-size: 12px; }
-    .info-box p strong { color: #374151; }
-    .detalles-box { background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 20px; }
-    .detalles-box h3 { margin: 0 0 10px 0; color: #92400e; font-size: 13px; }
-    .detalles-box p { margin: 5px 0; font-size: 12px; }
-    .fotos-section { margin-top: 20px; }
-    .fotos-section h3 { color: #1e3a8a; font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
-    .fotos-grid-recibo { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .foto-recibo-item { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: white; }
-    .foto-recibo-item img { width: 100%; height: 200px; object-fit: cover; display: block; }
-    .foto-recibo-item .foto-label { padding: 8px; text-align: center; font-size: 11px; color: #6b7280; background: #f9fafb; font-weight: 600; }
-    .firmas { margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; text-align: center; }
-    .firma-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 5px; }
-    .firma-line p { margin: 3px 0; font-size: 12px; }
-    .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 10px; }
-    @media print { .no-print { display: none !important; } body { padding: 0; } }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <img src="${logoUrl}" class="logo-img" onerror="this.style.display='none'">
-    <div class="brand">
-      <h1>Eventos D' Primera</h1>
-      <p>Sistema de Inventario y Rentas</p>
-    </div>
-  </div>
-
-  <div class="aviso-averia">
-    <h2>⚠️ RECIBO DE AVERÍA</h2>
-    <p style="margin: 10px 0 0 0; font-size: 14px;">Código: <strong>${averia.codigo_barras}</strong></p>
-  </div>
-
-  <div class="info-grid">
-    <div class="info-box">
-      <h3>📦 Equipo Averiados</h3>
-      <p><strong>Nombre:</strong> ${averia.nombre_equipo}</p>
-      <p><strong>Marca/Modelo:</strong> ${averia.marca || ''} ${averia.modelo || ''}</p>
-      <p><strong>Serial:</strong> ${averia.serial || 'N/A'}</p>
-      <p><strong>Categoría:</strong> ${averia.categoria || 'N/A'}</p>
-    </div>
-    <div class="info-box">
-      <h3>👤 Reportante</h3>
-      <p><strong>Nombre:</strong> ${averia.reportante_nombre} ${averia.reportante_apellidos}</p>
-      <p><strong>Cédula:</strong> ${averia.reportante_cedula}</p>
-      <p><strong>Fecha:</strong> ${new Date(averia.fecha_averia + 'T12:00:00').toLocaleDateString('es-ES')}</p>
-      <p><strong>Hora:</strong> ${averia.hora_averia}</p>
-    </div>
-  </div>
-
-  <div class="detalles-box">
-    <h3>📝 Detalles de la Avería</h3>
-    <p>${averia.detalles_averia}</p>
-    ${averia.observaciones ? `<p style="margin-top: 10px;"><strong>Observaciones:</strong> ${averia.observaciones}</p>` : ''}
-  </div>
-
-  ${fotosHTML ? `
-  <div class="fotos-section">
-    <h3>📸 Fotos de Evidencia</h3>
-    <div class="fotos-grid-recibo">
-      ${fotosHTML}
-    </div>
-  </div>
-  ` : ''}
-
-  <div class="firmas">
-    <div class="firma-line">
-      <p><strong>${averia.reportante_nombre} ${averia.reportante_apellidos}</strong></p>
-      <p>Reportante</p>
-      <p style="font-size: 10px; color: #666;">Cédula: ${averia.reportante_cedula}</p>
-    </div>
-    <div class="firma-line">
-      <p><strong>${usuarioActualAveria?.email || 'Administrador'}</strong></p>
-      <p>Recibido por</p>
-      <p style="font-size: 10px; color: #666;">Firma del responsable</p>
-    </div>
-  </div>
-
-  <div class="footer">
-    <p>©copyright Eventos de Primera | 2026-2027 | Documento generado el ${new Date().toLocaleString('es-ES')}</p>
-  </div>
-
-  <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
-    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">🖨️ Imprimir Recibo</button>
-    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">❌ Cerrar</button>
-  </div>
-</body>
-</html>`);
-  ventana.document.close();
 }
 
 // ==========================================
 // INICIALIZAR
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('📄 Registrar Avería DOM cargado');
   inicializarRegistrarAveria();
 });
