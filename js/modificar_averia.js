@@ -262,10 +262,10 @@ async function cargarYMostrarFotosEquipoOriginal() {
 }
 
 // ==========================================
-// ✅ RENDERIZAR FOTOS DE EVIDENCIA (A PRUEBA DE FALLOS)
+// ✅ RENDERIZAR FOTOS DE EVIDENCIA (USANDO CSS EXISTENTE)
 // ==========================================
 function renderizarFotosEvidenciaMod() {
-  console.log("🎨 Renderizando slots de evidencia... Estado:", fotosEvidenciaMod);
+  console.log("🎨 Renderizando slots de evidencia...");
   
   for (let i = 1; i <= 4; i++) {
     const url = fotosEvidenciaMod[i - 1];
@@ -275,84 +275,56 @@ function renderizarFotosEvidenciaMod() {
     const input = document.getElementById(`mod_foto_evidencia_${i}`);
     
     if (!slot || !preview || !placeholder || !input) {
-      console.error(`❌ Faltan elementos del DOM para el slot ${i}`);
+      console.error(`❌ Faltan elementos para slot ${i}`);
       continue;
     }
 
-    // Limpiar cualquier botón o badge dinámico previo
-    const elementosDinamicos = slot.querySelectorAll('.btn-accion-foto, .badge-evidencia-dinamico');
-    elementosDinamicos.forEach(el => el.remove());
-
-    const tieneFoto = url && typeof url === 'string' && url.trim() !== '' && url !== 'null' && url !== 'undefined';
+    const tieneFoto = url && typeof url === 'string' && url.trim() !== '' && url !== 'null';
 
     if (tieneFoto) {
-      // 1. MOSTRAR LA FOTO
+      // MOSTRAR FOTO
       preview.src = url;
       preview.style.display = 'block';
       placeholder.style.display = 'none';
       
-      // 2. BADGE "EVIDENCIA"
-      const badge = document.createElement('div');
-      badge.className = 'badge-evidencia-dinamico';
-      badge.textContent = 'Evidencia';
-      badge.style.cssText = `position: absolute !important; top: 5px !important; left: 5px !important; background: #dc2626 !important; color: white !important; font-size: 10px !important; padding: 3px 8px !important; border-radius: 4px !important; font-weight: 600 !important; z-index: 50 !important; pointer-events: none !important;`;
-      slot.appendChild(badge);
-
-      // 3. BOTÓN PARA ELIMINAR (✕)
-      const btnEliminar = document.createElement('button');
-      btnEliminar.className = 'btn-accion-foto';
-      btnEliminar.innerHTML = '✕';
-      btnEliminar.title = 'Eliminar foto';
-      btnEliminar.style.cssText = `position: absolute !important; top: 5px !important; right: 5px !important; background: #dc2626 !important; color: white !important; border: 2px solid white !important; border-radius: 50% !important; width: 28px !important; height: 28px !important; cursor: pointer !important; font-size: 16px !important; font-weight: bold !important; display: flex !important; align-items: center !important; justify-content: center !important; z-index: 60 !important; box-shadow: 0 2px 6px rgba(0,0,0,0.3);`;
-      btnEliminar.onclick = function(e) {
-        e.stopPropagation();
+      // ✅ AGREGAR CLASE .con-foto para que el CSS muestre el botón X
+      slot.classList.add('con-foto');
+      
+      // ✅ AGREGAR BADGE "EVIDENCIA" usando el CSS existente
+      if (!slot.querySelector('.badge-evidencia')) {
+        const badge = document.createElement('div');
+        badge.className = 'badge-evidencia';
+        badge.textContent = 'Evidencia';
+        slot.appendChild(badge);
+      }
+      
+      // ✅ CLIC EN LA FOTO: ABRIR SELECTOR DE ARCHIVOS PARA REEMPLAZAR
+      slot.style.cursor = 'pointer';
+      slot.onclick = function(e) {
+        // Si se hizo clic en el botón X, no hacer nada (el X tiene su propio onclick)
+        if (e.target.classList.contains('foto-remove')) return;
         e.preventDefault();
-        eliminarFotoEvidenciaMod(i);
-      };
-      slot.appendChild(btnEliminar);
-
-      // 4. BOTÓN PARA REEMPLAZAR (🔄)
-      const btnReemplazar = document.createElement('button');
-      btnReemplazar.className = 'btn-accion-foto';
-      btnReemplazar.innerHTML = '🔄';
-      btnReemplazar.title = 'Cambiar foto';
-      btnReemplazar.style.cssText = `position: absolute !important; bottom: 5px !important; right: 5px !important; background: #2563eb !important; color: white !important; border: 2px solid white !important; border-radius: 50% !important; width: 28px !important; height: 28px !important; cursor: pointer !important; font-size: 14px !important; display: flex !important; align-items: center !important; justify-content: center !important; z-index: 60 !important; box-shadow: 0 2px 6px rgba(0,0,0,0.3);`;
-      btnReemplazar.onclick = function(e) {
         e.stopPropagation();
-        e.preventDefault();
-        input.click();
+        input.click(); // Abre el selector de archivos
       };
-      slot.appendChild(btnReemplazar);
-
-      // 5. BOTÓN PARA ZOOM (🔍)
-      const btnZoom = document.createElement('button');
-      btnZoom.className = 'btn-accion-foto';
-      btnZoom.innerHTML = '🔍';
-      btnZoom.title = 'Ver en zoom';
-      btnZoom.style.cssText = `position: absolute !important; bottom: 5px !important; left: 5px !important; background: rgba(0, 0, 0, 0.6) !important; color: white !important; border: none !important; border-radius: 50% !important; width: 28px !important; height: 28px !important; cursor: pointer !important; font-size: 14px !important; display: flex !important; align-items: center !important; justify-content: center !important; z-index: 60 !important;`;
-      btnZoom.onclick = function(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        abrirZoomInfalible(url);
-      };
-      slot.appendChild(btnZoom);
-
-      // 6. CLIC EN LA IMAGEN TAMBIÉN ABRE EL ZOOM
-      preview.style.cursor = 'zoom-in';
-      preview.onclick = function(e) {
-        e.stopPropagation();
-        abrirZoomInfalible(url);
-      };
-
-      console.log(`✅ Slot ${i}: Foto cargada con controles (Eliminar, Reemplazar, Zoom)`);
+      
+      console.log(`✅ Slot ${i}: Foto mostrada con X y etiqueta Evidencia`);
       
     } else {
-      // SIN FOTO: MOSTRAR PLACEHOLDER Y PERMITIR AGREGAR
+      // SIN FOTO: MOSTRAR PLACEHOLDER
       preview.style.display = 'none';
       preview.src = '';
       placeholder.style.display = 'flex';
       placeholder.innerHTML = `<div class="foto-preview-placeholder-icon">📷</div><div>Clic para agregar foto ${i}</div>`;
       
+      // ✅ QUITAR CLASE .con-foto para ocultar el botón X
+      slot.classList.remove('con-foto');
+      
+      // ✅ REMOVER BADGE SI EXISTE
+      const badge = slot.querySelector('.badge-evidencia');
+      if (badge) badge.remove();
+      
+      // ✅ CLIC EN EL SLOT VACÍO: ABRIR SELECTOR DE ARCHIVOS
       slot.style.cursor = 'pointer';
       slot.onclick = function(e) {
         e.preventDefault();
