@@ -288,12 +288,8 @@ async function cargarYMostrarFotosEquipoOriginal() {
   });
 }
 
-// ==========================================
-// ✅ RENDERIZAR FOTOS DE EVIDENCIA (CON PRUEBA DE DOM)
-// ==========================================
 function renderizarFotosEvidenciaMod() {
   console.log("🎨 Renderizando slots:", fotosEvidenciaMod);
-  
   for (let i = 1; i <= 4; i++) {
     const url = fotosEvidenciaMod[i - 1];
     const slot = document.getElementById(`slot_evidencia_${i}`);
@@ -301,73 +297,65 @@ function renderizarFotosEvidenciaMod() {
     const placeholder = document.getElementById(`mod_placeholder_evidencia_${i}`);
     const removeBtn = document.getElementById(`mod_remove_evidencia_${i}`);
     const input = document.getElementById(`mod_foto_evidencia_${i}`);
-    
+
     if (!slot || !preview || !placeholder || !removeBtn || !input) {
       console.error(`❌ Faltan elementos para slot ${i}`);
       continue;
     }
 
-    // Limpiar elementos dinámicos anteriores
-    const elementosDinamicos = slot.querySelectorAll('.badge-evidencia, .boton-x-dinamico');
-    elementosDinamicos.forEach(el => el.remove());
+    // Limpiar badges dinámicos anteriores (por si acaso)
+    slot.querySelectorAll('.badge-evidencia').forEach(el => el.remove());
 
     const tieneFoto = url && typeof url === 'string' && url.trim() !== '' && url !== 'null';
 
     if (tieneFoto) {
+      // 👇 Marcar el slot como "con foto" para que el CSS muestre el botón X
+      slot.classList.add('con-foto');
+
       preview.src = url;
       preview.style.display = 'block';
       placeholder.style.display = 'none';
-      
-      // CREAR ETIQUETA "EVIDENCIA"
+
+      // Crear badge "Evidencia" en rojo
       const badge = document.createElement('div');
       badge.className = 'badge-evidencia';
       badge.textContent = 'Evidencia';
-      badge.style.cssText = `
-        position: absolute !important; top: 5px !important; left: 5px !important;
-        background: #dc2626 !important; color: white !important; font-size: 10px !important;
-        padding: 3px 8px !important; border-radius: 4px !important; font-weight: 600 !important;
-        z-index: 9999 !important; pointer-events: none !important;
-      `;
       slot.appendChild(badge);
-      
-      // CREAR BOTÓN X
-      const btnX = document.createElement('button');
-      btnX.className = 'boton-x-dinamico';
-      btnX.innerHTML = '✕';
-      btnX.style.cssText = `
-        position: absolute !important; top: 5px !important; right: 5px !important;
-        background: #dc2626 !important; color: white !important; border: none !important;
-        border-radius: 50% !important; width: 24px !important; height: 24px !important;
-        cursor: pointer !important; font-size: 14px !important; display: flex !important;
-        align-items: center !important; justify-content: center !important; z-index: 10000 !important;
-      `;
-      btnX.onclick = function(e) {
+
+      // El botón X ya existe en el HTML (mod_remove_evidencia_i)
+      // Solo nos aseguramos de que su onclick esté correcto
+      removeBtn.onclick = function(e) {
         e.stopPropagation();
+        e.preventDefault();
         eliminarFotoEvidenciaMod(i);
       };
-      slot.appendChild(btnX);
-      
+
+      // Clic en la foto → abre zoom
       slot.onclick = function(e) {
-        if (e.target === btnX || btnX.contains(e.target)) return;
+        // Ignorar clics en el botón X
+        if (e.target === removeBtn || removeBtn.contains(e.target)) return;
         e.preventDefault();
         abrirZoomInfalible(url);
       };
-      
-      console.log(`✅ Slot ${i}: Foto mostrada con etiqueta y X`);
-      // 🔍 PRUEBA DE FUEGO: Despliega este objeto en la consola y verás los elementos dentro
-      console.log(`🔍 Inspecciona este elemento Slot ${i}:`, slot); 
-      
+
+      console.log(`✅ Slot ${i}: Foto mostrada con etiqueta "Evidencia" y botón X`);
     } else {
+      // 👇 Slot vacío: quitar marca y ocultar botón X
+      slot.classList.remove('con-foto');
+
       preview.style.display = 'none';
       preview.src = '';
       placeholder.style.display = 'flex';
       placeholder.innerHTML = `<div class="foto-preview-placeholder-icon">📷</div><div>Clic para agregar foto ${i}</div>`;
-      
+
+      // Clic en slot vacío → abre selector de archivos
       slot.onclick = function(e) {
         e.preventDefault();
         input.click();
       };
-      console.log(`⚪ Slot ${i}: Vacío`);
+      removeBtn.onclick = null;
+
+      console.log(`⚪ Slot ${i}: Vacío (listo para subir)`);
     }
   }
 }
@@ -376,14 +364,13 @@ function renderizarFotosEvidenciaMod() {
 // ✅ ELIMINAR FOTO
 // ==========================================
 window.eliminarFotoEvidenciaMod = function(numero) {
-  if (confirm(`¿Eliminar la foto de evidencia ${numero}?`)) {
-    fotosEvidenciaMod[numero - 1] = null;
-    const input = document.getElementById(`mod_foto_evidencia_${numero}`);
-    if (input) input.value = '';
-    renderizarFotosEvidenciaMod();
-  }
+  if (!confirm(`¿Eliminar la foto de evidencia ${numero}?`)) return;
+  fotosEvidenciaMod[numero - 1] = null;
+  const input = document.getElementById(`mod_foto_evidencia_${numero}`);
+  if (input) input.value = '';
+  renderizarFotosEvidenciaMod();
+  mostrarToastMod(`🗑️ Foto ${numero} eliminada (recuerda guardar cambios)`, 'aviso');
 };
-
 // ==========================================
 // ✅ CAMBIAR FOTO
 // ==========================================
