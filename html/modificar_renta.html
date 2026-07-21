@@ -48,10 +48,40 @@
   .mensaje.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; display: block; }
   .mensaje.info { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; display: block; }
 
-  .totales-edicion { display: flex; justify-content: flex-end; gap: 20px; margin-top: 15px; padding: 15px; background: #eff6ff; border-radius: 8px; }
-  .totales-edicion div { text-align: right; }
-  .totales-edicion span { display: block; font-size: 12px; color: #6b7280; }
-  .totales-edicion strong { font-size: 18px; color: #1e3a8a; }
+  /* ✅ NUEVO DISEÑO DE TOTALES (Estilo Nueva Renta) */
+  .totales-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+  .totales-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 15px 25px;
+    min-width: 280px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #475569;
+  }
+  .total-row.final {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 2px dashed #cbd5e1;
+    font-size: 16px;
+    font-weight: 600;
+    color: #059669; /* Verde éxito */
+  }
+  .total-row.final strong {
+    font-size: 24px;
+    font-weight: 700;
+  }
 </style>
 </head>
 <body>
@@ -208,15 +238,21 @@
       </table>
     </div>
 
-    <!-- Totales -->
-    <div class="totales-edicion">
-      <div>
-        <span>Subtotal</span>
-        <strong id="editSubtotal">$0.00</strong>
-      </div>
-      <div>
-        <span>Total a Pagar</span>
-        <strong id="editTotal" style="color: #059669;">$0.00</strong>
+    <!-- ✅ TOTALES CON NUEVO DISEÑO -->
+    <div class="totales-container">
+      <div class="totales-box">
+        <div class="total-row">
+          <span>Subtotal:</span>
+          <span id="editSubtotal">$0.00</span>
+        </div>
+        <div class="total-row">
+          <span>Descuento:</span>
+          <span id="editDescuentoDisplay">-$0.00</span>
+        </div>
+        <div class="total-row final">
+          <span>Total a Pagar:</span>
+          <strong id="editTotal">$0.00</strong>
+        </div>
       </div>
     </div>
 
