@@ -401,21 +401,23 @@ function eliminarFotoEvidencia(index) {
 }
 
 // ==========================================
-// ✅ GUARDAR AVERÍA (CORREGIDO - VARIABLES COINCIDEN)
+// ✅ GUARDAR AVERÍA (BLINDADA CONTRA ELEMENTOS NULOS)
 // ==========================================
 async function guardarAveria() {
-  // ✅ CORRECCIÓN: usar equipoSeleccionadoAveria (no equipoSeleccionado)
   if (!equipoSeleccionadoAveria) {
     mostrarToast('Primero debe buscar un equipo', 'error');
     return;
   }
 
-  const reportanteNombres = document.getElementById('reportanteNombres').value.trim();
-  const reportanteApellidos = document.getElementById('reportanteApellidos').value.trim();
-  const reportanteCedula = document.getElementById('reportanteCedula').value.trim();
-  const fechaAveria = document.getElementById('fechaAveria').value;
-  const horaAveria = document.getElementById('horaAveria').value;
-  const detallesAveria = document.getElementById('detallesAveria').value.trim();
+  // ✅ CORRECCIÓN: Usar optional chaining (?.) para evitar el error "Cannot read properties of null"
+  const reportanteNombres = document.getElementById('reportanteNombres')?.value?.trim() || '';
+  const reportanteApellidos = document.getElementById('reportanteApellidos')?.value?.trim() || '';
+  const reportanteCedula = document.getElementById('reportanteCedula')?.value?.trim() || '';
+  const fechaAveria = document.getElementById('fechaAveria')?.value || '';
+  const horaAveria = document.getElementById('horaAveria')?.value || '';
+  const detallesAveria = document.getElementById('detallesAveria')?.value?.trim() || '';
+  const observaciones = document.getElementById('observaciones')?.value?.trim() || ''; 
+  // Nota: Si tu HTML usa id="observacion" (sin la 'es' al final), cámbialo aquí a 'observacion'
 
   if (!reportanteNombres || !reportanteApellidos || !reportanteCedula || !fechaAveria || !horaAveria || !detallesAveria) {
     mostrarToast('Complete todos los campos obligatorios', 'error');
@@ -428,8 +430,10 @@ async function guardarAveria() {
   }
 
   const btnGuardar = document.getElementById('btnGuardarAveria');
-  btnGuardar.disabled = true;
-  btnGuardar.textContent = '⏳ Guardando...';
+  if (btnGuardar) {
+    btnGuardar.disabled = true;
+    btnGuardar.textContent = '⏳ Guardando...';
+  }
 
   try {
     const insertData = {
@@ -444,14 +448,13 @@ async function guardarAveria() {
       fecha_averia: fechaAveria,
       hora_averia: horaAveria,
       detalles_averia: detallesAveria,
-      observaciones: document.getElementById('observaciones').value.trim(),
+      observaciones: observaciones,
       fotos_evidencia: fotosEvidencia,
-      // ✅ Copiar las fotos originales del equipo al momento de registrar la avería
+      // ✅ Fotos originales del equipo respaldadas
       foto_url: equipoSeleccionadoAveria.foto_url || null,
       foto2_url: equipoSeleccionadoAveria.foto2_url || null,
       foto3_url: equipoSeleccionadoAveria.foto3_url || null,
       foto4_url: equipoSeleccionadoAveria.foto4_url || null,
-      // ✅ CORRECCIÓN: usar usuarioActualAveria (no usuarioActual)
       usuario_registro: usuarioActualAveria?.email || 'unknown',
       usuario_registro_id: usuarioActualAveria?.id || null
     };
@@ -480,8 +483,11 @@ async function guardarAveria() {
     console.error('Error al registrar avería:', err);
     mostrarToast('Error al registrar: ' + err.message, 'error');
   } finally {
-    btnGuardar.disabled = false;
-    btnGuardar.textContent = '💾 Registrar Avería';
+    const btn = document.getElementById('btnGuardarAveria');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '💾 Registrar Avería';
+    }
   }
 }
 
