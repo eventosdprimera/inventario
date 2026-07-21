@@ -20,11 +20,23 @@
 .foto-preview-placeholder-icon { font-size: 32px; margin-bottom: 4px; }
 
 .foto-remove {
-  position: absolute; top: 5px; right: 5px; background: rgba(220, 38, 38, 0.9); color: white;
-  border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px;
-  display: none; align-items: center; justify-content: center; transition: all 0.3s; z-index: 30;
+  position: absolute; top: 5px; right: 5px; background: rgba(220, 38, 38, 0.95); color: white;
+  border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 14px;
+  display: none; align-items: center; justify-content: center; transition: all 0.3s; z-index: 10000;
+  font-weight: bold; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
-.foto-remove:hover { background: rgba(185, 28, 28, 1); transform: scale(1.1); }
+/* 👇 ESTO ES LO QUE FALTABA: mostrar el botón X cuando el slot tiene foto */
+.foto-preview.con-foto .foto-remove { display: flex; }
+.foto-remove:hover { background: rgba(185, 28, 28, 1); transform: scale(1.15); }
+
+/* Badge "Evidencia" en rojo (igual estilo que "Original") */
+.badge-evidencia {
+  position: absolute !important; top: 5px !important; left: 5px !important;
+  background: #dc2626 !important; color: white !important; font-size: 10px !important;
+  padding: 3px 8px !important; border-radius: 4px !important; font-weight: 600 !important;
+  z-index: 9999 !important; pointer-events: none !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
 </style>
 </head>
 <body>
