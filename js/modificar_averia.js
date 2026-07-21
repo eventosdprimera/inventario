@@ -217,92 +217,56 @@ async function buscarAveriaParaModificar() {
 }
 
 // ==========================================
-// ✅ BÚSQUEDA INTELIGENTE DE FOTOS (equipos → equipos_eliminados)
+// ✅ CARGAR Y MOSTRAR FOTOS ORIGINALES (AHORA DESDE LA MISMA AVERÍA)
 // ==========================================
-async function cargarYMostrarFotosEquipoOriginal(codigoBarras, serial) {
+async function cargarYMostrarFotosEquipoOriginal() {
   const contenedor = asegurarContenedorFotosEquipo();
   const fieldset = document.getElementById('fieldsetFotosEquipoOriginalMod');
   if (fieldset) fieldset.style.display = 'block';
 
-  contenedor.innerHTML = '<div style="text-align: center; padding: 20px; color: #6b7280;">Cargando fotos del equipo...</div>';
-  
-  try {
-    console.log('🔍 Buscando fotos del equipo:', codigoBarras, '/', serial);
-    
-    // PASO 1: Buscar en la tabla activa "equipos"
-    let { data: equipo, error } = await supabaseClient
-      .from('equipos')
-      .select('foto_url, foto2_url, foto3_url, foto4_url')
-      .or(`codigo_barras.eq.${codigoBarras},serial.eq.${serial}`)
-      .maybeSingle();
+  contenedor.innerHTML = '';
 
-    // PASO 2: Si no está en equipos, buscar en equipos_eliminados (respaldo)
-    if (!equipo && !error) {
-      console.log('🔍 No encontrado en "equipos". Buscando en "equipos_eliminados"...');
-      const { data: equipoEliminado, error: errorElim } = await supabaseClient
-        .from('equipos_eliminados')
-        .select('foto_url, foto2_url, foto3_url, foto4_url')
-        .or(`codigo_barras.eq.${codigoBarras},serial.eq.${serial}`)
-        .maybeSingle();
-      
-      if (!errorElim) {
-        equipo = equipoEliminado;
-        if (equipo) {
-          console.log('✅ Fotos encontradas en el respaldo de equipos eliminados');
-        }
-      }
-    }
+  // ✅ Las fotos originales YA ESTÁN en averiaSeleccionada (gracias al paso 2)
+  const fotos = [
+    averiaSeleccionada.foto_url, 
+    averiaSeleccionada.foto2_url, 
+    averiaSeleccionada.foto3_url, 
+    averiaSeleccionada.foto4_url
+  ].filter(url => url && url.trim() !== '');
 
-    // PASO 3: Si aún no hay fotos, mostrar mensaje
-    if (!equipo) {
-      console.warn('⚠️ No se encontró el equipo en ninguna tabla. Las fotos originales no están disponibles.');
-      contenedor.innerHTML = `
-        <div class="foto-preview-placeholder">
-          <div class="foto-preview-placeholder-icon">⚠️</div>
-          <div>No se encontraron fotos originales</div>
-          <div style="font-size: 10px; margin-top: 5px; color: #9ca3af;">
-            El equipo fue eliminado antes de ser averiado o no tenía fotos al registrarse
-          </div>
-        </div>`;
-      return;
-    }
-
-    const fotos = [equipo.foto_url, equipo.foto2_url, equipo.foto3_url, equipo.foto4_url].filter(url => url && url.trim() !== '');
-    
-    if (fotos.length === 0) {
-      contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>El equipo no tenía fotos al registrarse</div></div>`;
-      return;
-    }
-
-    contenedor.innerHTML = '';
-
-    fotos.forEach((fotoUrl, index) => {
-      const div = document.createElement('div');
-      div.className = 'foto-preview';
-      div.style.cursor = 'pointer';
-      div.style.position = 'relative';
-      div.onclick = function() { abrirZoomInfalible(fotoUrl); };
-      
-      const img = document.createElement('img');
-      img.src = fotoUrl;
-      img.alt = `Foto del equipo ${index + 1}`;
-      img.style.width = '100%';
-      img.style.height = '100%';
-      img.style.objectFit = 'cover';
-      
-      const badge = document.createElement('div');
-      badge.textContent = 'Original';
-      badge.style.cssText = 'position: absolute; top: 5px; left: 5px; background: rgba(30, 58, 138, 0.85); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 10;';
-      
-      div.appendChild(img);
-      div.appendChild(badge);
-      contenedor.appendChild(div);
-    });
-
-  } catch (err) {
-    console.error('❌ Error inesperado al cargar fotos del equipo:', err);
-    contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">❌</div><div>Error al cargar fotos</div></div>`;
+  if (fotos.length === 0) {
+    contenedor.innerHTML = `
+      <div class="foto-preview-placeholder">
+        <div class="foto-preview-placeholder-icon">📷</div>
+        <div>El equipo no tenía fotos al momento de registrar la avería</div>
+      </div>`;
+    return;
   }
+
+  console.log(`✅ Mostrando ${fotos.length} fotos originales respaldadas en la avería`);
+
+  fotos.forEach((fotoUrl, index) => {
+    const div = document.createElement('div');
+    div.className = 'foto-preview';
+    div.style.cursor = 'pointer';
+    div.style.position = 'relative';
+    div.onclick = function() { abrirZoomInfalible(fotoUrl); };
+    
+    const img = document.createElement('img');
+    img.src = fotoUrl;
+    img.alt = `Foto original del equipo ${index + 1}`;
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    
+    const badge = document.createElement('div');
+    badge.textContent = 'Original';
+    badge.style.cssText = 'position: absolute; top: 5px; left: 5px; background: rgba(30, 58, 138, 0.85); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 10;';
+    
+    div.appendChild(img);
+    div.appendChild(badge);
+    contenedor.appendChild(div);
+  });
 }
 
 // ==========================================
