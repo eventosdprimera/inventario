@@ -322,41 +322,39 @@ async function cargarFotosEvidenciaReint(data) {
 }
 
 // ==========================================
-// ✅ REINTEGRAR EQUIPO (CORREGIDO CON MEDIDA_UNIDAD)
+// ✅ REINTEGRAR EQUIPO (CON RESTAURACIÓN DE FOTOS ORIGINALES)
 // ==========================================
 async function reintegrarEquipo() {
   if (!averiaSeleccionadaReint) {
     mostrarToastReint('No hay avería seleccionada', 'error');
     return;
   }
-
   const tecnico = document.getElementById('reintTecnico').value.trim();
   const fechaReparacion = document.getElementById('reintFechaReparacion').value;
   const costoReparacion = document.getElementById('reintCostoReparacion').value || '0';
   const observacionesReparacion = document.getElementById('reintObservacionesReparacion').value.trim();
-
   if (!tecnico || !fechaReparacion || !observacionesReparacion) {
     mostrarToastReint('Complete los campos obligatorios: técnico, fecha y observaciones', 'error');
     return;
   }
-
-  if (!confirm(`¿Confirmar la reintegración del equipo ${averiaSeleccionadaReint.codigo_barras} al inventario?\n\nEsta acción:\n- Eliminará el registro de la tabla de averías activas\n- Lo archivará en el historial de averías\n- Devolverá el equipo a la tabla de equipos como operativo`)) {
+  if (!confirm(`¿Confirmar la reintegración del equipo ${averiaSeleccionadaReint.codigo_barras} al inventario?
+Esta acción:
+- Eliminará el registro de la tabla de averías activas
+- Lo archivará en el historial de averías
+- Devolverá el equipo a la tabla de equipos como operativo
+- Restaurará las fotos originales del equipo`)) {
     return;
   }
-
   const btnReintegrar = document.getElementById('btnReintegrar');
   btnReintegrar.disabled = true;
   btnReintegrar.textContent = '⏳ Reintegrando...';
-
   try {
     // 1. ELIMINAR de la tabla activa (equipos_averiados)
     const { error: errorDelete } = await supabaseClient
       .from('equipos_averiados')
       .delete()
       .eq('id', averiaSeleccionadaReint.id);
-
     if (errorDelete) throw errorDelete;
-
     // 2. ARCHIVAR en historial_averias
     const { error: errorHistorial } = await supabaseClient
       .from('historial_averias')
@@ -387,10 +385,8 @@ async function reintegrarEquipo() {
         reintegrado_por_id: usuarioActualReint?.id || null,
         estado_final: 'reintegrado'
       });
-
     if (errorHistorial) throw errorHistorial;
-
-    // 3. REINSERTAR en la tabla equipos como operativo
+    // 3. ✅ REINSERTAR en la tabla equipos como operativo CON LAS FOTOS ORIGINALES
     const equipoData = {
       codigo_barras: averiaSeleccionadaReint.codigo_barras,
       nombre_equipo: averiaSeleccionadaReint.nombre_equipo,
@@ -400,8 +396,13 @@ async function reintegrarEquipo() {
       costo: averiaSeleccionadaReint.costo || 0,
       estatus: 'operativo',
       activo: true,
-      medida_unidad: 'm',        // ✅ CAMBIADO: 'm' (metros) es el valor que tu tabla acepta
-      medida_valor: 1,           // ✅ Valor numérico por defecto
+      medida_unidad: 'm',
+      medida_valor: 1,
+      // ✅ RESTAURAR FOTOS ORIGINALES
+      foto_url: averiaSeleccionadaReint.foto_url || null,
+      foto2_url: averiaSeleccionadaReint.foto2_url || null,
+      foto3_url: averiaSeleccionadaReint.foto3_url || null,
+      foto4_url: averiaSeleccionadaReint.foto4_url || null,
       usuario_registro: usuarioActualReint?.email || 'unknown',
       usuario_registro_id: usuarioActualReint?.id || null,
       fecha_registro: new Date().toISOString()
@@ -409,24 +410,19 @@ async function reintegrarEquipo() {
     const { error: errorInsertEquipo } = await supabaseClient
       .from('equipos')
       .insert(equipoData);
-
     if (errorInsertEquipo) throw errorInsertEquipo;
-
     // 4. Registrar en logs
     if (typeof registrarLog === 'function') {
-      const descripcion = `Equipo REINTEGRADO al inventario | Código: ${averiaSeleccionadaReint.codigo_barras} (${averiaSeleccionadaReint.nombre_equipo}) | Técnico: ${tecnico} | Costo reparación: $${parseFloat(costoReparacion).toFixed(2)} | Reintegrado por: ${usuarioActualReint?.email || 'Desconocido'}`;
+      const descripcion = `Equipo REINTEGRADO al inventario | Código: ${averiaSeleccionadaReint.codigo_barras} (${averiaSeleccionadaReint.nombre_equipo}) | Técnico: ${tecnico} | Costo reparación: $${parseFloat(costoReparacion).toFixed(2)} | Fotos originales restauradas: ${[averiaSeleccionadaReint.foto_url, averiaSeleccionadaReint.foto2_url, averiaSeleccionadaReint.foto3_url, averiaSeleccionadaReint.foto4_url].filter(f => f).length} | Reintegrado por: ${usuarioActualReint?.email || 'Desconocido'}`;
       await registrarLog('averias', 'Equipo reintegrado', descripcion, 'success');
     }
-
-    mostrarToastReint('✅ Equipo reintegrado exitosamente al inventario', 'exito');
-
+    mostrarToastReint('✅ Equipo reintegrado exitosamente al inventario con fotos originales', 'exito');
     // 5. Limpiar formulario y recargar lista
     setTimeout(() => {
       cancelarReintegrar();
       paginaActualReint = 1;
       cargarListaAverias();
     }, 1000);
-
   } catch (err) {
     console.error('Error al reintegrar:', err);
     mostrarToastReint('Error al reintegrar: ' + err.message, 'error');
