@@ -19,6 +19,25 @@
 .foto-preview-placeholder { text-align: center; color: #9ca3af; font-size: 11px; padding: 10px; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
 .foto-preview-placeholder:hover { color: #1e3a8a; }
 .foto-preview-placeholder-icon { font-size: 32px; margin-bottom: 4px; }
+
+/* ✅ BOTÓN X: oculto por defecto, se muestra cuando el slot tiene la clase .con-foto */
+.foto-remove {
+  position: absolute; top: 5px; right: 5px; background: rgba(220, 38, 38, 0.95); color: white;
+  border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 14px;
+  display: none; align-items: center; justify-content: center; transition: all 0.3s; z-index: 10000;
+  font-weight: bold; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.foto-preview.con-foto .foto-remove { display: flex !important; }
+.foto-remove:hover { background: rgba(185, 28, 28, 1); transform: scale(1.15); }
+
+/* ✅ BADGE "EVIDENCIA" */
+.badge-evidencia {
+  position: absolute !important; top: 5px !important; left: 5px !important;
+  background: #dc2626 !important; color: white !important; font-size: 10px !important;
+  padding: 3px 8px !important; border-radius: 4px !important; font-weight: 600 !important;
+  z-index: 9999 !important; pointer-events: none !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
 </style>
 </head>
 <body>
@@ -97,7 +116,7 @@
   <fieldset id="fieldsetFotosMod" style="display: none;">
     <legend>📷 Fotos de Evidencia (Máximo 4)</legend>
     <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 2px dashed #d1d5db;">
-      <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">Usa los botones sobre la foto para Eliminar (✕), Reemplazar (🔄) o ver Zoom (🔍)</label>
+      <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">Clic en la foto para reemplazarla, en la ✕ roja para eliminarla, o fuera de la foto para ver Zoom</label>
       
       <div class="fotos-grid">
         <!-- Slot 1 -->
@@ -107,6 +126,7 @@
             <div class="foto-preview-placeholder-icon">📷</div>
             <div>Clic para agregar foto 1</div>
           </div>
+          <button type="button" class="foto-remove" id="mod_remove_evidencia_1" onclick="event.stopPropagation(); eliminarFotoEvidenciaMod(1)">✕</button>
           <input type="file" id="mod_foto_evidencia_1" accept="image/*" style="display: none;" onchange="cambiarFotoEvidenciaMod(1, event)">
         </div>
         <!-- Slot 2 -->
@@ -116,6 +136,7 @@
             <div class="foto-preview-placeholder-icon">📷</div>
             <div>Clic para agregar foto 2</div>
           </div>
+          <button type="button" class="foto-remove" id="mod_remove_evidencia_2" onclick="event.stopPropagation(); eliminarFotoEvidenciaMod(2)">✕</button>
           <input type="file" id="mod_foto_evidencia_2" accept="image/*" style="display: none;" onchange="cambiarFotoEvidenciaMod(2, event)">
         </div>
         <!-- Slot 3 -->
@@ -125,6 +146,7 @@
             <div class="foto-preview-placeholder-icon">📷</div>
             <div>Clic para agregar foto 3</div>
           </div>
+          <button type="button" class="foto-remove" id="mod_remove_evidencia_3" onclick="event.stopPropagation(); eliminarFotoEvidenciaMod(3)">✕</button>
           <input type="file" id="mod_foto_evidencia_3" accept="image/*" style="display: none;" onchange="cambiarFotoEvidenciaMod(3, event)">
         </div>
         <!-- Slot 4 -->
@@ -134,6 +156,7 @@
             <div class="foto-preview-placeholder-icon">📷</div>
             <div>Clic para agregar foto 4</div>
           </div>
+          <button type="button" class="foto-remove" id="mod_remove_evidencia_4" onclick="event.stopPropagation(); eliminarFotoEvidenciaMod(4)">✕</button>
           <input type="file" id="mod_foto_evidencia_4" accept="image/*" style="display: none;" onchange="cambiarFotoEvidenciaMod(4, event)">
         </div>
       </div>
