@@ -491,6 +491,42 @@ async function cargarContenido(action) {
     }
     return;
   }
+    // ✅ 14. VENTAS → CREAR (y otras operaciones de ventas)
+  if (modulo === 'ventas') {
+    try {
+      // Asegurar que el módulo de logs esté disponible
+      if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      
+      // Cargar el script específico de ventas
+      if (typeof inicializarVentas === 'undefined') await cargarScript('js/ventas.js');
+      
+      // Cargar el HTML de ventas
+      const response = await fetch('html/ventas.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/ventas.html');
+      
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      
+      if (!container) throw new Error('No se encontró .container en ventas.html');
+      
+      // Inyectar el contenido en el dashboard
+      contenidoDiv.innerHTML = container.innerHTML;
+      
+      // Pequeña pausa para asegurar que el DOM esté listo
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Inicializar la lógica de ventas
+      if (typeof inicializarVentas === 'function') {
+        await inicializarVentas();
+      }
+    } catch (err) {
+      console.error('Error cargando módulo de ventas:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el módulo de ventas: ${err.message}</p></fieldset>`;
+    }
+    return;
+  }
 
   // 15. OTROS MÓDULOS (Placeholders)
   let html = '';
