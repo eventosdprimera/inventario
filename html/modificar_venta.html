@@ -13,6 +13,13 @@
 .foto-preview img { width: 100%; height: 100%; object-fit: cover; }
 .foto-preview-placeholder { text-align: center; color: #9ca3af; font-size: 11px; grid-column: 1 / -1; padding: 20px; }
 .foto-preview-placeholder-icon { font-size: 32px; margin-bottom: 4px; }
+.table-container { overflow-x: auto; margin-top: 15px; }
+table { width: 100%; border-collapse: collapse; background: white; }
+th { background: #1e3a8a; color: white; padding: 12px 10px; text-align: left; font-size: 12px; text-transform: uppercase; }
+td { padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+tr:hover { background: #f9fafb; cursor: pointer; }
+tr.selected { background: #eff6ff; border-left: 3px solid #1e3a8a; }
+.badge-venta { background: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
 .form-grid-registro { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 10px; }
 .form-group-registro { display: flex; flex-direction: column; }
 .form-group-registro.full-width { grid-column: 1 / -1; }
@@ -25,7 +32,9 @@
 .btn-primary:hover { background: #1e40af; }
 .btn-secondary { background: #6b7280; color: white; }
 .btn-secondary:hover { background: #4b5563; }
-.button-group { display: flex; gap: 10px; margin-top: 20px; }
+.btn-success { background: #10b981; color: white; }
+.btn-success:hover { background: #059669; }
+.button-group { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
 .mensaje { padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; font-weight: 500; display: none; }
 .mensaje.exito { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; display: block; }
 .mensaje.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; display: block; }
@@ -34,21 +43,71 @@
 <body>
 <div class="container">
   <div class="page-header">
-    <h1 class="page-title">✏️ Modificar Venta</h1>
-    <p class="page-subtitle">Corrija los datos del comprador o el precio de una venta registrada</p>
+    <h1 class="page-title">️ Modificar Venta</h1>
+    <p class="page-subtitle">Busque, seleccione y corrija los datos de una venta registrada</p>
   </div>
+
   <div id="mensaje" class="mensaje"></div>
 
-  <!-- BÚSQUEDA -->
+  <!-- SECCIÓN 1: FILTROS DE BÚSQUEDA -->
   <fieldset>
-    <legend>🔍 Buscar Venta</legend>
-    <div style="display: flex; gap: 10px; margin-top: 10px;">
-      <input type="text" id="buscarVentaMod" placeholder="Ej: VENTA-000001" style="flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; text-transform: uppercase;" autofocus>
-      <button type="button" class="btn-action btn-primary" onclick="buscarVentaParaModificar()">🔎 Buscar</button>
+    <legend>🔍 Filtros de Búsqueda</legend>
+    <div class="form-grid-registro">
+      <div class="form-group-registro">
+        <label>Buscar por Cliente</label>
+        <input type="text" id="filtroCliente" placeholder="Nombre del comprador...">
+      </div>
+      <div class="form-group-registro">
+        <label>Buscar por N° de Venta</label>
+        <input type="text" id="filtroNumero" placeholder="Ej: VENTA-000001" style="text-transform: uppercase;">
+      </div>
+      <div class="form-group-registro">
+        <label>Fecha Desde</label>
+        <input type="date" id="filtroFechaDesde">
+      </div>
+      <div class="form-group-registro">
+        <label>Fecha Hasta</label>
+        <input type="date" id="filtroFechaHasta">
+      </div>
+      <div class="form-group-registro" style="display: flex; align-items: flex-end; gap: 10px;">
+        <button type="button" class="btn-action btn-primary" onclick="buscarVentas()">🔎 Buscar</button>
+        <button type="button" class="btn-action btn-secondary" onclick="limpiarFiltros()">🔄 Limpiar</button>
+      </div>
     </div>
   </fieldset>
 
-  <!-- FICHA DEL EQUIPO VENDIDO (SOLO LECTURA) -->
+  <!-- SECCIÓN 2: LISTA DE VENTAS -->
+  <fieldset id="fieldsetListaVentas">
+    <legend>📜 Historial de Ventas (<span id="totalVentas">0</span>)</legend>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 50px;">#</th>
+            <th>N° Venta</th>
+            <th>Fecha</th>
+            <th>Equipo</th>
+            <th>Serial</th>
+            <th>Comprador</th>
+            <th>Cédula</th>
+            <th style="text-align: right;">Precio</th>
+            <th style="text-align: center;">Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyVentasMod">
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 40px; color: #6b7280;">
+              <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
+              <div>Cargando ventas...</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="paginacionVentasMod" style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 15px;"></div>
+  </fieldset>
+
+  <!-- SECCIÓN 3: FICHA DE LA VENTA SELECCIONADA (SOLO LECTURA - EQUIPO) -->
   <fieldset id="fieldsetEquipoVendido" style="display: none;">
     <legend>📦 Equipo Vendido (Solo lectura)</legend>
     <div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #6b7280; margin-bottom: 20px;">
@@ -74,7 +133,7 @@
     </div>
   </fieldset>
 
-  <!-- DATOS EDITABLES -->
+  <!-- SECCIÓN 4: DATOS EDITABLES DE LA VENTA -->
   <fieldset id="fieldsetDatosVentaMod" style="display: none;">
     <legend> Datos de la Venta (Editables)</legend>
     <div class="form-grid-registro">
@@ -94,12 +153,14 @@
     </div>
   </fieldset>
 
-  <!-- BOTONES -->
+  <!-- BOTONES DE ACCIÓN -->
   <div class="button-group" id="botonesAccionModVenta" style="display: none; margin-top: 20px; gap: 10px;">
+    <button type="button" class="btn-action btn-success" onclick="imprimirNotaVenta()" id="btnImprimirNota">️ Imprimir Nota de Entrega</button>
     <button type="button" class="btn-action btn-primary" onclick="guardarCambiosVenta()" id="btnGuardarCambiosVenta">💾 Guardar Cambios</button>
     <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioModVenta()">🔄 Cancelar / Nueva Búsqueda</button>
   </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
 <script src="../js/modificar_venta.js"></script>
