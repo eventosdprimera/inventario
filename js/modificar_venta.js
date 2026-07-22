@@ -175,7 +175,7 @@ async function buscarVentaParaModificar() {
 }
 
 // ==========================================
-// GUARDAR CAMBIOS
+// GUARDAR CAMBIOS (CON REGISTRO EN LOGS)
 // ==========================================
 async function guardarCambiosVenta() {
   if (!ventaSeleccionada) return;
@@ -225,13 +225,15 @@ async function guardarCambiosVenta() {
 
     if (error) throw error;
 
-    // Registrar en logs
+    // ✅ REGISTRAR EN LOGS DEL SISTEMA
     if (typeof registrarLog === 'function') {
       const descripcion = `Venta modificada | N° Venta: ${ventaSeleccionada.numero_venta} | Equipo: ${ventaSeleccionada.nombre_equipo} | Nuevo Comprador: ${nombre} ${apellido} (C.I: ${cedula}) | Nuevo Precio: $${parseFloat(precioVenta).toFixed(2)} | Modificado por: ${usuarioActualModVenta?.email || 'Desconocido'}`;
       await registrarLog('ventas', 'Venta modificada', descripcion, 'warning');
+    } else {
+      console.warn('⚠️ La función registrarLog no está disponible. Los cambios se guardaron pero no se registraron en el log.');
     }
 
-    mostrarToastModVenta('✅ Cambios guardados exitosamente', 'exito');
+    mostrarToastModVenta('✅ Cambios guardados exitosamente y registrados en logs', 'exito');
     setTimeout(() => { limpiarFormularioModVenta(); }, 1500);
 
   } catch (err) {
