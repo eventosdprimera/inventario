@@ -3,6 +3,9 @@
 // ==========================================
 let ventaSeleccionada = null;
 let usuarioActualModVenta = null;
+let paginaActualModVenta = 1;
+const POR_PAGINA_MOD_VENTA = 20;
+let totalVentasMod = 0;
 
 // ==========================================
 // TOAST
@@ -82,41 +85,149 @@ async function inicializarModificarVenta() {
     const { data } = await supabaseClient.from('usuarios').select('*').eq('email', session.user.email).maybeSingle();
     usuarioActualModVenta = data || { email: session.user.email, id: session.user.id };
   }
-  const inputBusqueda = document.getElementById('buscarVentaMod');
-  if (inputBusqueda) {
-    inputBusqueda.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); buscarVentaParaModificar(); }
-    });
+  await buscarVentas();
+}
+
+// ==========================================
+// BUSCAR VENTAS CON FILTROS
+// ==========================================
+async function buscarVentas() {
+  const filtroCliente = document.getElementById('filtroCliente')?.value.trim() || '';
+  const filtroNumero = document.getElementById('filtroNumero')?.value.trim().toUpperCase() || '';
+  const filtroDesde = document.getElementById('filtroFechaDesde')?.value || '';
+  const filtroHasta = document.getElementById('filtroFechaHasta')?.value || '';
+
+  const tbody = document.getElementById('tbodyVentasMod');
+  const totalSpan = document.getElementById('totalVentas');
+  if (!tbody) return;
+
+  try {
+    const desde = (paginaActualModVenta - 1) * POR_PAGINA_MOD_VENTA;
+    const hasta = desde + POR_PAGINA_MOD_VENTA - 1;
+
+    let query = supabaseClient
+      .from('ventas')
+      .select('*', { count: 'exact' })
+      .order('fecha_venta', { ascending: false });
+
+    if (filtroCliente) query = query.ilike('comprador_nombre', `%${filtroCliente}%`);
+    if (filtroNumero) query = query.ilike('numero_venta', `%${filtroNumero}%`);
+    if (filtroDesde) query = query.gte('fecha_venta', filtroDesde);
+    if (filtroHasta) query = query.lte('fecha_venta', filtroHasta + 'T23:59:59');
+
+    query = query.range(desde, hasta);
+
+    const { data, count, error } = await query;
+    if (error) throw error;
+
+    totalVentasMod = count || 0;
+    if (totalSpan) totalSpan.textContent = totalVentasMod;
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 40px; color: #6b7280;"><div style="font-size: 40px; margin-bottom: 10px;">📭</div><div>No se encontraron ventas con los filtros aplicados</div></td></tr>`;
+      document.getElementById('paginacionVentasMod').innerHTML = '';
+      return;
+    }
+
+    tbody.innerHTML = data.map((venta, index) => {
+      const globalIndex = desde + index + 1;
+      const fecha = new Date(venta.fecha_venta).toLocaleDateString('es-ES');
+      const comprador = `${venta.comprador_nombre || ''} ${venta.comprador_apellido || ''}`.trim();
+      return `
+        <tr onclick="seleccionarVenta('${venta.id}')" id="fila-venta-${venta.id}">
+          <td>${globalIndex}</td>
+          <td style="font-family: monospace; font-weight: 600; color: #1e3a8a;">${venta.numero_venta}</td>
+          <td>${fecha}</td>
+          <td><strong>${venta.nombre_equipo}</strong></td>
+          <td>${venta.serial || '-'}</td>
+          <td>${comprador}</td>
+          <td>${venta.comprador_cedula || '-'}</td>
+          <td style="text-align: right; color: #047857; font-weight: 600;">$${parseFloat(venta.precio_venta).toFixed(2)}</td>
+          <td style="text-align: center;">
+            <button type="button" onclick="event.stopPropagation(); seleccionarVenta('${venta.id}')" 
+                    style="background: #dbeafe; color: #1e3a8a; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+              ✏️ Editar
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    renderizarPaginacionModVenta();
+  } catch (err) {
+    console.error('Error al buscar ventas:', err);
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 40px; color: #ef4444;">Error al cargar: ${err.message}</td></tr>`;
   }
 }
 
 // ==========================================
-// BUSCAR VENTA
+// PAGINACIÓN
 // ==========================================
-async function buscarVentaParaModificar() {
-  const input = document.getElementById('buscarVentaMod');
-  if (!input) return;
-  let numeroVenta = input.value.trim().toUpperCase();
-  if (!numeroVenta) {
-    mostrarToastModVenta('Por favor ingrese un número de venta', 'error');
+function renderizarPaginacionModVenta() {
+  const cont = document.getElementById('paginacionVentasMod');
+  if (!cont) return;
+
+  const totalPaginas = Math.ceil(totalVentasMod / POR_PAGINA_MOD_VENTA);
+  if (totalPaginas <= 1) {
+    cont.innerHTML = `<span style="color: #6b7280; font-size: 13px;">Total: ${totalVentasMod} venta(s)</span>`;
     return;
   }
 
+  let html = '';
+  html += `<button type="button" onclick="cambiarPaginaModVenta(${paginaActualModVenta - 1})" 
+           style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px;"
+           ${paginaActualModVenta === 1 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>‹ Anterior</button>`;
+  html += `<span style="color: #374151; font-size: 13px; font-weight: 600;">Página ${paginaActualModVenta} de ${totalPaginas}</span>`;
+  html += `<button type="button" onclick="cambiarPaginaModVenta(${paginaActualModVenta + 1})" 
+           style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px;"
+           ${paginaActualModVenta === totalPaginas ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>Siguiente ›</button>`;
+  html += `<span style="color: #6b7280; font-size: 13px;">Total: ${totalVentasMod}</span>`;
+
+  cont.innerHTML = html;
+}
+
+async function cambiarPaginaModVenta(nuevaPagina) {
+  const totalPaginas = Math.ceil(totalVentasMod / POR_PAGINA_MOD_VENTA);
+  if (nuevaPagina < 1 || nuevaPagina > totalPaginas) return;
+  paginaActualModVenta = nuevaPagina;
+  await buscarVentas();
+  document.getElementById('fieldsetListaVentas')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ==========================================
+// LIMPIAR FILTROS
+// ==========================================
+function limpiarFiltros() {
+  document.getElementById('filtroCliente').value = '';
+  document.getElementById('filtroNumero').value = '';
+  document.getElementById('filtroFechaDesde').value = '';
+  document.getElementById('filtroFechaHasta').value = '';
+  paginaActualModVenta = 1;
+  buscarVentas();
+}
+
+// ==========================================
+// SELECCIONAR VENTA
+// ==========================================
+async function seleccionarVenta(id) {
   try {
     const { data, error } = await supabaseClient
       .from('ventas')
       .select('*')
-      .eq('numero_venta', numeroVenta)
-      .maybeSingle();
+      .eq('id', id)
+      .single();
 
     if (error || !data) {
-      mostrarToastModVenta('Venta no encontrada', 'error');
-      input.value = '';
-      input.focus();
+      mostrarToastModVenta('Error al cargar la venta', 'error');
       return;
     }
 
     ventaSeleccionada = data;
+
+    // Resaltar fila seleccionada
+    document.querySelectorAll('#tbodyVentasMod tr').forEach(tr => tr.classList.remove('selected'));
+    const fila = document.getElementById(`fila-venta-${id}`);
+    if (fila) fila.classList.add('selected');
 
     // Ficha solo lectura
     document.getElementById('modVentaNumero').textContent = data.numero_venta || '-';
@@ -153,8 +264,11 @@ async function buscarVentaParaModificar() {
     document.getElementById('fieldsetDatosVentaMod').style.display = 'block';
     document.getElementById('botonesAccionModVenta').style.display = 'flex';
 
+    document.getElementById('fieldsetEquipoVendido').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
   } catch (err) {
-    mostrarToastModVenta('Error al buscar: ' + err.message, 'error');
+    console.error('Error al seleccionar venta:', err);
+    mostrarToastModVenta('Error: ' + err.message, 'error');
   }
 }
 
@@ -207,14 +321,18 @@ async function guardarCambiosVenta() {
 
     if (error) throw error;
 
-    // ✅ Registrar en logs
+    // Registrar en logs
     if (typeof registrarLog === 'function') {
       const descripcion = `Venta modificada | N° Venta: ${ventaSeleccionada.numero_venta} | Equipo: ${ventaSeleccionada.nombre_equipo} | Nuevo Comprador: ${nombre} ${apellido} (C.I: ${cedula}) | Nuevo Precio: $${parseFloat(precioVenta).toFixed(2)} | Modificado por: ${usuarioActualModVenta?.email || 'Desconocido'}`;
       await registrarLog('ventas', 'Venta modificada', descripcion, 'warning');
     }
 
     mostrarToastModVenta('✅ Cambios guardados exitosamente y registrados en logs', 'exito');
-    setTimeout(() => { limpiarFormularioModVenta(); }, 1500);
+    
+    // Actualizar la lista
+    setTimeout(() => {
+      buscarVentas();
+    }, 1000);
 
   } catch (err) {
     console.error('Error al guardar cambios:', err);
@@ -229,11 +347,98 @@ async function guardarCambiosVenta() {
 }
 
 // ==========================================
+// IMPRIMIR NOTA DE ENTREGA
+// ==========================================
+function imprimirNotaVenta() {
+  if (!ventaSeleccionada) {
+    mostrarToastModVenta('No hay ninguna venta seleccionada para imprimir', 'error');
+    return;
+  }
+
+  const logoUrl = new URL('../img/logo.png', window.location.href).href;
+  const fecha = new Date(ventaSeleccionada.fecha_venta).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+  
+  const fotos = ventaSeleccionada.fotos_equipo || [];
+  const fotosHTML = fotos.map((url, i) => 
+    `<img src="${url}" style="width: 100px; height: 100px; object-fit: cover; border: 1px solid #ccc; border-radius: 4px; margin: 5px;">`
+  ).join('');
+
+  const ventana = window.open('', '_blank', 'width=800,height=900');
+  ventana.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Nota de Entrega - ${ventaSeleccionada.numero_venta}</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+        .header { text-align: center; border-bottom: 2px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; }
+        .logo { max-width: 150px; margin-bottom: 10px; }
+        .titulo { font-size: 24px; font-weight: bold; color: #1e3a8a; margin: 10px 0; }
+        .subtitulo { font-size: 14px; color: #666; }
+        .seccion { margin-bottom: 20px; padding: 15px; background: #f9fafb; border-radius: 8px; }
+        .seccion h3 { margin-top: 0; color: #1e3a8a; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .dato { margin: 5px 0; font-size: 14px; }
+        .dato strong { color: #374151; }
+        .total { text-align: right; font-size: 20px; font-weight: bold; color: #047857; margin-top: 20px; border-top: 2px solid #047857; padding-top: 10px; }
+        .firmas { display: flex; justify-content: space-between; margin-top: 60px; text-align: center; }
+        .firma { border-top: 1px solid #333; width: 40%; padding-top: 5px; font-size: 12px; }
+        @media print { .no-print { display: none; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <img src="${logoUrl}" class="logo" onerror="this.style.display='none'">
+        <div class="titulo">EVENTOS D' PRIMERA</div>
+        <div class="subtitulo">Nota de Entrega de Venta</div>
+        <div style="margin-top: 10px; font-size: 18px; font-weight: bold; color: #dc2626;">N° ${ventaSeleccionada.numero_venta}</div>
+        <div style="font-size: 12px; color: #666;">Fecha: ${fecha}</div>
+      </div>
+
+      <div class="seccion">
+        <h3>👤 Datos del Comprador</h3>
+        <div class="grid">
+          <div class="dato"><strong>Nombre:</strong> ${ventaSeleccionada.comprador_nombre} ${ventaSeleccionada.comprador_apellido}</div>
+          <div class="dato"><strong>Cédula:</strong> ${ventaSeleccionada.comprador_cedula}</div>
+          <div class="dato"><strong>Teléfono:</strong> ${ventaSeleccionada.comprador_telefono}</div>
+          <div class="dato"><strong>Correo:</strong> ${ventaSeleccionada.comprador_email || 'N/A'}</div>
+          <div class="dato" style="grid-column: 1 / -1;"><strong>Dirección:</strong> ${ventaSeleccionada.comprador_direccion || 'N/A'}</div>
+        </div>
+      </div>
+
+      <div class="seccion">
+        <h3>📦 Equipo Vendido</h3>
+        <div class="grid">
+          <div class="dato"><strong>Equipo:</strong> ${ventaSeleccionada.nombre_equipo}</div>
+          <div class="dato"><strong>Marca/Modelo:</strong> ${ventaSeleccionada.marca || ''} ${ventaSeleccionada.modelo || ''}</div>
+          <div class="dato"><strong>Código:</strong> ${ventaSeleccionada.codigo_barras}</div>
+          <div class="dato"><strong>Serial:</strong> ${ventaSeleccionada.serial || 'N/A'}</div>
+        </div>
+        ${fotosHTML ? `<div style="margin-top: 15px;"><strong>Fotos del equipo:</strong><br>${fotosHTML}</div>` : ''}
+      </div>
+
+      <div class="total">TOTAL PAGADO: $${parseFloat(ventaSeleccionada.precio_venta).toFixed(2)}</div>
+
+      <div class="firmas">
+        <div class="firma">Firma del Comprador<br>C.I: ${ventaSeleccionada.comprador_cedula}</div>
+        <div class="firma">Firma de Eventos D' Primera<br>${ventaSeleccionada.usuario_venta}</div>
+      </div>
+
+      <div class="no-print" style="text-align: center; margin-top: 30px;">
+        <button onclick="window.print()" style="padding: 10px 20px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px;">🖨️ Imprimir Nota</button>
+        <button onclick="window.close()" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-left: 10px;">Cerrar</button>
+      </div>
+    </body>
+    </html>
+  `);
+  ventana.document.close();
+}
+
+// ==========================================
 // LIMPIAR FORMULARIO
 // ==========================================
 function limpiarFormularioModVenta() {
   ventaSeleccionada = null;
-  document.getElementById('buscarVentaMod').value = '';
   document.getElementById('modCompradorNombre').value = '';
   document.getElementById('modCompradorApellido').value = '';
   document.getElementById('modCompradorCedula').value = '';
@@ -249,13 +454,9 @@ function limpiarFormularioModVenta() {
   const contenedorFotos = document.getElementById('fotosEquipoVendidoMod');
   if (contenedorFotos) contenedorFotos.innerHTML = '';
 
-  const btnGuardar = document.getElementById('btnGuardarCambiosVenta');
-  if (btnGuardar) {
-    btnGuardar.disabled = false;
-    btnGuardar.textContent = '💾 Guardar Cambios';
-  }
+  document.querySelectorAll('#tbodyVentasMod tr').forEach(tr => tr.classList.remove('selected'));
 
-  document.getElementById('buscarVentaMod').focus();
+  document.getElementById('fieldsetListaVentas').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ==========================================
