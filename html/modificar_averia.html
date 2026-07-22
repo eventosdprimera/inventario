@@ -10,218 +10,172 @@
 <style>
 .fotos-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 10px; }
 .foto-preview {
-  width: 100%; height: 140px; border: 2px dashed #e5e7eb; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center; background-color: #f9fafb;
-  overflow: hidden; transition: all 0.3s; position: relative;
+width: 100%; height: 140px; border: 2px dashed #e5e7eb; border-radius: 8px;
+display: flex; align-items: center; justify-content: center; background-color: #f9fafb;
+overflow: hidden; cursor: pointer; transition: all 0.3s; position: relative;
 }
-.foto-preview:hover { border-color: #1e3a8a; background-color: #eff6ff; }
+.foto-preview:hover { border-color: #1e3a8a; background-color: #eff6ff; transform: scale(1.02); }
 .foto-preview img { width: 100%; height: 100%; object-fit: cover; }
-.foto-preview-placeholder { text-align: center; color: #9ca3af; font-size: 11px; padding: 10px; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
-.foto-preview-placeholder:hover { color: #1e3a8a; }
+.foto-preview-placeholder { text-align: center; color: #9ca3af; font-size: 11px; padding: 10px; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .foto-preview-placeholder-icon { font-size: 32px; margin-bottom: 4px; }
-
-/* ✅ ESTILOS PARA BOTONES DE FOTOS */
+/* ✅ BOTÓN X: oculto por defecto, se muestra cuando el slot tiene la clase .con-foto */
 .foto-remove {
-  position: absolute !important; 
-  top: 5px !important; 
-  right: 5px !important; 
-  background: rgba(220, 38, 38, 0.95) !important; 
-  color: white !important;
-  border: 2px solid white !important;
-  border-radius: 50% !important; 
-  width: 28px !important; 
-  height: 28px !important; 
-  cursor: pointer !important; 
-  font-size: 16px !important;
-  font-weight: bold !important;
-  display: flex !important; 
-  align-items: center !important; 
-  justify-content: center !important; 
-  z-index: 100 !important;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
+position: absolute; top: 5px; right: 5px; background: rgba(220, 38, 38, 0.95); color: white;
+border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 14px;
+display: none; align-items: center; justify-content: center; transition: all 0.3s; z-index: 10000;
+font-weight: bold; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
-.foto-preview.con-foto .foto-remove { display: flex !important; }
+.foto-preview.con-foto .foto-remove { display: flex; }
 .foto-remove:hover { background: rgba(185, 28, 28, 1); transform: scale(1.15); }
-
-/* ✅ ESTILOS PARA BADGE "EVIDENCIA" */
+/* ✅ BADGE "EVIDENCIA" en rojo */
 .badge-evidencia {
-  position: absolute !important; 
-  top: 5px !important; 
-  left: 5px !important;
-  background: #dc2626 !important; 
-  color: white !important; 
-  font-size: 10px !important;
-  padding: 3px 8px !important; 
-  border-radius: 4px !important; 
-  font-weight: 600 !important;
-  z-index: 9999 !important; 
-  pointer-events: none !important;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+position: absolute !important; top: 5px !important; left: 5px !important;
+background: #dc2626 !important; color: white !important; font-size: 10px !important;
+padding: 3px 8px !important; border-radius: 4px !important; font-weight: 600 !important;
+z-index: 9999 !important; pointer-events: none !important;
+box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
-
-/* Estilos generales */
-.fotos-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 10px; }
-.container { max-width: 1200px; margin: 0 auto; padding: 30px; }
-.page-header { text-align: center; margin-bottom: 30px; }
-.page-title { font-family: 'Libre Caslon Text', serif; color: #1e3a8a; font-size: 28px; }
-.page-subtitle { color: #6b7280; font-size: 14px; }
-
-/* Formularios */
-.form-grid-registro { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 10px; }
-.form-group-registro { display: flex; flex-direction: column; }
-.form-group-registro label { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px; }
-.form-group-registro input, .form-group-registro textarea, .form-group-registro select {
-  padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;
+/* Fichas de equipo */
+.ficha-fotos {
+display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 15px; 
 }
-.form-group-registro input:focus, .form-group-registro textarea:focus, .form-group-registro select:focus {
-  outline: none; border-color: #1e3a8a; box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+.ficha-foto {
+border: 1px solid #e5e7eb; border-radius: 8px; position: relative; overflow: hidden; height: 120px;
 }
-
-/* Botones */
-.btn-action { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
-.btn-primary { background: #1e3a8a; color: white; }
-.btn-primary:hover { background: #1e40af; }
-.btn-secondary { background: #6b7280; color: white; }
-.btn-secondary:hover { background: #4b5563; }
-.button-group { display: flex; gap: 10px; margin-top: 20px; }
-
-/* Mensajes */
-.mensaje { padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; font-weight: 500; display: none; }
-.mensaje.exito { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; display: block; }
-.mensaje.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; display: block; }
-.mensaje.info { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; display: block; }
+.ficha-foto img {
+width: 100%; height: 100%; object-fit: cover;
+}
+.ficha-foto .badge-original {
+position: absolute; top: 5px; left: 5px; background: rgba(30, 58, 138, 0.85); color: white;
+font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 100;
+}
 </style>
 </head>
 <body>
-
 <div class="container">
-  <div class="page-header">
-    <h1 class="page-title">✏️ Modificar Avería</h1>
-    <p class="page-subtitle">Corrija los datos o fotos de una avería registrada</p>
-  </div>
-
-  <div id="mensaje" class="mensaje"></div>
-
-  <!-- SECCIÓN 1: BÚSQUEDA -->
-  <fieldset>
-    <legend>🔍 Buscar Avería</legend>
-    <div class="codigo-barras-section">
-      <div class="codigo-barras-label">Escanee o escriba el código de barras / serial del equipo averiado</div>
-      <div style="display: flex; gap: 10px; margin-top: 10px;">
-        <input type="text" id="buscarAveriaMod" placeholder="Ej: EP-20260714-210042-252452" style="flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;" autofocus>
-        <button type="button" class="btn-action btn-primary" onclick="buscarAveriaParaModificar()">🔎 Buscar</button>
-      </div>
-    </div>
-  </fieldset>
-
-  <!-- SECCIÓN 2: FICHA DEL EQUIPO (SOLO LECTURA) -->
-  <fieldset id="fieldsetFichaEquipoMod" style="display: none;">
-    <legend>📦 Ficha del Equipo (Solo lectura)</legend>
-    <div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #6b7280; margin-bottom: 20px;">
-      <h3 style="color: #374151; margin: 0 0 20px 0; font-size: 16px;">Información del Equipo</h3>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Código de Barras</label>
-          <strong id="modFichaCodigo" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
-        </div>
-        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Nombre del Equipo</label>
-          <strong id="modFichaNombre" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
-        </div>
-        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Marca</label>
-          <strong id="modFichaMarca" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
-        </div>
-        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Modelo</label>
-          <strong id="modFichaModelo" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
-        </div>
-        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Serial</label>
-          <strong id="modFichaSerial" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
-        </div>
-      </div>
-    </div>
-  </fieldset>
-
-  <!-- SECCIÓN 3: DATOS EDITABLES DE LA AVERÍA -->
-  <fieldset id="fieldsetDatosAveriaMod" style="display: none;">
-    <legend>📝 Datos de la Avería (Editables)</legend>
-    <div class="form-grid-registro">
-      <div class="form-group-registro"><label>Nombres del Reportante <span class="required">*</span></label><input type="text" id="modReportanteNombres"></div>
-      <div class="form-group-registro"><label>Apellidos del Reportante <span class="required">*</span></label><input type="text" id="modReportanteApellidos"></div>
-      <div class="form-group-registro"><label>Cédula <span class="required">*</span></label><input type="text" id="modReportanteCedula"></div>
-      <div class="form-group-registro"><label>Fecha de la Avería <span class="required">*</span></label><input type="date" id="modFechaAveria"></div>
-      <div class="form-group-registro"><label>Hora de la Avería <span class="required">*</span></label><input type="time" id="modHoraAveria"></div>
-    </div>
-    <div class="form-group-registro full-width" style="margin-top: 15px;">
-      <label>Detalles / Explicación de la Avería <span class="required">*</span></label>
-      <textarea id="modDetallesAveria" rows="4"></textarea>
-    </div>
-    <div class="form-group-registro full-width" style="margin-top: 15px;">
-      <label>Observaciones Adicionales</label>
-      <textarea id="modObservacionesAveria" rows="3"></textarea>
-    </div>
-  </fieldset>
-
-  <!-- SECCIÓN 4: FOTOS DE EVIDENCIA -->
-  <fieldset id="fieldsetFotosMod" style="display: none;">
-    <legend>📷 Fotos de Evidencia (Máximo 4)</legend>
-    <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 2px dashed #d1d5db;">
-      <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">Use los botones sobre la foto para Eliminar (✕), Reemplazar (🔄) o ver Zoom (🔍)</label>
-      
-      <div class="fotos-grid">
-        <!-- Slot 1 -->
-        <div class="foto-preview" id="slot_evidencia_1">
-          <img id="mod_preview_evidencia_1" src="" alt="Evidencia 1" style="display: none;">
-          <div id="mod_placeholder_evidencia_1" class="foto-preview-placeholder">
-            <div class="foto-preview-placeholder-icon">📷</div>
-            <div>Clic para agregar foto 1</div>
-          </div>
-          <button type="button" class="foto-remove" id="mod_remove_evidencia_1" onclick="event.stopPropagation(); eliminarFotoEvidenciaMod(1)">✕</button>
-          <input type="file" id="mod_foto_evidencia_1" accept="image/*" style="display: none;" onchange="cambiarFotoEvidenciaMod(1, event)">
-        </div>
-        <!-- Slot 2 -->
-        <div class="foto-preview" id="slot_evidencia_2">
-          <img id="mod_preview_evidencia_2" src="" alt="Evidencia 2" style="display: none;">
-          <div id="mod_placeholder_evidencia_2" class="foto-preview-placeholder">
-            <div class="foto-preview-placeholder-icon">📷</div>
-            <div>Clic para agregar foto 2</div>
-          </div>
-          <button type="button" class="foto-remove" id="mod_remove_evidencia_2" onclick="event.stopPropagation(); eliminarFotoEvidenciaMod(2)">✕</button>
-          <input type="file" id="mod_foto_evidencia_2" accept="image/*" style="display: none;" onchange="cambiarFotoEvidenciaMod(2, event)">
-        </div>
-        <!-- Slot 3 -->
-        <div class="foto-preview" id="slot_evidencia_3">
-          <img id="mod_preview_evidencia_3" src="" alt="Evidencia 3" style="display: none;">
-          <div id="mod_placeholder_evidencia_3" class="foto-preview-placeholder">
-            <div class="foto-preview-placeholder-icon">📷</div>
-            <div>Clic para agregar foto 3</div>
-          </div>
-          <button type="button" class="foto-remove" id="mod_remove_evidencia_3" onclick="event.stopPropagation(); eliminarFotoEvidenciaMod(3)">✕</button>
-          <input type="file" id="mod_foto_evidencia_3" accept="image/*" style="display: none;" onchange="cambiarFotoEvidenciaMod(3, event)">
-        </div>
-        <!-- Slot 4 -->
-        <div class="foto-preview" id="slot_evidencia_4">
-          <img id="mod_preview_evidencia_4" src="" alt="Evidencia 4" style="display: none;">
-          <div id="mod_placeholder_evidencia_4" class="foto-preview-placeholder">
-            <div class="foto-preview-placeholder-icon">📷</div>
-            <div>Clic para agregar foto 4</div>
-          </div>
-          <button type="button" class="foto-remove" id="mod_remove_evidencia_4" onclick="event.stopPropagation(); eliminarFotoEvidenciaMod(4)">✕</button>
-          <input type="file" id="mod_foto_evidencia_4" accept="image/*" style="display: none;" onchange="cambiarFotoEvidenciaMod(4, event)">
-        </div>
-      </div>
-    </div>
-  </fieldset>
-
-  <!-- BOTONES DE ACCIÓN -->
-  <div class="button-group" id="botonesAccionMod" style="display: none; margin-top: 20px; gap: 10px;">
-    <button type="button" class="btn-action btn-primary" onclick="guardarCambiosAveria()" id="btnGuardarCambios">💾 Guardar Cambios</button>
-    <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioModAveria()">🔄 Cancelar / Nueva Búsqueda</button>
-  </div>
+<div class="page-header">
+<h1 class="page-title">✏️ Modificar Avería</h1>
+<p class="page-subtitle">Corrija los datos o fotos de una avería registrada</p>
 </div>
-
+<div id="mensaje" class="mensaje"></div>
+<!-- SECCIÓN 1: BÚSQUEDA -->
+<fieldset>
+<legend>🔍 Buscar Avería</legend>
+<div class="codigo-barras-section">
+<div class="codigo-barras-label">Escanee o escriba el código de barras / serial del equipo averiado</div>
+<div style="display: flex; gap: 10px; margin-top: 10px;">
+<input type="text" id="buscarAveriaMod" placeholder="Ej: EP-20260714-210042-252452" style="flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;" autofocus>
+<button type="button" class="btn-action btn-primary" onclick="buscarAveriaParaModificar()">🔎 Buscar</button>
+</div>
+</div>
+</fieldset>
+<!-- SECCIÓN 2: FICHA DEL EQUIPO (SOLO LECTURA) -->
+<fieldset id="fieldsetFichaEquipoMod" style="display: none;">
+<legend>📦 Ficha del Equipo (Solo lectura)</legend>
+<div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #6b7280; margin-bottom: 20px;">
+<h3 style="color: #374151; margin: 0 0 20px 0; font-size: 16px;">Información del Equipo</h3>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+<div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+<label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Código de Barras</label>
+<strong id="modFichaCodigo" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+</div>
+<div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+<label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Nombre del Equipo</label>
+<strong id="modFichaNombre" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+</div>
+<div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+<label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Marca</label>
+<strong id="modFichaMarca" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+</div>
+<div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+<label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Modelo</label>
+<strong id="modFichaModelo" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+</div>
+<div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+<label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Serial</label>
+<strong id="modFichaSerial" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+</div>
+</div>
+<!-- Fotos del equipo original -->
+<div style="margin-top: 20px;">
+<label style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">🖼️ Fotos del Equipo (Original)</label>
+<div id="fichaFotos" class="ficha-fotos"></div>
+</div>
+</div>
+</fieldset>
+<!-- SECCIÓN 3: DATOS EDITABLES DE LA AVERÍA -->
+<fieldset id="fieldsetDatosAveriaMod" style="display: none;">
+<legend>📝 Datos de la Avería (Editables)</legend>
+<div class="form-grid-registro">
+<div class="form-group-registro"><label>Nombres del Reportante <span class="required">*</span></label><input type="text" id="modReportanteNombres"></div>
+<div class="form-group-registro"><label>Apellidos del Reportante <span class="required">*</span></label><input type="text" id="modReportanteApellidos"></div>
+<div class="form-group-registro"><label>Cédula <span class="required">*</span></label><input type="text" id="modReportanteCedula"></div>
+<div class="form-group-registro"><label>Fecha de la Avería <span class="required">*</span></label><input type="date" id="modFechaAveria"></div>
+<div class="form-group-registro"><label>Hora de la Avería <span class="required">*</span></label><input type="time" id="modHoraAveria"></div>
+</div>
+<div class="form-group-registro full-width" style="margin-top: 15px;">
+<label>Detalles / Explicación de la Avería <span class="required">*</span></label>
+<textarea id="modDetallesAveria" rows="4"></textarea>
+</div>
+<div class="form-group-registro full-width" style="margin-top: 15px;">
+<label>Observaciones Adicionales</label>
+<textarea id="modObservacionesAveria" rows="3"></textarea>
+</div>
+</fieldset>
+<!-- ✅ SECCIÓN 4: FOTOS DE EVIDENCIA -->
+<fieldset id="fieldsetFotosMod" style="display: none;">
+<legend>📷 Fotos de Evidencia (Máximo 4)</legend>
+<div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 2px dashed #d1d5db;">
+<label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600;">Haga clic en un recuadro vacío para agregar, o en la ✕ roja para eliminar</label>
+<div class="fotos-grid">
+<!-- Slot 1 -->
+<div class="foto-preview" id="slot_evidencia_1">
+<img id="mod_preview_evidencia_1" src="" alt="Evidencia 1" style="display: none;">
+<div id="mod_placeholder_evidencia_1" class="foto-preview-placeholder">
+<div class="foto-preview-placeholder-icon">📷</div>
+<div>Clic para agregar foto 1</div>
+</div>
+<button type="button" class="foto-remove" id="mod_remove_evidencia_1" onclick="event.stopPropagation(); eliminarFotoEvidenciaMod(1)">✕</button>
+<input type="file" id="mod_foto_evidencia_1" accept="image/*" style="display: none;" onchange="cambiarFotoEvidenciaMod(1, event)">
+</div>
+<!-- Slot 2 -->
+<div class="foto-preview" id="slot_evidencia_2">
+<img id="mod_preview_evidencia_2" src="" alt="Evidencia 2" style="display: none;">
+<div id="mod_placeholder_evidencia_2" class="foto-preview-placeholder">
+<div class="foto-preview-placeholder-icon">📷</div>
+<div>Clic para agregar foto 2</div>
+</div>
+<button type="button" class="foto-remove" id="mod_remove_evidencia_2" onclick="event.stopPropagation(); eliminarFotoEvidenciaMod(2)">✕</button>
+<input type="file" id="mod_foto_evidencia_2" accept="image/*" style="display: none;" onchange="cambiarFotoEvidenciaMod(2, event)">
+</div>
+<!-- Slot 3 -->
+<div class="foto-preview" id="slot_evidencia_3">
+<img id="mod_preview_evidencia_3" src="" alt="Evidencia 3" style="display: none;">
+<div id="mod_placeholder_evidencia_3" class="foto-preview-placeholder">
+<div class="foto-preview-placeholder-icon">📷</div>
+<div>Clic para agregar foto 3</div>
+</div>
+<button type="button" class="foto-remove" id="mod_remove_evidencia_3" onclick="event.stopPropagation(); eliminarFotoEvidenciaMod(3)">✕</button>
+<input type="file" id="mod_foto_evidencia_3" accept="image/*" style="display: none;" onchange="cambiarFotoEvidenciaMod(3, event)">
+</div>
+<!-- Slot 4 -->
+<div class="foto-preview" id="slot_evidencia_4">
+<img id="mod_preview_evidencia_4" src="" alt="Evidencia 4" style="display: none;">
+<div id="mod_placeholder_evidencia_4" class="foto-preview-placeholder">
+<div class="foto-preview-placeholder-icon">📷</div>
+<div>Clic para agregar foto 4</div>
+</div>
+<button type="button" class="foto-remove" id="mod_remove_evidencia_4" onclick="event.stopPropagation(); eliminarFotoEvidenciaMod(4)">✕</button>
+<input type="file" id="mod_foto_evidencia_4" accept="image/*" style="display: none;" onchange="cambiarFotoEvidenciaMod(4, event)">
+</div>
+</div>
+</fieldset>
+<!-- BOTONES DE ACCIÓN -->
+<div class="button-group" id="botonesAccionMod" style="display: none; margin-top: 20px; gap: 10px;">
+<button type="button" class="btn-action btn-primary" onclick="guardarCambiosAveria()" id="btnGuardarCambios">💾 Guardar Cambios</button>
+<button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioModAveria()">🔄 Cancelar / Nueva Búsqueda</button>
+</div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
 <script src="../js/modificar_averia.js"></script>
