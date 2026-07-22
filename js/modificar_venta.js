@@ -5,7 +5,7 @@ let ventaSeleccionada = null;
 let usuarioActualModVenta = null;
 
 // ==========================================
-// SISTEMA DE NOTIFICACIONES TOAST
+// TOAST
 // ==========================================
 function mostrarToastModVenta(texto, tipo) {
   let toastContainer = document.getElementById('toastContainerModVenta');
@@ -38,26 +38,15 @@ if (!document.getElementById('toastStylesModVenta')) {
 }
 
 // ==========================================
-// FUNCIÓN PARA ABRIR ZOOM
+// ZOOM
 // ==========================================
 function abrirZoomInfalibleModVenta(url) {
   const modal = document.createElement('div');
   modal.id = 'modalZoomDinamicoModVenta';
-  modal.style.cssText = `
-    position: fixed !important; top: 0 !important; left: 0 !important;
-    width: 100vw !important; height: 100vh !important;
-    background-color: rgba(0, 0, 0, 0.95) !important; z-index: 999999 !important;
-    display: flex !important; align-items: center !important; justify-content: center !important;
-    cursor: zoom-out;
-  `;
+  modal.style.cssText = `position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; background-color: rgba(0, 0, 0, 0.95) !important; z-index: 999999 !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: zoom-out;`;
   const closeBtn = document.createElement('button');
   closeBtn.innerHTML = '&times;';
-  closeBtn.style.cssText = `
-    position: absolute !important; top: 20px !important; right: 30px !important;
-    color: #fff !important; font-size: 40px !important; font-weight: bold !important;
-    cursor: pointer !important; background: none !important; border: none !important;
-    z-index: 1000000 !important;
-  `;
+  closeBtn.style.cssText = `position: absolute !important; top: 20px !important; right: 30px !important; color: #fff !important; font-size: 40px !important; font-weight: bold !important; cursor: pointer !important; background: none !important; border: none !important; z-index: 1000000 !important;`;
   closeBtn.onclick = function(e) { e.stopPropagation(); cerrarZoomInfalibleModVenta(); };
   const img = document.createElement('img');
   img.src = url;
@@ -67,17 +56,12 @@ function abrirZoomInfalibleModVenta(url) {
   modal.appendChild(img);
   document.body.appendChild(modal);
   document.body.style.overflow = 'hidden';
-  modal.addEventListener('click', function(e) {
-    if (e.target === modal) cerrarZoomInfalibleModVenta();
-  });
+  modal.addEventListener('click', function(e) { if (e.target === modal) cerrarZoomInfalibleModVenta(); });
 }
 
 function cerrarZoomInfalibleModVenta() {
   const modal = document.getElementById('modalZoomDinamicoModVenta');
-  if (modal) {
-    modal.remove();
-    document.body.style.overflow = '';
-  }
+  if (modal) { modal.remove(); document.body.style.overflow = ''; }
 }
 
 // ==========================================
@@ -134,14 +118,14 @@ async function buscarVentaParaModificar() {
 
     ventaSeleccionada = data;
 
-    // 1. Llenar ficha de solo lectura (Equipo y N° Venta)
+    // Ficha solo lectura
     document.getElementById('modVentaNumero').textContent = data.numero_venta || '-';
     document.getElementById('modVentaCodigo').textContent = data.codigo_barras || '-';
     document.getElementById('modVentaNombre').textContent = data.nombre_equipo || '-';
     document.getElementById('modVentaSerial').textContent = data.serial || '-';
     document.getElementById('fieldsetEquipoVendido').style.display = 'block';
 
-    // 2. Mostrar fotos del equipo vendido
+    // Fotos del equipo vendido
     const contenedorFotos = document.getElementById('fotosEquipoVendidoMod');
     contenedorFotos.innerHTML = '';
     const fotos = data.fotos_equipo || [];
@@ -157,7 +141,7 @@ async function buscarVentaParaModificar() {
       });
     }
 
-    // 3. Llenar campos editables (Comprador y Precio)
+    // Campos editables
     document.getElementById('modCompradorNombre').value = data.comprador_nombre || '';
     document.getElementById('modCompradorApellido').value = data.comprador_apellido || '';
     document.getElementById('modCompradorCedula').value = data.comprador_cedula || '';
@@ -175,7 +159,7 @@ async function buscarVentaParaModificar() {
 }
 
 // ==========================================
-// GUARDAR CAMBIOS (CON REGISTRO EN LOGS)
+// GUARDAR CAMBIOS (CON LOGS)
 // ==========================================
 async function guardarCambiosVenta() {
   if (!ventaSeleccionada) return;
@@ -188,7 +172,6 @@ async function guardarCambiosVenta() {
   const direccion = document.getElementById('modCompradorDireccion').value.trim();
   const precioVenta = document.getElementById('modPrecioVenta').value;
 
-  // Validaciones estrictas
   if (!nombre || !apellido || !cedula || !telefono || !precioVenta) {
     mostrarToastModVenta('Complete todos los campos obligatorios (*)', 'error');
     return;
@@ -207,7 +190,6 @@ async function guardarCambiosVenta() {
   btnGuardar.textContent = '⏳ Guardando...';
 
   try {
-    // Actualizar solo los campos permitidos
     const updateData = {
       comprador_nombre: nombre,
       comprador_apellido: apellido,
@@ -225,12 +207,10 @@ async function guardarCambiosVenta() {
 
     if (error) throw error;
 
-    // ✅ REGISTRAR EN LOGS DEL SISTEMA
+    // ✅ Registrar en logs
     if (typeof registrarLog === 'function') {
       const descripcion = `Venta modificada | N° Venta: ${ventaSeleccionada.numero_venta} | Equipo: ${ventaSeleccionada.nombre_equipo} | Nuevo Comprador: ${nombre} ${apellido} (C.I: ${cedula}) | Nuevo Precio: $${parseFloat(precioVenta).toFixed(2)} | Modificado por: ${usuarioActualModVenta?.email || 'Desconocido'}`;
       await registrarLog('ventas', 'Venta modificada', descripcion, 'warning');
-    } else {
-      console.warn('⚠️ La función registrarLog no está disponible. Los cambios se guardaron pero no se registraron en el log.');
     }
 
     mostrarToastModVenta('✅ Cambios guardados exitosamente y registrados en logs', 'exito');
