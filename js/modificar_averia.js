@@ -262,7 +262,7 @@ async function cargarYMostrarFotosEquipoOriginal() {
 }
 
 // ==========================================
-// ✅ RENDERIZAR FOTOS DE EVIDENCIA (USANDO CSS EXISTENTE)
+// ✅ RENDERIZAR FOTOS DE EVIDENCIA (CAMBIAR DIRECTO AL CLIC)
 // ==========================================
 function renderizarFotosEvidenciaMod() {
   console.log("🎨 Renderizando slots de evidencia...");
@@ -273,42 +273,92 @@ function renderizarFotosEvidenciaMod() {
     const preview = document.getElementById(`mod_preview_evidencia_${i}`);
     const placeholder = document.getElementById(`mod_placeholder_evidencia_${i}`);
     const input = document.getElementById(`mod_foto_evidencia_${i}`);
+    const htmlRemoveBtn = document.getElementById(`mod_remove_evidencia_${i}`);
     
     if (!slot || !preview || !placeholder || !input) {
       console.error(`❌ Faltan elementos para slot ${i}`);
       continue;
     }
 
+    // Ocultar el botón X del HTML para evitar duplicados
+    if (htmlRemoveBtn) htmlRemoveBtn.style.display = 'none';
+
+    // Limpiar elementos dinámicos anteriores
+    const elementosDinamicos = slot.querySelectorAll('.badge-evidencia-dinamico, .boton-x-dinamico, .boton-zoom-dinamico');
+    elementosDinamicos.forEach(el => el.remove());
+
     const tieneFoto = url && typeof url === 'string' && url.trim() !== '' && url !== 'null';
 
     if (tieneFoto) {
-      // MOSTRAR FOTO
       preview.src = url;
       preview.style.display = 'block';
       placeholder.style.display = 'none';
       
-      // ✅ AGREGAR CLASE .con-foto para que el CSS muestre el botón X
-      slot.classList.add('con-foto');
+      // 1. BADGE "EVIDENCIA"
+      const badge = document.createElement('div');
+      badge.className = 'badge-evidencia-dinamico';
+      badge.textContent = 'Evidencia';
+      badge.style.cssText = `
+        position: absolute !important; top: 5px !important; left: 5px !important;
+        background: #dc2626 !important; color: white !important; font-size: 10px !important;
+        padding: 3px 8px !important; border-radius: 4px !important; font-weight: 600 !important;
+        z-index: 9999 !important; pointer-events: none !important;
+      `;
+      slot.appendChild(badge);
       
-      // ✅ AGREGAR BADGE "EVIDENCIA" usando el CSS existente
-      if (!slot.querySelector('.badge-evidencia')) {
-        const badge = document.createElement('div');
-        badge.className = 'badge-evidencia';
-        badge.textContent = 'Evidencia';
-        slot.appendChild(badge);
-      }
+      // 2. BOTÓN "X" PARA ELIMINAR (esquina superior derecha)
+      const btnX = document.createElement('button');
+      btnX.className = 'boton-x-dinamico';
+      btnX.innerHTML = '✕';
+      btnX.title = 'Eliminar foto';
+      btnX.style.cssText = `
+        position: absolute !important; top: 5px !important; right: 5px !important;
+        background: #dc2626 !important; color: white !important; border: 2px solid white !important;
+        border-radius: 50% !important; width: 28px !important; height: 28px !important;
+        cursor: pointer !important; font-size: 16px !important; font-weight: bold !important;
+        display: flex !important; align-items: center !important; justify-content: center !important;
+        z-index: 10000 !important; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      `;
+      btnX.onclick = function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        eliminarFotoEvidenciaMod(i);
+      };
+      slot.appendChild(btnX);
+
+      // 3. BOTÓN "🔍" PARA ZOOM (esquina inferior derecha)
+      const btnZoom = document.createElement('button');
+      btnZoom.className = 'boton-zoom-dinamico';
+      btnZoom.innerHTML = '🔍';
+      btnZoom.title = 'Ver en zoom';
+      btnZoom.style.cssText = `
+        position: absolute !important; bottom: 5px !important; right: 5px !important;
+        background: rgba(0, 0, 0, 0.7) !important; color: white !important; border: none !important;
+        border-radius: 50% !important; width: 28px !important; height: 28px !important;
+        cursor: pointer !important; font-size: 14px !important;
+        display: flex !important; align-items: center !important; justify-content: center !important;
+        z-index: 10000 !important;
+      `;
+      btnZoom.onclick = function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        abrirZoomInfalible(url);
+      };
+      slot.appendChild(btnZoom);
       
-      // ✅ CLIC EN LA FOTO: ABRIR SELECTOR DE ARCHIVOS PARA REEMPLAZAR
+      // 4. ✅ CLIC EN LA FOTO: ABRIR SELECTOR DE ARCHIVOS PARA REEMPLAZAR
       slot.style.cursor = 'pointer';
+      slot.title = 'Clic para reemplazar la foto';
       slot.onclick = function(e) {
-        // Si se hizo clic en el botón X, no hacer nada (el X tiene su propio onclick)
-        if (e.target.classList.contains('foto-remove')) return;
+        // Ignorar si se hizo clic en los botones de acción
+        if (e.target === btnX || btnX.contains(e.target)) return;
+        if (e.target === btnZoom || btnZoom.contains(e.target)) return;
         e.preventDefault();
         e.stopPropagation();
-        input.click();
+        input.click(); // Abre el selector de archivos
       };
       
-      console.log(`✅ Slot ${i}: Foto mostrada con X y etiqueta Evidencia`);
+      console.log(`✅ Slot ${i}: Foto mostrada - clic para cambiar, ✕ para eliminar, 🔍 para zoom`);
       
     } else {
       // SIN FOTO: MOSTRAR PLACEHOLDER
@@ -317,15 +367,8 @@ function renderizarFotosEvidenciaMod() {
       placeholder.style.display = 'flex';
       placeholder.innerHTML = `<div class="foto-preview-placeholder-icon">📷</div><div>Clic para agregar foto ${i}</div>`;
       
-      // ✅ QUITAR CLASE .con-foto para ocultar el botón X
-      slot.classList.remove('con-foto');
-      
-      // ✅ REMOVER BADGE SI EXISTE
-      const badge = slot.querySelector('.badge-evidencia');
-      if (badge) badge.remove();
-      
-      // ✅ CLIC EN EL SLOT VACÍO: ABRIR SELECTOR DE ARCHIVOS
       slot.style.cursor = 'pointer';
+      slot.title = 'Clic para agregar foto';
       slot.onclick = function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -336,7 +379,6 @@ function renderizarFotosEvidenciaMod() {
     }
   }
 }
-
 // ==========================================
 // ✅ ELIMINAR FOTO
 // ==========================================
