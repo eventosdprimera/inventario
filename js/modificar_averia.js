@@ -6,7 +6,7 @@ let fotosEvidenciaMod = [null, null, null, null];
 let usuarioActualMod = null;
 
 // ==========================================
-// SISTEMA DE NOTIFICACIONES TOAST
+// TOAST
 // ==========================================
 function mostrarToastMod(texto, tipo) {
   let toastContainer = document.getElementById('toastContainerMod');
@@ -39,7 +39,7 @@ if (!document.getElementById('toastStylesMod')) {
 }
 
 // ==========================================
-// FUNCIÓN PARA ABRIR ZOOM
+// ZOOM
 // ==========================================
 function abrirZoomInfalible(url) {
   const modal = document.createElement('div');
@@ -75,10 +75,7 @@ function abrirZoomInfalible(url) {
 
 function cerrarZoomInfalibleMod() {
   const modal = document.getElementById('modalZoomDinamicoMod');
-  if (modal) {
-    modal.remove();
-    document.body.style.overflow = '';
-  }
+  if (modal) { modal.remove(); document.body.style.overflow = ''; }
 }
 
 // ==========================================
@@ -182,7 +179,6 @@ async function buscarAveriaParaModificar() {
     document.getElementById('fieldsetFotosMod').style.display = 'block';
     document.getElementById('botonesAccionMod').style.display = 'flex';
 
-    // Cargar fotos de evidencia
     fotosEvidenciaMod = [null, null, null, null];
     if (data.fotos_evidencia) {
       let evidencias = [];
@@ -262,7 +258,7 @@ async function cargarYMostrarFotosEquipoOriginal() {
 }
 
 // ==========================================
-// ✅ RENDERIZAR FOTOS DE EVIDENCIA (IDÉNTICAS A LAS ORIGINALES PERO EDITABLES)
+// ✅ RENDERIZAR FOTOS DE EVIDENCIA (BADGE AZUL + EDITABLE)
 // ==========================================
 function renderizarFotosEvidenciaMod() {
   console.log("🎨 Renderizando slots de evidencia...");
@@ -273,15 +269,11 @@ function renderizarFotosEvidenciaMod() {
     const preview = document.getElementById(`mod_preview_evidencia_${i}`);
     const placeholder = document.getElementById(`mod_placeholder_evidencia_${i}`);
     const input = document.getElementById(`mod_foto_evidencia_${i}`);
-    const htmlRemoveBtn = document.getElementById(`mod_remove_evidencia_${i}`);
     
     if (!slot || !preview || !placeholder || !input) {
       console.error(`❌ Faltan elementos para slot ${i}`);
       continue;
     }
-
-    // Ocultar el botón X del HTML (usaremos uno propio más pequeño)
-    if (htmlRemoveBtn) htmlRemoveBtn.style.display = 'none';
 
     // Limpiar elementos dinámicos anteriores
     const elementosDinamicos = slot.querySelectorAll('.badge-evidencia-dinamico, .boton-x-dinamico, .boton-zoom-dinamico');
@@ -290,7 +282,7 @@ function renderizarFotosEvidenciaMod() {
     const tieneFoto = url && typeof url === 'string' && url.trim() !== '' && url !== 'null';
 
     if (tieneFoto) {
-      // MOSTRAR FOTO (igual que las originales)
+      // MOSTRAR FOTO
       preview.src = url;
       preview.style.display = 'block';
       placeholder.style.display = 'none';
@@ -300,10 +292,17 @@ function renderizarFotosEvidenciaMod() {
       badge.className = 'badge-evidencia-dinamico';
       badge.textContent = 'Evidencia';
       badge.style.cssText = `
-        position: absolute !important; top: 5px !important; left: 5px !important;
-        background: rgba(30, 58, 138, 0.85) !important; color: white !important; 
-        font-size: 10px !important; padding: 3px 8px !important; border-radius: 4px !important; 
-        font-weight: 600 !important; z-index: 9999 !important; pointer-events: none !important;
+        position: absolute !important; 
+        top: 5px !important; 
+        left: 5px !important;
+        background: rgba(30, 58, 138, 0.85) !important; 
+        color: white !important; 
+        font-size: 10px !important;
+        padding: 3px 8px !important; 
+        border-radius: 4px !important; 
+        font-weight: 600 !important;
+        z-index: 9999 !important; 
+        pointer-events: none !important;
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
       `;
       slot.appendChild(badge);
@@ -314,13 +313,21 @@ function renderizarFotosEvidenciaMod() {
       btnX.innerHTML = '';
       btnX.title = 'Eliminar foto';
       btnX.style.cssText = `
-        position: absolute !important; top: 5px !important; right: 5px !important;
-        background: rgba(220, 38, 38, 0.9) !important; color: white !important; 
-        border: none !important; border-radius: 50% !important; 
-        width: 24px !important; height: 24px !important;
-        cursor: pointer !important; font-size: 14px !important;
-        display: flex !important; align-items: center !important; 
-        justify-content: center !important; z-index: 10000 !important;
+        position: absolute !important; 
+        top: 5px !important; 
+        right: 5px !important;
+        background: rgba(220, 38, 38, 0.9) !important; 
+        color: white !important; 
+        border: none !important; 
+        border-radius: 50% !important; 
+        width: 24px !important; 
+        height: 24px !important;
+        cursor: pointer !important; 
+        font-size: 14px !important;
+        display: flex !important; 
+        align-items: center !important; 
+        justify-content: center !important; 
+        z-index: 10000 !important;
         transition: all 0.3s !important;
       `;
       btnX.onmouseover = function() { this.style.background = 'rgba(185, 28, 28, 1)'; this.style.transform = 'scale(1.1)'; };
@@ -332,17 +339,26 @@ function renderizarFotosEvidenciaMod() {
       };
       slot.appendChild(btnX);
 
-      // 3. BOTÓN "🔍" PARA ZOOM (esquina inferior derecha)
+      // 3. BOTÓN "" PARA ZOOM (esquina inferior derecha)
       const btnZoom = document.createElement('button');
       btnZoom.className = 'boton-zoom-dinamico';
-      btnZoom.innerHTML = '🔍';
+      btnZoom.innerHTML = '';
       btnZoom.title = 'Ver en zoom';
       btnZoom.style.cssText = `
-        position: absolute !important; bottom: 5px !important; right: 5px !important;
-        background: rgba(0, 0, 0, 0.6) !important; color: white !important; border: none !important;
-        border-radius: 50% !important; width: 24px !important; height: 24px !important;
-        cursor: pointer !important; font-size: 12px !important;
-        display: flex !important; align-items: center !important; justify-content: center !important;
+        position: absolute !important; 
+        bottom: 5px !important; 
+        right: 5px !important;
+        background: rgba(0, 0, 0, 0.6) !important; 
+        color: white !important; 
+        border: none !important;
+        border-radius: 50% !important; 
+        width: 24px !important; 
+        height: 24px !important;
+        cursor: pointer !important; 
+        font-size: 12px !important;
+        display: flex !important; 
+        align-items: center !important; 
+        justify-content: center !important;
         z-index: 10000 !important;
       `;
       btnZoom.onclick = function(e) {
@@ -363,14 +379,14 @@ function renderizarFotosEvidenciaMod() {
         input.click(); // Abre el selector de archivos
       };
       
-      console.log(`✅ Slot ${i}: Foto mostrada estilo original, editable`);
+      console.log(`✅ Slot ${i}: Foto mostrada con badge AZUL, botón X y zoom`);
       
     } else {
       // SIN FOTO: MOSTRAR PLACEHOLDER
       preview.style.display = 'none';
       preview.src = '';
       placeholder.style.display = 'flex';
-      placeholder.innerHTML = `<div class="foto-preview-placeholder-icon">📷</div><div>Clic para agregar foto ${i}</div>`;
+      placeholder.innerHTML = `<div class="foto-preview-placeholder-icon"></div><div>Clic para agregar foto ${i}</div>`;
       
       slot.style.cursor = 'pointer';
       slot.onclick = function(e) {
@@ -379,15 +395,16 @@ function renderizarFotosEvidenciaMod() {
         input.click();
       };
       
-      console.log(`⚪ Slot ${i}: Vacío, listo para agregar`);
+      console.log(` Slot ${i}: Vacío, listo para agregar`);
     }
   }
 }
+
 // ==========================================
-// ✅ ELIMINAR FOTO
+// ELIMINAR FOTO
 // ==========================================
 function eliminarFotoEvidenciaMod(numero) {
-  if (!confirm(`¿Eliminar la foto de evidencia ${numero}?\n\nPodrás agregar una nueva haciendo clic en el recuadro o en el botón 🔄.`)) return;
+  if (!confirm(`¿Eliminar la foto de evidencia ${numero}?\n\nPodrás agregar una nueva haciendo clic en el recuadro.`)) return;
   fotosEvidenciaMod[numero - 1] = null;
   const input = document.getElementById(`mod_foto_evidencia_${numero}`);
   if (input) input.value = '';
@@ -396,7 +413,7 @@ function eliminarFotoEvidenciaMod(numero) {
 }
 
 // ==========================================
-// ✅ CAMBIAR FOTO
+// CAMBIAR FOTO
 // ==========================================
 async function cambiarFotoEvidenciaMod(numero, event) {
   const file = event.target.files[0];
