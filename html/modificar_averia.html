@@ -43,12 +43,12 @@
 .foto-preview.con-foto .foto-remove { display: flex !important; }
 .foto-remove:hover { background: rgba(185, 28, 28, 1); transform: scale(1.15); }
 
-/* ✅ ESTILOS PARA BADGE "EVIDENCIA" */
+/* ✅ BADGE "EVIDENCIA" en AZUL (idéntico al de "Original") */
 .badge-evidencia {
   position: absolute !important; 
   top: 5px !important; 
   left: 5px !important;
-  background: #dc2626 !important; 
+  background: rgba(30, 58, 138, 0.85) !important; 
   color: white !important; 
   font-size: 10px !important;
   padding: 3px 8px !important; 
@@ -59,6 +59,29 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
+/* ✅ BOTÓN X pequeño y sutil */
+.foto-remove {
+  position: absolute !important; 
+  top: 5px !important; 
+  right: 5px !important; 
+  background: rgba(220, 38, 38, 0.9) !important; 
+  color: white !important;
+  border: none !important; 
+  border-radius: 50% !important; 
+  width: 24px !important; 
+  height: 24px !important; 
+  cursor: pointer !important; 
+  font-size: 14px !important;
+  display: flex !important; 
+  align-items: center !important; 
+  justify-content: center !important; 
+  z-index: 10000 !important;
+  transition: all 0.3s !important;
+}
+.foto-remove:hover { 
+  background: rgba(185, 28, 28, 1) !important; 
+  transform: scale(1.1) !important; 
+}
 /* Estilos generales */
 .fotos-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 10px; }
 .container { max-width: 1200px; margin: 0 auto; padding: 30px; }
