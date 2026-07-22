@@ -596,6 +596,18 @@ async function cargarContenido(action) {
   if (modulo === 'reportes' && operacion === 'ver') {
     try {
       if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      
+      // ✅ CARGAR CHART.JS MANUALMENTE ANTES DE REPORTES.JS
+      if (typeof Chart === 'undefined') {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+      
       if (typeof inicializarReportes === 'undefined') await cargarScript('js/reportes.js');
       
       const response = await fetch('html/reportes.html');
