@@ -111,7 +111,7 @@ async function inicializarModificarAveria() {
 // ASEGURAR CONTENEDOR DE FOTOS DEL EQUIPO
 // ==========================================
 function asegurarContenedorFotosEquipo() {
-  let contenedor = document.getElementById('fichaFotos');
+  let contenedor = document.getElementById('previewFotosEquipoMod');
   if (!contenedor) {
     const fieldset = document.createElement('fieldset');
     fieldset.id = 'fieldsetFotosEquipoOriginalMod';
@@ -122,8 +122,8 @@ function asegurarContenedorFotosEquipo() {
     legend.style.cssText = 'background: #1e3a8a; color: white; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 600;';
     fieldset.appendChild(legend);
     const grid = document.createElement('div');
-    grid.className = 'ficha-fotos';
-    grid.id = 'fichaFotos';
+    grid.className = 'fotos-grid';
+    grid.id = 'previewFotosEquipoMod';
     grid.style.cssText = 'display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 15px;';
     fieldset.appendChild(grid);
     const fieldsetFicha = document.getElementById('fieldsetFichaEquipoMod');
@@ -168,7 +168,9 @@ async function buscarAveriaParaModificar() {
     document.getElementById('modFichaModelo').textContent = data.modelo || '-';
     document.getElementById('modFichaSerial').textContent = data.serial || '-';
     document.getElementById('fieldsetFichaEquipoMod').style.display = 'block';
+
     await cargarYMostrarFotosEquipoOriginal();
+
     document.getElementById('modReportanteNombres').value = data.reportante_nombre || '';
     document.getElementById('modReportanteApellidos').value = data.reportante_apellidos || '';
     document.getElementById('modReportanteCedula').value = data.reportante_cedula || '';
@@ -179,7 +181,7 @@ async function buscarAveriaParaModificar() {
     document.getElementById('fieldsetDatosAveriaMod').style.display = 'block';
     document.getElementById('fieldsetFotosMod').style.display = 'block';
     document.getElementById('botonesAccionMod').style.display = 'flex';
-    
+
     // Cargar fotos de evidencia
     fotosEvidenciaMod = [null, null, null, null];
     if (data.fotos_evidencia) {
@@ -212,18 +214,14 @@ async function buscarAveriaParaModificar() {
 // ==========================================
 async function cargarYMostrarFotosEquipoOriginal() {
   const contenedor = asegurarContenedorFotosEquipo();
+  const fieldset = document.getElementById('fieldsetFotosEquipoOriginalMod');
+  if (fieldset) fieldset.style.display = 'block';
   contenedor.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">Cargando fotos...</div>';
-  
+
   let fotos = [];
   if (averiaSeleccionada.foto_url) {
-    fotos = [
-      averiaSeleccionada.foto_url,
-      averiaSeleccionada.foto2_url,
-      averiaSeleccionada.foto3_url,
-      averiaSeleccionada.foto4_url
-    ].filter(url => url && String(url).trim() !== '');
+    fotos = [averiaSeleccionada.foto_url, averiaSeleccionada.foto2_url, averiaSeleccionada.foto3_url, averiaSeleccionada.foto4_url].filter(url => url && String(url).trim() !== '');
   }
-  
   if (fotos.length === 0) {
     const { data: equipoOrig } = await supabaseClient
       .from('equipos')
@@ -231,12 +229,7 @@ async function cargarYMostrarFotosEquipoOriginal() {
       .eq('codigo_barras', averiaSeleccionada.codigo_barras)
       .maybeSingle();
     if (equipoOrig) {
-      fotos = [
-        equipoOrig.foto_url,
-        equipoOrig.foto2_url,
-        equipoOrig.foto3_url,
-        equipoOrig.foto4_url
-      ].filter(url => url && String(url).trim() !== '');
+      fotos = [equipoOrig.foto_url, equipoOrig.foto2_url, equipoOrig.foto3_url, equipoOrig.foto4_url].filter(url => url && String(url).trim() !== '');
     }
   }
 
@@ -248,20 +241,20 @@ async function cargarYMostrarFotosEquipoOriginal() {
 
   fotos.forEach((fotoUrl, index) => {
     const div = document.createElement('div');
-    div.className = 'ficha-foto';
+    div.className = 'foto-preview';
     div.style.cursor = 'zoom-in';
     div.style.position = 'relative';
     div.onclick = function() { abrirZoomInfalible(fotoUrl); };
-    
+
     const img = document.createElement('img');
     img.src = fotoUrl;
     img.alt = `Foto original ${index + 1}`;
     img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
-    
+
     const badge = document.createElement('div');
     badge.textContent = 'Original';
     badge.style.cssText = 'position: absolute; top: 5px; left: 5px; background: rgba(30, 58, 138, 0.85); color: white; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; z-index: 100;';
-    
+
     div.appendChild(img);
     div.appendChild(badge);
     contenedor.appendChild(div);
@@ -269,9 +262,11 @@ async function cargarYMostrarFotosEquipoOriginal() {
 }
 
 // ==========================================
-// ✅ RENDERIZAR FOTOS DE EVIDENCIA
+// ✅ RENDERIZAR FOTOS DE EVIDENCIA (USANDO CSS EXISTENTE)
 // ==========================================
 function renderizarFotosEvidenciaMod() {
+  console.log("🎨 Renderizando slots de evidencia...");
+  
   for (let i = 1; i <= 4; i++) {
     const url = fotosEvidenciaMod[i - 1];
     const slot = document.getElementById(`slot_evidencia_${i}`);
@@ -287,15 +282,15 @@ function renderizarFotosEvidenciaMod() {
     const tieneFoto = url && typeof url === 'string' && url.trim() !== '' && url !== 'null';
 
     if (tieneFoto) {
-      // Mostrar foto
+      // MOSTRAR FOTO
       preview.src = url;
       preview.style.display = 'block';
       placeholder.style.display = 'none';
       
-      // Agregar clase .con-foto para mostrar el botón X
+      // ✅ AGREGAR CLASE .con-foto para que el CSS muestre el botón X
       slot.classList.add('con-foto');
       
-      // Agregar badge "EVIDENCIA" si no existe
+      // ✅ AGREGAR BADGE "EVIDENCIA" usando el CSS existente
       if (!slot.querySelector('.badge-evidencia')) {
         const badge = document.createElement('div');
         badge.className = 'badge-evidencia';
@@ -303,39 +298,37 @@ function renderizarFotosEvidenciaMod() {
         slot.appendChild(badge);
       }
       
-      // Clic en la imagen = Reemplazar
-      preview.style.cursor = 'pointer';
-      preview.onclick = function(e) {
+      // ✅ CLIC EN LA FOTO: ABRIR SELECTOR DE ARCHIVOS PARA REEMPLAZAR
+      slot.style.cursor = 'pointer';
+      slot.onclick = function(e) {
+        // Si se hizo clic en el botón X, no hacer nada (el X tiene su propio onclick)
+        if (e.target.classList.contains('foto-remove')) return;
+        e.preventDefault();
         e.stopPropagation();
         input.click();
       };
       
-      // Clic fuera de la imagen = Zoom
-      slot.onclick = function(e) {
-        if (e.target.classList.contains('foto-remove')) return;
-        e.preventDefault();
-        abrirZoomInfalible(url);
-      };
+      console.log(`✅ Slot ${i}: Foto mostrada con X y etiqueta Evidencia`);
       
-      console.log(`✅ Slot ${i}: Foto mostrada con badge y botón X`);
     } else {
-      // Sin foto
+      // SIN FOTO: MOSTRAR PLACEHOLDER
       preview.style.display = 'none';
       preview.src = '';
       placeholder.style.display = 'flex';
       placeholder.innerHTML = `<div class="foto-preview-placeholder-icon">📷</div><div>Clic para agregar foto ${i}</div>`;
       
-      // Quitar clase .con-foto para ocultar el botón X
+      // ✅ QUITAR CLASE .con-foto para ocultar el botón X
       slot.classList.remove('con-foto');
       
-      // Remover badge si existe
+      // ✅ REMOVER BADGE SI EXISTE
       const badge = slot.querySelector('.badge-evidencia');
       if (badge) badge.remove();
       
-      // Clic en el slot vacío = Abrir selector de archivos
+      // ✅ CLIC EN EL SLOT VACÍO: ABRIR SELECTOR DE ARCHIVOS
       slot.style.cursor = 'pointer';
       slot.onclick = function(e) {
         e.preventDefault();
+        e.stopPropagation();
         input.click();
       };
       
@@ -348,13 +341,12 @@ function renderizarFotosEvidenciaMod() {
 // ✅ ELIMINAR FOTO
 // ==========================================
 function eliminarFotoEvidenciaMod(numero) {
-  if (!confirm(`¿Eliminar la foto de evidencia ${numero}?
-Podrás agregar una nueva haciendo clic en el recuadro vacío.`)) return;
+  if (!confirm(`¿Eliminar la foto de evidencia ${numero}?\n\nPodrás agregar una nueva haciendo clic en el recuadro o en el botón 🔄.`)) return;
   fotosEvidenciaMod[numero - 1] = null;
   const input = document.getElementById(`mod_foto_evidencia_${numero}`);
   if (input) input.value = '';
   renderizarFotosEvidenciaMod();
-  mostrarToastMod(`🗑️ Foto ${numero} eliminada. Haz clic en el recuadro para agregar la nueva.`, 'aviso');
+  mostrarToastMod(`🗑️ Foto ${numero} eliminada.`, 'aviso');
 }
 
 // ==========================================
@@ -490,7 +482,7 @@ function limpiarFormularioModAveria() {
     if (input) input.value = '';
   }
 
-  const contenedorEquipo = document.getElementById('fichaFotos');
+  const contenedorEquipo = document.getElementById('previewFotosEquipoMod');
   if (contenedorEquipo) contenedorEquipo.innerHTML = '';
 
   document.getElementById('fieldsetFichaEquipoMod').style.display = 'none';
@@ -501,10 +493,7 @@ function limpiarFormularioModAveria() {
   document.getElementById('botonesAccionMod').style.display = 'none';
 
   const btnGuardar = document.getElementById('btnGuardarCambios');
-  if (btnGuardar) { 
-    btnGuardar.disabled = false; 
-    btnGuardar.textContent = '💾 Guardar Cambios'; 
-  }
+  if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Guardar Cambios'; }
 
   document.getElementById('buscarAveriaMod').focus();
 }
