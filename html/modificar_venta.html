@@ -49,35 +49,34 @@ tr.selected { background: #eff6ff; border-left: 3px solid #1e3a8a; }
 
   <div id="mensaje" class="mensaje"></div>
 
-  <!-- SECCIÓN 1: FILTROS DE BÚSQUEDA -->
-  <fieldset>
-    <legend>🔍 Filtros de Búsqueda</legend>
+<!-- SECCIÓN 1: FILTROS DE BÚSQUEDA -->
+<fieldset>
+  <legend>🔍 Filtros de Búsqueda</legend>
   <div class="form-grid-registro">
-  <div class="form-group-registro">
-    <label>Buscar por Cliente</label>
-    <input type="text" id="filtroCliente" placeholder="Nombre del comprador...">
-  </div>
-  <div class="form-group-registro">
-    <label>Buscar por N° de Venta</label>
-    <input type="text" id="filtroNumero" placeholder="Ej: VENTA-000001" style="text-transform: uppercase;">
-  </div>
-  <div class="form-group-registro">
-    <label>Fecha Desde</label>
-    <input type="date" id="filtroFechaDesde">
-  </div>
-  <div class="form-group-registro">
-    <label>Fecha Hasta</label>
-    <input type="date" id="filtroFechaHasta">
-  </div>
-</div>
-
-<!-- Botones alineados a la izquierda, uno al lado del otro -->
-<div style="display: flex; gap: 10px; margin-top: 15px; justify-content: flex-start;">
-  <button type="button" class="btn-action btn-primary" onclick="buscarVentas()">🔎 Buscar</button>
-  <button type="button" class="btn-action btn-secondary" onclick="limpiarFiltros()"> Limpiar</button>
-</div>
+    <div class="form-group-registro">
+      <label>Buscar por Cliente</label>
+      <input type="text" id="filtroCliente" placeholder="Nombre del comprador...">
     </div>
-  </fieldset>
+    <div class="form-group-registro">
+      <label>Buscar por N° de Venta</label>
+      <input type="text" id="filtroNumero" placeholder="Ej: VENTA-000001" style="text-transform: uppercase;">
+    </div>
+    <div class="form-group-registro">
+      <label>Fecha Desde</label>
+      <input type="date" id="filtroFechaDesde">
+    </div>
+    <div class="form-group-registro">
+      <label>Fecha Hasta</label>
+      <input type="date" id="filtroFechaHasta">
+    </div>
+  </div>
+
+  <!-- Botones alineados a la izquierda, uno al lado del otro -->
+  <div style="display: flex; gap: 10px; margin-top: 15px; justify-content: flex-start;">
+    <button type="button" class="btn-action btn-primary" onclick="buscarVentas()">🔎 Buscar</button>
+    <button type="button" class="btn-action btn-secondary" onclick="limpiarFiltros()">🔄 Limpiar</button>
+  </div>
+</fieldset>
 
   <!-- SECCIÓN 2: LISTA DE VENTAS -->
   <fieldset id="fieldsetListaVentas">
