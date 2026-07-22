@@ -592,7 +592,34 @@ async function cargarContenido(action) {
     }
     return;
   }
-
+  // ✅ 17. REPORTES → VER
+  if (modulo === 'reportes' && operacion === 'ver') {
+    try {
+      if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      if (typeof inicializarReportes === 'undefined') await cargarScript('js/reportes.js');
+      
+      const response = await fetch('html/reportes.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/reportes.html');
+      
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      
+      if (!container) throw new Error('No se encontró .container en reportes.html');
+      
+      contenidoDiv.innerHTML = container.innerHTML;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      if (typeof inicializarReportes === 'function') {
+        await inicializarReportes();
+      }
+    } catch (err) {
+      console.error('Error cargando módulo de reportes:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el módulo de reportes: ${err.message}</p></fieldset>`;
+    }
+    return;
+  }
   // 15. OTROS MÓDULOS (Placeholders)
   let html = '';
   switch (modulo) {
