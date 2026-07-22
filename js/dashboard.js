@@ -491,39 +491,68 @@ async function cargarContenido(action) {
     }
     return;
   }
-    // ✅ 14. VENTAS → CREAR (y otras operaciones de ventas)
-  if (modulo === 'ventas') {
+    // ✅ 14. VENTAS → CREAR
+  if (modulo === 'ventas' && operacion === 'crear') {
     try {
-      // Asegurar que el módulo de logs esté disponible
       if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
-      
-      // Cargar el script específico de ventas
       if (typeof inicializarVentas === 'undefined') await cargarScript('js/ventas.js');
-      
-      // Cargar el HTML de ventas
       const response = await fetch('html/ventas.html');
       if (!response.ok) throw new Error('No se pudo cargar html/ventas.html');
-      
       const htmlText = await response.text();
       const parser = new DOMParser();
       const doc = parser.parseFromString(htmlText, 'text/html');
       const container = doc.querySelector('.container');
-      
       if (!container) throw new Error('No se encontró .container en ventas.html');
-      
-      // Inyectar el contenido en el dashboard
       contenidoDiv.innerHTML = container.innerHTML;
-      
-      // Pequeña pausa para asegurar que el DOM esté listo
       await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Inicializar la lógica de ventas
-      if (typeof inicializarVentas === 'function') {
-        await inicializarVentas();
-      }
+      if (typeof inicializarVentas === 'function') await inicializarVentas();
     } catch (err) {
       console.error('Error cargando módulo de ventas:', err);
       contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el módulo de ventas: ${err.message}</p></fieldset>`;
+    }
+    return;
+  }
+
+  // ✅ 15. VENTAS → MODIFICAR
+  if (modulo === 'ventas' && operacion === 'modificar') {
+    try {
+      if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      if (typeof inicializarModificarVenta === 'undefined') await cargarScript('js/modificar_venta.js');
+      const response = await fetch('html/modificar_venta.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/modificar_venta.html');
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      if (!container) throw new Error('No se encontró .container en modificar_venta.html');
+      contenidoDiv.innerHTML = container.innerHTML;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof inicializarModificarVenta === 'function') await inicializarModificarVenta();
+    } catch (err) {
+      console.error('Error cargando módulo de modificar venta:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el módulo: ${err.message}</p></fieldset>`;
+    }
+    return;
+  }
+
+  // ✅ 16. VENTAS → ELIMINAR
+  if (modulo === 'ventas' && operacion === 'eliminar') {
+    try {
+      if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      if (typeof inicializarEliminarVenta === 'undefined') await cargarScript('js/eliminar_venta.js');
+      const response = await fetch('html/eliminar_venta.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/eliminar_venta.html');
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      if (!container) throw new Error('No se encontró .container en eliminar_venta.html');
+      contenidoDiv.innerHTML = container.innerHTML;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof inicializarEliminarVenta === 'function') await inicializarEliminarVenta();
+    } catch (err) {
+      console.error('Error cargando módulo de eliminar venta:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el módulo: ${err.message}</p></fieldset>`;
     }
     return;
   }
