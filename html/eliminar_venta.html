@@ -13,14 +13,22 @@
 .foto-preview img { width: 100%; height: 100%; object-fit: cover; }
 .foto-preview-placeholder { text-align: center; color: #9ca3af; font-size: 11px; grid-column: 1 / -1; padding: 20px; }
 .foto-preview-placeholder-icon { font-size: 32px; margin-bottom: 4px; }
+.table-container { overflow-x: auto; margin-top: 15px; }
+table { width: 100%; border-collapse: collapse; background: white; }
+th { background: #1e3a8a; color: white; padding: 12px 10px; text-align: left; font-size: 12px; text-transform: uppercase; }
+td { padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+tr:hover { background: #f9fafb; cursor: pointer; }
+tr.selected { background: #fee2e2; border-left: 3px solid #dc2626; }
 .btn-action { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
 .btn-primary { background: #1e3a8a; color: white; }
 .btn-primary:hover { background: #1e40af; }
-.btn-danger { background: #dc2626; color: white; }
-.btn-danger:hover { background: #b91c1c; }
 .btn-secondary { background: #6b7280; color: white; }
 .btn-secondary:hover { background: #4b5563; }
-.button-group { display: flex; gap: 10px; margin-top: 20px; }
+.btn-danger { background: #dc2626; color: white; }
+.btn-danger:hover { background: #b91c1c; }
+.btn-success { background: #10b981; color: white; }
+.btn-success:hover { background: #059669; }
+.button-group { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
 .mensaje { padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; font-weight: 500; display: none; }
 .mensaje.exito { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; display: block; }
 .mensaje.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; display: block; }
@@ -31,22 +39,74 @@
 <div class="container">
   <div class="page-header">
     <h1 class="page-title">🗑️ Eliminar Venta</h1>
-    <p class="page-subtitle">Elimina registros de ventas incorrectas o duplicadas</p>
+    <p class="page-subtitle">Busque, seleccione y elimine registros de ventas incorrectas o duplicadas</p>
   </div>
+
   <div id="mensaje" class="mensaje"></div>
 
-  <!-- BÚSQUEDA -->
+  <!-- SECCIÓN 1: FILTROS DE BÚSQUEDA -->
   <fieldset>
-    <legend>🔍 Buscar Venta a Eliminar</legend>
-    <div style="display: flex; gap: 10px; margin-top: 10px;">
-      <input type="text" id="buscarVentaElim" placeholder="Ej: VENTA-000001" style="flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; text-transform: uppercase;" autofocus>
-      <button type="button" class="btn-action btn-primary" onclick="buscarVentaParaEliminar()">🔎 Buscar</button>
+    <legend>🔍 Filtros de Búsqueda</legend>
+    <div class="form-grid-registro" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 10px;">
+      <div style="display: flex; flex-direction: column;">
+        <label style="font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px;">Buscar por Cliente</label>
+        <input type="text" id="filtroClienteElim" placeholder="Nombre del comprador..." style="padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <label style="font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px;">Buscar por N° de Venta</label>
+        <input type="text" id="filtroNumeroElim" placeholder="Ej: VENTA-000001" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; text-transform: uppercase;">
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <label style="font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px;">Fecha Desde</label>
+        <input type="date" id="filtroFechaDesdeElim" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+      </div>
+      <div style="display: flex; flex-direction: column;">
+        <label style="font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px;">Fecha Hasta</label>
+        <input type="date" id="filtroFechaHastaElim" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+      </div>
+    </div>
+
+    <!-- Botones alineados a la izquierda, uno al lado del otro -->
+    <div style="display: flex; gap: 10px; margin-top: 15px; justify-content: flex-start;">
+      <button type="button" class="btn-action btn-primary" onclick="buscarVentasEliminar()">🔎 Buscar</button>
+      <button type="button" class="btn-action btn-secondary" onclick="limpiarFiltrosEliminar()">🔄 Limpiar</button>
     </div>
   </fieldset>
 
-  <!-- FICHA DE LA VENTA (SOLO LECTURA) -->
-  <fieldset id="fieldsetVentaEliminar" style="display: none;">
-    <legend>📋 Detalle de la Venta</legend>
+  <!-- SECCIÓN 2: LISTA DE VENTAS -->
+  <fieldset id="fieldsetListaVentasElim">
+    <legend>📜 Historial de Ventas (<span id="totalVentasElim">0</span>)</legend>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 50px;">#</th>
+            <th>N° Venta</th>
+            <th>Fecha</th>
+            <th>Equipo</th>
+            <th>Serial</th>
+            <th>Comprador</th>
+            <th>Cédula</th>
+            <th style="text-align: right;">Precio</th>
+            <th style="text-align: center;">Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyVentasElim">
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 40px; color: #6b7280;">
+              <div style="font-size: 40px; margin-bottom: 10px;">📭</div>
+              <div>Cargando ventas...</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="paginacionVentasElim" style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 15px;"></div>
+  </fieldset>
+
+  <!-- SECCIÓN 3: DETALLES DE LA VENTA (SOLO LECTURA) -->
+  <fieldset id="fieldsetDetallesElim" style="display: none;">
+    <legend>📋 Detalles de la Venta Seleccionada</legend>
     <div style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #dc2626; margin-bottom: 20px;">
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
         <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
@@ -93,12 +153,14 @@
     </div>
   </fieldset>
 
-  <!-- BOTONES -->
+  <!-- BOTONES DE ACCIÓN -->
   <div class="button-group" id="botonesAccionElimVenta" style="display: none; margin-top: 20px; gap: 10px;">
+    <button type="button" class="btn-action btn-success" onclick="imprimirNotaVentaEliminar()" id="btnImprimirNotaElim">🖨️ Imprimir Nota de Entrega</button>
     <button type="button" class="btn-action btn-danger" onclick="confirmarEliminarVenta()" id="btnEliminarVenta">🗑️ Eliminar Venta Permanentemente</button>
     <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioElimVenta()">🔄 Cancelar / Nueva Búsqueda</button>
   </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
 <script src="../js/eliminar_venta.js"></script>
