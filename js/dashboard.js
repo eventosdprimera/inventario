@@ -527,6 +527,42 @@ async function cargarContenido(action) {
     }
     return;
   }
+    // ✅ 14. VENTAS → MODIFICAR
+  if (modulo === 'ventas' && operacion === 'modificar') {
+    try {
+      // Asegurar que el módulo de logs esté disponible
+      if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      
+      // Cargar el script específico de modificar venta
+      if (typeof inicializarModificarVenta === 'undefined') await cargarScript('js/modificar_venta.js');
+      
+      // Cargar el HTML
+      const response = await fetch('html/modificar_venta.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/modificar_venta.html');
+      
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      
+      if (!container) throw new Error('No se encontró .container en modificar_venta.html');
+      
+      // Inyectar el contenido en el dashboard
+      contenidoDiv.innerHTML = container.innerHTML;
+      
+      // Pequeña pausa para asegurar que el DOM esté listo
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Inicializar la lógica
+      if (typeof inicializarModificarVenta === 'function') {
+        await inicializarModificarVenta();
+      }
+    } catch (err) {
+      console.error('Error cargando módulo de modificar venta:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el módulo: ${err.message}</p></fieldset>`;
+    }
+    return;
+  }
 
   // 15. OTROS MÓDULOS (Placeholders)
   let html = '';
