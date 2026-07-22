@@ -13,8 +13,6 @@
 .foto-preview img { width: 100%; height: 100%; object-fit: cover; }
 .foto-preview-placeholder { text-align: center; color: #9ca3af; font-size: 11px; grid-column: 1 / -1; padding: 20px; }
 .foto-preview-placeholder-icon { font-size: 32px; margin-bottom: 4px; }
-
-/* Estilos generales del formulario */
 .form-grid-registro { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 10px; }
 .form-group-registro { display: flex; flex-direction: column; }
 .form-group-registro.full-width { grid-column: 1 / -1; }
@@ -22,14 +20,12 @@
 .form-group-registro input { padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; font-family: 'Poppins', sans-serif; }
 .form-group-registro input:focus { outline: none; border-color: #1e3a8a; box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1); }
 .required { color: #ef4444; }
-
 .btn-action { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
 .btn-primary { background: #1e3a8a; color: white; }
 .btn-primary:hover { background: #1e40af; }
 .btn-secondary { background: #6b7280; color: white; }
 .btn-secondary:hover { background: #4b5563; }
 .button-group { display: flex; gap: 10px; margin-top: 20px; }
-
 .mensaje { padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; font-weight: 500; display: none; }
 .mensaje.exito { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; display: block; }
 .mensaje.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; display: block; }
@@ -41,10 +37,9 @@
     <h1 class="page-title">✏️ Modificar Venta</h1>
     <p class="page-subtitle">Corrija los datos del comprador o el precio de una venta registrada</p>
   </div>
-
   <div id="mensaje" class="mensaje"></div>
 
-  <!-- SECCIÓN 1: BÚSQUEDA -->
+  <!-- BÚSQUEDA -->
   <fieldset>
     <legend>🔍 Buscar Venta</legend>
     <div style="display: flex; gap: 10px; margin-top: 10px;">
@@ -53,7 +48,7 @@
     </div>
   </fieldset>
 
-  <!-- SECCIÓN 2: FICHA DEL EQUIPO VENDIDO (SOLO LECTURA) -->
+  <!-- FICHA DEL EQUIPO VENDIDO (SOLO LECTURA) -->
   <fieldset id="fieldsetEquipoVendido" style="display: none;">
     <legend>📦 Equipo Vendido (Solo lectura)</legend>
     <div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #6b7280; margin-bottom: 20px;">
@@ -79,9 +74,9 @@
     </div>
   </fieldset>
 
-  <!-- SECCIÓN 3: DATOS EDITABLES DE LA VENTA -->
+  <!-- DATOS EDITABLES -->
   <fieldset id="fieldsetDatosVentaMod" style="display: none;">
-    <legend>👤 Datos de la Venta (Editables)</legend>
+    <legend> Datos de la Venta (Editables)</legend>
     <div class="form-grid-registro">
       <div class="form-group-registro"><label>Nombre del Comprador <span class="required">*</span></label><input type="text" id="modCompradorNombre"></div>
       <div class="form-group-registro"><label>Apellido del Comprador <span class="required">*</span></label><input type="text" id="modCompradorApellido"></div>
@@ -99,13 +94,12 @@
     </div>
   </fieldset>
 
-  <!-- BOTONES DE ACCIÓN -->
+  <!-- BOTONES -->
   <div class="button-group" id="botonesAccionModVenta" style="display: none; margin-top: 20px; gap: 10px;">
     <button type="button" class="btn-action btn-primary" onclick="guardarCambiosVenta()" id="btnGuardarCambiosVenta">💾 Guardar Cambios</button>
     <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioModVenta()">🔄 Cancelar / Nueva Búsqueda</button>
   </div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
 <script src="../js/modificar_venta.js"></script>
