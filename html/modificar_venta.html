@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modificar Venta - Eventos D' Primera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+.fotos-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 10px; }
+.foto-preview { width: 100%; height: 140px; border: 2px solid #e5e7eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; background-color: #f9fafb; overflow: hidden; position: relative; cursor: zoom-in; }
+.foto-preview img { width: 100%; height: 100%; object-fit: cover; }
+.foto-preview-placeholder { text-align: center; color: #9ca3af; font-size: 11px; grid-column: 1 / -1; padding: 20px; }
+.foto-preview-placeholder-icon { font-size: 32px; margin-bottom: 4px; }
+
+/* Estilos generales del formulario */
+.form-grid-registro { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 10px; }
+.form-group-registro { display: flex; flex-direction: column; }
+.form-group-registro.full-width { grid-column: 1 / -1; }
+.form-group-registro label { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+.form-group-registro input { padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; font-family: 'Poppins', sans-serif; }
+.form-group-registro input:focus { outline: none; border-color: #1e3a8a; box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1); }
+.required { color: #ef4444; }
+
+.btn-action { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
+.btn-primary { background: #1e3a8a; color: white; }
+.btn-primary:hover { background: #1e40af; }
+.btn-secondary { background: #6b7280; color: white; }
+.btn-secondary:hover { background: #4b5563; }
+.button-group { display: flex; gap: 10px; margin-top: 20px; }
+
+.mensaje { padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; font-weight: 500; display: none; }
+.mensaje.exito { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; display: block; }
+.mensaje.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">✏️ Modificar Venta</h1>
+    <p class="page-subtitle">Corrija los datos del comprador o el precio de una venta registrada</p>
+  </div>
+
+  <div id="mensaje" class="mensaje"></div>
+
+  <!-- SECCIÓN 1: BÚSQUEDA -->
+  <fieldset>
+    <legend>🔍 Buscar Venta</legend>
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+      <input type="text" id="buscarVentaMod" placeholder="Ej: VENTA-000001" style="flex: 1; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; text-transform: uppercase;" autofocus>
+      <button type="button" class="btn-action btn-primary" onclick="buscarVentaParaModificar()">🔎 Buscar</button>
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 2: FICHA DEL EQUIPO VENDIDO (SOLO LECTURA) -->
+  <fieldset id="fieldsetEquipoVendido" style="display: none;">
+    <legend>📦 Equipo Vendido (Solo lectura)</legend>
+    <div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #6b7280; margin-bottom: 20px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">N° Venta</label>
+          <strong id="modVentaNumero" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+        </div>
+        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Código</label>
+          <strong id="modVentaCodigo" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+        </div>
+        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Nombre del Equipo</label>
+          <strong id="modVentaNombre" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+        </div>
+        <div style="background: white; padding: 14px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">Serial</label>
+          <strong id="modVentaSerial" style="color: #1e3a8a; font-size: 15px; display: block; word-break: break-word;">-</strong>
+        </div>
+      </div>
+      <div id="fotosEquipoVendidoMod" class="fotos-grid" style="margin-top: 15px;"></div>
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 3: DATOS EDITABLES DE LA VENTA -->
+  <fieldset id="fieldsetDatosVentaMod" style="display: none;">
+    <legend>👤 Datos de la Venta (Editables)</legend>
+    <div class="form-grid-registro">
+      <div class="form-group-registro"><label>Nombre del Comprador <span class="required">*</span></label><input type="text" id="modCompradorNombre"></div>
+      <div class="form-group-registro"><label>Apellido del Comprador <span class="required">*</span></label><input type="text" id="modCompradorApellido"></div>
+      <div class="form-group-registro">
+        <label>Cédula <span class="required">*</span></label>
+        <input type="text" id="modCompradorCedula" maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Ej: 12345678">
+      </div>
+      <div class="form-group-registro">
+        <label>Teléfono <span class="required">*</span></label>
+        <input type="text" id="modCompradorTelefono" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Ej: 04121234567">
+      </div>
+      <div class="form-group-registro"><label>Correo Electrónico</label><input type="email" id="modCompradorEmail"></div>
+      <div class="form-group-registro full-width"><label>Dirección</label><input type="text" id="modCompradorDireccion"></div>
+      <div class="form-group-registro"><label>Precio de Venta ($) <span class="required">*</span></label><input type="number" id="modPrecioVenta" step="0.01" min="0"></div>
+    </div>
+  </fieldset>
+
+  <!-- BOTONES DE ACCIÓN -->
+  <div class="button-group" id="botonesAccionModVenta" style="display: none; margin-top: 20px; gap: 10px;">
+    <button type="button" class="btn-action btn-primary" onclick="guardarCambiosVenta()" id="btnGuardarCambiosVenta">💾 Guardar Cambios</button>
+    <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioModVenta()">🔄 Cancelar / Nueva Búsqueda</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/modificar_venta.js"></script>
+</body>
+</html>
