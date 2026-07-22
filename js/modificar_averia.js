@@ -262,7 +262,7 @@ async function cargarYMostrarFotosEquipoOriginal() {
 }
 
 // ==========================================
-// ✅ RENDERIZAR FOTOS DE EVIDENCIA (ESTILO ORIGINAL, EDITABLES)
+// ✅ RENDERIZAR FOTOS DE EVIDENCIA (IDÉNTICAS A LAS ORIGINALES PERO EDITABLES)
 // ==========================================
 function renderizarFotosEvidenciaMod() {
   console.log("🎨 Renderizando slots de evidencia...");
@@ -275,13 +275,16 @@ function renderizarFotosEvidenciaMod() {
     const input = document.getElementById(`mod_foto_evidencia_${i}`);
     const htmlRemoveBtn = document.getElementById(`mod_remove_evidencia_${i}`);
     
-    if (!slot || !preview || !placeholder || !input) continue;
+    if (!slot || !preview || !placeholder || !input) {
+      console.error(`❌ Faltan elementos para slot ${i}`);
+      continue;
+    }
 
-    // Ocultar el botón X del HTML (usaremos uno propio)
+    // Ocultar el botón X del HTML (usaremos uno propio más pequeño)
     if (htmlRemoveBtn) htmlRemoveBtn.style.display = 'none';
 
     // Limpiar elementos dinámicos anteriores
-    const elementosDinamicos = slot.querySelectorAll('.badge-evidencia-dinamico, .boton-x-dinamico');
+    const elementosDinamicos = slot.querySelectorAll('.badge-evidencia-dinamico, .boton-x-dinamico, .boton-zoom-dinamico');
     elementosDinamicos.forEach(el => el.remove());
 
     const tieneFoto = url && typeof url === 'string' && url.trim() !== '' && url !== 'null';
@@ -292,7 +295,7 @@ function renderizarFotosEvidenciaMod() {
       preview.style.display = 'block';
       placeholder.style.display = 'none';
       
-      // BADGE "Evidencia" en AZUL (igual que "Original")
+      // 1. BADGE "Evidencia" en AZUL (idéntico al de "Original")
       const badge = document.createElement('div');
       badge.className = 'badge-evidencia-dinamico';
       badge.textContent = 'Evidencia';
@@ -301,13 +304,14 @@ function renderizarFotosEvidenciaMod() {
         background: rgba(30, 58, 138, 0.85) !important; color: white !important; 
         font-size: 10px !important; padding: 3px 8px !important; border-radius: 4px !important; 
         font-weight: 600 !important; z-index: 9999 !important; pointer-events: none !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
       `;
       slot.appendChild(badge);
       
-      // BOTÓN "X" ROJO pequeño (para eliminar)
+      // 2. BOTÓN "X" ROJO PEQUEÑO (para eliminar)
       const btnX = document.createElement('button');
       btnX.className = 'boton-x-dinamico';
-      btnX.innerHTML = '✕';
+      btnX.innerHTML = '';
       btnX.title = 'Eliminar foto';
       btnX.style.cssText = `
         position: absolute !important; top: 5px !important; right: 5px !important;
@@ -319,21 +323,44 @@ function renderizarFotosEvidenciaMod() {
         justify-content: center !important; z-index: 10000 !important;
         transition: all 0.3s !important;
       `;
-      btnX.onmouseover = function() { this.style.background = 'rgba(185, 28, 28, 1) !important'; this.style.transform = 'scale(1.1)'; };
-      btnX.onmouseout = function() { this.style.background = 'rgba(220, 38, 38, 0.9) !important'; this.style.transform = 'scale(1)'; };
+      btnX.onmouseover = function() { this.style.background = 'rgba(185, 28, 28, 1)'; this.style.transform = 'scale(1.1)'; };
+      btnX.onmouseout = function() { this.style.background = 'rgba(220, 38, 38, 0.9)'; this.style.transform = 'scale(1)'; };
       btnX.onclick = function(e) {
         e.stopPropagation();
         e.preventDefault();
         eliminarFotoEvidenciaMod(i);
       };
       slot.appendChild(btnX);
+
+      // 3. BOTÓN "🔍" PARA ZOOM (esquina inferior derecha)
+      const btnZoom = document.createElement('button');
+      btnZoom.className = 'boton-zoom-dinamico';
+      btnZoom.innerHTML = '🔍';
+      btnZoom.title = 'Ver en zoom';
+      btnZoom.style.cssText = `
+        position: absolute !important; bottom: 5px !important; right: 5px !important;
+        background: rgba(0, 0, 0, 0.6) !important; color: white !important; border: none !important;
+        border-radius: 50% !important; width: 24px !important; height: 24px !important;
+        cursor: pointer !important; font-size: 12px !important;
+        display: flex !important; align-items: center !important; justify-content: center !important;
+        z-index: 10000 !important;
+      `;
+      btnZoom.onclick = function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        abrirZoomInfalible(url);
+      };
+      slot.appendChild(btnZoom);
       
-      // CLIC EN LA FOTO: ABRIR SELECTOR DE ARCHIVOS PARA REEMPLAZAR
+      // 4. ✅ CLIC EN LA FOTO: ABRIR SELECTOR DE ARCHIVOS PARA REEMPLAZAR
       slot.style.cursor = 'pointer';
       slot.onclick = function(e) {
+        // Ignorar si se hizo clic en los botones de acción
         if (e.target === btnX || btnX.contains(e.target)) return;
+        if (e.target === btnZoom || btnZoom.contains(e.target)) return;
         e.preventDefault();
-        input.click();
+        e.stopPropagation();
+        input.click(); // Abre el selector de archivos
       };
       
       console.log(`✅ Slot ${i}: Foto mostrada estilo original, editable`);
@@ -348,10 +375,11 @@ function renderizarFotosEvidenciaMod() {
       slot.style.cursor = 'pointer';
       slot.onclick = function(e) {
         e.preventDefault();
+        e.stopPropagation();
         input.click();
       };
       
-      console.log(` Slot ${i}: Vacío`);
+      console.log(`⚪ Slot ${i}: Vacío, listo para agregar`);
     }
   }
 }
