@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  .container { max-width: 800px; margin: 0 auto; padding: 30px; }
+  .container { max-width: 900px; margin: 0 auto; padding: 30px; }
   .page-header { text-align: center; margin-bottom: 30px; }
   .page-title { font-family: 'Libre Caslon Text', serif; color: #1e3a8a; font-size: 28px; margin: 0; }
   .page-subtitle { color: #6b7280; font-size: 14px; margin-top: 5px; }
@@ -28,26 +28,143 @@
   }
   .required { color: #ef4444; }
   
-  .btn-action { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s; font-family: 'Poppins', sans-serif; }
+  /* FOTO DE PERFIL */
+  .foto-section {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 25px;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    border: 2px dashed #d1d5db;
+  }
+  .foto-preview-container {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    border: 3px dashed #d1d5db;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background-color: #f9fafb;
+    cursor: pointer;
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+  .foto-preview-container:hover {
+    border-color: #1e3a8a;
+    background-color: #eff6ff;
+    transform: scale(1.05);
+  }
+  .foto-preview-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .foto-preview-container span {
+    font-size: 48px;
+    color: #9ca3af;
+  }
+  .foto-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .btn-action {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s;
+    font-family: 'Poppins', sans-serif;
+  }
   .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; }
   .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3); }
   .btn-secondary { background-color: #6b7280; color: white; }
   .btn-secondary:hover { background-color: #4b5563; }
+  .btn-success { background: #10b981; color: white; }
+  .btn-success:hover { background: #059669; }
+  
+  /* CONTRASEÑA CON FORTALEZA */
+  .password-wrapper {
+    position: relative;
+  }
+  .password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #6b7280;
+    font-size: 18px;
+    user-select: none;
+  }
+  .password-toggle:hover { color: #1e3a8a; }
+  .password-strength {
+    margin-top: 8px;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .password-strength-bar {
+    height: 100%;
+    width: 0%;
+    transition: all 0.3s;
+    border-radius: 3px;
+  }
+  .password-strength-text {
+    font-size: 11px;
+    margin-top: 4px;
+    font-weight: 600;
+  }
+  .strength-weak { background: #ef4444; width: 33%; }
+  .strength-medium { background: #f59e0b; width: 66%; }
+  .strength-strong { background: #10b981; width: 100%; }
   
   .button-group { display: flex; gap: 10px; margin-top: 25px; justify-content: flex-end; }
   
-  .mensaje { padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; font-weight: 500; display: none; }
+  .mensaje {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: none;
+  }
   .mensaje.exito { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; display: block; }
   .mensaje.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; display: block; }
   
-  .foto-preview-container {
-    width: 120px; height: 120px; border-radius: 50%; border: 3px dashed #d1d5db;
-    display: flex; align-items: center; justify-content: center; overflow: hidden;
-    background-color: #f9fafb; margin: 0 auto 15px; cursor: pointer; transition: all 0.3s;
+  /* Modal de Cámara */
+  .modal-camara {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.9);
+    z-index: 999999;
+    align-items: center;
+    justify-content: center;
   }
-  .foto-preview-container:hover { border-color: #1e3a8a; background-color: #eff6ff; }
-  .foto-preview-container img { width: 100%; height: 100%; object-fit: cover; }
-  .foto-preview-container span { font-size: 32px; color: #9ca3af; }
+  .modal-camara-content {
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    max-width: 90%;
+    max-height: 90vh;
+  }
+  .modal-camara video {
+    width: 100%;
+    max-width: 500px;
+    border-radius: 8px;
+    background: #000;
+  }
 </style>
 </head>
 <body>
@@ -62,16 +179,32 @@
   <fieldset>
     <legend>📝 Datos del Usuario</legend>
     
-    <div class="foto-preview-container" id="fotoPreviewContainer" onclick="document.getElementById('inputFoto').click()">
-      <span id="fotoPlaceholder">📷</span>
-      <img id="fotoPreview" src="" style="display: none;">
+    <!-- SECCIÓN DE FOTO -->
+    <div class="foto-section">
+      <div class="foto-preview-container" id="fotoPreviewContainer" onclick="document.getElementById('inputFoto').click()" title="Clic para cambiar foto">
+        <span id="fotoPlaceholder">📷</span>
+        <img id="fotoPreview" src="" style="display: none;">
+      </div>
+      <div class="foto-actions">
+        <button type="button" class="btn-action btn-secondary" onclick="document.getElementById('inputFoto').click()">📁 Subir Archivo</button>
+        <button type="button" class="btn-action btn-primary" onclick="abrirCamara()">📷 Tomar Foto con Cámara</button>
+        <button type="button" class="btn-action btn-secondary" onclick="eliminarFoto()" id="btnEliminarFoto" style="display: none;">🗑️ Eliminar Foto</button>
+      </div>
+      <input type="file" id="inputFoto" accept="image/*" style="display: none;" onchange="previsualizarFoto(event)">
     </div>
-    <input type="file" id="inputFoto" accept="image/*" style="display: none;" onchange="previsualizarFoto(event)">
 
     <div class="form-grid">
-      <div class="form-group full-width">
-        <label>Nombre Completo <span class="required">*</span></label>
-        <input type="text" id="usuarioNombre" placeholder="Ej: Juan Pérez">
+      <div class="form-group">
+        <label>Nombres <span class="required">*</span></label>
+        <input type="text" id="usuarioNombre" placeholder="Ej: Juan Carlos">
+      </div>
+      <div class="form-group">
+        <label>Apellidos <span class="required">*</span></label>
+        <input type="text" id="usuarioApellido" placeholder="Ej: Pérez García">
+      </div>
+      <div class="form-group">
+        <label>Cédula de Identidad <span class="required">*</span></label>
+        <input type="text" id="usuarioCedula" placeholder="Ej: V-12345678" maxlength="10">
       </div>
       <div class="form-group full-width">
         <label>Correo Electrónico <span class="required">*</span></label>
@@ -79,23 +212,50 @@
       </div>
       <div class="form-group">
         <label>Contraseña <span class="required">*</span></label>
-        <input type="password" id="usuarioPassword" placeholder="Mínimo 6 caracteres" minlength="6">
+        <div class="password-wrapper">
+          <input type="password" id="usuarioPassword" placeholder="Mínimo 6 caracteres" minlength="6" oninput="verificarFortalezaPassword()">
+          <span class="password-toggle" onclick="togglePassword('usuarioPassword')">👁️</span>
+        </div>
+        <div class="password-strength">
+          <div class="password-strength-bar" id="passwordStrengthBar"></div>
+        </div>
+        <div class="password-strength-text" id="passwordStrengthText"></div>
       </div>
       <div class="form-group">
+        <label>Repetir Contraseña <span class="required">*</span></label>
+        <div class="password-wrapper">
+          <input type="password" id="usuarioPasswordConfirm" placeholder="Repita la contraseña" minlength="6">
+          <span class="password-toggle" onclick="togglePassword('usuarioPasswordConfirm')">👁️</span>
+        </div>
+      </div>
+      <div class="form-group full-width">
         <label>Rol en el Sistema <span class="required">*</span></label>
         <select id="usuarioRol">
-          <option value="consultor">Consultor (Solo lectura)</option>
-          <option value="moderador">Moderador (Gestión operativa)</option>
-          <option value="administrador">Administrador (Control total)</option>
+          <option value="consultor">️ Consultor (Solo lectura)</option>
+          <option value="moderador">⚙️ Moderador (Gestión operativa)</option>
+          <option value="administrador"> Administrador (Control total)</option>
         </select>
       </div>
     </div>
 
     <div class="button-group">
       <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioUsuario()">🔄 Limpiar</button>
-      <button type="button" class="btn-action btn-primary" onclick="crearUsuario()" id="btnCrearUsuario">💾 Crear Usuario</button>
+      <button type="button" class="btn-action btn-success" onclick="crearUsuario()" id="btnCrearUsuario">💾 Crear Usuario</button>
     </div>
   </fieldset>
+</div>
+
+<!-- Modal de Cámara -->
+<div class="modal-camara" id="modalCamara">
+  <div class="modal-camara-content">
+    <h3 style="margin: 0 0 15px 0; color: #1e3a8a;">📷 Tomar Foto de Perfil</h3>
+    <video id="videoCamara" autoplay playsinline></video>
+    <canvas id="canvasCamara" style="display: none;"></canvas>
+    <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center;">
+      <button type="button" class="btn-action btn-success" onclick="capturarFotoCamara()"> Capturar</button>
+      <button type="button" class="btn-action btn-secondary" onclick="cerrarCamara()">❌ Cancelar</button>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
