@@ -91,7 +91,8 @@ async function inicializarConsulta() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
     const { data } = await supabaseClient.from('usuarios').select('*').eq('email', session.user.email).maybeSingle();
-    usuarioActualConsulta = data || { email: session.user.email, id: session.user.id };
+    // Guardamos el rol para usarlo después
+    usuarioActualConsulta = data || { email: session.user.email, id: session.user.id, rol: 'consultor' };
   }
 
   const inputBusqueda = document.getElementById('buscarConsulta');
@@ -105,36 +106,18 @@ async function inicializarConsulta() {
   const filtroFechaInicio = document.getElementById('filtroFechaInicio');
   const filtroFechaFin = document.getElementById('filtroFechaFin');
 
-  if (filtroEstatus) {
-    filtroEstatus.addEventListener('change', () => {
-      paginaActualConsulta = 1;
-      aplicarFiltrosYRenderizar();
-    });
-  }
-
-  if (filtroFechaInicio) {
-    filtroFechaInicio.addEventListener('change', () => {
-      paginaActualConsulta = 1;
-      aplicarFiltrosYRenderizar();
-    });
-  }
-
-  if (filtroFechaFin) {
-    filtroFechaFin.addEventListener('change', () => {
-      paginaActualConsulta = 1;
-      aplicarFiltrosYRenderizar();
-    });
-  }
+  if (filtroEstatus) filtroEstatus.addEventListener('change', () => { paginaActualConsulta = 1; aplicarFiltrosYRenderizar(); });
+  if (filtroFechaInicio) filtroFechaInicio.addEventListener('change', () => { paginaActualConsulta = 1; aplicarFiltrosYRenderizar(); });
+  if (filtroFechaFin) filtroFechaFin.addEventListener('change', () => { paginaActualConsulta = 1; aplicarFiltrosYRenderizar(); });
 
   await cargarListaEquipos();
 }
 
 // ==========================================
-// ✅ VERIFICAR SI UN EQUIPO ESTÁ RENTADO (CORREGIDO CON rentas_items)
+// VERIFICAR SI UN EQUIPO ESTÁ RENTADO
 // ==========================================
 async function verificarSiEstaRentado(codigoBarras) {
   try {
-    // 1. Buscar en rentas_items si el equipo está en alguna renta
     const { data: itemsRenta, error: errorItems } = await supabaseClient
       .from('rentas_items')
       .select('renta_id, cantidad, precio_unitario')
@@ -144,7 +127,6 @@ async function verificarSiEstaRentado(codigoBarras) {
       return { estaRentado: false, renta: null, item: null };
     }
 
-    // 2. Para cada item, verificar si la renta está activa
     for (const item of itemsRenta) {
       const { data: renta, error: errorRenta } = await supabaseClient
         .from('rentas')
@@ -154,18 +136,10 @@ async function verificarSiEstaRentado(codigoBarras) {
         .maybeSingle();
 
       if (!errorRenta && renta) {
-        // Encontramos una renta activa con este equipo
-        return { 
-          estaRentado: true, 
-          renta: renta,
-          item: item
-        };
+        return { estaRentado: true, renta: renta, item: item };
       }
     }
-
-    // Si llegamos aquí, el equipo está en rentas pero ninguna está activa
     return { estaRentado: false, renta: null, item: null };
-
   } catch (err) {
     console.error('Error al verificar renta:', err);
     return { estaRentado: false, renta: null, item: null };
@@ -179,7 +153,7 @@ async function determinarEstatus(codigoBarras) {
   let estatus = 'operativo';
   let infoAdicional = null;
 
-  // 1. Verificar si está en averías activas (prioridad alta)
+  // 1. Verificar si está en averías activas
   const { data: averiaActiva } = await supabaseClient
     .from('equipos_averiados')
     .select('*')
@@ -202,19 +176,18 @@ async function determinarEstatus(codigoBarras) {
     return { estatus, infoAdicional };
   }
 
-  // 2. Verificar si está rentado (usando rentas_items)
+  // 2. Verificar si está rentado
   const { estaRentado, renta, item } = await verificarSiEstaRentado(codigoBarras);
 
   if (estaRentado && renta) {
     estatus = 'rentado';
     infoAdicional = {
       tipo: 'renta',
-      titulo: ' Información de Renta Activa',
+      titulo: '🤝 Información de Renta Activa',
       datos: [
         { label: 'Número de Renta', valor: renta.numero_renta || 'N/A' },
         { label: 'Cliente', valor: renta.cliente_nombre || 'N/A' },
         { label: 'Teléfono', valor: renta.cliente_telefono || 'N/A' },
-        { label: 'Email', valor: renta.cliente_email || 'N/A' },
         { label: 'Fecha Renta', valor: renta.fecha_renta ? new Date(renta.fecha_renta).toLocaleDateString('es-ES') : '-' },
         { label: 'Fecha Devolución', valor: renta.fecha_devolucion ? new Date(renta.fecha_devolucion).toLocaleDateString('es-ES') : '-' },
         { label: 'Cantidad', valor: item?.cantidad || '1' },
@@ -269,7 +242,6 @@ async function buscarEquipoConsulta() {
     }
 
     equipoSeleccionadoConsulta = equipo;
-
     const { estatus, infoAdicional } = await determinarEstatus(equipo.codigo_barras);
 
     document.getElementById('consultaCodigo').textContent = equipo.codigo_barras || '-';
@@ -283,10 +255,11 @@ async function buscarEquipoConsulta() {
     const estatusBadge = `<span class="badge badge-${estatus}">${estatus.toUpperCase()}</span>`;
     document.getElementById('consultaEstatus').innerHTML = estatusBadge;
 
+    // ✅ RENDERIZAR INFORMACIÓN ADICIONAL CON EL MISMO ESTILO QUE EL RESTO
     const infoDiv = document.getElementById('infoAdicional');
     if (infoAdicional) {
       infoDiv.innerHTML = `
-        <h4 style="color: #1e40af; margin: 0 0 15px 0; font-size: 14px;">${infoAdicional.titulo}</h4>
+        <h4 style="color: #1e40af; margin: 0 0 15px 0; font-size: 15px; font-weight: 700;">${infoAdicional.titulo}</h4>
         <div class="ficha-grid">
           ${infoAdicional.datos.map(d => `
             <div class="ficha-item">
@@ -297,10 +270,17 @@ async function buscarEquipoConsulta() {
         </div>
       `;
     } else {
-      infoDiv.innerHTML = '<p style="color: #6b7280; font-size: 13px; text-align: center; padding: 10px;">✅ Este equipo no está rentado ni averiado en este momento.</p>';
+      infoDiv.innerHTML = '<p style="color: #065f46; font-size: 13px; text-align: center; padding: 10px; background: #d1fae5; border-radius: 8px;">✅ Este equipo está disponible (no está rentado ni averiado).</p>';
     }
 
     await cargarFotosConsulta(equipo);
+
+    // ✅ MOSTRAR BOTÓN DE IMPRIMIR SOLO SI ES ADMINISTRADOR
+    const contenedorImprimir = document.getElementById('contenedorImprimirFicha');
+    if (contenedorImprimir) {
+      const esAdmin = usuarioActualConsulta && usuarioActualConsulta.rol && usuarioActualConsulta.rol.toLowerCase().includes('admin');
+      contenedorImprimir.style.display = esAdmin ? 'block' : 'none';
+    }
 
     document.getElementById('fieldsetFichaConsulta').style.display = 'block';
     document.getElementById('fieldsetFichaConsulta').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -404,28 +384,21 @@ function aplicarFiltrosYRenderizar() {
   const filtroFechaFin = document.getElementById('filtroFechaFin')?.value || '';
 
   let equiposFiltrados = equiposEnriquecidosCache.filter(equipo => {
-    if (filtroEstatus && equipo.estatus_real !== filtroEstatus) {
-      return false;
-    }
-
+    if (filtroEstatus && equipo.estatus_real !== filtroEstatus) return false;
     if (filtroFechaInicio) {
       const fechaEquipo = new Date(equipo.fecha_registro).toISOString().split('T')[0];
       if (fechaEquipo < filtroFechaInicio) return false;
     }
-
     if (filtroFechaFin) {
       const fechaEquipo = new Date(equipo.fecha_registro).toISOString().split('T')[0];
       if (fechaEquipo > filtroFechaFin) return false;
     }
-
     return true;
   });
 
   totalEquiposConsulta = equiposFiltrados.length;
   const contadorDiv = document.getElementById('contadorEquipos');
-  if (contadorDiv) {
-    contadorDiv.textContent = `Total: ${totalEquiposConsulta} equipo(s)`;
-  }
+  if (contadorDiv) contadorDiv.textContent = `Total: ${totalEquiposConsulta} equipo(s)`;
 
   const desde = (paginaActualConsulta - 1) * POR_PAGINA_CONSULTA;
   const hasta = desde + POR_PAGINA_CONSULTA;
@@ -475,23 +448,8 @@ function renderizarPaginacionConsulta() {
   if (!cont) return;
 
   const totalPaginas = Math.ceil(totalEquiposConsulta / POR_PAGINA_CONSULTA);
-  
-  const filtroEstatus = document.getElementById('filtroEstatus')?.value || '';
-  const filtroFechaInicio = document.getElementById('filtroFechaInicio')?.value || '';
-  const filtroFechaFin = document.getElementById('filtroFechaFin')?.value || '';
-  
-  let filtrosActivos = [];
-  if (filtroEstatus) filtrosActivos.push(`Estatus: ${filtroEstatus}`);
-  if (filtroFechaInicio) filtrosActivos.push(`Desde: ${filtroFechaInicio}`);
-  if (filtroFechaFin) filtrosActivos.push(`Hasta: ${filtroFechaFin}`);
-
-  let infoHTML = '';
-  if (filtrosActivos.length > 0) {
-    infoHTML = `<span style="color: #f59e0b; font-size: 12px; font-weight: 600;">🔎 Filtros: ${filtrosActivos.join(' | ')}</span>`;
-  }
-
   if (totalPaginas <= 1) {
-    cont.innerHTML = `<span style="color: #6b7280; font-size: 13px;">Página 1 de 1</span> ${infoHTML}`;
+    cont.innerHTML = `<span style="color: #6b7280; font-size: 13px;">Página 1 de 1</span>`;
     return;
   }
 
@@ -499,7 +457,6 @@ function renderizarPaginacionConsulta() {
   html += `<button type="button" onclick="cambiarPaginaConsulta(${paginaActualConsulta - 1})" style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px;" ${paginaActualConsulta === 1 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>‹ Anterior</button>`;
   html += `<span style="color: #374151; font-size: 13px; font-weight: 600;">Página ${paginaActualConsulta} de ${totalPaginas}</span>`;
   html += `<button type="button" onclick="cambiarPaginaConsulta(${paginaActualConsulta + 1})" style="padding: 6px 12px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px;" ${paginaActualConsulta === totalPaginas ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>Siguiente ›</button>`;
-  html += ` ${infoHTML}`;
 
   cont.innerHTML = html;
 }
@@ -507,7 +464,6 @@ function renderizarPaginacionConsulta() {
 async function cambiarPaginaConsulta(nuevaPagina) {
   const totalPaginas = Math.ceil(totalEquiposConsulta / POR_PAGINA_CONSULTA);
   if (nuevaPagina < 1 || nuevaPagina > totalPaginas) return;
-  
   paginaActualConsulta = nuevaPagina;
   aplicarFiltrosYRenderizar();
 }
@@ -530,7 +486,7 @@ function limpiarFiltros() {
 }
 
 // ==========================================
-// IMPRIMIR FICHA
+// IMPRIMIR FICHA (SOLO ADMIN)
 // ==========================================
 function imprimirFichaConsulta() {
   if (!equipoSeleccionadoConsulta) {
@@ -590,7 +546,7 @@ function imprimirFichaConsulta() {
 </head>
 <body>
   <div class="header">
-    <img src="${new URL('img/logo.png', window.location.href).href}" class="logo-img" onerror="this.style.display='none'">
+    <img src="${new URL('../img/logo.png', window.location.href).href}" class="logo-img" onerror="this.style.display='none'">
     <div class="brand">
       <h1>Eventos D' Primera</h1>
       <p>Sistema de Inventario y Rentas</p>
@@ -613,7 +569,7 @@ function imprimirFichaConsulta() {
       <p><strong>Medida:</strong> ${equipo.medida_valor ? `${equipo.medida_valor} ${equipo.medida_unidad || ''}` : 'N/A'}</p>
     </div>
     <div class="info-box">
-      <h3> Estatus Actual</h3>
+      <h3>📊 Estatus Actual</h3>
       <p><span class="estatus-badge estatus-${estatus.toLowerCase()}">${estatus}</span></p>
       <p><strong>Fecha Registro:</strong> ${equipo.fecha_registro ? new Date(equipo.fecha_registro).toLocaleDateString('es-ES') : 'N/A'}</p>
       <p><strong>Registrado por:</strong> ${equipo.usuario_registro || 'N/A'}</p>
@@ -624,7 +580,7 @@ function imprimirFichaConsulta() {
 
   ${fotosHTML ? `
   <div class="fotos-section">
-    <h3> Fotos del Equipo</h3>
+    <h3>📸 Fotos del Equipo</h3>
     <div style="display: flex; flex-wrap: wrap;">
       ${fotosHTML}
     </div>
