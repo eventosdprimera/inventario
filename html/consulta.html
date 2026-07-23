@@ -43,9 +43,6 @@ th { background: #1e3a8a; color: white; padding: 12px 10px; text-align: left; fo
 td { padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
 tr:hover { background: #f9fafb; cursor: pointer; }
 tr.selected { background: #eff6ff; border-left: 3px solid #1e3a8a; }
-
-.filtros-container { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
-.filtros-container select, .filtros-container input { padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 13px; }
 </style>
 </head>
 <body>
@@ -60,7 +57,7 @@ tr.selected { background: #eff6ff; border-left: 3px solid #1e3a8a; }
 
   <!-- SECCIÓN 1: BÚSQUEDA -->
   <fieldset>
-    <legend> Buscar Equipo</legend>
+    <legend>🔎 Buscar Equipo</legend>
     <div class="codigo-barras-section">
       <div class="codigo-barras-label">📷 Escanee o escriba el código de barras / serial del equipo</div>
       <div style="display: flex; gap: 10px; margin-top: 10px;">
@@ -116,13 +113,13 @@ tr.selected { background: #eff6ff; border-left: 3px solid #1e3a8a; }
 
       <!-- Fotos del equipo -->
       <div style="margin-top: 20px; padding-top: 20px; border-top: 2px dashed #93c5fd;">
-        <label style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;"> Fotos del Equipo</label>
+        <label style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; font-weight: 600;">📸 Fotos del Equipo</label>
         <div id="consultaFotos" class="fotos-grid"></div>
       </div>
 
-      <!-- Botón de imprimir -->
-      <div style="margin-top: 20px; text-align: center;">
-        <button type="button" class="btn-action btn-primary" onclick="imprimirFichaConsulta()">🖨️ Imprimir Ficha</button>
+      <!-- Botón de imprimir (SOLO ADMINISTRADOR) -->
+      <div id="contenedorImprimirFicha" style="margin-top: 20px; text-align: center; display: none;">
+        <button type="button" class="btn-action btn-primary" onclick="imprimirFichaConsulta()">🖨️ Imprimir Ficha / Sticker</button>
       </div>
     </div>
   </fieldset>
@@ -131,11 +128,9 @@ tr.selected { background: #eff6ff; border-left: 3px solid #1e3a8a; }
   <fieldset>
     <legend>📋 Lista de Equipos en el Sistema</legend>
     
-    <!-- FILTROS CON ESTILOS MEJORADOS -->
     <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 15px;">
       <label style="display: block; margin-bottom: 10px; color: #374151; font-weight: 600; font-size: 13px;">🔎 Filtros de búsqueda (se aplican automáticamente)</label>
       <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
-        
         <div style="flex: 1; min-width: 180px;">
           <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; font-weight: 600;">Estatus</label>
           <select id="filtroEstatus" style="width: 100%; padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 13px; background: white; cursor: pointer;">
@@ -146,27 +141,22 @@ tr.selected { background: #eff6ff; border-left: 3px solid #1e3a8a; }
             <option value="averiado">🟡 Averiado</option>
           </select>
         </div>
-
         <div style="flex: 1; min-width: 180px;">
           <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; font-weight: 600;">Fecha desde</label>
           <input type="date" id="filtroFechaInicio" style="width: 100%; padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 13px; background: white; cursor: pointer;">
         </div>
-
         <div style="flex: 1; min-width: 180px;">
           <label style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; font-weight: 600;">Fecha hasta</label>
           <input type="date" id="filtroFechaFin" style="width: 100%; padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 6px; font-size: 13px; background: white; cursor: pointer;">
         </div>
-
         <div style="flex: 0 0 auto;">
           <button type="button" class="btn-action btn-secondary" onclick="limpiarFiltros()" style="padding: 10px 16px; border: 2px solid #e5e7eb; background: white; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; color: #374151;">
             🔄 Limpiar Filtros
           </button>
         </div>
-
       </div>
     </div>
 
-    <!-- ✅ CONTADOR ARRIBA DE LA TABLA -->
     <div id="contadorEquipos" style="background: #eff6ff; padding: 12px 16px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-bottom: 15px; font-size: 14px; font-weight: 600; color: #1e40af;">
       Total: 0 equipo(s)
     </div>
