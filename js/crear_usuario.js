@@ -1,275 +1,4 @@
 // ==========================================
-// INYECTAR ESTILOS INMEDIATAMENTE
-// ==========================================
-function inyectarEstilosCrearUsuario() {
-  if (document.getElementById('estilos-crear-usuario')) return;
-  
-  const style = document.createElement('style');
-  style.id = 'estilos-crear-usuario';
-  style.textContent = `
-    /* Ocultar contenido hasta que los estilos estén listos */
-    .crear-usuario-container { opacity: 0; transition: opacity 0.3s ease; }
-    .crear-usuario-container.loaded { opacity: 1; }
-    
-    .crear-usuario-container { max-width: 1000px; margin: 0 auto; padding: 30px; }
-    .crear-usuario-header { text-align: center; margin-bottom: 35px; }
-    .crear-usuario-title { font-family: 'Libre Caslon Text', serif; color: #1e3a8a; font-size: 32px; margin: 0; font-weight: 700; }
-    .crear-usuario-subtitle { color: #6b7280; font-size: 15px; margin-top: 8px; }
-    
-    .crear-usuario-fieldset { border: 1px solid #d1d5db; border-radius: 10px; padding: 30px; margin-bottom: 25px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .crear-usuario-fieldset legend { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 10px 24px; border-radius: 20px; font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
-    
-    .crear-usuario-mensaje { padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; font-weight: 600; display: none; }
-    .crear-usuario-mensaje.exito { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; display: block; }
-    .crear-usuario-mensaje.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; display: block; }
-    
-    /* SECCIÓN DE FOTO - ESTILOS CRÍTICOS */
-    .foto-section-usuario {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 35px;
-      padding: 30px;
-      background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-      border-radius: 12px;
-      border: 2px dashed #d1d5db;
-    }
-    
-    .foto-recuadro-usuario {
-      width: 200px;
-      height: 200px;
-      border-radius: 12px;
-      border: 3px dashed #1e3a8a;
-      background: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.3s;
-      overflow: hidden;
-      position: relative;
-      box-shadow: 0 4px 12px rgba(30, 58, 138, 0.1);
-    }
-    
-    .foto-recuadro-usuario:hover {
-      background: #eff6ff;
-      border-color: #3b82f6;
-      transform: scale(1.03);
-      box-shadow: 0 6px 16px rgba(30, 58, 138, 0.2);
-    }
-    
-    .foto-recuadro-usuario img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    
-    .foto-placeholder-usuario {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      color: #9ca3af;
-    }
-    
-    .foto-placeholder-icon-usuario {
-      font-size: 64px;
-      margin-bottom: 10px;
-    }
-    
-    .foto-placeholder-text-usuario {
-      font-size: 14px;
-      font-weight: 600;
-    }
-    
-    .foto-botones-usuario {
-      display: flex;
-      gap: 15px;
-      margin-top: 20px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    
-    /* BOTONES - ESTILOS CRÍTICOS INMEDIATOS */
-    .foto-btn-usuario,
-    .btn-action-usuario {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-      font-family: 'Poppins', sans-serif;
-      transition: all 0.3s;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      /* Evitar flash: aplicar colores inmediatamente */
-      background: #6b7280;
-      color: white;
-    }
-    
-    .foto-btn-subir-usuario,
-    .btn-secondary-usuario {
-      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
-      color: white;
-    }
-    
-    .foto-btn-subir-usuario:hover,
-    .btn-secondary-usuario:hover { 
-      transform: translateY(-2px); 
-      box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3); 
-    }
-    
-    .foto-btn-camara-usuario {
-      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-      color: white;
-    }
-    
-    .foto-btn-camara-usuario:hover { 
-      transform: translateY(-2px); 
-      box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3); 
-    }
-    
-    .foto-btn-eliminar-usuario {
-      background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
-      color: white;
-    }
-    
-    .foto-btn-eliminar-usuario:hover { 
-      transform: translateY(-2px); 
-      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); 
-    }
-    
-    .btn-success-usuario { 
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
-      color: white; 
-    }
-    .btn-success-usuario:hover { 
-      transform: translateY(-2px); 
-      box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3); 
-    }
-    
-    /* FORMULARIO */
-    .form-grid-usuario {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 20px;
-    }
-    
-    .form-group-usuario {
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .form-group-usuario.full-width {
-      grid-column: 1 / -1;
-    }
-    
-    .form-group-usuario label {
-      font-size: 13px;
-      font-weight: 700;
-      color: #374151;
-      margin-bottom: 8px;
-    }
-    
-    .form-group-usuario input,
-    .form-group-usuario select {
-      padding: 12px 14px;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      font-size: 14px;
-      font-family: 'Poppins', sans-serif;
-      transition: all 0.3s;
-      background: white;
-    }
-    
-    .form-group-usuario input:focus,
-    .form-group-usuario select:focus {
-      outline: none;
-      border-color: #1e3a8a;
-      box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
-    }
-    
-    .required { color: #ef4444; }
-    
-    /* BARRA DE FORTALEZA */
-    .password-strength-container {
-      margin-top: 10px;
-    }
-    
-    .password-strength-bar-container {
-      height: 8px;
-      background: #e5e7eb;
-      border-radius: 4px;
-      overflow: hidden;
-      margin-bottom: 6px;
-    }
-    
-    .password-strength-bar {
-      height: 100%;
-      width: 0%;
-      transition: all 0.3s;
-      border-radius: 4px;
-    }
-    
-    .password-strength-text {
-      font-size: 12px;
-      font-weight: 600;
-    }
-    
-    .strength-weak { background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%); width: 33%; }
-    .strength-medium { background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%); width: 66%; }
-    .strength-strong { background: linear-gradient(90deg, #10b981 0%, #059669 100%); width: 100%; }
-    
-    /* BOTONES DE ACCIÓN */
-    .button-group-usuario {
-      display: flex;
-      gap: 15px;
-      margin-top: 30px;
-      justify-content: flex-end;
-      padding-top: 25px;
-      border-top: 2px solid #e5e7eb;
-    }
-    
-    /* MODAL CÁMARA */
-    .modal-camara-usuario {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0,0,0,0.9);
-      z-index: 999999;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .modal-camara-content-usuario {
-      background: white;
-      padding: 30px;
-      border-radius: 16px;
-      max-width: 90%;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-    }
-    
-    .modal-camara-content-usuario video {
-      width: 100%;
-      max-width: 500px;
-      border-radius: 8px;
-      background: #000;
-    }
-    
-    @media (max-width: 768px) {
-      .form-grid-usuario { grid-template-columns: 1fr; }
-      .foto-recuadro-usuario { width: 180px; height: 180px; }
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-// ==========================================
 // VARIABLES GLOBALES
 // ==========================================
 let fotoSeleccionada = null;
@@ -277,18 +6,11 @@ let usuarioActualCreador = null;
 let streamCamara = null;
 
 // ==========================================
-// INICIALIZACIÓN (OPTIMIZADA - SIN FLASH)
+// INICIALIZACIÓN
 // ==========================================
 async function inicializarCrearUsuario() {
   console.log('👤 Inicializando módulo de crear usuario...');
   
-  // ✅ 1. Inyectar estilos PRIMERO (antes de cualquier otra cosa)
-  inyectarEstilosCrearUsuario();
-  
-  // ✅ 2. Esperar un frame para asegurar que los estilos se apliquen
-  await new Promise(resolve => requestAnimationFrame(resolve));
-  
-  // ✅ 3. Ahora sí, esperar a que Supabase esté disponible
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -296,11 +18,10 @@ async function inicializarCrearUsuario() {
   }
   
   if (typeof supabaseClient === 'undefined') {
-    mostrarMensajeUsuario('❌ Error: Supabase no está disponible', 'error');
+    mostrarMensaje('❌ Error: Supabase no está disponible', 'error');
     return;
   }
 
-  // ✅ 4. Obtener usuario actual
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (session) {
@@ -319,29 +40,23 @@ async function inicializarCrearUsuario() {
     console.error('Error al cargar usuario actual:', err);
   }
 
-  // ✅ 5. Mostrar el contenido con fade-in
-  const container = document.querySelector('.crear-usuario-container');
-  if (container) {
-    container.classList.add('loaded');
-  }
-
   console.log('✅ Módulo de crear usuario inicializado');
 }
 
 // ==========================================
 // MANEJO DE FOTO
 // ==========================================
-function previsualizarFotoUsuario(event) {
+function previsualizarFoto(event) {
   const file = event.target.files[0];
   if (!file) return;
   
   if (!file.type.startsWith('image/')) {
-    mostrarMensajeUsuario('️ Por favor seleccione un archivo de imagen válido', 'error');
+    mostrarMensaje('⚠️ Por favor seleccione un archivo de imagen válido', 'error');
     return;
   }
 
   if (file.size > 5 * 1024 * 1024) {
-    mostrarMensajeUsuario('⚠️ La imagen no debe superar los 5MB', 'error');
+    mostrarMensaje('⚠️ La imagen no debe superar los 5MB', 'error');
     return;
   }
 
@@ -349,9 +64,9 @@ function previsualizarFotoUsuario(event) {
   
   const reader = new FileReader();
   reader.onload = function(e) {
-    const imgPreview = document.getElementById('fotoPreviewUsuario');
-    const placeholder = document.getElementById('fotoPlaceholderUsuario');
-    const btnEliminar = document.getElementById('btnEliminarFotoUsuario');
+    const imgPreview = document.getElementById('fotoPreview');
+    const placeholder = document.getElementById('fotoPlaceholder');
+    const btnEliminar = document.getElementById('btnEliminarFoto');
     
     imgPreview.src = e.target.result;
     imgPreview.style.display = 'block';
@@ -362,13 +77,13 @@ function previsualizarFotoUsuario(event) {
   reader.readAsDataURL(file);
 }
 
-function eliminarFotoUsuario() {
+function eliminarFoto() {
   fotoSeleccionada = null;
   
-  const imgPreview = document.getElementById('fotoPreviewUsuario');
-  const placeholder = document.getElementById('fotoPlaceholderUsuario');
-  const btnEliminar = document.getElementById('btnEliminarFotoUsuario');
-  const inputFoto = document.getElementById('inputFotoUsuario');
+  const imgPreview = document.getElementById('fotoPreview');
+  const placeholder = document.getElementById('fotoPlaceholder');
+  const btnEliminar = document.getElementById('btnEliminarFoto');
+  const inputFoto = document.getElementById('inputFoto');
   
   imgPreview.src = '';
   imgPreview.style.display = 'none';
@@ -380,12 +95,12 @@ function eliminarFotoUsuario() {
 // ==========================================
 // CÁMARA
 // ==========================================
-async function abrirCamaraUsuario() {
-  const modal = document.getElementById('modalCamaraUsuario');
-  const video = document.getElementById('videoCamaraUsuario');
+async function abrirCamara() {
+  const modal = document.getElementById('modalCamara');
+  const video = document.getElementById('videoCamara');
   
   if (!modal || !video) {
-    mostrarMensajeUsuario('️ Error: No se encontró el modal de cámara', 'error');
+    mostrarMensaje('⚠️ Error: No se encontró el modal de cámara', 'error');
     return;
   }
 
@@ -403,16 +118,16 @@ async function abrirCamaraUsuario() {
     modal.style.display = 'flex';
   } catch (err) {
     console.error('Error al acceder a la cámara:', err);
-    mostrarMensajeUsuario('️ No se pudo acceder a la cámara. Verifique los permisos.', 'error');
+    mostrarMensaje('️ No se pudo acceder a la cámara. Verifique los permisos.', 'error');
   }
 }
 
-function capturarFotoCamaraUsuario() {
-  const video = document.getElementById('videoCamaraUsuario');
-  const canvas = document.getElementById('canvasCamaraUsuario');
+function capturarFotoCamara() {
+  const video = document.getElementById('videoCamara');
+  const canvas = document.getElementById('canvasCamara');
   
   if (!video || !canvas) {
-    mostrarMensajeUsuario('️ Error: No se encontró el video o canvas', 'error');
+    mostrarMensaje('⚠️ Error: No se encontró el video o canvas', 'error');
     return;
   }
 
@@ -424,7 +139,7 @@ function capturarFotoCamaraUsuario() {
   
   canvas.toBlob(async (blob) => {
     if (!blob) {
-      mostrarMensajeUsuario(' Error al capturar la foto', 'error');
+      mostrarMensaje('❌ Error al capturar la foto', 'error');
       return;
     }
     
@@ -436,9 +151,9 @@ function capturarFotoCamaraUsuario() {
     
     const reader = new FileReader();
     reader.onload = function(e) {
-      const imgPreview = document.getElementById('fotoPreviewUsuario');
-      const placeholder = document.getElementById('fotoPlaceholderUsuario');
-      const btnEliminar = document.getElementById('btnEliminarFotoUsuario');
+      const imgPreview = document.getElementById('fotoPreview');
+      const placeholder = document.getElementById('fotoPlaceholder');
+      const btnEliminar = document.getElementById('btnEliminarFoto');
       
       imgPreview.src = e.target.result;
       imgPreview.style.display = 'block';
@@ -448,13 +163,13 @@ function capturarFotoCamaraUsuario() {
     
     reader.readAsDataURL(file);
     
-    cerrarCamaraUsuario();
-    mostrarMensajeUsuario('✅ Foto capturada exitosamente', 'exito');
+    cerrarCamara();
+    mostrarMensaje('✅ Foto capturada exitosamente', 'exito');
   }, 'image/jpeg', 0.9);
 }
 
-function cerrarCamaraUsuario() {
-  const modal = document.getElementById('modalCamaraUsuario');
+function cerrarCamara() {
+  const modal = document.getElementById('modalCamara');
   if (modal) modal.style.display = 'none';
   
   if (streamCamara) {
@@ -466,10 +181,10 @@ function cerrarCamaraUsuario() {
 // ==========================================
 // VERIFICAR FORTALEZA DE CONTRASEÑA
 // ==========================================
-function verificarFortalezaPasswordUsuario() {
+function verificarFortalezaPassword() {
   const password = document.getElementById('usuarioPassword').value;
-  const bar = document.getElementById('passwordStrengthBarUsuario');
-  const text = document.getElementById('passwordStrengthTextUsuario');
+  const bar = document.getElementById('passwordStrengthBar');
+  const text = document.getElementById('passwordStrengthText');
   
   if (!bar || !text) return;
   
@@ -490,7 +205,7 @@ function verificarFortalezaPasswordUsuario() {
   
   if (strength <= 2) {
     bar.className = 'password-strength-bar strength-weak';
-    text.textContent = ' Contraseña débil';
+    text.textContent = '🔴 Contraseña débil';
     text.style.color = '#ef4444';
   } else if (strength <= 4) {
     bar.className = 'password-strength-bar strength-medium';
@@ -498,7 +213,7 @@ function verificarFortalezaPasswordUsuario() {
     text.style.color = '#f59e0b';
   } else {
     bar.className = 'password-strength-bar strength-strong';
-    text.textContent = '🟢 Contraseña fuerte';
+    text.textContent = ' Contraseña fuerte';
     text.style.color = '#10b981';
   }
 }
@@ -519,28 +234,28 @@ async function crearUsuario() {
 
   // Validaciones
   if (!nombre || !apellido || !cedula || !email || !password || !rol) {
-    mostrarMensajeUsuario('⚠️ Por favor complete todos los campos obligatorios', 'error');
+    mostrarMensaje('⚠️ Por favor complete todos los campos obligatorios', 'error');
     return;
   }
   
   if (!email.includes('@')) {
-    mostrarMensajeUsuario('️ El correo electrónico debe contener "@"', 'error');
+    mostrarMensaje('⚠️ El correo electrónico debe contener "@"', 'error');
     return;
   }
   
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    mostrarMensajeUsuario('⚠️ Por favor ingrese un correo electrónico válido', 'error');
+    mostrarMensaje('⚠️ Por favor ingrese un correo electrónico válido', 'error');
     return;
   }
   
   if (password.length < 6) {
-    mostrarMensajeUsuario('️ La contraseña debe tener al menos 6 caracteres', 'error');
+    mostrarMensaje('⚠️ La contraseña debe tener al menos 6 caracteres', 'error');
     return;
   }
   
   if (password !== passwordConfirm) {
-    mostrarMensajeUsuario('⚠️ Las contraseñas no coinciden', 'error');
+    mostrarMensaje('⚠️ Las contraseñas no coinciden', 'error');
     return;
   }
 
@@ -609,38 +324,38 @@ async function crearUsuario() {
       await registrarLog('usuarios', 'Usuario creado', descripcion, 'success');
     }
 
-    mostrarMensajeUsuario(`✅ Usuario "${nombre} ${apellido}" creado exitosamente`, 'exito');
+    mostrarMensaje(`✅ Usuario "${nombre} ${apellido}" creado exitosamente`, 'exito');
     
     setTimeout(() => {
-      limpiarFormularioUsuario();
+      limpiarFormulario();
     }, 2000);
 
   } catch (err) {
     console.error('❌ Error al crear usuario:', err);
-    mostrarMensajeUsuario(`❌ Error: ${err.message}`, 'error');
+    mostrarMensaje(`❌ Error: ${err.message}`, 'error');
   } finally {
     const btn = document.getElementById('btnCrearUsuario');
     btn.disabled = false;
-    btn.textContent = '💾 Crear Usuario';
+    btn.textContent = ' Crear Usuario';
   }
 }
 
 // ==========================================
 // UTILIDADES
 // ==========================================
-function mostrarMensajeUsuario(texto, tipo) {
-  const msg = document.getElementById('mensajeUsuario');
+function mostrarMensaje(texto, tipo) {
+  const msg = document.getElementById('mensaje');
   if (!msg) return;
   
   msg.textContent = texto;
-  msg.className = `crear-usuario-mensaje ${tipo}`;
+  msg.className = `mensaje ${tipo}`;
   
   setTimeout(() => { 
-    msg.className = 'crear-usuario-mensaje'; 
+    msg.className = 'mensaje'; 
   }, 5000);
 }
 
-function limpiarFormularioUsuario() {
+function limpiarFormulario() {
   document.getElementById('usuarioNombre').value = '';
   document.getElementById('usuarioApellido').value = '';
   document.getElementById('usuarioCedula').value = '';
@@ -649,10 +364,10 @@ function limpiarFormularioUsuario() {
   document.getElementById('usuarioPasswordConfirm').value = '';
   document.getElementById('usuarioRol').value = 'consultor';
   
-  eliminarFotoUsuario();
+  eliminarFoto();
   
-  const bar = document.getElementById('passwordStrengthBarUsuario');
-  const text = document.getElementById('passwordStrengthTextUsuario');
+  const bar = document.getElementById('passwordStrengthBar');
+  const text = document.getElementById('passwordStrengthText');
   if (bar) bar.className = 'password-strength-bar';
   if (text) text.textContent = '';
   
@@ -663,6 +378,6 @@ function limpiarFormularioUsuario() {
 // INICIALIZAR
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
-  console.log(' DOM cargado - Iniciando módulo de crear usuario');
+  console.log('📄 DOM cargado - Iniciando módulo de crear usuario');
   inicializarCrearUsuario();
 });
