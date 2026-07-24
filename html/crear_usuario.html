@@ -7,421 +7,109 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  .container { max-width: 900px; margin: 0 auto; padding: 30px; }
-  .page-header { text-align: center; margin-bottom: 30px; }
-  .page-title { font-family: 'Libre Caslon Text', serif; color: #1e3a8a; font-size: 28px; margin: 0; }
-  .page-subtitle { color: #6b7280; font-size: 14px; margin-top: 5px; }
-  
-  fieldset { border: 1px solid #d1d5db; border-radius: 8px; padding: 25px; margin-bottom: 20px; background: #fafafa; }
-  legend { background: #1e3a8a; color: white; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; }
-  
-  /* ============================================ */
-  /* SECCIÓN DE FOTO - RECUADRO CENTRAL */
-  /* ============================================ */
-  .foto-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 30px;
-    padding: 25px;
-    background: white;
-    border-radius: 12px;
-    border: 2px dashed #d1d5db;
-  }
-  
-  .foto-recuadro {
-    width: 200px;
-    height: 200px;
-    border-radius: 12px;
-    border: 3px dashed #1e3a8a;
-    background: #f9fafb;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    overflow: hidden;
-    position: relative;
-  }
-  
-  .foto-recuadro:hover {
-    background: #eff6ff;
-    border-color: #3b82f6;
-    transform: scale(1.02);
-  }
-  
-  .foto-recuadro img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: none;
-  }
-  
-  .foto-recuadro .foto-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    color: #9ca3af;
-  }
-  
-  .foto-recuadro .foto-placeholder-icon {
-    font-size: 56px;
-    margin-bottom: 8px;
-  }
-  
-  .foto-recuadro .foto-placeholder-text {
-    font-size: 13px;
-    font-weight: 500;
-  }
-  
-  .foto-botones {
-    display: flex;
-    gap: 12px;
-    margin-top: 18px;
-  }
-  
-  .foto-btn {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: 'Poppins', sans-serif;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  
-  .foto-btn-subir {
-    background: #6b7280;
-    color: white;
-  }
-  
-  .foto-btn-subir:hover { background: #4b5563; }
-  
-  .foto-btn-camara {
-    background: #1e3a8a;
-    color: white;
-  }
-  
-  .foto-btn-camara:hover { background: #1e40af; }
-  
-  .foto-btn-eliminar {
-    background: #dc2626;
-    color: white;
-    display: none;
-  }
-  
-  .foto-btn-eliminar:hover { background: #b91c1c; }
-  
-  /* ============================================ */
-  /* FORMULARIO - GRID 2 COLUMNAS */
-  /* ============================================ */
-  .form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 18px;
-  }
-  
-  .form-group {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .form-group.full-width {
-    grid-column: 1 / -1;
-  }
-  
-  .form-group label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 6px;
-  }
-  
-  .form-group input,
-  .form-group select {
-    padding: 10px 12px;
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: 'Poppins', sans-serif;
-    transition: all 0.3s;
-    background: white;
-  }
-  
-  .form-group input:focus,
-  .form-group select:focus {
-    outline: none;
-    border-color: #1e3a8a;
-    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
-  }
-  
-  .required { color: #ef4444; }
-  
-  /* ============================================ */
-  /* CONTRASEÑA CON OJO GRIS DENTRO DEL CAMPO */
-  /* ============================================ */
-  .password-wrapper {
-    position: relative;
-    width: 100%;
-  }
-  
-  .password-wrapper input {
-    width: 100%;
-    padding-right: 42px; /* Espacio para el ojo */
-    box-sizing: border-box;
-  }
-  
-  .password-toggle {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
-    color: #9ca3af; /* Gris */
-    font-size: 18px;
-    user-select: none;
-    transition: color 0.2s;
-    background: none;
-    border: none;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .password-toggle:hover {
-    color: #4b5563; /* Gris más oscuro al hover */
-  }
-  
-  /* Barra de fortaleza */
-  .password-strength {
-    margin-top: 8px;
-    height: 6px;
-    background: #e5e7eb;
-    border-radius: 3px;
-    overflow: hidden;
-  }
-  
-  .password-strength-bar {
-    height: 100%;
-    width: 0%;
-    transition: all 0.3s;
-    border-radius: 3px;
-  }
-  
-  .password-strength-text {
-    font-size: 11px;
-    margin-top: 4px;
-    font-weight: 600;
-  }
-  
-  .strength-weak { background: #ef4444; width: 33%; }
-  .strength-medium { background: #f59e0b; width: 66%; }
-  .strength-strong { background: #10b981; width: 100%; }
-  
-  /* ============================================ */
-  /* BOTONES DE ACCIÓN */
-  /* ============================================ */
-  .btn-action {
-    padding: 12px 24px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    transition: all 0.3s;
-    font-family: 'Poppins', sans-serif;
-  }
-  
-  .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; }
-  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3); }
-  .btn-secondary { background-color: #6b7280; color: white; }
-  .btn-secondary:hover { background-color: #4b5563; }
-  .btn-success { background: #10b981; color: white; }
-  .btn-success:hover { background: #059669; }
-  
-  .button-group {
-    display: flex;
-    gap: 10px;
-    margin-top: 25px;
-    justify-content: flex-end;
-    padding-top: 20px;
-    border-top: 2px solid #e5e7eb;
-  }
-  
-  /* ============================================ */
-  /* MENSAJES */
-  /* ============================================ */
-  .mensaje {
-    padding: 12px;
-    border-radius: 6px;
-    margin-bottom: 20px;
-    font-size: 14px;
-    font-weight: 500;
-    display: none;
-  }
-  .mensaje.exito { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; display: block; }
-  .mensaje.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; display: block; }
-  
-  /* ============================================ */
-  /* MODAL DE CÁMARA */
-  /* ============================================ */
-  .modal-camara {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0,0,0,0.9);
-    z-index: 999999;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .modal-camara-content {
-    background: white;
-    padding: 25px;
-    border-radius: 16px;
-    max-width: 90%;
-  }
-  
-  .modal-camara video {
-    width: 100%;
-    max-width: 500px;
-    border-radius: 8px;
-    background: #000;
-  }
-  
-  /* ============================================ */
-  /* RESPONSIVE */
-  /* ============================================ */
-  @media (max-width: 768px) {
-    .form-grid { grid-template-columns: 1fr; }
-    .foto-recuadro { width: 180px; height: 180px; }
-  }
-</style>
 </head>
 <body>
-<div class="container">
-  <div class="page-header">
-    <h1 class="page-title">👤 Crear Nuevo Usuario</h1>
-    <p class="page-subtitle">Registra un nuevo usuario con sus credenciales y rol en el sistema</p>
+<div class="crear-usuario-container">
+  <div class="crear-usuario-header">
+    <h1 class="crear-usuario-title">👤 Crear Nuevo Usuario</h1>
+    <p class="crear-usuario-subtitle">Registra un nuevo usuario con sus credenciales y rol en el sistema</p>
   </div>
 
-  <div id="mensaje" class="mensaje"></div>
+  <div id="mensajeUsuario" class="crear-usuario-mensaje"></div>
 
-  <fieldset>
+  <fieldset class="crear-usuario-fieldset">
     <legend>📝 Datos del Usuario</legend>
     
-    <!-- ============================================ -->
-    <!-- SECCIÓN DE FOTO - RECUADRO CENTRAL -->
-    <!-- ============================================ -->
-    <div class="foto-section">
-      <div class="foto-recuadro" id="fotoRecuadro" onclick="document.getElementById('inputFoto').click()" title="Clic para subir foto">
-        <div class="foto-placeholder" id="fotoPlaceholder">
-          <div class="foto-placeholder-icon">📷</div>
-          <div class="foto-placeholder-text">Clic para agregar foto</div>
+    <!-- SECCIÓN DE FOTO -->
+    <div class="foto-section-usuario">
+      <div class="foto-recuadro-usuario" id="fotoRecuadroUsuario" onclick="document.getElementById('inputFotoUsuario').click()" title="Clic para subir foto">
+        <div class="foto-placeholder-usuario" id="fotoPlaceholderUsuario">
+          <div class="foto-placeholder-icon-usuario">📷</div>
+          <div class="foto-placeholder-text-usuario">Clic para agregar foto</div>
         </div>
-        <img id="fotoPreview" src="" alt="Foto de perfil">
+        <img id="fotoPreviewUsuario" src="" alt="Foto de perfil" style="display: none;">
       </div>
       
-      <div class="foto-botones">
-        <button type="button" class="foto-btn foto-btn-subir" onclick="document.getElementById('inputFoto').click()">
+      <div class="foto-botones-usuario">
+        <button type="button" class="foto-btn-usuario foto-btn-subir-usuario" onclick="document.getElementById('inputFotoUsuario').click()">
           📁 Subir Archivo
         </button>
-        <button type="button" class="foto-btn foto-btn-camara" onclick="abrirCamara()">
-           Tomar Foto
+        <button type="button" class="foto-btn-usuario foto-btn-camara-usuario" onclick="abrirCamaraUsuario()">
+          📷 Tomar Foto
         </button>
-        <button type="button" class="foto-btn foto-btn-eliminar" id="btnEliminarFoto" onclick="eliminarFoto()">
-          🗑️ Eliminar
+        <button type="button" class="foto-btn-usuario foto-btn-eliminar-usuario" id="btnEliminarFotoUsuario" onclick="eliminarFotoUsuario()" style="display: none;">
+          ️ Eliminar
         </button>
       </div>
       
-      <input type="file" id="inputFoto" accept="image/*" style="display: none;" onchange="previsualizarFoto(event)">
+      <input type="file" id="inputFotoUsuario" accept="image/*" style="display: none;" onchange="previsualizarFotoUsuario(event)">
     </div>
 
-    <!-- ============================================ -->
-    <!-- FORMULARIO - GRID 2 COLUMNAS -->
-    <!-- ============================================ -->
-    <div class="form-grid">
-      <div class="form-group">
+    <!-- FORMULARIO -->
+    <div class="form-grid-usuario">
+      <div class="form-group-usuario">
         <label>Nombres <span class="required">*</span></label>
         <input type="text" id="usuarioNombre" placeholder="Ej: Juan Carlos">
       </div>
       
-      <div class="form-group">
+      <div class="form-group-usuario">
         <label>Apellidos <span class="required">*</span></label>
         <input type="text" id="usuarioApellido" placeholder="Ej: Pérez García">
       </div>
       
-      <div class="form-group">
+      <div class="form-group-usuario">
         <label>Cédula de Identidad <span class="required">*</span></label>
         <input type="text" id="usuarioCedula" placeholder="Ej: 12345678" maxlength="10">
       </div>
       
-      <div class="form-group">
+      <div class="form-group-usuario">
         <label>Correo Electrónico <span class="required">*</span></label>
         <input type="email" id="usuarioEmail" placeholder="usuario@ejemplo.com">
       </div>
       
-      <div class="form-group">
+      <div class="form-group-usuario">
         <label>Contraseña <span class="required">*</span></label>
-        <div class="password-wrapper">
-          <input type="password" id="usuarioPassword" placeholder="Mínimo 6 caracteres" minlength="6" oninput="verificarFortalezaPassword()">
-          <button type="button" class="password-toggle" onclick="togglePassword('usuarioPassword')" title="Mostrar/Ocultar">👁️</button>
+        <input type="password" id="usuarioPassword" placeholder="Mínimo 6 caracteres" minlength="6" oninput="verificarFortalezaPasswordUsuario()">
+        <div class="password-strength-container">
+          <div class="password-strength-bar-container">
+            <div class="password-strength-bar" id="passwordStrengthBarUsuario"></div>
+          </div>
+          <div class="password-strength-text" id="passwordStrengthTextUsuario"></div>
         </div>
-        <div class="password-strength">
-          <div class="password-strength-bar" id="passwordStrengthBar"></div>
-        </div>
-        <div class="password-strength-text" id="passwordStrengthText"></div>
       </div>
       
-      <div class="form-group">
+      <div class="form-group-usuario">
         <label>Repetir Contraseña <span class="required">*</span></label>
-        <div class="password-wrapper">
-          <input type="password" id="usuarioPasswordConfirm" placeholder="Repita la contraseña" minlength="6">
-          <button type="button" class="password-toggle" onclick="togglePassword('usuarioPasswordConfirm')" title="Mostrar/Ocultar">👁️</button>
-        </div>
+        <input type="password" id="usuarioPasswordConfirm" placeholder="Repita la contraseña" minlength="6">
       </div>
       
-      <div class="form-group full-width">
+      <div class="form-group-usuario full-width">
         <label>Rol en el Sistema <span class="required">*</span></label>
         <select id="usuarioRol">
           <option value="consultor">👁️ Consultor (Solo lectura)</option>
-          <option value="moderador">⚙️ Moderador (Gestión operativa)</option>
-          <option value="administrador">👑 Administrador (Control total)</option>
+          <option value="moderador">️ Moderador (Gestión operativa)</option>
+          <option value="administrador"> Administrador (Control total)</option>
         </select>
       </div>
     </div>
 
-    <!-- ============================================ -->
-    <!-- BOTONES DE ACCIÓN -->
-    <!-- ============================================ -->
-    <div class="button-group">
-      <button type="button" class="btn-action btn-secondary" onclick="limpiarFormularioUsuario()">🔄 Limpiar</button>
-      <button type="button" class="btn-action btn-success" onclick="crearUsuario()" id="btnCrearUsuario">💾 Crear Usuario</button>
+    <!-- BOTONES -->
+    <div class="button-group-usuario">
+      <button type="button" class="btn-action-usuario btn-secondary-usuario" onclick="limpiarFormularioUsuario()">🔄 Limpiar</button>
+      <button type="button" class="btn-action-usuario btn-success-usuario" onclick="crearUsuario()" id="btnCrearUsuario"> Crear Usuario</button>
     </div>
   </fieldset>
 </div>
 
-<!-- ============================================ -->
 <!-- MODAL DE CÁMARA -->
-<!-- ============================================ -->
-<div class="modal-camara" id="modalCamara">
-  <div class="modal-camara-content">
+<div class="modal-camara-usuario" id="modalCamaraUsuario">
+  <div class="modal-camara-content-usuario">
     <h3 style="margin: 0 0 15px 0; color: #1e3a8a; font-family: 'Libre Caslon Text', serif;">📷 Tomar Foto de Perfil</h3>
-    <video id="videoCamara" autoplay playsinline></video>
-    <canvas id="canvasCamara" style="display: none;"></canvas>
+    <video id="videoCamaraUsuario" autoplay playsinline></video>
+    <canvas id="canvasCamaraUsuario" style="display: none;"></canvas>
     <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center;">
-      <button type="button" class="btn-action btn-success" onclick="capturarFotoCamara()">📸 Capturar</button>
-      <button type="button" class="btn-action btn-secondary" onclick="cerrarCamara()"> Cancelar</button>
+      <button type="button" class="btn-action-usuario btn-success-usuario" onclick="capturarFotoCamaraUsuario()">📸 Capturar</button>
+      <button type="button" class="btn-action-usuario btn-secondary-usuario" onclick="cerrarCamaraUsuario()">❌ Cancelar</button>
     </div>
   </div>
 </div>
