@@ -268,32 +268,85 @@ async function guardarCambiosUsuario() {
 }
 
 // ==========================================
-// RESTABLECER CONTRASEÑA (MÉTODO SEGURO)
+// CAMBIAR CONTRASEÑA (VÍA EDGE FUNCTION)
 // ==========================================
-async function enviarRestablecimientoPassword() {
-  if (!usuarioSeleccionadoMod || !usuarioSeleccionadoMod.email) {
-    mostrarMensajeMod('⚠️ No hay un usuario válido seleccionado', 'error');
+async function cambiarPasswordUsuario() {
+  if (!usuarioSeleccionadoMod) {
+    mostrarMensajeMod('️ No hay un usuario seleccionado', 'error');
     return;
   }
 
-  if (!confirm(`¿Enviar enlace de restablecimiento de contraseña a ${usuarioSeleccionadoMod.email}?`)) {
+  const nuevaPassword = document.getElementById('editNuevaPassword').value;
+  const confirmarPassword = document.getElementById('editConfirmarPassword').value;
+
+  // Validaciones
+  if (!nuevaPassword || !confirmarPassword) {
+    mostrarMensajeMod('⚠️ Complete ambos campos de contraseña', 'error');
+    return;
+  }
+
+  if (nuevaPassword.length < 6) {
+    mostrarMensajeMod('️ La contraseña debe tener al menos 6 caracteres', 'error');
+    return;
+  }
+
+  if (nuevaPassword !== confirmarPassword) {
+    mostrarMensajeMod('⚠️ Las contraseñas no coinciden', 'error');
+    return;
+  }
+
+  if (!confirm(`¿Está seguro de cambiar la contraseña del usuario "${usuarioSeleccionadoMod.nombre}"?\n\nEsta acción no se puede deshacer.`)) {
     return;
   }
 
   try {
-    const { error } = await supabaseClient.auth.resetPasswordForEmail(usuarioSeleccionadoMod.email, {
-      redirectTo: window.location.origin + '/dashboard.html' // Ajusta esta URL a tu ruta de login/dashboard
+    // Obtener la sesión actual del administrador
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    
+    if (!session || !session.access_token) {
+      throw new Error('No hay sesión activa');
+    }
+
+    // Llamar a la Edge Function
+    const { data: supabaseUrl } = supabaseClient;
+    const functionUrl = `${supabaseUrl.supabaseUrl}/functions/v1/update-user-password`;
+
+    const response = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+        'apikey': supabaseUrl.supabaseKey
+      },
+      body: JSON.stringify({
+        user_id: usuarioSeleccionadoMod.id,
+        new_password: nuevaPassword
+      })
     });
 
-    if (error) throw error;
+    const result = await response.json();
 
-    mostrarMensajeMod(`✅ Se ha enviado un enlace de restablecimiento a ${usuarioSeleccionadoMod.email}`, 'info');
+    if (!response.ok || result.error) {
+      throw new Error(result.error || 'Error al cambiar la contraseña');
+    }
+
+    // Registrar en logs
+    if (typeof registrarLog === 'function') {
+      const descripcion = `Contraseña modificada del usuario: ${usuarioSeleccionadoMod.nombre} (${usuarioSeleccionadoMod.email}). Modificado por: ${usuarioActualMod?.email || 'Sistema'}`;
+      await registrarLog('usuarios', 'Contraseña cambiada', descripcion, 'warning');
+    }
+
+    mostrarMensajeMod(`✅ La contraseña de "${usuarioSeleccionadoMod.nombre}" ha sido actualizada exitosamente`, 'exito');
+    
+    // Limpiar campos de contraseña
+    document.getElementById('editNuevaPassword').value = '';
+    document.getElementById('editConfirmarPassword').value = '';
+
   } catch (err) {
-    console.error('Error al enviar restablecimiento:', err);
+    console.error('Error al cambiar contraseña:', err);
     mostrarMensajeMod(`❌ Error: ${err.message}`, 'error');
   }
 }
-
 // ==========================================
 // UTILIDADES
 // ==========================================
