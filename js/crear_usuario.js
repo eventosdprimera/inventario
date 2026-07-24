@@ -1,5 +1,5 @@
 // ==========================================
-// INYECTAR ESTILOS CSS
+// INYECTAR ESTILOS CSS (OPTIMIZADO)
 // ==========================================
 function inyectarEstilosCrearUsuario() {
   if (document.getElementById('estilos-crear-usuario')) return;
@@ -7,6 +7,7 @@ function inyectarEstilosCrearUsuario() {
   const style = document.createElement('style');
   style.id = 'estilos-crear-usuario';
   style.textContent = `
+    /* Estilos base que se aplican inmediatamente */
     .crear-usuario-container { max-width: 1000px; margin: 0 auto; padding: 30px; }
     .crear-usuario-header { text-align: center; margin-bottom: 35px; }
     .crear-usuario-title { font-family: 'Libre Caslon Text', serif; color: #1e3a8a; font-size: 32px; margin: 0; font-weight: 700; }
@@ -86,7 +87,9 @@ function inyectarEstilosCrearUsuario() {
       justify-content: center;
     }
     
-    .foto-btn-usuario {
+    /* BOTONES - ESTILOS CRÍTICOS */
+    .foto-btn-usuario,
+    .btn-action-usuario {
       padding: 10px 20px;
       border: none;
       border-radius: 8px;
@@ -95,17 +98,22 @@ function inyectarEstilosCrearUsuario() {
       font-weight: 600;
       font-family: 'Poppins', sans-serif;
       transition: all 0.3s;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 8px;
+      /* Evitar flash: aplicar estilos base inmediatamente */
+      opacity: 1;
+      transform: none;
     }
     
-    .foto-btn-subir-usuario {
+    .foto-btn-subir-usuario,
+    .btn-secondary-usuario {
       background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
       color: white;
     }
     
-    .foto-btn-subir-usuario:hover { 
+    .foto-btn-subir-usuario:hover,
+    .btn-secondary-usuario:hover { 
       transform: translateY(-2px); 
       box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3); 
     }
@@ -128,6 +136,15 @@ function inyectarEstilosCrearUsuario() {
     .foto-btn-eliminar-usuario:hover { 
       transform: translateY(-2px); 
       box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); 
+    }
+    
+    .btn-success-usuario { 
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+      color: white; 
+    }
+    .btn-success-usuario:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3); 
     }
     
     /* FORMULARIO */
@@ -203,47 +220,6 @@ function inyectarEstilosCrearUsuario() {
     .strength-strong { background: linear-gradient(90deg, #10b981 0%, #059669 100%); width: 100%; }
     
     /* BOTONES DE ACCIÓN */
-    .btn-action-usuario {
-      padding: 14px 28px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 15px;
-      font-weight: 700;
-      transition: all 0.3s;
-      font-family: 'Poppins', sans-serif;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .btn-primary-usuario { 
-      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); 
-      color: white; 
-    }
-    .btn-primary-usuario:hover { 
-      transform: translateY(-2px); 
-      box-shadow: 0 6px 15px rgba(30, 58, 138, 0.3); 
-    }
-    
-    .btn-secondary-usuario { 
-      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); 
-      color: white; 
-    }
-    .btn-secondary-usuario:hover { 
-      transform: translateY(-2px); 
-      box-shadow: 0 6px 15px rgba(107, 114, 128, 0.3); 
-    }
-    
-    .btn-success-usuario { 
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
-      color: white; 
-    }
-    .btn-success-usuario:hover { 
-      transform: translateY(-2px); 
-      box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3); 
-    }
-    
     .button-group-usuario {
       display: flex;
       gap: 15px;
@@ -285,6 +261,9 @@ function inyectarEstilosCrearUsuario() {
     @media (max-width: 768px) {
       .form-grid-usuario { grid-template-columns: 1fr; }
       .foto-recuadro-usuario { width: 180px; height: 180px; }
+      .foto-botones-usuario { flex-direction: column; align-items: center; }
+      .button-group-usuario { justify-content: center; flex-direction: column; }
+      .btn-action-usuario { width: 100%; justify-content: center; }
     }
   `;
   document.head.appendChild(style);
@@ -298,13 +277,16 @@ let usuarioActualCreador = null;
 let streamCamara = null;
 
 // ==========================================
-// INICIALIZACIÓN
+// INICIALIZACIÓN (OPTIMIZADA)
 // ==========================================
 async function inicializarCrearUsuario() {
   console.log('👤 Inicializando módulo de crear usuario...');
   
-  // Inyectar estilos primero
+  // ✅ Inyectar estilos PRIMERO antes de cualquier otra cosa
   inyectarEstilosCrearUsuario();
+  
+  // Esperar un tick para asegurar que los estilos se apliquen
+  await new Promise(resolve => requestAnimationFrame(resolve));
   
   // Esperar a que Supabase esté disponible
   let intentos = 0;
@@ -397,7 +379,7 @@ async function abrirCamaraUsuario() {
   const video = document.getElementById('videoCamaraUsuario');
   
   if (!modal || !video) {
-    mostrarMensajeUsuario('⚠️ Error: No se encontró el modal de cámara', 'error');
+    mostrarMensajeUsuario('️ Error: No se encontró el modal de cámara', 'error');
     return;
   }
 
@@ -415,7 +397,7 @@ async function abrirCamaraUsuario() {
     modal.style.display = 'flex';
   } catch (err) {
     console.error('Error al acceder a la cámara:', err);
-    mostrarMensajeUsuario('⚠️ No se pudo acceder a la cámara. Verifique los permisos.', 'error');
+    mostrarMensajeUsuario('️ No se pudo acceder a la cámara. Verifique los permisos.', 'error');
   }
 }
 
@@ -424,7 +406,7 @@ function capturarFotoCamaraUsuario() {
   const canvas = document.getElementById('canvasCamaraUsuario');
   
   if (!video || !canvas) {
-    mostrarMensajeUsuario('⚠️ Error: No se encontró el video o canvas', 'error');
+    mostrarMensajeUsuario('️ Error: No se encontró el video o canvas', 'error');
     return;
   }
 
@@ -436,7 +418,7 @@ function capturarFotoCamaraUsuario() {
   
   canvas.toBlob(async (blob) => {
     if (!blob) {
-      mostrarMensajeUsuario('❌ Error al capturar la foto', 'error');
+      mostrarMensajeUsuario(' Error al capturar la foto', 'error');
       return;
     }
     
@@ -502,7 +484,7 @@ function verificarFortalezaPasswordUsuario() {
   
   if (strength <= 2) {
     bar.className = 'password-strength-bar strength-weak';
-    text.textContent = ' Contraseña débil';
+    text.textContent = '🔴 Contraseña débil';
     text.style.color = '#ef4444';
   } else if (strength <= 4) {
     bar.className = 'password-strength-bar strength-medium';
@@ -552,13 +534,13 @@ async function crearUsuario() {
   }
   
   if (password !== passwordConfirm) {
-    mostrarMensajeUsuario('️ Las contraseñas no coinciden', 'error');
+    mostrarMensajeUsuario('⚠️ Las contraseñas no coinciden', 'error');
     return;
   }
 
   const btnCrear = document.getElementById('btnCrearUsuario');
   btnCrear.disabled = true;
-  btnCrear.textContent = ' Creando usuario...';
+  btnCrear.textContent = '⏳ Creando usuario...';
 
   try {
     let fotoUrl = null;
