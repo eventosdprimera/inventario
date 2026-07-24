@@ -660,6 +660,34 @@ async function cargarContenido(action) {
     }
     return;
   }
+    // ✅ 19. USUARIOS → MODIFICAR
+  if (modulo === 'usuarios' && operacion === 'modificar') {
+    try {
+      if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      if (typeof inicializarModificarUsuario === 'undefined') await cargarScript('js/modificar_usuario.js');
+      
+      const response = await fetch('html/modificar_usuario.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/modificar_usuario.html');
+      
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      
+      if (!container) throw new Error('No se encontró .container en modificar_usuario.html');
+      
+      contenidoDiv.innerHTML = container.innerHTML;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      if (typeof inicializarModificarUsuario === 'function') {
+        await inicializarModificarUsuario();
+      }
+    } catch (err) {
+      console.error('Error cargando módulo de modificar usuario:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el módulo: ${err.message}</p></fieldset>`;
+    }
+    return;
+  }
   
   // 15. OTROS MÓDULOS (Placeholders)
   let html = '';
