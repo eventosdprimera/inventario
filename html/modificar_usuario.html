@@ -166,14 +166,27 @@
         </select>
       </div>
       
-      <!-- SECCIÓN DE CONTRASEÑA -->
-      <div class="form-group-mod full-width">
-        <div class="password-reset-box">
-          <p>🔒 <strong>Seguridad:</strong> Por políticas de seguridad de Supabase, no es posible cambiar la contraseña de otro usuario directamente desde el frontend. Usa este botón para enviarle un enlace seguro a su correo y que él mismo la restablezca.</p>
-          <button type="button" class="btn-mod btn-warning-mod" onclick="enviarRestablecimientoPassword()">📧 Enviar Enlace de Restablecimiento de Contraseña</button>
-        </div>
+     <!-- SECCIÓN DE CONTRASEÑA -->
+<div class="form-group-mod full-width">
+  <div class="password-reset-box" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 15px; margin-top: 10px;">
+    <p style="font-size: 12px; color: #1e40af; margin: 0 0 10px 0;">
+      🔒 <strong>Cambiar Contraseña:</strong> Establece una nueva contraseña para este usuario. Debe tener al menos 6 caracteres.
+    </p>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+      <div style="flex: 1; min-width: 200px;">
+        <label style="font-size: 11px; color: #374151; font-weight: 600; display: block; margin-bottom: 4px;">Nueva Contraseña</label>
+        <input type="password" id="editNuevaPassword" placeholder="Mínimo 6 caracteres" minlength="6" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
       </div>
+      <div style="flex: 1; min-width: 200px;">
+        <label style="font-size: 11px; color: #374151; font-weight: 600; display: block; margin-bottom: 4px;">Confirmar Contraseña</label>
+        <input type="password" id="editConfirmarPassword" placeholder="Repita la contraseña" minlength="6" style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px;">
+      </div>
+      <button type="button" class="btn-mod btn-warning-mod" onclick="cambiarPasswordUsuario()" style="white-space: nowrap;">
+        🔑 Cambiar Contraseña
+      </button>
     </div>
+  </div>
+</div>
 
     <div style="display: flex; gap: 12px; margin-top: 25px; justify-content: flex-end; border-top: 2px solid #e5e7eb; padding-top: 20px;">
       <button type="button" class="btn-mod btn-secondary-mod" onclick="cancelarEdicion()">❌ Cancelar</button>
