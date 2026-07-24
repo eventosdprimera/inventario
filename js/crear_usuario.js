@@ -6,7 +6,7 @@ let usuarioActualCreador = null;
 let streamCamara = null;
 
 // ==========================================
-// INICIALIZACIÓN
+// INICIALIZAIÓN
 // ==========================================
 async function inicializarCrearUsuario() {
   console.log('👤 Inicializando módulo de crear usuario...');
