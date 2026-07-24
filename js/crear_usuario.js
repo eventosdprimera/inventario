@@ -18,7 +18,7 @@ async function inicializarCrearUsuario() {
   }
   
   if (typeof supabaseClient === 'undefined') {
-    mostrarMensaje('❌ Error: Supabase no está disponible', 'error');
+    mostrarMensajeUsuario('❌ Error: Supabase no está disponible', 'error');
     return;
   }
 
@@ -46,17 +46,17 @@ async function inicializarCrearUsuario() {
 // ==========================================
 // MANEJO DE FOTO
 // ==========================================
-function previsualizarFoto(event) {
+function previsualizarFotoUsuario(event) {
   const file = event.target.files[0];
   if (!file) return;
   
   if (!file.type.startsWith('image/')) {
-    mostrarMensaje('⚠️ Por favor seleccione un archivo de imagen válido', 'error');
+    mostrarMensajeUsuario('⚠️ Por favor seleccione un archivo de imagen válido', 'error');
     return;
   }
 
   if (file.size > 5 * 1024 * 1024) {
-    mostrarMensaje('⚠️ La imagen no debe superar los 5MB', 'error');
+    mostrarMensajeUsuario('⚠️ La imagen no debe superar los 5MB', 'error');
     return;
   }
 
@@ -64,9 +64,9 @@ function previsualizarFoto(event) {
   
   const reader = new FileReader();
   reader.onload = function(e) {
-    const imgPreview = document.getElementById('fotoPreview');
-    const placeholder = document.getElementById('fotoPlaceholder');
-    const btnEliminar = document.getElementById('btnEliminarFoto');
+    const imgPreview = document.getElementById('fotoPreviewUsuario');
+    const placeholder = document.getElementById('fotoPlaceholderUsuario');
+    const btnEliminar = document.getElementById('btnEliminarFotoUsuario');
     
     imgPreview.src = e.target.result;
     imgPreview.style.display = 'block';
@@ -77,13 +77,13 @@ function previsualizarFoto(event) {
   reader.readAsDataURL(file);
 }
 
-function eliminarFoto() {
+function eliminarFotoUsuario() {
   fotoSeleccionada = null;
   
-  const imgPreview = document.getElementById('fotoPreview');
-  const placeholder = document.getElementById('fotoPlaceholder');
-  const btnEliminar = document.getElementById('btnEliminarFoto');
-  const inputFoto = document.getElementById('inputFoto');
+  const imgPreview = document.getElementById('fotoPreviewUsuario');
+  const placeholder = document.getElementById('fotoPlaceholderUsuario');
+  const btnEliminar = document.getElementById('btnEliminarFotoUsuario');
+  const inputFoto = document.getElementById('inputFotoUsuario');
   
   imgPreview.src = '';
   imgPreview.style.display = 'none';
@@ -95,12 +95,12 @@ function eliminarFoto() {
 // ==========================================
 // CÁMARA
 // ==========================================
-async function abrirCamara() {
-  const modal = document.getElementById('modalCamara');
-  const video = document.getElementById('videoCamara');
+async function abrirCamaraUsuario() {
+  const modal = document.getElementById('modalCamaraUsuario');
+  const video = document.getElementById('videoCamaraUsuario');
   
   if (!modal || !video) {
-    mostrarMensaje('⚠️ Error: No se encontró el modal de cámara', 'error');
+    mostrarMensajeUsuario('⚠️ Error: No se encontró el modal de cámara', 'error');
     return;
   }
 
@@ -118,16 +118,16 @@ async function abrirCamara() {
     modal.style.display = 'flex';
   } catch (err) {
     console.error('Error al acceder a la cámara:', err);
-    mostrarMensaje('️ No se pudo acceder a la cámara. Verifique los permisos.', 'error');
+    mostrarMensajeUsuario('⚠️ No se pudo acceder a la cámara. Verifique los permisos.', 'error');
   }
 }
 
-function capturarFotoCamara() {
-  const video = document.getElementById('videoCamara');
-  const canvas = document.getElementById('canvasCamara');
+function capturarFotoCamaraUsuario() {
+  const video = document.getElementById('videoCamaraUsuario');
+  const canvas = document.getElementById('canvasCamaraUsuario');
   
   if (!video || !canvas) {
-    mostrarMensaje('⚠️ Error: No se encontró el video o canvas', 'error');
+    mostrarMensajeUsuario('⚠️ Error: No se encontró el video o canvas', 'error');
     return;
   }
 
@@ -139,7 +139,7 @@ function capturarFotoCamara() {
   
   canvas.toBlob(async (blob) => {
     if (!blob) {
-      mostrarMensaje('❌ Error al capturar la foto', 'error');
+      mostrarMensajeUsuario('❌ Error al capturar la foto', 'error');
       return;
     }
     
@@ -151,9 +151,9 @@ function capturarFotoCamara() {
     
     const reader = new FileReader();
     reader.onload = function(e) {
-      const imgPreview = document.getElementById('fotoPreview');
-      const placeholder = document.getElementById('fotoPlaceholder');
-      const btnEliminar = document.getElementById('btnEliminarFoto');
+      const imgPreview = document.getElementById('fotoPreviewUsuario');
+      const placeholder = document.getElementById('fotoPlaceholderUsuario');
+      const btnEliminar = document.getElementById('btnEliminarFotoUsuario');
       
       imgPreview.src = e.target.result;
       imgPreview.style.display = 'block';
@@ -163,13 +163,13 @@ function capturarFotoCamara() {
     
     reader.readAsDataURL(file);
     
-    cerrarCamara();
-    mostrarMensaje('✅ Foto capturada exitosamente', 'exito');
+    cerrarCamaraUsuario();
+    mostrarMensajeUsuario('✅ Foto capturada exitosamente', 'exito');
   }, 'image/jpeg', 0.9);
 }
 
-function cerrarCamara() {
-  const modal = document.getElementById('modalCamara');
+function cerrarCamaraUsuario() {
+  const modal = document.getElementById('modalCamaraUsuario');
   if (modal) modal.style.display = 'none';
   
   if (streamCamara) {
@@ -181,10 +181,10 @@ function cerrarCamara() {
 // ==========================================
 // VERIFICAR FORTALEZA DE CONTRASEÑA
 // ==========================================
-function verificarFortalezaPassword() {
+function verificarFortalezaPasswordUsuario() {
   const password = document.getElementById('usuarioPassword').value;
-  const bar = document.getElementById('passwordStrengthBar');
-  const text = document.getElementById('passwordStrengthText');
+  const bar = document.getElementById('passwordStrengthBarUsuario');
+  const text = document.getElementById('passwordStrengthTextUsuario');
   
   if (!bar || !text) return;
   
@@ -213,7 +213,7 @@ function verificarFortalezaPassword() {
     text.style.color = '#f59e0b';
   } else {
     bar.className = 'password-strength-bar strength-strong';
-    text.textContent = ' Contraseña fuerte';
+    text.textContent = '🟢 Contraseña fuerte';
     text.style.color = '#10b981';
   }
 }
@@ -232,30 +232,29 @@ async function crearUsuario() {
   const passwordConfirm = document.getElementById('usuarioPasswordConfirm').value;
   const rol = document.getElementById('usuarioRol').value;
 
-  // Validaciones
   if (!nombre || !apellido || !cedula || !email || !password || !rol) {
-    mostrarMensaje('⚠️ Por favor complete todos los campos obligatorios', 'error');
+    mostrarMensajeUsuario('⚠️ Por favor complete todos los campos obligatorios', 'error');
     return;
   }
   
   if (!email.includes('@')) {
-    mostrarMensaje('⚠️ El correo electrónico debe contener "@"', 'error');
+    mostrarMensajeUsuario('⚠️ El correo electrónico debe contener "@"', 'error');
     return;
   }
   
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    mostrarMensaje('⚠️ Por favor ingrese un correo electrónico válido', 'error');
+    mostrarMensajeUsuario('⚠️ Por favor ingrese un correo electrónico válido', 'error');
     return;
   }
   
   if (password.length < 6) {
-    mostrarMensaje('⚠️ La contraseña debe tener al menos 6 caracteres', 'error');
+    mostrarMensajeUsuario('⚠️ La contraseña debe tener al menos 6 caracteres', 'error');
     return;
   }
   
   if (password !== passwordConfirm) {
-    mostrarMensaje('⚠️ Las contraseñas no coinciden', 'error');
+    mostrarMensajeUsuario('⚠️ Las contraseñas no coinciden', 'error');
     return;
   }
 
@@ -324,38 +323,38 @@ async function crearUsuario() {
       await registrarLog('usuarios', 'Usuario creado', descripcion, 'success');
     }
 
-    mostrarMensaje(`✅ Usuario "${nombre} ${apellido}" creado exitosamente`, 'exito');
+    mostrarMensajeUsuario(`✅ Usuario "${nombre} ${apellido}" creado exitosamente`, 'exito');
     
     setTimeout(() => {
-      limpiarFormulario();
+      limpiarFormularioUsuario();
     }, 2000);
 
   } catch (err) {
     console.error('❌ Error al crear usuario:', err);
-    mostrarMensaje(`❌ Error: ${err.message}`, 'error');
+    mostrarMensajeUsuario(`❌ Error: ${err.message}`, 'error');
   } finally {
     const btn = document.getElementById('btnCrearUsuario');
     btn.disabled = false;
-    btn.textContent = ' Crear Usuario';
+    btn.textContent = '💾 Crear Usuario';
   }
 }
 
 // ==========================================
 // UTILIDADES
 // ==========================================
-function mostrarMensaje(texto, tipo) {
-  const msg = document.getElementById('mensaje');
+function mostrarMensajeUsuario(texto, tipo) {
+  const msg = document.getElementById('mensajeUsuario');
   if (!msg) return;
   
   msg.textContent = texto;
-  msg.className = `mensaje ${tipo}`;
+  msg.className = `crear-usuario-mensaje ${tipo}`;
   
   setTimeout(() => { 
-    msg.className = 'mensaje'; 
+    msg.className = 'crear-usuario-mensaje'; 
   }, 5000);
 }
 
-function limpiarFormulario() {
+function limpiarFormularioUsuario() {
   document.getElementById('usuarioNombre').value = '';
   document.getElementById('usuarioApellido').value = '';
   document.getElementById('usuarioCedula').value = '';
@@ -364,10 +363,10 @@ function limpiarFormulario() {
   document.getElementById('usuarioPasswordConfirm').value = '';
   document.getElementById('usuarioRol').value = 'consultor';
   
-  eliminarFoto();
+  eliminarFotoUsuario();
   
-  const bar = document.getElementById('passwordStrengthBar');
-  const text = document.getElementById('passwordStrengthText');
+  const bar = document.getElementById('passwordStrengthBarUsuario');
+  const text = document.getElementById('passwordStrengthTextUsuario');
   if (bar) bar.className = 'password-strength-bar';
   if (text) text.textContent = '';
   
