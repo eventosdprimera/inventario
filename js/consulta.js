@@ -50,19 +50,105 @@ function inyectarEstilosConsulta() {
     tr:hover { background: #f9fafb; cursor: pointer; }
     tr.selected { background: #eff6ff; border-left: 4px solid #1e3a8a; }
     
-    .foto-preview { width: 100%; height: 150px; border: 2px solid #e5e7eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; background-color: #f9fafb; overflow: hidden; cursor: pointer; transition: all 0.3s; }
-    .foto-preview:hover { border-color: #1e3a8a; transform: scale(1.02); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    .foto-preview img { width: 100%; height: 100%; object-fit: cover; }
-    .foto-preview-placeholder { text-align: center; color: #9ca3af; font-size: 11px; padding: 30px; }
-    .foto-preview-placeholder-icon { font-size: 40px; margin-bottom: 8px; }
+    /* ✅ ESTILOS CORREGIDOS PARA FOTOS EN MINIATURA */
+    .fotos-grid-consulta { 
+      display: grid; 
+      grid-template-columns: repeat(4, 1fr); 
+      gap: 15px; 
+      margin-top: 10px; 
+    }
+    
+    .foto-preview-consulta {
+      width: 100%; 
+      height: 140px; 
+      border: 2px solid #e5e7eb; 
+      border-radius: 8px;
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      background-color: #f9fafb;
+      overflow: hidden; 
+      cursor: pointer; 
+      transition: all 0.3s;
+      position: relative;
+    }
+    
+    .foto-preview-consulta:hover { 
+      border-color: #1e3a8a; 
+      transform: scale(1.02); 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+    }
+    
+    .foto-preview-consulta img { 
+      width: 100%; 
+      height: 100%; 
+      object-fit: cover; 
+    }
+    
+    .foto-preview-placeholder { 
+      text-align: center; 
+      color: #9ca3af; 
+      font-size: 11px; 
+      padding: 30px; 
+      grid-column: 1 / -1;
+    }
+    
+    .foto-preview-placeholder-icon { 
+      font-size: 40px; 
+      margin-bottom: 8px; 
+    }
     
     @media print {
       .no-print { display: none !important; }
       body { padding: 0; }
       fieldset { border: none; padding: 0; }
     }
+    
+    @media (max-width: 768px) {
+      .fotos-grid-consulta { grid-template-columns: repeat(2, 1fr); }
+    }
   `;
   document.head.appendChild(style);
+}
+
+// ==========================================
+// CARGAR FOTOS (CORREGIDO PARA MINIATURAS)
+// ==========================================
+async function cargarFotosConsulta(equipo) {
+  const contenedor = document.getElementById('consultaFotos');
+  contenedor.innerHTML = '';
+  
+  // ✅ Agregar clase correcta al contenedor
+  contenedor.className = 'fotos-grid-consulta';
+
+  let fotos = [];
+  if (equipo.foto_url) fotos.push(equipo.foto_url);
+  if (equipo.foto2_url) fotos.push(equipo.foto2_url);
+  if (equipo.foto3_url) fotos.push(equipo.foto3_url);
+  if (equipo.foto4_url) fotos.push(equipo.foto4_url);
+
+  if (fotos.length === 0) {
+    contenedor.innerHTML = `<div class="foto-preview-placeholder"><div class="foto-preview-placeholder-icon">📷</div><div>Sin fotos registradas</div></div>`;
+    return;
+  }
+
+  fotos.forEach((fotoUrl, index) => {
+    const div = document.createElement('div');
+    div.className = 'foto-preview-consulta';
+    div.title = 'Clic para ver en zoom';
+    
+    const img = document.createElement('img');
+    img.src = fotoUrl;
+    img.alt = `Foto ${index + 1}`;
+    img.style.cursor = 'pointer';
+    img.onclick = function() { abrirZoomInfalibleConsulta(fotoUrl); };
+    img.onerror = function() { 
+      this.parentElement.innerHTML = '<div style="color: #ef4444; font-size: 11px; text-align: center; padding: 10px;">❌ Error al cargar</div>'; 
+    };
+    
+    div.appendChild(img);
+    contenedor.appendChild(div);
+  });
 }
 
 // ==========================================
