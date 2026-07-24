@@ -377,11 +377,16 @@ function limpiarFormularioVenta() {
 
 function mostrarMensajeVenta(texto, tipo) {
   const msg = document.getElementById('mensaje');
-  msg.textContent = texto;
-  msg.className = `mensaje ${tipo}`;
-  setTimeout(() => { msg.className = 'mensaje'; }, 4000);
+  if (msg) {
+    msg.textContent = texto;
+    msg.className = `mensaje ${tipo}`;
+    
+    // ✅ Hace que la página suba automáticamente para mostrar el mensaje
+    msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    setTimeout(() => { msg.className = 'mensaje'; }, 4000);
+  }
 }
-
 function abrirZoomInfalibleVenta(url) {
   const modal = document.createElement('div');
   modal.style.cssText = `position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 999999; display: flex; align-items: center; justify-content: center; cursor: zoom-out;`;
