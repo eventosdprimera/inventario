@@ -9,7 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-<div class="crear-usuario-container">
+<!-- ✅ CAMBIO CLAVE: usar "container" en lugar de "crear-usuario-container" -->
+<div class="container">
   <div class="crear-usuario-header">
     <h1 class="crear-usuario-title">👤 Crear Nuevo Usuario</h1>
     <p class="crear-usuario-subtitle">Registra un nuevo usuario con sus credenciales y rol en el sistema</p>
@@ -18,7 +19,7 @@
   <div id="mensajeUsuario" class="crear-usuario-mensaje"></div>
 
   <fieldset class="crear-usuario-fieldset">
-    <legend>📝 Datos del Usuario</legend>
+    <legend> Datos del Usuario</legend>
     
     <!-- SECCIÓN DE FOTO -->
     <div class="foto-section-usuario">
@@ -38,7 +39,7 @@
           📷 Tomar Foto
         </button>
         <button type="button" class="foto-btn-usuario foto-btn-eliminar-usuario" id="btnEliminarFotoUsuario" onclick="eliminarFotoUsuario()" style="display: none;">
-          ️ Eliminar
+          🗑️ Eliminar
         </button>
       </div>
       
@@ -87,8 +88,8 @@
         <label>Rol en el Sistema <span class="required">*</span></label>
         <select id="usuarioRol">
           <option value="consultor">👁️ Consultor (Solo lectura)</option>
-          <option value="moderador">️ Moderador (Gestión operativa)</option>
-          <option value="administrador"> Administrador (Control total)</option>
+          <option value="moderador">⚙️ Moderador (Gestión operativa)</option>
+          <option value="administrador">👑 Administrador (Control total)</option>
         </select>
       </div>
     </div>
@@ -96,7 +97,7 @@
     <!-- BOTONES -->
     <div class="button-group-usuario">
       <button type="button" class="btn-action-usuario btn-secondary-usuario" onclick="limpiarFormularioUsuario()">🔄 Limpiar</button>
-      <button type="button" class="btn-action-usuario btn-success-usuario" onclick="crearUsuario()" id="btnCrearUsuario"> Crear Usuario</button>
+      <button type="button" class="btn-action-usuario btn-success-usuario" onclick="crearUsuario()" id="btnCrearUsuario">💾 Crear Usuario</button>
     </div>
   </fieldset>
 </div>
@@ -104,7 +105,7 @@
 <!-- MODAL DE CÁMARA -->
 <div class="modal-camara-usuario" id="modalCamaraUsuario">
   <div class="modal-camara-content-usuario">
-    <h3 style="margin: 0 0 15px 0; color: #1e3a8a; font-family: 'Libre Caslon Text', serif;">📷 Tomar Foto de Perfil</h3>
+    <h3 style="margin: 0 0 15px 0; color: #1e3a8a; font-family: 'Libre Caslon Text', serif;"> Tomar Foto de Perfil</h3>
     <video id="videoCamaraUsuario" autoplay playsinline></video>
     <canvas id="canvasCamaraUsuario" style="display: none;"></canvas>
     <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center;">
