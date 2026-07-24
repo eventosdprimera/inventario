@@ -349,6 +349,9 @@ function mostrarMensajeUsuario(texto, tipo) {
   msg.textContent = texto;
   msg.className = `crear-usuario-mensaje ${tipo}`;
   
+  // ✅ Hace que la página suba automáticamente para mostrar el mensaje
+  msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  
   setTimeout(() => { 
     msg.className = 'crear-usuario-mensaje'; 
   }, 5000);
