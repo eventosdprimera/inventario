@@ -1,5 +1,5 @@
 // ==========================================
-// INYECTAR ESTILOS CSS (OPTIMIZADO)
+// INYECTAR ESTILOS INMEDIATAMENTE
 // ==========================================
 function inyectarEstilosCrearUsuario() {
   if (document.getElementById('estilos-crear-usuario')) return;
@@ -7,7 +7,10 @@ function inyectarEstilosCrearUsuario() {
   const style = document.createElement('style');
   style.id = 'estilos-crear-usuario';
   style.textContent = `
-    /* Estilos base que se aplican inmediatamente */
+    /* Ocultar contenido hasta que los estilos estén listos */
+    .crear-usuario-container { opacity: 0; transition: opacity 0.3s ease; }
+    .crear-usuario-container.loaded { opacity: 1; }
+    
     .crear-usuario-container { max-width: 1000px; margin: 0 auto; padding: 30px; }
     .crear-usuario-header { text-align: center; margin-bottom: 35px; }
     .crear-usuario-title { font-family: 'Libre Caslon Text', serif; color: #1e3a8a; font-size: 32px; margin: 0; font-weight: 700; }
@@ -20,7 +23,7 @@ function inyectarEstilosCrearUsuario() {
     .crear-usuario-mensaje.exito { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; display: block; }
     .crear-usuario-mensaje.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; display: block; }
     
-    /* SECCIÓN DE FOTO */
+    /* SECCIÓN DE FOTO - ESTILOS CRÍTICOS */
     .foto-section-usuario {
       display: flex;
       flex-direction: column;
@@ -87,7 +90,7 @@ function inyectarEstilosCrearUsuario() {
       justify-content: center;
     }
     
-    /* BOTONES - ESTILOS CRÍTICOS */
+    /* BOTONES - ESTILOS CRÍTICOS INMEDIATOS */
     .foto-btn-usuario,
     .btn-action-usuario {
       padding: 10px 20px;
@@ -101,9 +104,9 @@ function inyectarEstilosCrearUsuario() {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      /* Evitar flash: aplicar estilos base inmediatamente */
-      opacity: 1;
-      transform: none;
+      /* Evitar flash: aplicar colores inmediatamente */
+      background: #6b7280;
+      color: white;
     }
     
     .foto-btn-subir-usuario,
@@ -190,7 +193,7 @@ function inyectarEstilosCrearUsuario() {
     
     .required { color: #ef4444; }
     
-    /* BARRA DE FORTALEZA DE CONTRASEÑA */
+    /* BARRA DE FORTALEZA */
     .password-strength-container {
       margin-top: 10px;
     }
@@ -261,9 +264,6 @@ function inyectarEstilosCrearUsuario() {
     @media (max-width: 768px) {
       .form-grid-usuario { grid-template-columns: 1fr; }
       .foto-recuadro-usuario { width: 180px; height: 180px; }
-      .foto-botones-usuario { flex-direction: column; align-items: center; }
-      .button-group-usuario { justify-content: center; flex-direction: column; }
-      .btn-action-usuario { width: 100%; justify-content: center; }
     }
   `;
   document.head.appendChild(style);
@@ -277,18 +277,18 @@ let usuarioActualCreador = null;
 let streamCamara = null;
 
 // ==========================================
-// INICIALIZACIÓN (OPTIMIZADA)
+// INICIALIZACIÓN (OPTIMIZADA - SIN FLASH)
 // ==========================================
 async function inicializarCrearUsuario() {
   console.log('👤 Inicializando módulo de crear usuario...');
   
-  // ✅ Inyectar estilos PRIMERO antes de cualquier otra cosa
+  // ✅ 1. Inyectar estilos PRIMERO (antes de cualquier otra cosa)
   inyectarEstilosCrearUsuario();
   
-  // Esperar un tick para asegurar que los estilos se apliquen
+  // ✅ 2. Esperar un frame para asegurar que los estilos se apliquen
   await new Promise(resolve => requestAnimationFrame(resolve));
   
-  // Esperar a que Supabase esté disponible
+  // ✅ 3. Ahora sí, esperar a que Supabase esté disponible
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -300,7 +300,7 @@ async function inicializarCrearUsuario() {
     return;
   }
 
-  // Obtener usuario actual
+  // ✅ 4. Obtener usuario actual
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (session) {
@@ -319,6 +319,12 @@ async function inicializarCrearUsuario() {
     console.error('Error al cargar usuario actual:', err);
   }
 
+  // ✅ 5. Mostrar el contenido con fade-in
+  const container = document.querySelector('.crear-usuario-container');
+  if (container) {
+    container.classList.add('loaded');
+  }
+
   console.log('✅ Módulo de crear usuario inicializado');
 }
 
@@ -330,12 +336,12 @@ function previsualizarFotoUsuario(event) {
   if (!file) return;
   
   if (!file.type.startsWith('image/')) {
-    mostrarMensajeUsuario('⚠️ Por favor seleccione un archivo de imagen válido', 'error');
+    mostrarMensajeUsuario('️ Por favor seleccione un archivo de imagen válido', 'error');
     return;
   }
 
   if (file.size > 5 * 1024 * 1024) {
-    mostrarMensajeUsuario('️ La imagen no debe superar los 5MB', 'error');
+    mostrarMensajeUsuario('⚠️ La imagen no debe superar los 5MB', 'error');
     return;
   }
 
@@ -484,7 +490,7 @@ function verificarFortalezaPasswordUsuario() {
   
   if (strength <= 2) {
     bar.className = 'password-strength-bar strength-weak';
-    text.textContent = '🔴 Contraseña débil';
+    text.textContent = ' Contraseña débil';
     text.style.color = '#ef4444';
   } else if (strength <= 4) {
     bar.className = 'password-strength-bar strength-medium';
@@ -518,18 +524,18 @@ async function crearUsuario() {
   }
   
   if (!email.includes('@')) {
-    mostrarMensajeUsuario('⚠️ El correo electrónico debe contener "@"', 'error');
+    mostrarMensajeUsuario('️ El correo electrónico debe contener "@"', 'error');
     return;
   }
   
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    mostrarMensajeUsuario('️ Por favor ingrese un correo electrónico válido', 'error');
+    mostrarMensajeUsuario('⚠️ Por favor ingrese un correo electrónico válido', 'error');
     return;
   }
   
   if (password.length < 6) {
-    mostrarMensajeUsuario('⚠️ La contraseña debe tener al menos 6 caracteres', 'error');
+    mostrarMensajeUsuario('️ La contraseña debe tener al menos 6 caracteres', 'error');
     return;
   }
   
@@ -657,6 +663,6 @@ function limpiarFormularioUsuario() {
 // INICIALIZAR
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('📄 DOM cargado - Iniciando módulo de crear usuario');
+  console.log(' DOM cargado - Iniciando módulo de crear usuario');
   inicializarCrearUsuario();
 });
