@@ -1,5 +1,5 @@
 // ==========================================
-// VARIABLES GLOBALES
+// VARIAB GLOBALES
 // ==========================================
 let usuarioSeleccionadoMod = null;
 let fotoSeleccionadaMod = null;
