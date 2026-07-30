@@ -272,7 +272,7 @@ async function guardarCambiosUsuario() {
 // ==========================================
 async function cambiarPasswordUsuario() {
   if (!usuarioSeleccionadoMod) {
-    mostrarMensajeMod('️ No hay un usuario seleccionado', 'error');
+    mostrarMensajeMod('⚠️ No hay un usuario seleccionado', 'error');
     return;
   }
 
@@ -286,7 +286,7 @@ async function cambiarPasswordUsuario() {
   }
 
   if (nuevaPassword.length < 6) {
-    mostrarMensajeMod('️ La contraseña debe tener al menos 6 caracteres', 'error');
+    mostrarMensajeMod('⚠️ La contraseña debe tener al menos 6 caracteres', 'error');
     return;
   }
 
@@ -307,16 +307,39 @@ async function cambiarPasswordUsuario() {
       throw new Error('No hay sesión activa');
     }
 
-    // Llamar a la Edge Function
-    const { data: supabaseUrl } = supabaseClient;
-    const functionUrl = `${supabaseUrl.supabaseUrl}/functions/v1/update-user-password`;
+    // ✅ CORRECCIÓN: Obtener la URL correctamente
+    // Opción A: Si usas config.js, usa las variables globales
+    let supabaseUrl = typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : null;
+    let supabaseKey = typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : null;
+
+    // Opción B: Fallback si las variables globales no existen (extraer del cliente)
+    if (!supabaseUrl && supabaseClient) {
+        // Algunos clientes exponen estas propiedades internamente
+        supabaseUrl = supabaseClient.supabaseUrl || null; 
+        supabaseKey = supabaseClient.supabaseKey || null;
+        
+        // Opción C: Reconstruir URL desde headers si todo falla
+        if (!supabaseUrl) {
+            const authHeader = supabaseClient.realtime?.headers?.Authorization || '';
+            // Esto es un último recurso, idealmente usa config.js
+            console.warn('No se pudo obtener SUPABASE_URL automáticamente. Verifica tu config.js');
+        }
+    }
+
+    if (!supabaseUrl) {
+        throw new Error('Error de configuración: No se encontró la URL de Supabase. Verifica que config.js esté cargado.');
+    }
+
+    const functionUrl = `${supabaseUrl}/functions/v1/update-user-password`;
+
+    console.log(' Llamando a Edge Function:', functionUrl);
 
     const response = await fetch(functionUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${session.access_token}`,
         'Content-Type': 'application/json',
-        'apikey': supabaseUrl.supabaseKey
+        'apikey': supabaseKey || ''
       },
       body: JSON.stringify({
         user_id: usuarioSeleccionadoMod.id,
@@ -325,6 +348,7 @@ async function cambiarPasswordUsuario() {
     });
 
     const result = await response.json();
+    console.log('📥 Respuesta Edge Function:', result);
 
     if (!response.ok || result.error) {
       throw new Error(result.error || 'Error al cambiar la contraseña');
