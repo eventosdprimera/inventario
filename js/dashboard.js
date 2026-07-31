@@ -688,7 +688,34 @@ async function cargarContenido(action) {
     }
     return;
   }
-  
+    // ✅ 20. USUARIOS → ELIMINAR
+  if (modulo === 'usuarios' && operacion === 'eliminar') {
+    try {
+      if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+      if (typeof inicializarEliminarUsuario === 'undefined') await cargarScript('js/eliminar_usuario.js');
+      
+      const response = await fetch('html/eliminar_usuario.html');
+      if (!response.ok) throw new Error('No se pudo cargar html/eliminar_usuario.html');
+      
+      const htmlText = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const container = doc.querySelector('.container');
+      
+      if (!container) throw new Error('No se encontró .container en eliminar_usuario.html');
+      
+      contenidoDiv.innerHTML = container.innerHTML;
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      if (typeof inicializarEliminarUsuario === 'function') {
+        await inicializarEliminarUsuario();
+      }
+    } catch (err) {
+      console.error('Error cargando módulo de eliminar usuario:', err);
+      contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el módulo: ${err.message}</p></fieldset>`;
+    }
+    return;
+  }
   // 15. OTROS MÓDULOS (Placeholders)
   let html = '';
   switch (modulo) {
