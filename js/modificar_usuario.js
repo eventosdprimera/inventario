@@ -307,32 +307,23 @@ async function cambiarPasswordUsuario() {
       throw new Error('No hay sesión activa');
     }
 
-    // ✅ CORRECCIÓN: Obtener la URL correctamente
-    // Opción A: Si usas config.js, usa las variables globales
+    // ✅ CORRECCIÓN: Obtener URL y Key desde las variables globales de config.js
+    // Intentamos varias formas comunes de nombrar estas variables
     let supabaseUrl = typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : null;
     let supabaseKey = typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : null;
 
-    // Opción B: Fallback si las variables globales no existen (extraer del cliente)
-    if (!supabaseUrl && supabaseClient) {
-        // Algunos clientes exponen estas propiedades internamente
-        supabaseUrl = supabaseClient.supabaseUrl || null; 
-        supabaseKey = supabaseClient.supabaseKey || null;
-        
-        // Opción C: Reconstruir URL desde headers si todo falla
-        if (!supabaseUrl) {
-            const authHeader = supabaseClient.realtime?.headers?.Authorization || '';
-            // Esto es un último recurso, idealmente usa config.js
-            console.warn('No se pudo obtener SUPABASE_URL automáticamente. Verifica tu config.js');
-        }
-    }
+    // Fallback si las variables no existen como globales directas
+    if (!supabaseUrl && window.supabaseUrl) supabaseUrl = window.supabaseUrl;
+    if (!supabaseKey && window.supabaseKey) supabaseKey = window.supabaseKey;
 
     if (!supabaseUrl) {
-        throw new Error('Error de configuración: No se encontró la URL de Supabase. Verifica que config.js esté cargado.');
+      console.error('Variables disponibles:', Object.keys(window).filter(k => k.toLowerCase().includes('supabase')));
+      throw new Error('Error de configuración: No se encontró SUPABASE_URL. Verifica tu archivo config.js');
     }
 
     const functionUrl = `${supabaseUrl}/functions/v1/update-user-password`;
 
-    console.log(' Llamando a Edge Function:', functionUrl);
+    console.log('🔑 Llamando a Edge Function:', functionUrl);
 
     const response = await fetch(functionUrl, {
       method: 'POST',
