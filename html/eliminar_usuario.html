@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eliminar Usuario - Eventos D' Primera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+  <!-- ✅ ESTILOS INYECTADOS PARA EVITAR EL "FLASH" GRIS AL CARGAR -->
+  <style>
+    .elim-usuario-header { text-align: center; margin-bottom: 30px; }
+    .elim-usuario-title { font-family: 'Libre Caslon Text', serif; color: #1e3a8a; font-size: 28px; margin: 0; font-weight: 700; }
+    .elim-usuario-subtitle { color: #6b7280; font-size: 14px; margin-top: 5px; }
+    
+    .elim-usuario-fieldset { border: 1px solid #d1d5db; border-radius: 10px; padding: 25px; margin-bottom: 25px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .elim-usuario-fieldset legend { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: white; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 700; }
+    
+    .elim-usuario-mensaje { padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; font-weight: 600; display: none; }
+    .elim-usuario-mensaje.exito { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; display: block; }
+    .elim-usuario-mensaje.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; display: block; }
+    .elim-usuario-mensaje.warning { background: #fef3c7; color: #92400e; border-left: 4px solid #f59e0b; display: block; }
+
+    /* BÚSQUEDA CON ALINEACIÓN CORRECTA */
+    .buscador-grid { 
+      display: flex; 
+      gap: 15px; 
+      margin-bottom: 15px; 
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    
+    .form-group-elim { 
+      display: flex; 
+      flex-direction: column; 
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    .form-group-elim label { 
+      font-size: 12px; 
+      font-weight: 600; 
+      color: #374151; 
+      margin-bottom: 6px; 
+    }
+    
+    .form-group-elim input, 
+    .form-group-elim select { 
+      padding: 10px; 
+      border: 2px solid #e5e7eb; 
+      border-radius: 8px; 
+      font-size: 14px; 
+      font-family: 'Poppins', sans-serif; 
+      transition: all 0.3s;
+      height: 42px;
+      box-sizing: border-box;
+    }
+    
+    .form-group-elim input:focus, 
+    .form-group-elim select:focus { 
+      outline: none; 
+      border-color: #dc2626; 
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1); 
+    }
+
+    .btn-elim { 
+      padding: 10px 20px; 
+      border: none; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      font-size: 14px; 
+      font-weight: 600; 
+      font-family: 'Poppins', sans-serif; 
+      transition: all 0.3s; 
+      display: inline-flex; 
+      align-items: center; 
+      gap: 8px;
+      height: 42px;
+      box-sizing: border-box;
+    }
+    
+    .btn-primary-elim { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: white; }
+    .btn-primary-elim:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); }
+    .btn-secondary-elim { background: #6b7280; color: white; }
+    .btn-secondary-elim:hover { background: #4b5563; }
+
+    .table-container-elim { overflow-x: auto; margin-top: 15px; border-radius: 8px; border: 1px solid #e5e7eb; }
+    table.elim-table { width: 100%; border-collapse: collapse; background: white; }
+    table.elim-table th { background: #dc2626; color: white; padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; }
+    table.elim-table td { padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+    table.elim-table tr:hover { background: #fef2f2; cursor: pointer; }
+    table.elim-table tr.selected { background: #fee2e2; border-left: 4px solid #dc2626; }
+
+    @media (max-width: 768px) {
+      .buscador-grid { flex-direction: column; align-items: stretch; }
+      .buscador-grid .form-group-elim { width: 100%; }
+      .buscador-grid .btn-elim { width: 100%; justify-content: center; }
+    }
+  </style>
+
+  <div class="elim-usuario-header">
+    <h1 class="elim-usuario-title">🗑️ Eliminar Usuarios</h1>
+    <p class="elim-usuario-subtitle">Busca y elimina permanentemente usuarios del sistema. Esta acción es irreversible.</p>
+  </div>
+
+  <div id="mensajeElimUsuario" class="elim-usuario-mensaje"></div>
+
+  <!-- SECCIÓN 1: BÚSQUEDA Y LISTA -->
+  <fieldset class="elim-usuario-fieldset">
+    <legend>🔍 Buscar Usuario a Eliminar</legend>
+    
+    <div class="buscador-grid">
+      <div class="form-group-elim">
+        <label>Nombre o Apellido</label>
+        <input type="text" id="buscarNombreElim" placeholder="Ej: Juan">
+      </div>
+      <div class="form-group-elim">
+        <label>Cédula</label>
+        <input type="text" id="buscarCedulaElim" placeholder="Ej: 12345678" maxlength="10">
+      </div>
+      <div class="form-group-elim">
+        <label>Nivel (Rol)</label>
+        <select id="buscarRolElim">
+          <option value="">Todos los niveles</option>
+          <option value="administrador">Administrador</option>
+          <option value="moderador">Moderador</option>
+          <option value="consultor">Consultor</option>
+        </select>
+      </div>
+      <div class="form-group-elim" style="flex: 0 0 auto;">
+        <button type="button" class="btn-elim btn-primary-elim" onclick="buscarUsuariosElim()">🔎 Buscar</button>
+      </div>
+    </div>
+
+    <div class="table-container-elim">
+      <table class="elim-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Cédula</th>
+            <th>Correo Electrónico</th>
+            <th>Nivel</th>
+            <th style="width: 120px;">Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyUsuariosElim">
+          <tr><td colspan="5" style="text-align: center; padding: 30px; color: #6b7280;">Realiza una búsqueda para ver los usuarios</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 2: CONFIRMACIÓN DE ELIMINACIÓN (Oculto hasta seleccionar) -->
+  <fieldset class="elim-usuario-fieldset" id="fieldsetConfirmacionElim" style="display: none;">
+    <legend>⚠️ Confirmar Eliminación Permanente</legend>
+    
+    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+      <p style="font-size: 14px; color: #991b1b; margin: 0 0 10px 0; font-weight: 600;">
+        Estás a punto de eliminar permanentemente al siguiente usuario:
+      </p>
+      <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #dc2626;">
+        <p style="margin: 5px 0;"><strong>Nombre:</strong> <span id="confirmNombreElim"></span></p>
+        <p style="margin: 5px 0;"><strong>Cédula:</strong> <span id="confirmCedulaElim"></span></p>
+        <p style="margin: 5px 0;"><strong>Correo:</strong> <span id="confirmEmailElim"></span></p>
+        <p style="margin: 5px 0;"><strong>Nivel:</strong> <span id="confirmRolElim"></span></p>
+      </div>
+      
+      <div style="margin-top: 20px; padding: 15px; background: #fffbeb; border-radius: 8px; border: 1px solid #fde68a;">
+        <p style="font-size: 13px; color: #92400e; margin: 0 0 10px 0;">
+          ️ <strong>Advertencia:</strong> Para confirmar esta acción destructiva, escribe la palabra <strong>ELIMINAR</strong> en mayúsculas en el campo de abajo.
+        </p>
+        <input type="text" id="confirmacionTextoElim" placeholder="Escribe ELIMINAR aquí..." style="width: 100%; padding: 10px; border: 2px solid #fbbf24; border-radius: 8px; font-size: 14px; font-weight: 600; text-transform: uppercase;">
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+      <button type="button" class="btn-elim btn-secondary-elim" onclick="cancelarEliminacion()">❌ Cancelar</button>
+      <button type="button" class="btn-elim btn-primary-elim" onclick="ejecutarEliminacion()" id="btnEjecutarElim">🗑️ Eliminar Permanentemente</button>
+    </div>
+  </fieldset>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/eliminar_usuario.js"></script>
+</body>
+</html>
