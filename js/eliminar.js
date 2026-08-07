@@ -107,11 +107,24 @@ async function inicializarEliminacion() {
     try {
       const codigoBusqueda = codigoOriginal.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
 
-      const { data, error } = await supabaseClient
+      // ✅ Primero buscar por código de barras (exacto)
+      let { data, error } = await supabaseClient
         .from('equipos')
         .select('*')
-        .or(`codigo_barras.eq.${codigoBusqueda},serial.eq.${codigoBusqueda}`)
+        .eq('codigo_barras', codigoBusqueda)
         .maybeSingle();
+
+      // ✅ Si no encontró por código, buscar por serial (case-insensitive con ilike)
+      if (!data && !error) {
+        const resultado = await supabaseClient
+          .from('equipos')
+          .select('*')
+          .ilike('serial', codigoBusqueda)
+          .maybeSingle();
+        
+        data = resultado.data;
+        error = resultado.error;
+      }
 
       if (error || !data) {
         mostrarMensaje(`❌ No se encontró ningún equipo con: "${codigoBusqueda}"`, 'error');
