@@ -92,7 +92,6 @@ legend {
   align-items: center;
   gap: 4px;
 }
-.form-group label .required { color: #dc2626; font-weight: 700; font-size: 14px; }
 .form-group input,
 .form-group select,
 .form-group textarea {
@@ -183,14 +182,12 @@ legend {
   border-left-color: #3b82f6;
   display: block;
 }
-/* Búsqueda - GAP AUMENTADO */
 .busqueda-container {
   display: flex;
   gap: 20px;
   align-items: flex-end;
 }
 .busqueda-container .form-group { flex: 1; }
-/* Fotos */
 .fotos-section { margin-bottom: 30px; }
 .fotos-grid {
   display: grid;
@@ -265,7 +262,6 @@ legend {
   background: #b91c1c;
   transform: scale(1.15);
 }
-/* Medida compuesta */
 .medida-compuesta {
   display: flex;
   gap: 8px;
@@ -273,7 +269,6 @@ legend {
 }
 .medida-compuesta input[type="number"] { flex: 2; text-align: center; }
 .medida-compuesta select { flex: 1; min-width: 100px; cursor: pointer; }
-/* Info del equipo encontrado */
 .equipo-encontrado {
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   padding: 15px 20px;
@@ -344,17 +339,17 @@ legend {
     </div>
   </fieldset>
 
-  <!-- INFO DEL EQUIPO ENCONTRADO (OCULTO POR DEFECTO) -->
+  <!-- INFO DEL EQUIPO ENCONTRADO -->
   <div id="equipoEncontrado" class="equipo-encontrado" style="display: none;">
     <div class="equipo-encontrado-titulo">✅ Equipo encontrado</div>
     <div class="equipo-encontrado-info" id="equipoEncontradoInfo"></div>
   </div>
 
-  <!-- FORMULARIO DE MODIFICACIÓN (oculto hasta buscar) -->
+  <!-- FORMULARIO DE MODIFICACIÓN -->
   <fieldset id="fieldsetModificacion" style="display: none;">
     <legend>✏️ Editar Datos del Equipo</legend>
 
-    <!-- Código de barras (NO modificable) -->
+    <!-- Código de barras -->
     <div class="form-row-full">
       <div class="form-group">
         <label>Código de Barras <span style="color: #6b7280; font-size: 11px;">(No modificable)</span></label>
@@ -365,7 +360,7 @@ legend {
     <!-- Nombre -->
     <div class="form-row-full">
       <div class="form-group">
-        <label>Nombre del Equipo <span class="required">*</span></label>
+        <label>Nombre del Equipo <span style="color: #dc2626; font-weight: 700; font-size: 14px;">*</span></label>
         <input type="text" id="mod_nombre" required>
       </div>
     </div>
@@ -374,7 +369,7 @@ legend {
     <div class="form-row">
       <div class="form-grid-3">
         <div class="form-group">
-          <label>Marca <span class="required">*</span></label>
+          <label>Marca <span style="color: #dc2626; font-weight: 700; font-size: 14px;">*</span></label>
           <input type="text" id="mod_marca" required>
         </div>
         <div class="form-group">
@@ -382,7 +377,7 @@ legend {
           <input type="text" id="mod_modelo">
         </div>
         <div class="form-group">
-          <label>Serial <span class="required">*</span></label>
+          <label>Serial <span style="color: #dc2626; font-weight: 700; font-size: 14px;">*</span></label>
           <input type="text" id="mod_serial" required>
         </div>
       </div>
@@ -392,7 +387,7 @@ legend {
     <div class="form-row">
       <div class="form-grid-2">
         <div class="form-group">
-          <label>Medida | Costo ($) <span class="required">*</span></label>
+          <label>Medida | Costo ($) <span style="color: #dc2626; font-weight: 700; font-size: 14px;">*</span></label>
           <div class="medida-compuesta">
             <input type="number" id="mod_medida_valor" step="0.01" min="0" placeholder="0.00">
             <select id="mod_medida_unidad">
@@ -403,7 +398,7 @@ legend {
           </div>
         </div>
         <div class="form-group">
-          <label>Estatus <span class="required">*</span></label>
+          <label>Estatus <span style="color: #dc2626; font-weight: 700; font-size: 14px;">*</span></label>
           <select id="mod_estatus" required>
             <option value="operativo">✅ Operativo</option>
             <option value="inoperativo">⚠️ Inoperativo</option>
@@ -479,7 +474,7 @@ legend {
     </div>
   </fieldset>
 
-  <!-- Botones de acción (ocultos hasta buscar) -->
+  <!-- Botones de acción -->
   <div id="buttonGroupModificacion" class="button-group" style="display: none;">
     <button type="button" class="btn-action btn-primary" id="btnGuardarMod" onclick="guardarModificacion()">💾 Guardar Cambios</button>
     <button type="button" class="btn-action btn-secondary" onclick="cancelarModificacion()"> Cancelar / Buscar otro</button>
@@ -490,34 +485,6 @@ legend {
   <strong>©copyright Eventos de Primera</strong><br>
   2026-2027 | Versión 0.1
 </div>
-
-<!-- SCRIPT PARA FORZAR ASTERISCOS ROJOS -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Seleccionar todos los spans con asteriscos en todo el documento
-  const todosLosSpans = document.querySelectorAll('span');
-  todosLosSpans.forEach(function(span) {
-    if (span.textContent.trim() === '*') {
-      span.style.color = '#dc2626';
-      span.style.fontWeight = '700';
-      span.style.fontSize = '14px';
-    }
-  });
-  
-  // También buscar específicamente en labels
-  const labels = document.querySelectorAll('label');
-  labels.forEach(function(label) {
-    const spans = label.querySelectorAll('span');
-    spans.forEach(function(span) {
-      if (span.textContent.trim() === '*') {
-        span.style.color = '#dc2626';
-        span.style.fontWeight = '700';
-        span.style.fontSize = '14px';
-      }
-    });
-  });
-});
-</script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
