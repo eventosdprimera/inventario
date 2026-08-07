@@ -608,7 +608,7 @@ window.guardarEquipo = async function() {
 };
 
 // ==========================================
-// IMPRIMIR STICKER (VERTICAL ROTADO - ESQUINA SUPERIOR IZQUIERDA)
+// IMPRIMIR STICKER (ROTADO 90° - ESQUINA SUPERIOR IZQUIERDA)
 // ==========================================
 window.imprimirSticker = function(datos) {
   const info = datos || window.equipoRegistrado || {};
@@ -624,7 +624,7 @@ window.imprimirSticker = function(datos) {
   const modelo = info.modelo || (document.getElementById('modeloEquipo')?.value.trim() || '');
   const serial = info.serial || (document.getElementById('serialEquipo')?.value.trim() || '');
 
-  console.log('️ Iniciando impresión de sticker rotado para:', codigoParaImprimir);
+  console.log('🖨️ Iniciando impresión de sticker rotado para:', codigoParaImprimir);
 
   const tempDiv = document.createElement('div');
   tempDiv.style.position = 'absolute';
@@ -660,19 +660,19 @@ window.imprimirSticker = function(datos) {
             width: 100%;
             height: 100%;
           }
-          .sticker-container {
-            /* Posicionar en esquina superior izquierda */
+          .sticker-wrapper {
+            /* ✅ Posicionar en esquina superior izquierda */
             position: absolute;
             top: 10mm;
             left: 10mm;
-            /* Rotar 90 grados en sentido antihorario */
+            /* ✅ Rotar 90 grados en sentido antihorario */
             transform: rotate(-90deg);
             transform-origin: top left;
-            /* Compensar la rotación: el alto original (35mm) ahora es el desplazamiento horizontal */
+            /* ✅ Compensar la rotación: el alto original (35mm) ahora es el desplazamiento horizontal */
             margin-left: 35mm;
           }
           .sticker { 
-            /* Dimensiones originales del sticker */
+            /* ✅ Dimensiones originales del sticker (sin cambiar) */
             width: 70mm; 
             height: 35mm; 
             border: 0.5mm solid #000; 
@@ -731,7 +731,7 @@ window.imprimirSticker = function(datos) {
         </style>
       </head>
       <body>
-        <div class="sticker-container">
+        <div class="sticker-wrapper">
           <div class="sticker">
             <div class="empresa">EVENTOS D' PRIMERA</div>
             ${nombre ? `<div class="nombre">${nombre.substring(0, 40)}</div>` : ''}
@@ -755,7 +755,7 @@ window.imprimirSticker = function(datos) {
       ventana.document.write(htmlSticker);
       ventana.document.close();
     } else {
-      mostrarMensajeRegistro('️ El navegador bloqueó la ventana emergente.', 'error');
+      mostrarMensajeRegistro('⚠️ El navegador bloqueó la ventana emergente.', 'error');
     }
 
   } catch (err) {
