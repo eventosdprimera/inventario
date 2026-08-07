@@ -608,7 +608,7 @@ window.guardarEquipo = async function() {
 };
 
 // ==========================================
-// IMPRIMIR STICKER (ESQUINA SUPERIOR IZQUIERDA)
+// IMPRIMIR STICKER (VERTICAL ROTADO - ESQUINA SUPERIOR IZQUIERDA)
 // ==========================================
 window.imprimirSticker = function(datos) {
   const info = datos || window.equipoRegistrado || {};
@@ -624,7 +624,7 @@ window.imprimirSticker = function(datos) {
   const modelo = info.modelo || (document.getElementById('modeloEquipo')?.value.trim() || '');
   const serial = info.serial || (document.getElementById('serialEquipo')?.value.trim() || '');
 
-  console.log('🖨️ Iniciando impresión de sticker para:', codigoParaImprimir);
+  console.log('🖨️ Iniciando impresión de sticker rotado para:', codigoParaImprimir);
 
   const tempDiv = document.createElement('div');
   tempDiv.style.position = 'absolute';
@@ -656,13 +656,24 @@ window.imprimirSticker = function(datos) {
             overflow: hidden; 
           }
           body { 
-            /* ✅ CLAVE: Alinear en la esquina superior izquierda */
-            display: flex; 
-            justify-content: flex-start; 
-            align-items: flex-start; 
-            padding: 5mm; /* Pequeño margen para que no se corte al imprimir */
+            /* ✅ Contenedor para posicionar el sticker rotado */
+            position: relative;
+            width: 100%;
+            height: 100%;
+          }
+          .sticker-wrapper {
+            /* ✅ Posicionar en esquina superior izquierda */
+            position: absolute;
+            top: 5mm;
+            left: 5mm;
+            /* ✅ Rotar el contenido 90 grados */
+            transform: rotate(-90deg);
+            transform-origin: top left;
+            /* ✅ Ajustar posición después de rotar */
+            margin-left: 70mm; /* Compensar la rotación */
           }
           .sticker { 
+            /* ✅ Dimensiones del sticker (ancho x alto) */
             width: 70mm; 
             height: 35mm; 
             border: 0.5mm solid #000; 
@@ -671,29 +682,64 @@ window.imprimirSticker = function(datos) {
             display: flex; 
             flex-direction: column; 
             justify-content: space-between;
-            /* ✅ Sin márgenes adicionales para que quede pegado a la esquina */
-            margin: 0;
+            background: white;
           }
-          .empresa { font-size: 6pt; font-weight: bold; color: #1e3a8a; line-height: 1; margin-bottom: 0.5mm; }
-          .nombre { font-size: 6pt; font-weight: bold; line-height: 1.1; margin-bottom: 0.5mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-          .barcode { margin: 0.5mm 0; display: flex; justify-content: center; align-items: center; }
-          .barcode svg { max-width: 100%; height: auto; max-height: 12mm; }
-          .codigo { font-size: 7pt; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 0.3mm; line-height: 1; }
-          .info { font-size: 5pt; color: #333; line-height: 1.1; margin-top: 0.3mm; }
+          .empresa { 
+            font-size: 6pt; 
+            font-weight: bold; 
+            color: #1e3a8a; 
+            line-height: 1; 
+            margin-bottom: 0.5mm; 
+          }
+          .nombre { 
+            font-size: 6pt; 
+            font-weight: bold; 
+            line-height: 1.1; 
+            margin-bottom: 0.5mm; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            white-space: nowrap; 
+          }
+          .barcode { 
+            margin: 0.5mm 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+          }
+          .barcode svg { 
+            max-width: 100%; 
+            height: auto; 
+            max-height: 12mm; 
+          }
+          .codigo { 
+            font-size: 7pt; 
+            font-weight: bold; 
+            font-family: 'Courier New', monospace; 
+            letter-spacing: 0.3mm; 
+            line-height: 1; 
+          }
+          .info { 
+            font-size: 5pt; 
+            color: #333; 
+            line-height: 1.1; 
+            margin-top: 0.3mm; 
+          }
           
           @media print { 
-            body { padding: 5mm; } 
+            body { padding: 0; } 
             .sticker { border: 0.3mm solid #000; } 
           }
         </style>
       </head>
       <body>
-        <div class="sticker">
-          <div class="empresa">EVENTOS D' PRIMERA</div>
-          ${nombre ? `<div class="nombre">${nombre.substring(0, 40)}</div>` : ''}
-          <div class="barcode">${barcodeSVG}</div>
-          <div class="codigo">${codigoParaImprimir}</div>
-          ${marca || serial ? `<div class="info">${marca}${modelo ? ' ' + modelo : ''}${serial ? ' | S/N: ' + serial : ''}</div>` : ''}
+        <div class="sticker-wrapper">
+          <div class="sticker">
+            <div class="empresa">EVENTOS D' PRIMERA</div>
+            ${nombre ? `<div class="nombre">${nombre.substring(0, 40)}</div>` : ''}
+            <div class="barcode">${barcodeSVG}</div>
+            <div class="codigo">${codigoParaImprimir}</div>
+            ${marca || serial ? `<div class="info">${marca}${modelo ? ' ' + modelo : ''}${serial ? ' | S/N: ' + serial : ''}</div>` : ''}
+          </div>
         </div>
         <script>
           window.addEventListener('load', function() {
