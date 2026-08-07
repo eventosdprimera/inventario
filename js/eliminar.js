@@ -330,6 +330,32 @@ async function cargarHistorialEliminados() {
       </tr>`;
   }
 }
+// ==========================================
+// ✅ DISPATCHER GLOBAL PARA EVITAR COLISIONES
+// ==========================================
+
+// Exponer la función de buscar con un nombre único
+window.buscarEquipoElim = buscarEquipo;
+
+// Guardar la función anterior (puede ser la de modificar.js si se cargó antes)
+const _buscarEquipoAnteriorElim = window.buscarEquipo;
+
+// Crear un dispatcher global inteligente que detecta qué página está activa
+window.buscarEquipo = async function() {
+  // Si estamos en la página de ELIMINAR, usar la función de eliminar
+  if (document.getElementById('tbodyEliminados')) {
+    console.log('🗑️ Dispatcher: Usando buscarEquipoElim');
+    return await window.buscarEquipoElim();
+  }
+  // Si no estamos en eliminar, delegar a la función anterior (probablemente modificar)
+  else if (typeof _buscarEquipoAnteriorElim === 'function') {
+    console.log('🗑️ Dispatcher: Delegando a función anterior');
+    return await _buscarEquipoAnteriorElim();
+  }
+  else {
+    console.warn('⚠️ No se encontró contexto de búsqueda válido');
+  }
+};
 
 // ==========================================
 // INICIALIZAR AL CARGAR
