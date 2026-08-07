@@ -608,7 +608,7 @@ window.guardarEquipo = async function() {
 };
 
 // ==========================================
-// IMPRIMIR STICKER (ROTADO 90°)
+// IMPRIMIR STICKER (ROTADO 90° - TAMAÑO ORIGINAL)
 // ==========================================
 window.imprimirSticker = function(datos) {
   const info = datos || window.equipoRegistrado || {};
@@ -647,21 +647,15 @@ window.imprimirSticker = function(datos) {
 <head>
   <title>Sticker - ${codigoParaImprimir}</title>
   <style>
-    @page { size: 35mm 70mm; margin: 0; }
+    @page { size: 70mm 35mm; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { 
-      width: 35mm; 
-      height: 70mm; 
-      font-family: Arial, sans-serif; 
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    /* CONTENEDOR ROTADO 90 GRADOS */
+    html, body { width: 70mm; height: 35mm; font-family: Arial, sans-serif; overflow: hidden; }
+    body { display: flex; justify-content: center; align-items: center; padding: 1mm; }
+    
+    /* CONTENEDOR ROTADO 90° DENTRO DEL MISMO TAMAÑO */
     .sticker { 
-      width: 70mm; 
-      height: 35mm; 
+      width: 100%; 
+      height: 100%; 
       border: 0.5mm solid #000; 
       padding: 1.5mm 2mm; 
       text-align: center; 
