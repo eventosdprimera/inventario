@@ -11,14 +11,18 @@ let modInicializado = false;
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarModificacion() {
-  if (modInicializado) return;
-  
+  // ✅ Verificar que estamos en la página correcta
   if (!document.getElementById('fieldsetModificacion') || !document.getElementById('buscarEquipoInput')) {
     console.log('ℹ️ No estamos en la página de modificación');
     return;
   }
 
   console.log('✏️ === INICIANDO MODIFICACIÓN DE EQUIPO ===');
+
+  // Resetear estado cada vez que se visita la página
+  equipoEnModificacion = null;
+  fotosModificacion = [null, null, null, null];
+  formularioModModificado = false;
 
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
@@ -33,6 +37,115 @@ async function inicializarModificacion() {
 
   await cargarUsuarioMod();
   configurarEventListeners();
+
+  // ✅ DEFINIR BUSCAR EQUIPO EN EL SCOPE GLOBAL (cada vez que se visita la página)
+  window.buscarEquipo = async function() {
+    let codigo = document.getElementById('buscarEquipoInput').value.trim();
+    
+    if (!codigo) {
+      mostrarMensajeMod('Por favor ingresa un código de barras o serial.', 'error');
+      return;
+    }
+
+    codigo = codigo.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
+    document.getElementById('buscarEquipoInput').value = codigo;
+
+    mostrarMensajeMod('⏳ Buscando equipo...', 'info');
+
+    try {
+      // Primero buscar por código de barras (exacto)
+      let { data, error } = await supabaseClient
+        .from('equipos')
+        .select('*')
+        .eq('codigo_barras', codigo)
+        .maybeSingle();
+
+      // Si no encontró por código, buscar por serial (case-insensitive)
+      if (!data && !error) {
+        const resultado = await supabaseClient
+          .from('equipos')
+          .select('*')
+          .ilike('serial', codigo)
+          .maybeSingle();
+        
+        data = resultado.data;
+        error = resultado.error;
+      }
+
+      if (error) throw error;
+
+      if (!data) {
+        mostrarMensajeMod(`❌ No se encontró ningún equipo con el código/serial: "${codigo}"`, 'error');
+        document.getElementById('fieldsetModificacion').style.display = 'none';
+        document.getElementById('buttonGroupModificacion').style.display = 'none';
+        document.getElementById('equipoEncontrado').classList.remove('activo');
+        return;
+      }
+
+      equipoEnModificacion = data;
+      fotosModificacion = [null, null, null, null];
+      formularioModModificado = false;
+
+      const infoDiv = document.getElementById('equipoEncontradoInfo');
+      infoDiv.innerHTML = `
+        <strong>${data.nombre_equipo}</strong> | 
+        Marca: ${data.marca} | 
+        Serial: ${data.serial} | 
+        Código: ${data.codigo_barras}
+      `;
+      document.getElementById('equipoEncontrado').classList.add('activo');
+
+      document.getElementById('mod_codigo_barras').value = data.codigo_barras;
+      document.getElementById('mod_nombre').value = data.nombre_equipo || '';
+      document.getElementById('mod_marca').value = data.marca || '';
+      document.getElementById('mod_modelo').value = data.modelo || '';
+      document.getElementById('mod_serial').value = data.serial || '';
+      document.getElementById('mod_medida_valor').value = data.medida_valor || '';
+      document.getElementById('mod_medida_unidad').value = data.medida_unidad || 'm';
+      document.getElementById('mod_costo').value = data.costo || '';
+      document.getElementById('mod_estatus').value = data.estatus || 'operativo';
+      document.getElementById('mod_observacion').value = data.observacion || '';
+
+      for (let i = 1; i <= 4; i++) {
+        const urlKey = i === 1 ? 'foto_url' : `foto${i}_url`;
+        const url = data[urlKey];
+        const preview = document.getElementById(`mod_preview${i}`);
+        const placeholder = document.getElementById(`mod_preview${i}-placeholder`);
+        const removeBtn = document.getElementById(`mod_remove${i}`);
+
+        if (url) {
+          preview.src = url;
+          preview.style.display = 'block';
+          placeholder.style.display = 'none';
+          removeBtn.style.display = 'flex';
+        } else {
+          preview.style.display = 'none';
+          preview.src = '';
+          placeholder.style.display = 'block';
+          removeBtn.style.display = 'none';
+        }
+      }
+
+      document.getElementById('fieldsetModificacion').style.display = 'block';
+      document.getElementById('buttonGroupModificacion').style.display = 'flex';
+
+      const btnGuardar = document.getElementById('btnGuardarMod');
+      if (btnGuardar) {
+        btnGuardar.disabled = false;
+        btnGuardar.textContent = '💾 Guardar Cambios';
+      }
+
+      mostrarMensajeMod(`✅ Equipo encontrado: ${data.nombre_equipo}`, 'exito');
+
+      setTimeout(() => {
+        document.getElementById('fieldsetModificacion').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+
+    } catch (err) {
+      console.error('Error al buscar equipo:', err);
+      mostrarMensajeMod('❌ Error al buscar: ' + err.message, 'error');
+    }
+  };
 
   modInicializado = true;
   console.log('✅ === MODIFICACIÓN INICIALIZADA ===');
@@ -68,24 +181,25 @@ async function cargarUsuarioMod() {
 function configurarEventListeners() {
   const inputBuscar = document.getElementById('buscarEquipoInput');
   if (inputBuscar) {
-    if (inputBuscar.dataset.modListenerAttached) return;
-    
-    inputBuscar.addEventListener('input', (e) => {
-      const cursorPos = e.target.selectionStart;
-      e.target.value = e.target.value.toUpperCase();
-      e.target.setSelectionRange(cursorPos, cursorPos);
-    });
+    // Limpiar listeners previos clonando el elemento
+    if (!inputBuscar.dataset.modListenerAttached) {
+      inputBuscar.addEventListener('input', (e) => {
+        const cursorPos = e.target.selectionStart;
+        e.target.value = e.target.value.toUpperCase();
+        e.target.setSelectionRange(cursorPos, cursorPos);
+      });
 
-    inputBuscar.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        if (typeof window.buscarEquipo === 'function') {
-          window.buscarEquipo();
+      inputBuscar.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (typeof window.buscarEquipo === 'function') {
+            window.buscarEquipo();
+          }
         }
-      }
-    });
-    
-    inputBuscar.dataset.modListenerAttached = 'true';
+      });
+      
+      inputBuscar.dataset.modListenerAttached = 'true';
+    }
     inputBuscar.focus();
   }
 
@@ -97,115 +211,6 @@ function configurarEventListeners() {
       campo.dataset.modChangeListenerAttached = 'true';
     }
   });
-}
-
-// ==========================================
-// BUSCAR EQUIPO MODIFICAR (renombrada)
-// ==========================================
-async function _buscarEquipoMod() {
-  let codigo = document.getElementById('buscarEquipoInput').value.trim();
-  
-  if (!codigo) {
-    mostrarMensajeMod('Por favor ingresa un código de barras o serial.', 'error');
-    return;
-  }
-
-  codigo = codigo.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
-  document.getElementById('buscarEquipoInput').value = codigo;
-
-  mostrarMensajeMod('⏳ Buscando equipo...', 'info');
-
-  try {
-    let { data, error } = await supabaseClient
-      .from('equipos')
-      .select('*')
-      .eq('codigo_barras', codigo)
-      .maybeSingle();
-
-    if (!data && !error) {
-      const resultado = await supabaseClient
-        .from('equipos')
-        .select('*')
-        .ilike('serial', codigo)
-        .maybeSingle();
-      
-      data = resultado.data;
-      error = resultado.error;
-    }
-
-    if (error) throw error;
-
-    if (!data) {
-      mostrarMensajeMod(`❌ No se encontró ningún equipo con el código/serial: "${codigo}"`, 'error');
-      document.getElementById('fieldsetModificacion').style.display = 'none';
-      document.getElementById('buttonGroupModificacion').style.display = 'none';
-      document.getElementById('equipoEncontrado').classList.remove('activo');
-      return;
-    }
-
-    equipoEnModificacion = data;
-    fotosModificacion = [null, null, null, null];
-    formularioModModificado = false;
-
-    const infoDiv = document.getElementById('equipoEncontradoInfo');
-    infoDiv.innerHTML = `
-      <strong>${data.nombre_equipo}</strong> | 
-      Marca: ${data.marca} | 
-      Serial: ${data.serial} | 
-      Código: ${data.codigo_barras}
-    `;
-    document.getElementById('equipoEncontrado').classList.add('activo');
-
-    document.getElementById('mod_codigo_barras').value = data.codigo_barras;
-    document.getElementById('mod_nombre').value = data.nombre_equipo || '';
-    document.getElementById('mod_marca').value = data.marca || '';
-    document.getElementById('mod_modelo').value = data.modelo || '';
-    document.getElementById('mod_serial').value = data.serial || '';
-    document.getElementById('mod_medida_valor').value = data.medida_valor || '';
-    document.getElementById('mod_medida_unidad').value = data.medida_unidad || 'm';
-    document.getElementById('mod_costo').value = data.costo || '';
-    document.getElementById('mod_estatus').value = data.estatus || 'operativo';
-    document.getElementById('mod_observacion').value = data.observacion || '';
-
-    for (let i = 1; i <= 4; i++) {
-      const urlKey = i === 1 ? 'foto_url' : `foto${i}_url`;
-      const url = data[urlKey];
-      const preview = document.getElementById(`mod_preview${i}`);
-      const placeholder = document.getElementById(`mod_preview${i}-placeholder`);
-      const removeBtn = document.getElementById(`mod_remove${i}`);
-
-      if (url) {
-        preview.src = url;
-        preview.style.display = 'block';
-        placeholder.style.display = 'none';
-        removeBtn.style.display = 'flex';
-      } else {
-        preview.style.display = 'none';
-        preview.src = '';
-        placeholder.style.display = 'block';
-        removeBtn.style.display = 'none';
-      }
-    }
-
-    document.getElementById('fieldsetModificacion').style.display = 'block';
-    document.getElementById('buttonGroupModificacion').style.display = 'flex';
-
-    const btnGuardar = document.getElementById('btnGuardarMod');
-    if (btnGuardar) {
-      btnGuardar.disabled = false;
-      btnGuardar.textContent = '💾 Guardar Cambios';
-    }
-
-    mostrarMensajeMod(`✅ Equipo encontrado: ${data.nombre_equipo}`, 'exito');
-
-    setTimeout(() => {
-      document.getElementById('fieldsetModificacion').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 300);
-
-  } catch (err) {
-    console.error('Error al buscar equipo:', err);
-    mostrarMensajeMod('❌ Error al buscar: ' + err.message, 'error');
-  }
 }
 
 // ==========================================
@@ -342,6 +347,7 @@ window.guardarModificacion = async function() {
     return;
   }
 
+  // Validación case-insensitive de serial duplicado
   if (serial.toLowerCase() !== equipoEnModificacion.serial.toLowerCase()) {
     const { data: serialData, error } = await supabaseClient
       .from('equipos')
@@ -418,6 +424,7 @@ window.guardarModificacion = async function() {
         const descripcion = `Modificó equipo: "${nombre}" | Serial: ${serial} | Código: ${equipoEnModificacion.codigo_barras} | Fecha/Hora: ${fechaHora} | Modificado por: ${usuario}`;
 
         await registrarLog('inventario', 'Equipo modificado', descripcion, 'success');
+        console.log('📝 Log de modificación guardado');
       } catch (logErr) {
         console.warn('⚠️ No se pudo guardar el log:', logErr);
       }
@@ -466,15 +473,3 @@ if (!window._modBeforeUnloadAttached) {
   });
   window._modBeforeUnloadAttached = true;
 }
-
-// ==========================================
-// ✅ REGISTRAR EN EL DISPATCHER GLOBAL
-// ==========================================
-window.buscarEquipoMod = _buscarEquipoMod;
-
-// ==========================================
-// INICIAR
-// ==========================================
-document.addEventListener('DOMContentLoaded', function() {
-  inicializarModificacion();
-});
