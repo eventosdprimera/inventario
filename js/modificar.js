@@ -462,7 +462,32 @@ window.addEventListener('beforeunload', function(e) {
     return e.returnValue;
   }
 });
+// ==========================================
+// ✅ DISPATCHER GLOBAL PARA EVITAR COLISIONES
+// ==========================================
 
+// Exponer la función de buscar con un nombre único
+window.buscarEquipoMod = buscarEquipo;
+
+// Guardar la función anterior (puede ser la de eliminar.js si se cargó antes)
+const _buscarEquipoAnteriorMod = window.buscarEquipo;
+
+// Crear un dispatcher global inteligente que detecta qué página está activa
+window.buscarEquipo = async function() {
+  // Si estamos en la página de MODIFICAR, usar la función de modificar
+  if (document.getElementById('fieldsetModificacion')) {
+    console.log('📝 Dispatcher: Usando buscarEquipoMod');
+    return await window.buscarEquipoMod();
+  }
+  // Si no estamos en modificar, delegar a la función anterior (probablemente eliminar)
+  else if (typeof _buscarEquipoAnteriorMod === 'function') {
+    console.log('📝 Dispatcher: Delegando a función anterior');
+    return await _buscarEquipoAnteriorMod();
+  }
+  else {
+    console.warn('⚠️ No se encontró contexto de búsqueda válido');
+  }
+};
 // ==========================================
 // INICIAR CUANDO EL DOM ESTÉ LISTO
 // ==========================================
