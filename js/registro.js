@@ -608,7 +608,7 @@ window.guardarEquipo = async function() {
 };
 
 // ==========================================
-// IMPRIMIR STICKER
+// IMPRIMIR STICKER (ROTADO 90°)
 // ==========================================
 window.imprimirSticker = function(datos) {
   const info = datos || window.equipoRegistrado || {};
@@ -647,11 +647,30 @@ window.imprimirSticker = function(datos) {
 <head>
   <title>Sticker - ${codigoParaImprimir}</title>
   <style>
-    @page { size: 70mm 35mm; margin: 0; }
+    @page { size: 35mm 70mm; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 70mm; height: 35mm; font-family: Arial, sans-serif; overflow: hidden; }
-    body { display: flex; justify-content: center; align-items: center; padding: 1mm; }
-    .sticker { width: 100%; height: 100%; border: 0.5mm solid #000; padding: 1.5mm 2mm; text-align: center; display: flex; flex-direction: column; justify-content: space-between; }
+    html, body { 
+      width: 35mm; 
+      height: 70mm; 
+      font-family: Arial, sans-serif; 
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    /* CONTENEDOR ROTADO 90 GRADOS */
+    .sticker { 
+      width: 70mm; 
+      height: 35mm; 
+      border: 0.5mm solid #000; 
+      padding: 1.5mm 2mm; 
+      text-align: center; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: space-between;
+      transform: rotate(90deg);
+      transform-origin: center center;
+    }
     .empresa { font-size: 6pt; font-weight: bold; color: #1e3a8a; line-height: 1; margin-bottom: 0.5mm; }
     .nombre { font-size: 6pt; font-weight: bold; line-height: 1.1; margin-bottom: 0.5mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .barcode { margin: 0.5mm 0; display: flex; justify-content: center; align-items: center; }
