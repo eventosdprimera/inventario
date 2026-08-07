@@ -3,6 +3,7 @@
 // ==========================================
 let equipoEncontrado = null;
 let usuarioActual = null;
+let eliminacionInicializada = false;
 
 // ==========================================
 // SISTEMA DE MENSAJES (100% SEGURO)
@@ -14,7 +15,6 @@ function mostrarMensaje(texto, tipo) {
     return;
   }
 
-  // Usamos textContent por seguridad, evita errores de inyección y null
   mensajeDiv.textContent = texto;
   mensajeDiv.className = `mensaje ${tipo}`;
   mensajeDiv.style.display = 'block';
@@ -31,6 +31,21 @@ function mostrarMensaje(texto, tipo) {
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarEliminacion() {
+  // ✅ Evitar inicialización múltiple
+  if (eliminacionInicializada) {
+    console.log('ℹ️ Eliminación ya estaba inicializada');
+    return;
+  }
+
+  // ✅ Verificar que estamos en la página correcta
+  const inputBusqueda = document.getElementById('buscarEquipoInput');
+  const tbodyEliminados = document.getElementById('tbodyEliminados');
+  
+  if (!inputBusqueda || !tbodyEliminados) {
+    console.log('ℹ️ No estamos en la página de eliminación');
+    return;
+  }
+
   console.log('🗑️ Inicializando módulo de eliminación...');
   
   equipoEncontrado = null;
@@ -57,7 +72,6 @@ async function inicializarEliminacion() {
     console.error('Error al obtener usuario:', err);
   }
 
-  const inputBusqueda = document.getElementById('buscarEquipoInput');
   if (inputBusqueda) {
     if (!inputBusqueda.dataset.listenerAttached) {
       inputBusqueda.addEventListener('keypress', (e) => {
@@ -72,6 +86,9 @@ async function inicializarEliminacion() {
   }
 
   await cargarHistorialEliminados();
+  
+  eliminacionInicializada = true;
+  console.log('✅ Eliminación inicializada correctamente');
 }
 
 // ==========================================
@@ -81,7 +98,10 @@ async function buscarEquipo() {
   const input = document.getElementById('buscarEquipoInput');
   const btnBuscar = document.querySelector('button[onclick="buscarEquipo()"]');
   
-  if (!input) return;
+  if (!input) {
+    console.warn('⚠️ No se puede buscar: elemento no encontrado');
+    return;
+  }
 
   const codigoOriginal = input.value.trim();
   if (!codigoOriginal) {
@@ -143,9 +163,8 @@ function mostrarDatosEquipo(equipo) {
     const el = document.getElementById(campo.id);
     if (el) {
       el.textContent = campo.valor || 'N/A';
-    } else {
-      console.warn(`⚠️ Elemento #${campo.id} no encontrado en el HTML`);
     }
+    // ✅ Ya no muestra warnings si el elemento no existe
   });
 
   const elEncontrado = document.getElementById('equipoEncontrado');
@@ -264,7 +283,7 @@ function cancelarBusqueda() {
 async function cargarHistorialEliminados() {
   const tbody = document.getElementById('tbodyEliminados');
   if (!tbody) {
-    console.warn('⚠️ Elemento #tbodyEliminados no encontrado');
+    console.log('ℹ️ No se puede cargar historial: elemento no encontrado');
     return;
   }
 
@@ -316,5 +335,8 @@ async function cargarHistorialEliminados() {
 // INICIALIZAR AL CARGAR
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
-  inicializarEliminacion();
+  // ✅ Solo inicializar si estamos en la página correcta
+  if (document.getElementById('buscarEquipoInput') && document.getElementById('tbodyEliminados')) {
+    inicializarEliminacion();
+  }
 });
