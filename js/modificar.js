@@ -13,7 +13,6 @@ let modInicializado = false;
 async function inicializarModificacion() {
   if (modInicializado) return;
   
-  // ✅ Verificar que estamos en la página correcta
   if (!document.getElementById('fieldsetModificacion') || !document.getElementById('buscarEquipoInput')) {
     console.log('ℹ️ No estamos en la página de modificación');
     return;
@@ -64,12 +63,11 @@ async function cargarUsuarioMod() {
 }
 
 // ==========================================
-// ✅ CONFIGURAR EVENT LISTENERS
+// CONFIGURAR EVENT LISTENERS
 // ==========================================
 function configurarEventListeners() {
   const inputBuscar = document.getElementById('buscarEquipoInput');
   if (inputBuscar) {
-    // Evitar listeners duplicados
     if (inputBuscar.dataset.modListenerAttached) return;
     
     inputBuscar.addEventListener('input', (e) => {
@@ -78,7 +76,6 @@ function configurarEventListeners() {
       e.target.setSelectionRange(cursorPos, cursorPos);
     });
 
-    // ✅ IMPORTANTE: Usar window.buscarEquipo en lugar de buscarEquipo
     inputBuscar.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -103,9 +100,9 @@ function configurarEventListeners() {
 }
 
 // ==========================================
-// BUSCAR EQUIPO (CASE-INSENSITIVE)
+// BUSCAR EQUIPO MODIFICAR (renombrada)
 // ==========================================
-async function buscarEquipoMod() {
+async function _buscarEquipoMod() {
   let codigo = document.getElementById('buscarEquipoInput').value.trim();
   
   if (!codigo) {
@@ -212,7 +209,7 @@ async function buscarEquipoMod() {
 }
 
 // ==========================================
-// PREVISUALIZAR FOTO EN MODIFICACIÓN
+// PREVISUALIZAR FOTO
 // ==========================================
 window.previsualizarFotoModificacion = function(numero, event) {
   const file = event.target.files[0];
@@ -250,7 +247,7 @@ window.previsualizarFotoModificacion = function(numero, event) {
 };
 
 // ==========================================
-// REMOVER FOTO EN MODIFICACIÓN
+// REMOVER FOTO
 // ==========================================
 window.removerFotoModificacion = function(numero) {
   fotosModificacion[numero - 1] = null;
@@ -471,15 +468,9 @@ if (!window._modBeforeUnloadAttached) {
 }
 
 // ==========================================
-// ✅ REGISTRAR FUNCIÓN Y DISPATCHER
+// ✅ REGISTRAR EN EL DISPATCHER GLOBAL
 // ==========================================
-window.buscarEquipoMod = buscarEquipoMod;
-
-// Solo definir window.buscarEquipo si estamos en la página de modificar
-if (document.getElementById('fieldsetModificacion')) {
-  window.buscarEquipo = window.buscarEquipoMod;
-  console.log('📝 window.buscarEquipo asignado a buscarEquipoMod');
-}
+window.buscarEquipoMod = _buscarEquipoMod;
 
 // ==========================================
 // INICIAR
