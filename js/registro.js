@@ -608,7 +608,7 @@ window.guardarEquipo = async function() {
 };
 
 // ==========================================
-// IMPRIMIR STICKER (ROTADO 90° - TAMAÑO ORIGINAL)
+// IMPRIMIR STICKER (ROTADO 90° - HOJA CARTA)
 // ==========================================
 window.imprimirSticker = function(datos) {
   const info = datos || window.equipoRegistrado || {};
@@ -647,15 +647,28 @@ window.imprimirSticker = function(datos) {
 <head>
   <title>Sticker - ${codigoParaImprimir}</title>
   <style>
-    @page { size: 70mm 35mm; margin: 0; }
+    @page { 
+      size: letter; 
+      margin: 10mm; 
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 70mm; height: 35mm; font-family: Arial, sans-serif; overflow: hidden; }
-    body { display: flex; justify-content: center; align-items: center; padding: 1mm; }
+    html, body { 
+      width: 216mm; 
+      height: 279mm; 
+      font-family: Arial, sans-serif; 
+      overflow: hidden;
+    }
+    body { 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      padding: 20mm;
+    }
     
-    /* CONTENEDOR ROTADO 90° DENTRO DEL MISMO TAMAÑO */
+    /* STICKER ROTADO 90° - TAMAÑO ORIGINAL 70mm x 35mm */
     .sticker { 
-      width: 100%; 
-      height: 100%; 
+      width: 70mm; 
+      height: 35mm; 
       border: 0.5mm solid #000; 
       padding: 1.5mm 2mm; 
       text-align: center; 
@@ -664,6 +677,9 @@ window.imprimirSticker = function(datos) {
       justify-content: space-between;
       transform: rotate(90deg);
       transform-origin: center center;
+      /* Ajuste para compensar la rotación y centrar mejor */
+      margin-top: 17.5mm;
+      margin-bottom: 17.5mm;
     }
     .empresa { font-size: 6pt; font-weight: bold; color: #1e3a8a; line-height: 1; margin-bottom: 0.5mm; }
     .nombre { font-size: 6pt; font-weight: bold; line-height: 1.1; margin-bottom: 0.5mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -671,7 +687,10 @@ window.imprimirSticker = function(datos) {
     .barcode svg { max-width: 100%; height: auto; max-height: 12mm; }
     .codigo { font-size: 7pt; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 0.3mm; line-height: 1; }
     .info { font-size: 5pt; color: #333; line-height: 1.1; margin-top: 0.3mm; }
-    @media print { body { padding: 0; } .sticker { border: 0.3mm solid #000; } }
+    @media print { 
+      body { padding: 20mm; } 
+      .sticker { border: 0.3mm solid #000; } 
+    }
   </style>
 </head>
 <body>
@@ -705,7 +724,6 @@ window.imprimirSticker = function(datos) {
     if (document.body.contains(tempDiv)) document.body.removeChild(tempDiv);
   }
 };
-
 // ==========================================
 // LIMPIAR FORMULARIO (Manual)
 // ==========================================
