@@ -608,7 +608,7 @@ window.guardarEquipo = async function() {
 };
 
 // ==========================================
-// IMPRIMIR STICKER (ROTADO 90° - HOJA CARTA)
+// IMPRIMIR STICKER (ROTADO 90° - SUPERIOR IZQUIERDA)
 // ==========================================
 window.imprimirSticker = function(datos) {
   const info = datos || window.equipoRegistrado || {};
@@ -649,7 +649,7 @@ window.imprimirSticker = function(datos) {
   <style>
     @page { 
       size: letter; 
-      margin: 10mm; 
+      margin: 5mm; 
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { 
@@ -660,12 +660,12 @@ window.imprimirSticker = function(datos) {
     }
     body { 
       display: flex; 
-      justify-content: center; 
-      align-items: center; 
-      padding: 20mm;
+      justify-content: flex-start; 
+      align-items: flex-start; 
+      padding: 5mm;
     }
     
-    /* STICKER ROTADO 90° - TAMAÑO ORIGINAL 70mm x 35mm */
+    /* STICKER ROTADO 90° - SUPERIOR IZQUIERDA */
     .sticker { 
       width: 70mm; 
       height: 35mm; 
@@ -676,10 +676,10 @@ window.imprimirSticker = function(datos) {
       flex-direction: column; 
       justify-content: space-between;
       transform: rotate(90deg);
-      transform-origin: center center;
-      /* Ajuste para compensar la rotación y centrar mejor */
-      margin-top: 17.5mm;
-      margin-bottom: 17.5mm;
+      transform-origin: top left;
+      /* Compensación por la rotación desde esquina superior izquierda */
+      margin-left: 35mm;
+      margin-top: 0mm;
     }
     .empresa { font-size: 6pt; font-weight: bold; color: #1e3a8a; line-height: 1; margin-bottom: 0.5mm; }
     .nombre { font-size: 6pt; font-weight: bold; line-height: 1.1; margin-bottom: 0.5mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -688,7 +688,7 @@ window.imprimirSticker = function(datos) {
     .codigo { font-size: 7pt; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 0.3mm; line-height: 1; }
     .info { font-size: 5pt; color: #333; line-height: 1.1; margin-top: 0.3mm; }
     @media print { 
-      body { padding: 20mm; } 
+      body { padding: 5mm; } 
       .sticker { border: 0.3mm solid #000; } 
     }
   </style>
