@@ -107,7 +107,7 @@ legend { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: w
 
   <div id="mensaje" class="mensaje"></div>
 
-  <form id="formRegistro" onsubmit="return false;">
+<form id="formRegistro" onsubmit="return false;">
     <fieldset>
       <legend>🔖 Código de Barras (Automático)</legend>
       <div class="codigo-barras-section">
@@ -141,7 +141,7 @@ legend { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: w
             </div>
             <button type="button" class="foto-remove" id="remove1" style="display: none;" onclick="removerFoto(1)">×</button>
             <input type="file" id="foto1" class="foto-input" accept="image/*" onchange="previsualizarFoto(1, event)">
-            <div class="foto-label-text">Principal <span class="required">*</span></div>
+            <div class="foto-label-text">Principal <span style="color: #dc2626; font-weight: 700; font-size: 14px;">*</span></div>
           </div>
           <div class="foto-item">
             <div class="foto-preview" id="previewBox2" onclick="abrirSelectorFoto(2)">
@@ -184,7 +184,7 @@ legend { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: w
 
       <div class="form-row-full">
         <div class="form-group">
-          <label>Nombre del Equipo <span class="required">*</span></label>
+          <label>Nombre del Equipo <span style="color: #dc2626; font-weight: 700; font-size: 14px;">*</span></label>
           <input type="text" id="nombreEquipo" placeholder="Ej: Consola de Mezclas Digital Yamaha MG20XU" required>
         </div>
       </div>
@@ -192,7 +192,7 @@ legend { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: w
       <div class="form-row">
         <div class="form-grid-3">
           <div class="form-group">
-            <label>Marca <span class="required">*</span></label>
+            <label>Marca <span style="color: #dc2626; font-weight: 700; font-size: 14px;">*</span></label>
             <input type="text" id="marcaEquipo" placeholder="Ej: Yamaha, JBL, Shure" required>
           </div>
           <div class="form-group">
@@ -200,7 +200,7 @@ legend { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: w
             <input type="text" id="modeloEquipo" placeholder="Ej: MG20XU, EON615">
           </div>
           <div class="form-group">
-            <label>Serial <span class="required">*</span></label>
+            <label>Serial <span style="color: #dc2626; font-weight: 700; font-size: 14px;">*</span></label>
             <input type="text" id="serialEquipo" placeholder="Ej: YMH-2024-001234" required>
           </div>
         </div>
@@ -209,7 +209,7 @@ legend { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: w
       <div class="form-row">
         <div class="form-grid-2">
           <div class="form-group">
-            <label>Medida | Costo ($) <span class="required-underline">*</span></label>
+            <label>Medida | Costo ($) <span style="color: #dc2626; font-weight: 700; font-size: 14px; text-decoration: underline;">*</span></label>
             <div class="medida-compuesta">
               <input type="number" id="medidaValor" step="0.01" min="0" placeholder="0.00">
               <select id="medidaUnidad">
@@ -220,7 +220,7 @@ legend { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: w
             </div>
           </div>
           <div class="form-group">
-            <label>Estatus <span class="required">*</span></label>
+            <label>Estatus <span style="color: #dc2626; font-weight: 700; font-size: 14px;">*</span></label>
             <select id="estatusEquipo" required>
               <option value="">Seleccionar estatus...</option>
               <option value="operativo">✅ Operativo</option>
@@ -242,6 +242,7 @@ legend { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: w
       <button type="button" class="btn-action btn-primary" id="btnGuardar" onclick="guardarEquipo()">💾 Guardar Equipo</button>
       <button type="button" class="btn-action btn-secondary" onclick="limpiarFormulario()">🧹 Limpiar Formulario</button>
     </div>
+  </form>
   </form>
 </div>
 
