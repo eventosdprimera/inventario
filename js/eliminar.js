@@ -30,7 +30,6 @@ function mostrarMensaje(texto, tipo) {
 async function inicializarEliminacion() {
   if (eliminacionInicializada) return;
 
-  // ✅ Verificar que estamos en la página correcta
   const inputBusqueda = document.getElementById('buscarEquipoInput');
   const tbodyEliminados = document.getElementById('tbodyEliminados');
   
@@ -66,7 +65,6 @@ async function inicializarEliminacion() {
   }
 
   if (inputBusqueda && !inputBusqueda.dataset.elimListenerAttached) {
-    // ✅ IMPORTANTE: Usar window.buscarEquipo en lugar de buscarEquipo
     inputBusqueda.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -86,9 +84,9 @@ async function inicializarEliminacion() {
 }
 
 // ==========================================
-// BUSCAR EQUIPO
+// BUSCAR EQUIPO ELIMINAR (renombrada)
 // ==========================================
-async function buscarEquipoElim() {
+async function _buscarEquipoElim() {
   const input = document.getElementById('buscarEquipoInput');
   const btnBuscar = document.querySelector('button[onclick="buscarEquipo()"]');
   
@@ -317,15 +315,9 @@ async function cargarHistorialEliminados() {
 }
 
 // ==========================================
-// ✅ REGISTRAR FUNCIÓN Y DISPATCHER
+// ✅ REGISTRAR EN EL DISPATCHER GLOBAL
 // ==========================================
-window.buscarEquipoElim = buscarEquipoElim;
-
-// Solo definir window.buscarEquipo si estamos en la página de eliminar
-if (document.getElementById('tbodyEliminados')) {
-  window.buscarEquipo = window.buscarEquipoElim;
-  console.log('🗑️ window.buscarEquipo asignado a buscarEquipoElim');
-}
+window.buscarEquipoElim = _buscarEquipoElim;
 
 // ==========================================
 // INICIAR
