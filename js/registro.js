@@ -608,7 +608,7 @@ window.guardarEquipo = async function() {
 };
 
 // ==========================================
-// IMPRIMIR STICKER (VERTICAL - ESQUINA SUPERIOR IZQUIERDA)
+// IMPRIMIR STICKER (ESQUINA SUPERIOR IZQUIERDA)
 // ==========================================
 window.imprimirSticker = function(datos) {
   const info = datos || window.equipoRegistrado || {};
@@ -624,7 +624,7 @@ window.imprimirSticker = function(datos) {
   const modelo = info.modelo || (document.getElementById('modeloEquipo')?.value.trim() || '');
   const serial = info.serial || (document.getElementById('serialEquipo')?.value.trim() || '');
 
-  console.log('🖨️ Iniciando impresión de sticker vertical para:', codigoParaImprimir);
+  console.log('🖨️ Iniciando impresión de sticker para:', codigoParaImprimir);
 
   const tempDiv = document.createElement('div');
   tempDiv.style.position = 'absolute';
@@ -634,8 +634,8 @@ window.imprimirSticker = function(datos) {
 
   try {
     JsBarcode("#stickerBarcode", codigoParaImprimir, {
-      format: "CODE128", width: 1.5, height: 25, displayValue: true,
-      fontSize: 8, margin: 1, font: "Courier New", fontOptions: "bold"
+      format: "CODE128", width: 1.2, height: 35, displayValue: true,
+      fontSize: 9, margin: 1, font: "Courier New", fontOptions: "bold"
     });
 
     const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
@@ -647,7 +647,6 @@ window.imprimirSticker = function(datos) {
       <head>
         <title>Sticker - ${codigoParaImprimir}</title>
         <style>
-          /* ✅ Hoja tamaño carta con sticker en esquina superior izquierda */
           @page { size: letter; margin: 0; }
           * { margin: 0; padding: 0; box-sizing: border-box; }
           html, body { 
@@ -657,64 +656,30 @@ window.imprimirSticker = function(datos) {
             overflow: hidden; 
           }
           body { 
-            /* ✅ Alinear en esquina superior izquierda */
+            /* ✅ CLAVE: Alinear en la esquina superior izquierda */
             display: flex; 
             justify-content: flex-start; 
             align-items: flex-start; 
-            padding: 5mm; /* Margen de seguridad para impresión */
+            padding: 5mm; /* Pequeño margen para que no se corte al imprimir */
           }
           .sticker { 
-            /* ✅ Formato vertical: 35mm ancho x 70mm alto */
-            width: 35mm; 
-            height: 70mm; 
+            width: 70mm; 
+            height: 35mm; 
             border: 0.5mm solid #000; 
             padding: 1.5mm 2mm; 
             text-align: center; 
             display: flex; 
             flex-direction: column; 
             justify-content: space-between;
+            /* ✅ Sin márgenes adicionales para que quede pegado a la esquina */
             margin: 0;
           }
-          .empresa { 
-            font-size: 5pt; 
-            font-weight: bold; 
-            color: #1e3a8a; 
-            line-height: 1; 
-            margin-bottom: 0.5mm; 
-          }
-          .nombre { 
-            font-size: 5pt; 
-            font-weight: bold; 
-            line-height: 1.1; 
-            margin-bottom: 0.5mm; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            white-space: nowrap; 
-          }
-          .barcode { 
-            margin: 0.5mm 0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-          }
-          .barcode svg { 
-            max-width: 100%; 
-            height: auto; 
-            max-height: 15mm; 
-          }
-          .codigo { 
-            font-size: 6pt; 
-            font-weight: bold; 
-            font-family: 'Courier New', monospace; 
-            letter-spacing: 0.2mm; 
-            line-height: 1; 
-          }
-          .info { 
-            font-size: 4pt; 
-            color: #333; 
-            line-height: 1.1; 
-            margin-top: 0.3mm; 
-          }
+          .empresa { font-size: 6pt; font-weight: bold; color: #1e3a8a; line-height: 1; margin-bottom: 0.5mm; }
+          .nombre { font-size: 6pt; font-weight: bold; line-height: 1.1; margin-bottom: 0.5mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+          .barcode { margin: 0.5mm 0; display: flex; justify-content: center; align-items: center; }
+          .barcode svg { max-width: 100%; height: auto; max-height: 12mm; }
+          .codigo { font-size: 7pt; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 0.3mm; line-height: 1; }
+          .info { font-size: 5pt; color: #333; line-height: 1.1; margin-top: 0.3mm; }
           
           @media print { 
             body { padding: 5mm; } 
@@ -725,7 +690,7 @@ window.imprimirSticker = function(datos) {
       <body>
         <div class="sticker">
           <div class="empresa">EVENTOS D' PRIMERA</div>
-          ${nombre ? `<div class="nombre">${nombre.substring(0, 35)}</div>` : ''}
+          ${nombre ? `<div class="nombre">${nombre.substring(0, 40)}</div>` : ''}
           <div class="barcode">${barcodeSVG}</div>
           <div class="codigo">${codigoParaImprimir}</div>
           ${marca || serial ? `<div class="info">${marca}${modelo ? ' ' + modelo : ''}${serial ? ' | S/N: ' + serial : ''}</div>` : ''}
@@ -739,7 +704,7 @@ window.imprimirSticker = function(datos) {
       </html>
     `;
 
-    const ventana = window.open('', '_blank', 'width=300,height=500');
+    const ventana = window.open('', '_blank', 'width=400,height=300');
     if (ventana && !ventana.closed) {
       ventana.document.open();
       ventana.document.write(htmlSticker);
