@@ -608,7 +608,7 @@ window.guardarEquipo = async function() {
 };
 
 // ==========================================
-// IMPRIMIR STICKER (FORMATO VERTICAL)
+// IMPRIMIR STICKER (VERTICAL - ESQUINA SUPERIOR IZQUIERDA)
 // ==========================================
 window.imprimirSticker = function(datos) {
   const info = datos || window.equipoRegistrado || {};
@@ -647,29 +647,33 @@ window.imprimirSticker = function(datos) {
       <head>
         <title>Sticker - ${codigoParaImprimir}</title>
         <style>
-          @page { size: 35mm 70mm; margin: 0; }
+          /* ✅ Hoja tamaño carta con sticker en esquina superior izquierda */
+          @page { size: letter; margin: 0; }
           * { margin: 0; padding: 0; box-sizing: border-box; }
           html, body { 
-            width: 35mm; 
-            height: 70mm; 
+            width: 100%; 
+            height: 100%; 
             font-family: Arial, sans-serif; 
             overflow: hidden; 
           }
           body { 
+            /* ✅ Alinear en esquina superior izquierda */
             display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            padding: 1mm; 
+            justify-content: flex-start; 
+            align-items: flex-start; 
+            padding: 5mm; /* Margen de seguridad para impresión */
           }
           .sticker { 
-            width: 100%; 
-            height: 100%; 
+            /* ✅ Formato vertical: 35mm ancho x 70mm alto */
+            width: 35mm; 
+            height: 70mm; 
             border: 0.5mm solid #000; 
             padding: 1.5mm 2mm; 
             text-align: center; 
             display: flex; 
             flex-direction: column; 
-            justify-content: space-between; 
+            justify-content: space-between;
+            margin: 0;
           }
           .empresa { 
             font-size: 5pt; 
@@ -713,7 +717,7 @@ window.imprimirSticker = function(datos) {
           }
           
           @media print { 
-            body { padding: 0; } 
+            body { padding: 5mm; } 
             .sticker { border: 0.3mm solid #000; } 
           }
         </style>
