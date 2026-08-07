@@ -10,7 +10,10 @@ let eliminacionInicializada = false;
 // ==========================================
 function mostrarMensaje(texto, tipo) {
   const mensajeDiv = document.getElementById('mensaje');
-  if (!mensajeDiv) return;
+  if (!mensajeDiv) {
+    console.warn('⚠️ Elemento #mensaje no encontrado en el DOM');
+    return;
+  }
 
   mensajeDiv.textContent = texto;
   mensajeDiv.className = `mensaje ${tipo}`;
@@ -28,8 +31,7 @@ function mostrarMensaje(texto, tipo) {
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarEliminacion() {
-  if (eliminacionInicializada) return;
-
+  // ✅ Verificar que estamos en la página correcta
   const inputBusqueda = document.getElementById('buscarEquipoInput');
   const tbodyEliminados = document.getElementById('tbodyEliminados');
   
@@ -40,6 +42,7 @@ async function inicializarEliminacion() {
 
   console.log('🗑️ Inicializando módulo de eliminación...');
   
+  // Resetear estado cada vez que se visita la página
   equipoEncontrado = null;
   usuarioActual = null;
 
@@ -78,61 +81,62 @@ async function inicializarEliminacion() {
   }
 
   await cargarHistorialEliminados();
-  
-  eliminacionInicializada = true;
-  console.log('✅ Eliminación inicializada correctamente');
-}
 
-// ==========================================
-// BUSCAR EQUIPO ELIMINAR (renombrada)
-// ==========================================
-async function _buscarEquipoElim() {
-  const input = document.getElementById('buscarEquipoInput');
-  const btnBuscar = document.querySelector('button[onclick="buscarEquipo()"]');
-  
-  if (!input) return;
+  // ✅ DEFINIR BUSCAR EQUIPO EN EL SCOPE GLOBAL (cada vez que se visita la página)
+  window.buscarEquipo = async function() {
+    const input = document.getElementById('buscarEquipoInput');
+    const btnBuscar = document.querySelector('button[onclick="buscarEquipo()"]');
+    
+    if (!input) {
+      console.warn('⚠️ No se puede buscar: elemento no encontrado');
+      return;
+    }
 
-  const codigoOriginal = input.value.trim();
-  if (!codigoOriginal) {
-    mostrarMensaje('⚠️ Por favor ingrese un código de barras o serial', 'warning');
-    input.focus();
-    return;
-  }
-
-  if (btnBuscar) {
-    btnBuscar.disabled = true;
-    btnBuscar.textContent = '⏳ Buscando...';
-  }
-
-  try {
-    const codigoBusqueda = codigoOriginal.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
-
-    const { data, error } = await supabaseClient
-      .from('equipos')
-      .select('*')
-      .or(`codigo_barras.eq.${codigoBusqueda},serial.eq.${codigoBusqueda}`)
-      .maybeSingle();
-
-    if (error || !data) {
-      mostrarMensaje(`❌ No se encontró ningún equipo con: "${codigoBusqueda}"`, 'error');
-      input.value = '';
+    const codigoOriginal = input.value.trim();
+    if (!codigoOriginal) {
+      mostrarMensaje('⚠️ Por favor ingrese un código de barras o serial', 'warning');
       input.focus();
       return;
     }
 
-    equipoEncontrado = data;
-    mostrarDatosEquipo(data);
-    mostrarMensaje(`✅ Equipo encontrado: ${data.nombre_equipo}`, 'exito');
-
-  } catch (err) {
-    console.error('Error al buscar:', err);
-    mostrarMensaje('Error al buscar: ' + err.message, 'error');
-  } finally {
     if (btnBuscar) {
-      btnBuscar.disabled = false;
-      btnBuscar.textContent = '🔎 Buscar';
+      btnBuscar.disabled = true;
+      btnBuscar.textContent = '⏳ Buscando...';
     }
-  }
+
+    try {
+      const codigoBusqueda = codigoOriginal.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
+
+      const { data, error } = await supabaseClient
+        .from('equipos')
+        .select('*')
+        .or(`codigo_barras.eq.${codigoBusqueda},serial.eq.${codigoBusqueda}`)
+        .maybeSingle();
+
+      if (error || !data) {
+        mostrarMensaje(`❌ No se encontró ningún equipo con: "${codigoBusqueda}"`, 'error');
+        input.value = '';
+        input.focus();
+        return;
+      }
+
+      equipoEncontrado = data;
+      mostrarDatosEquipo(data);
+      mostrarMensaje(`✅ Equipo encontrado: ${data.nombre_equipo}`, 'exito');
+
+    } catch (err) {
+      console.error('Error al buscar:', err);
+      mostrarMensaje('Error al buscar: ' + err.message, 'error');
+    } finally {
+      if (btnBuscar) {
+        btnBuscar.disabled = false;
+        btnBuscar.textContent = '🔎 Buscar';
+      }
+    }
+  };
+
+  eliminacionInicializada = true;
+  console.log('✅ Eliminación inicializada correctamente');
 }
 
 // ==========================================
@@ -150,7 +154,9 @@ function mostrarDatosEquipo(equipo) {
 
   campos.forEach(campo => {
     const el = document.getElementById(campo.id);
-    if (el) el.textContent = campo.valor || 'N/A';
+    if (el) {
+      el.textContent = campo.valor || 'N/A';
+    }
   });
 
   const elEncontrado = document.getElementById('equipoEncontrado');
@@ -268,7 +274,10 @@ function cancelarBusqueda() {
 // ==========================================
 async function cargarHistorialEliminados() {
   const tbody = document.getElementById('tbodyEliminados');
-  if (!tbody) return;
+  if (!tbody) {
+    console.log('ℹ️ No se puede cargar historial: elemento no encontrado');
+    return;
+  }
 
   try {
     const { data, error } = await supabaseClient
@@ -313,15 +322,3 @@ async function cargarHistorialEliminados() {
       </tr>`;
   }
 }
-
-// ==========================================
-// ✅ REGISTRAR EN EL DISPATCHER GLOBAL
-// ==========================================
-window.buscarEquipoElim = _buscarEquipoElim;
-
-// ==========================================
-// INICIAR
-// ==========================================
-document.addEventListener('DOMContentLoaded', function() {
-  inicializarEliminacion();
-});
