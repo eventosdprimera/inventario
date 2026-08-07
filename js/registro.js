@@ -608,12 +608,12 @@ window.guardarEquipo = async function() {
 };
 
 // ==========================================
-// IMPRIMIR STICKER
+// IMPRIMIR STICKER (ESQUINA SUPERIOR IZQUIERDA)
 // ==========================================
 window.imprimirSticker = function(datos) {
   const info = datos || window.equipoRegistrado || {};
   const codigoParaImprimir = info.codigo_barras || codigoBarrasActual;
-
+  
   if (!codigoParaImprimir) {
     mostrarMensajeRegistro('No hay datos de equipo para imprimir', 'error');
     return;
@@ -642,40 +642,66 @@ window.imprimirSticker = function(datos) {
     document.body.removeChild(tempDiv);
 
     const htmlSticker = `
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Sticker - ${codigoParaImprimir}</title>
-  <style>
-    @page { size: 70mm 35mm; margin: 0; }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 70mm; height: 35mm; font-family: Arial, sans-serif; overflow: hidden; }
-    body { display: flex; justify-content: center; align-items: center; padding: 1mm; }
-    .sticker { width: 100%; height: 100%; border: 0.5mm solid #000; padding: 1.5mm 2mm; text-align: center; display: flex; flex-direction: column; justify-content: space-between; }
-    .empresa { font-size: 6pt; font-weight: bold; color: #1e3a8a; line-height: 1; margin-bottom: 0.5mm; }
-    .nombre { font-size: 6pt; font-weight: bold; line-height: 1.1; margin-bottom: 0.5mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .barcode { margin: 0.5mm 0; display: flex; justify-content: center; align-items: center; }
-    .barcode svg { max-width: 100%; height: auto; max-height: 12mm; }
-    .codigo { font-size: 7pt; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 0.3mm; line-height: 1; }
-    .info { font-size: 5pt; color: #333; line-height: 1.1; margin-top: 0.3mm; }
-    @media print { body { padding: 0; } .sticker { border: 0.3mm solid #000; } }
-  </style>
-</head>
-<body>
-  <div class="sticker">
-    <div class="empresa">EVENTOS D' PRIMERA</div>
-    ${nombre ? `<div class="nombre">${nombre.substring(0, 40)}</div>` : ''}
-    <div class="barcode">${barcodeSVG}</div>
-    <div class="codigo">${codigoParaImprimir}</div>
-    ${marca || serial ? `<div class="info">${marca}${modelo ? ' ' + modelo : ''}${serial ? ' | S/N: ' + serial : ''}</div>` : ''}
-  </div>
-  <script>
-    window.addEventListener('load', function() {
-      setTimeout(function() { window.print(); }, 400);
-    });
-  <\/script>
-</body>
-</html>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Sticker - ${codigoParaImprimir}</title>
+        <style>
+          @page { size: letter; margin: 0; }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          html, body { 
+            width: 100%; 
+            height: 100%; 
+            font-family: Arial, sans-serif; 
+            overflow: hidden; 
+          }
+          body { 
+            /* ✅ CLAVE: Alinear en la esquina superior izquierda */
+            display: flex; 
+            justify-content: flex-start; 
+            align-items: flex-start; 
+            padding: 5mm; /* Pequeño margen para que no se corte al imprimir */
+          }
+          .sticker { 
+            width: 70mm; 
+            height: 35mm; 
+            border: 0.5mm solid #000; 
+            padding: 1.5mm 2mm; 
+            text-align: center; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between;
+            /* ✅ Sin márgenes adicionales para que quede pegado a la esquina */
+            margin: 0;
+          }
+          .empresa { font-size: 6pt; font-weight: bold; color: #1e3a8a; line-height: 1; margin-bottom: 0.5mm; }
+          .nombre { font-size: 6pt; font-weight: bold; line-height: 1.1; margin-bottom: 0.5mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+          .barcode { margin: 0.5mm 0; display: flex; justify-content: center; align-items: center; }
+          .barcode svg { max-width: 100%; height: auto; max-height: 12mm; }
+          .codigo { font-size: 7pt; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 0.3mm; line-height: 1; }
+          .info { font-size: 5pt; color: #333; line-height: 1.1; margin-top: 0.3mm; }
+          
+          @media print { 
+            body { padding: 5mm; } 
+            .sticker { border: 0.3mm solid #000; } 
+          }
+        </style>
+      </head>
+      <body>
+        <div class="sticker">
+          <div class="empresa">EVENTOS D' PRIMERA</div>
+          ${nombre ? `<div class="nombre">${nombre.substring(0, 40)}</div>` : ''}
+          <div class="barcode">${barcodeSVG}</div>
+          <div class="codigo">${codigoParaImprimir}</div>
+          ${marca || serial ? `<div class="info">${marca}${modelo ? ' ' + modelo : ''}${serial ? ' | S/N: ' + serial : ''}</div>` : ''}
+        </div>
+        <script>
+          window.addEventListener('load', function() {
+            setTimeout(function() { window.print(); }, 400);
+          });
+        <\/script>
+      </body>
+      </html>
     `;
 
     const ventana = window.open('', '_blank', 'width=400,height=300');
@@ -686,6 +712,7 @@ window.imprimirSticker = function(datos) {
     } else {
       mostrarMensajeRegistro('⚠️ El navegador bloqueó la ventana emergente.', 'error');
     }
+
   } catch (err) {
     console.error('❌ Error al generar sticker:', err);
     mostrarMensajeRegistro('Error al generar el sticker: ' + err.message, 'error');
