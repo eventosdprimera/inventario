@@ -5,11 +5,20 @@ let equipoEnModificacion = null;
 let fotosModificacion = [null, null, null, null];
 let usuarioActualMod = null;
 let formularioModModificado = false;
+let modInicializado = false;
 
 // ==========================================
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarModificacion() {
+  if (modInicializado) return;
+  
+  // ✅ Verificar que estamos en la página correcta
+  if (!document.getElementById('fieldsetModificacion') || !document.getElementById('buscarEquipoInput')) {
+    console.log('ℹ️ No estamos en la página de modificación');
+    return;
+  }
+
   console.log('✏️ === INICIANDO MODIFICACIÓN DE EQUIPO ===');
 
   let intentos = 0;
@@ -26,9 +35,7 @@ async function inicializarModificacion() {
   await cargarUsuarioMod();
   configurarEventListeners();
 
-  const inputBuscar = document.getElementById('buscarEquipoInput');
-  if (inputBuscar) inputBuscar.focus();
-
+  modInicializado = true;
   console.log('✅ === MODIFICACIÓN INICIALIZADA ===');
 }
 
@@ -57,39 +64,48 @@ async function cargarUsuarioMod() {
 }
 
 // ==========================================
-// ✅ CONFIGURAR EVENT LISTENERS (CON MAYÚSCULAS AUTOMÁTICAS)
+// ✅ CONFIGURAR EVENT LISTENERS
 // ==========================================
 function configurarEventListeners() {
   const inputBuscar = document.getElementById('buscarEquipoInput');
   if (inputBuscar) {
-    // ✅ Forzar mayúsculas en tiempo real manteniendo la posición del cursor
+    // Evitar listeners duplicados
+    if (inputBuscar.dataset.modListenerAttached) return;
+    
     inputBuscar.addEventListener('input', (e) => {
       const cursorPos = e.target.selectionStart;
       e.target.value = e.target.value.toUpperCase();
       e.target.setSelectionRange(cursorPos, cursorPos);
     });
 
-    // Detectar Enter en el campo de búsqueda
+    // ✅ IMPORTANTE: Usar window.buscarEquipo en lugar de buscarEquipo
     inputBuscar.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        buscarEquipo();
+        if (typeof window.buscarEquipo === 'function') {
+          window.buscarEquipo();
+        }
       }
     });
+    
+    inputBuscar.dataset.modListenerAttached = 'true';
+    inputBuscar.focus();
   }
 
-  // Detectar cambios en el formulario para saber si hay datos sin guardar
   const campos = document.querySelectorAll('#fieldsetModificacion input, #fieldsetModificacion select, #fieldsetModificacion textarea');
   campos.forEach(campo => {
-    campo.addEventListener('input', () => { formularioModModificado = true; });
-    campo.addEventListener('change', () => { formularioModModificado = true; });
+    if (!campo.dataset.modChangeListenerAttached) {
+      campo.addEventListener('input', () => { formularioModModificado = true; });
+      campo.addEventListener('change', () => { formularioModModificado = true; });
+      campo.dataset.modChangeListenerAttached = 'true';
+    }
   });
 }
 
 // ==========================================
 // BUSCAR EQUIPO (CASE-INSENSITIVE)
 // ==========================================
-async function buscarEquipo() {
+async function buscarEquipoMod() {
   let codigo = document.getElementById('buscarEquipoInput').value.trim();
   
   if (!codigo) {
@@ -97,27 +113,23 @@ async function buscarEquipo() {
     return;
   }
 
-  // Sanitizar el código (reemplazar comillas por guiones)
   codigo = codigo.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
   document.getElementById('buscarEquipoInput').value = codigo;
 
   mostrarMensajeMod('⏳ Buscando equipo...', 'info');
 
   try {
-    // ✅ Búsqueda case-insensitive usando ilike
-    // Primero intentar buscar por código de barras (exacto)
     let { data, error } = await supabaseClient
       .from('equipos')
       .select('*')
       .eq('codigo_barras', codigo)
       .maybeSingle();
 
-    // Si no encontró por código de barras, buscar por serial (case-insensitive)
     if (!data && !error) {
       const resultado = await supabaseClient
         .from('equipos')
         .select('*')
-        .ilike('serial', codigo)  // ✅ ilike = case-insensitive
+        .ilike('serial', codigo)
         .maybeSingle();
       
       data = resultado.data;
@@ -134,7 +146,6 @@ async function buscarEquipo() {
       return;
     }
 
-    // Equipo encontrado: reiniciar estado
     equipoEnModificacion = data;
     fotosModificacion = [null, null, null, null];
     formularioModModificado = false;
@@ -182,7 +193,6 @@ async function buscarEquipo() {
     document.getElementById('fieldsetModificacion').style.display = 'block';
     document.getElementById('buttonGroupModificacion').style.display = 'flex';
 
-    // ✅ Asegurar que el botón de guardar esté habilitado y con el texto correcto
     const btnGuardar = document.getElementById('btnGuardarMod');
     if (btnGuardar) {
       btnGuardar.disabled = false;
@@ -258,7 +268,7 @@ window.removerFotoModificacion = function(numero) {
 };
 
 // ==========================================
-// ✅ CANCELAR MODIFICACIÓN (REINICIO COMPLETO Y SEGURO)
+// CANCELAR MODIFICACIÓN
 // ==========================================
 window.cancelarModificacion = function() {
   if (formularioModModificado) {
@@ -302,7 +312,6 @@ window.cancelarModificacion = function() {
     if (input) input.value = '';
   }
 
-  // ✅ Reiniciar el botón de guardar a su estado original
   const btnGuardar = document.getElementById('btnGuardarMod');
   if (btnGuardar) {
     btnGuardar.disabled = false;
@@ -313,7 +322,7 @@ window.cancelarModificacion = function() {
 };
 
 // ==========================================
-// ✅ GUARDAR MODIFICACIÓN (SIN CONFIRM, CON REINICIO AUTOMÁTICO)
+// GUARDAR MODIFICACIÓN
 // ==========================================
 window.guardarModificacion = async function() {
   if (!equipoEnModificacion) {
@@ -336,12 +345,11 @@ window.guardarModificacion = async function() {
     return;
   }
 
-  // ✅ Validación case-insensitive de serial duplicado
   if (serial.toLowerCase() !== equipoEnModificacion.serial.toLowerCase()) {
     const { data: serialData, error } = await supabaseClient
       .from('equipos')
       .select('id')
-      .ilike('serial', serial)  // ✅ Case-insensitive
+      .ilike('serial', serial)
       .neq('codigo_barras', equipoEnModificacion.codigo_barras)
       .maybeSingle();
 
@@ -413,13 +421,11 @@ window.guardarModificacion = async function() {
         const descripcion = `Modificó equipo: "${nombre}" | Serial: ${serial} | Código: ${equipoEnModificacion.codigo_barras} | Fecha/Hora: ${fechaHora} | Modificado por: ${usuario}`;
 
         await registrarLog('inventario', 'Equipo modificado', descripcion, 'success');
-        console.log('📝 Log de modificación guardado');
       } catch (logErr) {
-        console.warn('⚠️ No se pudo guardar el log, pero los cambios sí:', logErr);
+        console.warn('⚠️ No se pudo guardar el log:', logErr);
       }
     }
 
-    // ✅ REINICIO AUTOMÁTICO: Limpia el formulario y reinicia el botón después de 1.5 segundos
     setTimeout(() => {
       cancelarModificacion();
     }, 1500);
@@ -427,8 +433,6 @@ window.guardarModificacion = async function() {
   } catch (err) {
     console.error('❌ Error al guardar:', err);
     mostrarMensajeMod('❌ Error al guardar: ' + err.message, 'error');
-    
-    // Asegurar que el botón se reactive también en caso de error
     btnGuardar.disabled = false;
     btnGuardar.textContent = '💾 Guardar Cambios';
   }
@@ -446,7 +450,7 @@ function mostrarMensajeMod(texto, tipo) {
 
     if (tipo === 'exito') {
       setTimeout(() => {
-        if (msg.classList.contains('exito')) msg.className = 'mensaje';
+        if (msg && msg.classList.contains('exito')) msg.className = 'mensaje';
       }, 3000);
     }
   }
@@ -455,43 +459,31 @@ function mostrarMensajeMod(texto, tipo) {
 // ==========================================
 // CONFIRMACIÓN AL SALIR
 // ==========================================
-window.addEventListener('beforeunload', function(e) {
-  if (formularioModModificado) {
-    e.preventDefault();
-    e.returnValue = '';
-    return e.returnValue;
-  }
-});
-// ==========================================
-// ✅ DISPATCHER GLOBAL PARA EVITAR COLISIONES
-// ==========================================
+if (!window._modBeforeUnloadAttached) {
+  window.addEventListener('beforeunload', function(e) {
+    if (formularioModModificado) {
+      e.preventDefault();
+      e.returnValue = '';
+      return e.returnValue;
+    }
+  });
+  window._modBeforeUnloadAttached = true;
+}
 
-// Exponer la función de buscar con un nombre único
-window.buscarEquipoMod = buscarEquipo;
-
-// Guardar la función anterior (puede ser la de eliminar.js si se cargó antes)
-const _buscarEquipoAnteriorMod = window.buscarEquipo;
-
-// Crear un dispatcher global inteligente que detecta qué página está activa
-window.buscarEquipo = async function() {
-  // Si estamos en la página de MODIFICAR, usar la función de modificar
-  if (document.getElementById('fieldsetModificacion')) {
-    console.log('📝 Dispatcher: Usando buscarEquipoMod');
-    return await window.buscarEquipoMod();
-  }
-  // Si no estamos en modificar, delegar a la función anterior (probablemente eliminar)
-  else if (typeof _buscarEquipoAnteriorMod === 'function') {
-    console.log('📝 Dispatcher: Delegando a función anterior');
-    return await _buscarEquipoAnteriorMod();
-  }
-  else {
-    console.warn('⚠️ No se encontró contexto de búsqueda válido');
-  }
-};
 // ==========================================
-// INICIAR CUANDO EL DOM ESTÉ LISTO
+// ✅ REGISTRAR FUNCIÓN Y DISPATCHER
+// ==========================================
+window.buscarEquipoMod = buscarEquipoMod;
+
+// Solo definir window.buscarEquipo si estamos en la página de modificar
+if (document.getElementById('fieldsetModificacion')) {
+  window.buscarEquipo = window.buscarEquipoMod;
+  console.log('📝 window.buscarEquipo asignado a buscarEquipoMod');
+}
+
+// ==========================================
+// INICIAR
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('📄 Modificar DOM cargado');
   inicializarModificacion();
 });
