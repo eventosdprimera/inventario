@@ -87,7 +87,7 @@ function configurarEventListeners() {
 }
 
 // ==========================================
-// BUSCAR EQUIPO
+// BUSCAR EQUIPO (CASE-INSENSITIVE)
 // ==========================================
 async function buscarEquipo() {
   let codigo = document.getElementById('buscarEquipoInput').value.trim();
@@ -104,11 +104,25 @@ async function buscarEquipo() {
   mostrarMensajeMod('⏳ Buscando equipo...', 'info');
 
   try {
-    const { data, error } = await supabaseClient
+    // ✅ Búsqueda case-insensitive usando ilike
+    // Primero intentar buscar por código de barras (exacto)
+    let { data, error } = await supabaseClient
       .from('equipos')
       .select('*')
-      .or(`codigo_barras.eq.${codigo},serial.eq.${codigo}`)
+      .eq('codigo_barras', codigo)
       .maybeSingle();
+
+    // Si no encontró por código de barras, buscar por serial (case-insensitive)
+    if (!data && !error) {
+      const resultado = await supabaseClient
+        .from('equipos')
+        .select('*')
+        .ilike('serial', codigo)  // ✅ ilike = case-insensitive
+        .maybeSingle();
+      
+      data = resultado.data;
+      error = resultado.error;
+    }
 
     if (error) throw error;
 
@@ -322,11 +336,12 @@ window.guardarModificacion = async function() {
     return;
   }
 
-  if (serial !== equipoEnModificacion.serial) {
+  // ✅ Validación case-insensitive de serial duplicado
+  if (serial.toLowerCase() !== equipoEnModificacion.serial.toLowerCase()) {
     const { data: serialData, error } = await supabaseClient
       .from('equipos')
       .select('id')
-      .eq('serial', serial)
+      .ilike('serial', serial)  // ✅ Case-insensitive
       .neq('codigo_barras', equipoEnModificacion.codigo_barras)
       .maybeSingle();
 
@@ -432,7 +447,7 @@ function mostrarMensajeMod(texto, tipo) {
     if (tipo === 'exito') {
       setTimeout(() => {
         if (msg.classList.contains('exito')) msg.className = 'mensaje';
-      }, 3000); // Reducido a 3 segundos para que no estorbe
+      }, 3000);
     }
   }
 }
