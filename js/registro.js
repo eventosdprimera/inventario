@@ -1,4 +1,4 @@
-BB// ==========================================
+// ==========================================
 // VARIABLES GLOBALES (CON NOMBRES ÚNICOS PARA EVITAR COLISIONES)
 // ==========================================
 let codigoBarrasActual = null;
@@ -608,61 +608,50 @@ window.guardarEquipo = async function() {
 };
 
 // ==========================================
-// IMPRIMIR STICKER (ROTADO 90°)
+// IMPRIMIR STICKER
 // ==========================================
 window.imprimirSticker = function(datos) {
-    const info = datos || window.equipoRegistrado || {};
-    const codigoParaImprimir = info.codigo_barras || codigoBarrasActual;
+  const info = datos || window.equipoRegistrado || {};
+  const codigoParaImprimir = info.codigo_barras || codigoBarrasActual;
 
-    if (!codigoParaImprimir) {
-        mostrarMensajeRegistro('No hay datos de equipo para imprimir', 'error');
-        return;
-    }
+  if (!codigoParaImprimir) {
+    mostrarMensajeRegistro('No hay datos de equipo para imprimir', 'error');
+    return;
+  }
 
-    const nombre = info.nombre_equipo || (document.getElementById('nombreEquipo')?.value.trim() || '');
-    const marca = info.marca || (document.getElementById('marcaEquipo')?.value.trim() || '');
-    const modelo = info.modelo || (document.getElementById('modeloEquipo')?.value.trim() || '');
-    const serial = info.serial || (document.getElementById('serialEquipo')?.value.trim() || '');
+  const nombre = info.nombre_equipo || (document.getElementById('nombreEquipo')?.value.trim() || '');
+  const marca = info.marca || (document.getElementById('marcaEquipo')?.value.trim() || '');
+  const modelo = info.modelo || (document.getElementById('modeloEquipo')?.value.trim() || '');
+  const serial = info.serial || (document.getElementById('serialEquipo')?.value.trim() || '');
 
-    console.log('🖨️ Iniciando impresión de sticker para:', codigoParaImprimir);
+  console.log('🖨️ Iniciando impresión de sticker para:', codigoParaImprimir);
 
-    const tempDiv = document.createElement('div');
-    tempDiv.style.position = 'absolute';
-    tempDiv.style.left = '-9999px';
-    tempDiv.innerHTML = '<svg id="stickerBarcode"></svg>';
-    document.body.appendChild(tempDiv);
+  const tempDiv = document.createElement('div');
+  tempDiv.style.position = 'absolute';
+  tempDiv.style.left = '-9999px';
+  tempDiv.innerHTML = '<svg id="stickerBarcode"></svg>';
+  document.body.appendChild(tempDiv);
 
-    try {
-        JsBarcode("#stickerBarcode", codigoParaImprimir, {
-            format: "CODE128", width: 1.2, height: 35, displayValue: true,
-            fontSize: 9, margin: 1, font: "Courier New", fontOptions: "bold"
-        });
+  try {
+    JsBarcode("#stickerBarcode", codigoParaImprimir, {
+      format: "CODE128", width: 1.2, height: 35, displayValue: true,
+      fontSize: 9, margin: 1, font: "Courier New", fontOptions: "bold"
+    });
 
-        const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
-        document.body.removeChild(tempDiv);
+    const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
+    document.body.removeChild(tempDiv);
 
-        const htmlSticker = `
+    const htmlSticker = `
 <!DOCTYPE html>
 <html>
 <head>
-<title>Sticker - ${codigoParaImprimir}</title>
-<style>
+  <title>Sticker - ${codigoParaImprimir}</title>
+  <style>
     @page { size: 70mm 35mm; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 70mm; height: 35mm; font-family: Arial, sans-serif; overflow: hidden; }
-    body { display: flex; justify-content: center; align-items: center; padding: 0; }
-    .sticker {
-        width: 33mm;
-        height: 68mm;
-        transform: rotate(90deg);
-        transform-origin: center center;
-        border: 0.5mm solid #000;
-        padding: 1.5mm 2mm;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
+    body { display: flex; justify-content: center; align-items: center; padding: 1mm; }
+    .sticker { width: 100%; height: 100%; border: 0.5mm solid #000; padding: 1.5mm 2mm; text-align: center; display: flex; flex-direction: column; justify-content: space-between; }
     .empresa { font-size: 6pt; font-weight: bold; color: #1e3a8a; line-height: 1; margin-bottom: 0.5mm; }
     .nombre { font-size: 6pt; font-weight: bold; line-height: 1.1; margin-bottom: 0.5mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .barcode { margin: 0.5mm 0; display: flex; justify-content: center; align-items: center; }
@@ -670,39 +659,40 @@ window.imprimirSticker = function(datos) {
     .codigo { font-size: 7pt; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 0.3mm; line-height: 1; }
     .info { font-size: 5pt; color: #333; line-height: 1.1; margin-top: 0.3mm; }
     @media print { body { padding: 0; } .sticker { border: 0.3mm solid #000; } }
-</style>
+  </style>
 </head>
 <body>
-    <div class="sticker">
-        <div class="empresa">EVENTOS D' PRIMERA</div>
-        ${nombre ? `<div class="nombre">${nombre.substring(0, 40)}</div>` : ''}
-        <div class="barcode">${barcodeSVG}</div>
-        <div class="codigo">${codigoParaImprimir}</div>
-        ${marca || serial ? `<div class="info">${marca}${modelo ? ' ' + modelo : ''}${serial ? ' | S/N: ' + serial : ''}</div>` : ''}
-    </div>
-    <script>
-        window.addEventListener('load', function() {
-            setTimeout(function() { window.print(); }, 400);
-        });
-    <\/script>
+  <div class="sticker">
+    <div class="empresa">EVENTOS D' PRIMERA</div>
+    ${nombre ? `<div class="nombre">${nombre.substring(0, 40)}</div>` : ''}
+    <div class="barcode">${barcodeSVG}</div>
+    <div class="codigo">${codigoParaImprimir}</div>
+    ${marca || serial ? `<div class="info">${marca}${modelo ? ' ' + modelo : ''}${serial ? ' | S/N: ' + serial : ''}</div>` : ''}
+  </div>
+  <script>
+    window.addEventListener('load', function() {
+      setTimeout(function() { window.print(); }, 400);
+    });
+  <\/script>
 </body>
 </html>
-`;
+    `;
 
-        const ventana = window.open('', '_blank', 'width=400,height=300');
-        if (ventana && !ventana.closed) {
-            ventana.document.open();
-            ventana.document.write(htmlSticker);
-            ventana.document.close();
-        } else {
-            mostrarMensajeRegistro('⚠️ El navegador bloqueó la ventana emergente.', 'error');
-        }
-    } catch (err) {
-        console.error('❌ Error al generar sticker:', err);
-        mostrarMensajeRegistro('Error al generar el sticker: ' + err.message, 'error');
-        if (document.body.contains(tempDiv)) document.body.removeChild(tempDiv);
+    const ventana = window.open('', '_blank', 'width=400,height=300');
+    if (ventana && !ventana.closed) {
+      ventana.document.open();
+      ventana.document.write(htmlSticker);
+      ventana.document.close();
+    } else {
+      mostrarMensajeRegistro('⚠️ El navegador bloqueó la ventana emergente.', 'error');
     }
+  } catch (err) {
+    console.error('❌ Error al generar sticker:', err);
+    mostrarMensajeRegistro('Error al generar el sticker: ' + err.message, 'error');
+    if (document.body.contains(tempDiv)) document.body.removeChild(tempDiv);
+  }
 };
+
 // ==========================================
 // LIMPIAR FORMULARIO (Manual)
 // ==========================================
