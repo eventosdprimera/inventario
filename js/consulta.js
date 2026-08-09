@@ -473,89 +473,123 @@ async function cargarFotosConsulta(equipo) {
 }
 
 // ==========================================
-// IMPRIMIR STICKER CON CÓDIGO DE BARRAS
+// IMPRIMIR STICKER CON CÓDIGO DE BARRAS (ROTADO 90° - ESQUINA SUPERIOR IZQUIERDA)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
     mostrarToastConsulta('No hay equipo seleccionado', 'error');
     return;
   }
-
   const equipo = equipoSeleccionadoConsulta;
-  const ventana = window.open('', '_blank', 'width=400,height=300');
-  
-  ventana.document.write(`<!DOCTYPE html>
+
+  // Crear un div temporal para generar el SVG del código de barras
+  const tempDiv = document.createElement('div');
+  tempDiv.style.position = 'absolute';
+  tempDiv.style.left = '-9999px';
+  tempDiv.innerHTML = '<svg id="stickerBarcodeConsulta"></svg>';
+  document.body.appendChild(tempDiv);
+
+  try {
+    JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
+      format: "CODE128", width: 1.2, height: 35, displayValue: true,
+      fontSize: 9, margin: 1, font: "Courier New", fontOptions: "bold"
+    });
+
+    const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
+    document.body.removeChild(tempDiv);
+
+    const ventana = window.open('', '_blank', 'width=400,height=300');
+    if (!ventana || ventana.closed) {
+      mostrarToastConsulta('⚠️ El navegador bloqueó la ventana emergente', 'error');
+      return;
+    }
+
+    const htmlSticker = `
+<!DOCTYPE html>
 <html>
 <head>
   <title>Sticker - ${equipo.codigo_barras}</title>
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
   <style>
+    @page { 
+      size: letter; 
+      margin: 5mm; 
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { 
+      width: 216mm; 
+      height: 279mm; 
+      font-family: Arial, sans-serif; 
+      overflow: hidden;
+    }
     body { 
-      font-family: 'Arial', sans-serif; 
-      margin: 0; 
-      padding: 20px; 
+      display: flex; 
+      justify-content: flex-start; 
+      align-items: flex-start; 
+      padding: 5mm;
+    }
+    
+    /* STICKER ROTADO 90° - ESQUINA SUPERIOR IZQUIERDA */
+    .sticker { 
+      width: 70mm; 
+      height: 35mm; 
+      border: 0.5mm solid #000; 
+      padding: 1.5mm 2mm; 
+      text-align: center; 
       display: flex; 
       flex-direction: column; 
-      align-items: center; 
-      justify-content: center;
-      background: white;
+      justify-content: space-between;
+      transform: rotate(90deg);
+      transform-origin: top left;
+      margin-left: 35mm;
+      margin-top: 0mm;
     }
-    .sticker {
-      border: 2px solid #000;
-      padding: 15px;
-      text-align: center;
-      width: 350px;
-      background: white;
-    }
-    .equipo-nombre {
-      font-size: 18px;
-      font-weight: bold;
-      margin-bottom: 10px;
-      text-transform: uppercase;
-    }
-    .codigo-texto {
-      font-family: 'Courier New', monospace;
-      font-size: 14px;
-      margin: 10px 0;
-      font-weight: bold;
-    }
-    canvas {
-      margin: 10px 0;
-    }
-    @media print {
-      body { padding: 0; }
-      .no-print { display: none; }
+    .empresa { font-size: 6pt; font-weight: bold; color: #1e3a8a; line-height: 1; margin-bottom: 0.5mm; }
+    .nombre { font-size: 6pt; font-weight: bold; line-height: 1.1; margin-bottom: 0.5mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .barcode { margin: 0.5mm 0; display: flex; justify-content: center; align-items: center; }
+    .barcode svg { max-width: 100%; height: auto; max-height: 12mm; }
+    .codigo { font-size: 7pt; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 0.3mm; line-height: 1; }
+    .info { font-size: 5pt; color: #333; line-height: 1.1; margin-top: 0.3mm; }
+    @media print { 
+      body { padding: 5mm; } 
+      .sticker { border: 0.3mm solid #000; } 
+      .no-print { display: none !important; }
     }
   </style>
 </head>
 <body>
   <div class="sticker">
-    <div class="equipo-nombre">${equipo.nombre_equipo}</div>
-    <div class="codigo-texto">${equipo.codigo_barras}</div>
-    <canvas id="barcode"></canvas>
-    <div style="font-size: 11px; margin-top: 10px; color: #666;">
-      ${equipo.marca || ''} ${equipo.modelo || ''}
-    </div>
+    <div class="empresa">EVENTOS D' PRIMERA</div>
+    <div class="nombre">${(equipo.nombre_equipo || '').substring(0, 40)}</div>
+    <div class="barcode">${barcodeSVG}</div>
+    <div class="codigo">${equipo.codigo_barras}</div>
+    <div class="info">${equipo.marca || ''}${equipo.modelo ? ' ' + equipo.modelo : ''}${equipo.serial ? ' | S/N: ' + equipo.serial : ''}</div>
   </div>
-  <div class="no-print" style="margin-top: 20px;">
-    <button onclick="window.print()" style="padding: 10px 20px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">🖨️ Imprimir Sticker</button>
-    <button onclick="window.close()" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin-left: 10px;">Cerrar</button>
+  
+  <div class="no-print" style="position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px;">
+    <button onclick="window.print()" style="padding: 10px 20px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">🖨️ Imprimir</button>
+    <button onclick="window.close()" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">Cerrar</button>
   </div>
+
   <script>
-    JsBarcode("#barcode", "${equipo.codigo_barras}", {
-      format: "CODE128",
-      width: 2,
-      height: 60,
-      displayValue: false,
-      margin: 10
+    window.addEventListener('load', function() {
+      // No abrir el diálogo de impresión automáticamente, dejar que el usuario haga clic
+      // setTimeout(function() { window.print(); }, 400);
     });
   <\/script>
 </body>
-</html>`);
-  
-  ventana.document.close();
-}
+</html>
+    `;
 
+    ventana.document.open();
+    ventana.document.write(htmlSticker);
+    ventana.document.close();
+
+  } catch (err) {
+    console.error('❌ Error al generar sticker:', err);
+    mostrarToastConsulta('Error al generar el sticker: ' + err.message, 'error');
+    if (document.body.contains(tempDiv)) document.body.removeChild(tempDiv);
+  }
+}
 // ==========================================
 // IMPRIMIR FICHA COMPLETA
 // ==========================================
