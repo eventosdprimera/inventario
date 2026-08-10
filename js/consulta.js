@@ -154,33 +154,54 @@ function cerrarZoomInfalibleConsulta() {
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarConsulta() {
+  // Inyectar estilos primero
   inyectarEstilosConsulta();
+
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
     await new Promise(resolve => setTimeout(resolve, 100));
     intentos++;
   }
+
   if (typeof supabaseClient === 'undefined') {
     mostrarToastConsulta('Error: Supabase no está disponible', 'error');
     return;
   }
+
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
     const { data } = await supabaseClient.from('usuarios').select('*').eq('email', session.user.email).maybeSingle();
     usuarioActualConsulta = data || { email: session.user.email, id: session.user.id, rol: 'consultor' };
   }
+
   const inputBusqueda = document.getElementById('buscarConsulta');
   if (inputBusqueda) {
-    inputBusqueda.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); buscarEquipoConsulta(); }
+    // ✅ Forzar MAYÚSCULAS en tiempo real (para el lector USB)
+    inputBusqueda.addEventListener('input', (e) => {
+      const cursorPos = e.target.selectionStart;
+      e.target.value = e.target.value.toUpperCase();
+      e.target.setSelectionRange(cursorPos, cursorPos);
     });
+
+    // ✅ Detectar Enter para buscar (el lector USB envía Enter automáticamente)
+    inputBusqueda.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        buscarEquipoConsulta();
+      }
+    });
+
+    // ✅ Auto-focus para que el lector funcione inmediatamente
+    setTimeout(() => inputBusqueda.focus(), 100);
   }
+
   const filtroEstatus = document.getElementById('filtroEstatus');
   const filtroFechaInicio = document.getElementById('filtroFechaInicio');
   const filtroFechaFin = document.getElementById('filtroFechaFin');
   if (filtroEstatus) filtroEstatus.addEventListener('change', () => { paginaActualConsulta = 1; aplicarFiltrosYRenderizar(); });
   if (filtroFechaInicio) filtroFechaInicio.addEventListener('change', () => { paginaActualConsulta = 1; aplicarFiltrosYRenderizar(); });
   if (filtroFechaFin) filtroFechaFin.addEventListener('change', () => { paginaActualConsulta = 1; aplicarFiltrosYRenderizar(); });
+
   await cargarListaEquipos();
 }
 
@@ -273,7 +294,7 @@ async function verificarSiEstaRentado(codigoBarras) {
 }
 
 // ==========================================
-// BUSCAR EQUIPO (individual)
+// BUSCAR EQUIPO (CASE-INSENSITIVE)
 // ==========================================
 async function buscarEquipoConsulta() {
   const input = document.getElementById('buscarConsulta');
@@ -283,20 +304,25 @@ async function buscarEquipoConsulta() {
     mostrarToastConsulta('Por favor ingrese un código de barras o serial', 'error');
     return;
   }
-  codigo = codigo.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
+
+  // ✅ Sanitizar y convertir a MAYÚSCULAS
+  codigo = codigo.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim().toUpperCase();
+  input.value = codigo; // ✅ Actualizar el input con mayúsculas
+
   try {
-    // ✅ Búsqueda case-insensitive para serial
+    // ✅ Primero buscar por código de barras (case-insensitive)
     let { data: equipo, error } = await supabaseClient
       .from('equipos')
       .select('*')
-      .eq('codigo_barras', codigo)
+      .ilike('codigo_barras', codigo)  // ✅ ilike = case-insensitive
       .maybeSingle();
 
+    // ✅ Si no encontró por código, buscar por serial (case-insensitive)
     if (!equipo && !error) {
       const resultado = await supabaseClient
         .from('equipos')
         .select('*')
-        .ilike('serial', codigo)
+        .ilike('serial', codigo)  // ✅ ilike = case-insensitive
         .maybeSingle();
       equipo = resultado.data;
       error = resultado.error;
@@ -308,8 +334,10 @@ async function buscarEquipoConsulta() {
       input.focus();
       return;
     }
+
     equipoSeleccionadoConsulta = equipo;
     const { estatus, infoAdicional } = await determinarEstatus(equipo.codigo_barras);
+
     document.getElementById('consultaCodigo').textContent = equipo.codigo_barras || '-';
     document.getElementById('consultaNombre').textContent = equipo.nombre_equipo || '-';
     document.getElementById('consultaMarca').textContent = equipo.marca || '-';
@@ -317,8 +345,10 @@ async function buscarEquipoConsulta() {
     document.getElementById('consultaSerial').textContent = equipo.serial || '-';
     document.getElementById('consultaCosto').textContent = equipo.costo ? `$${parseFloat(equipo.costo).toFixed(2)}` : '$0.00';
     document.getElementById('consultaMedida').textContent = equipo.medida_valor ? `${equipo.medida_valor} ${equipo.medida_unidad || ''}` : '-';
+
     const estatusBadge = `<span class="badge badge-${estatus}">${estatus.toUpperCase()}</span>`;
     document.getElementById('consultaEstatus').innerHTML = estatusBadge;
+
     const infoDiv = document.getElementById('infoAdicional');
     if (infoAdicional) {
       infoDiv.innerHTML = `
@@ -337,11 +367,14 @@ async function buscarEquipoConsulta() {
     } else {
       infoDiv.innerHTML = '<p style="color: #065f46; font-size: 14px; text-align: center; padding: 20px; background: #d1fae5; border-radius: 8px; font-weight: 600;">✅ Este equipo está disponible (no está rentado ni averiado).</p>';
     }
+
     await cargarFotosConsulta(equipo);
+
     document.getElementById('btnImprimirSticker').style.display = 'inline-block';
     document.getElementById('btnImprimirFicha').style.display = 'inline-block';
     document.getElementById('fieldsetFichaConsulta').style.display = 'block';
     document.getElementById('fieldsetFichaConsulta').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
     if (typeof registrarLog === 'function') {
       await registrarLog('consulta', 'Equipo consultado', `Código: ${equipo.codigo_barras} (${equipo.nombre_equipo}) | Estatus: ${estatus} | Consultado por: ${usuarioActualConsulta?.email || 'Desconocido'}`, 'info');
     }
@@ -350,7 +383,6 @@ async function buscarEquipoConsulta() {
     mostrarToastConsulta('Error al buscar: ' + err.message, 'error');
   }
 }
-
 // ==========================================
 // ✅ CARGAR LISTA DE EQUIPOS (OPTIMIZADO CON PAGINACIÓN REAL)
 // ==========================================
