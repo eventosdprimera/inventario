@@ -691,7 +691,7 @@ async function generarNumeroRecepcion() {
 }
 
 // ==========================================
-// ✅ GUARDAR RECEPCIÓN (BLOQUEADO SI HAY PENDIENTES)
+// ✅ GUARDAR RECEPCIÓN (CON HISTORIAL EN RENTAS_TERMINADAS)
 // ==========================================
 async function guardarRecepcion() {
   if (!rentaSeleccionadaRecepcion) return;
@@ -707,7 +707,7 @@ async function guardarRecepcion() {
       'error'
     );
 
-    // ✅ Resaltar las filas pendientes para que sea fácil identificarlas
+    // Resaltar las filas pendientes
     itemsRecepcion.forEach(item => {
       if (item.estado_recepcion === 'pendiente') {
         const fila = document.getElementById(`fila-item-${item.id}`);
@@ -720,7 +720,6 @@ async function guardarRecepcion() {
       }
     });
 
-    // Quitar el resaltado después de 3 segundos
     setTimeout(() => {
       itemsRecepcion.forEach(item => {
         if (item.estado_recepcion === 'pendiente') {
@@ -733,7 +732,7 @@ async function guardarRecepcion() {
       });
     }, 3000);
 
-    return; // ❌ BLOQUEA el guardado
+    return;
   }
 
   const btnGuardar = document.getElementById('btnGuardarRecepcion');
@@ -743,12 +742,13 @@ async function guardarRecepcion() {
   }
 
   try {
-    // Determinar estado final (ya no puede ser 'parcial' porque no hay pendientes)
+    // Determinar estado final
     let estadoFinal = faltantes > 0 ? 'con_faltantes' : 'completa';
-
     const observaciones = document.getElementById('observacionesRecepcion')?.value.trim() || '';
 
+    // ========================================
     // 1. Insertar recepción principal
+    // ========================================
     const { data: recepcionData, error: errorRecepcion } = await supabaseClient
       .from('recepcion_equipos')
       .insert({
@@ -772,7 +772,9 @@ async function guardarRecepcion() {
     if (errorRecepcion) throw errorRecepcion;
     recepcionGuardadaId = recepcionData.id;
 
+    // ========================================
     // 2. Insertar items en lotes de 100
+    // ========================================
     const TAMANO_LOTE = 100;
     for (let i = 0; i < itemsRecepcion.length; i += TAMANO_LOTE) {
       const lote = itemsRecepcion.slice(i, i + TAMANO_LOTE).map(item => ({
@@ -796,7 +798,45 @@ async function guardarRecepcion() {
       if (errorLote) throw errorLote;
     }
 
-    // 3. Actualizar estado de la renta original a 'devuelta'
+    // ========================================
+    // ✅ 3. NUEVO: GUARDAR EN RENTAS_TERMINADAS (HISTORIAL)
+    // ========================================
+    const { error: errorTerminada } = await supabaseClient
+      .from('rentas_terminadas')
+      .insert({
+        numero_renta: rentaSeleccionadaRecepcion.numero_renta,
+        serie: rentaSeleccionadaRecepcion.serie || 'RENT',
+        fecha_renta: rentaSeleccionadaRecepcion.fecha_renta,
+        fecha_devolucion: rentaSeleccionadaRecepcion.fecha_devolucion,
+        fecha_terminacion: new Date().toISOString(),
+        cliente_nombre: rentaSeleccionadaRecepcion.cliente_nombre,
+        cliente_telefono: rentaSeleccionadaRecepcion.cliente_telefono,
+        cliente_email: rentaSeleccionadaRecepcion.cliente_email,
+        cliente_direccion: rentaSeleccionadaRecepcion.cliente_direccion,
+        ingeniero_nombre: rentaSeleccionadaRecepcion.ingeniero_nombre,
+        ingeniero_contacto: rentaSeleccionadaRecepcion.ingeniero_contacto,
+        subtotal: rentaSeleccionadaRecepcion.subtotal,
+        descuento: rentaSeleccionadaRecepcion.descuento,
+        total: rentaSeleccionadaRecepcion.total,
+        estado: 'terminada',
+        observaciones: rentaSeleccionadaRecepcion.observaciones,
+        usuario_registro: rentaSeleccionadaRecepcion.usuario_registro,
+        usuario_registro_id: rentaSeleccionadaRecepcion.usuario_registro_id,
+        numero_recepcion: numeroRecepcionActual,
+        terminado_por_email: usuarioActualRecepcion?.email || 'unknown',
+        terminado_por_id: usuarioActualRecepcion?.id || null,
+        motivo_terminacion: `Recepción de equipos completada (${estadoFinal}). Recibidos: ${recibidos}, Faltantes: ${faltantes}`
+      });
+
+    if (errorTerminada) {
+      console.warn('⚠️ No se pudo guardar en rentas_terminadas:', errorTerminada);
+      // No bloquear el proceso si falla el historial, solo advertir
+      mostrarToastRecepcion('⚠️ Recepción guardada pero hubo un problema con el historial', 'warning');
+    }
+
+    // ========================================
+    // 4. Actualizar estado de la renta original a 'devuelta'
+    // ========================================
     const { error: errorUpdateRenta } = await supabaseClient
       .from('rentas')
       .update({ estado: 'devuelta' })
@@ -806,9 +846,11 @@ async function guardarRecepcion() {
       console.warn('No se pudo actualizar la renta a devuelta:', errorUpdateRenta);
     }
 
-    // 4. Registrar log
+    // ========================================
+    // 5. Registrar log
+    // ========================================
     if (typeof registrarLog === 'function') {
-      const descripcion = `Recepción ${numeroRecepcionActual} | Renta: ${rentaSeleccionadaRecepcion.numero_renta} | Cliente: ${rentaSeleccionadaRecepcion.cliente_nombre} | Recibidos: ${recibidos}/${itemsRecepcion.length} | Faltantes: ${faltantes} | Estado: ${estadoFinal} | Por: ${usuarioActualRecepcion?.email || 'Desconocido'}`;
+      const descripcion = `Recepción ${numeroRecepcionActual} | Renta: ${rentaSeleccionadaRecepcion.numero_renta} | Cliente: ${rentaSeleccionadaRecepcion.cliente_nombre} | Recibidos: ${recibidos}/${itemsRecepcion.length} | Faltantes: ${faltantes} | Estado: ${estadoFinal} | Guardada en historial de terminadas | Por: ${usuarioActualRecepcion?.email || 'Desconocido'}`;
       await registrarLog('rentar', 'Recepción de equipos', descripcion, estadoFinal === 'completa' ? 'success' : 'warning');
     }
 
@@ -837,7 +879,6 @@ async function guardarRecepcion() {
     }
   }
 }
-
 // ==========================================
 // CANCELAR RECEPCIÓN
 // ==========================================
