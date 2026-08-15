@@ -822,18 +822,84 @@ function cancelarEdicion() {
 }
 
 // ==========================================
-// MOSTRAR MENSAJE
+// ✅ MOSTRAR MENSAJE (TOAST LATERAL - SIN SCROLL)
 // ==========================================
 function mostrarMensajeModificar(texto, tipo) {
-  const msg = document.getElementById('mensaje');
-  if (msg) {
-    msg.textContent = texto;
-    msg.className = `mensaje ${tipo}`;
-    setTimeout(() => { msg.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
-    if (tipo === 'exito') {
-      setTimeout(() => { if (msg.classList.contains('exito')) msg.className = 'mensaje'; }, 5000);
-    }
+  // Crear contenedor de toasts si no existe
+  let toastContainer = document.getElementById('toastContainerModificar');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toastContainerModificar';
+    toastContainer.style.cssText = `
+      position: fixed; 
+      top: 80px; 
+      right: 20px; 
+      z-index: 999999; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 10px; 
+      max-width: 380px;
+      pointer-events: none;
+    `;
+    document.body.appendChild(toastContainer);
   }
+
+  // Colores según tipo
+  const bgColor = tipo === 'exito' ? '#d1fae5' : (tipo === 'error' ? '#fee2e2' : '#fef3c7');
+  const borderColor = tipo === 'exito' ? '#10b981' : (tipo === 'error' ? '#dc2626' : '#f59e0b');
+  const textColor = tipo === 'exito' ? '#065f46' : (tipo === 'error' ? '#991b1b' : '#92400e');
+  const icono = tipo === 'exito' ? '✅' : (tipo === 'error' ? '⚠️' : 'ℹ️');
+
+  // Crear el toast
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    background: ${bgColor}; 
+    border-left: 4px solid ${borderColor}; 
+    color: ${textColor}; 
+    padding: 14px 18px; 
+    border-radius: 8px; 
+    font-size: 14px; 
+    font-family: 'Poppins', sans-serif; 
+    font-weight: 600; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
+    display: flex; 
+    align-items: center; 
+    gap: 10px;
+    pointer-events: auto;
+    animation: toastSlideInModificar 0.3s ease;
+  `;
+  toast.innerHTML = `
+    <span style="font-size: 18px;">${icono}</span>
+    <span style="flex: 1;">${texto}</span>
+    <span onclick="this.parentElement.remove()" style="cursor: pointer; font-size: 18px; opacity: 0.6;">✕</span>
+  `;
+
+  toastContainer.appendChild(toast);
+
+  // Auto-eliminar después de 3 segundos
+  setTimeout(() => {
+    if (toast.parentElement) {
+      toast.style.animation = 'toastSlideOutModificar 0.3s ease forwards';
+      setTimeout(() => toast.remove(), 300);
+    }
+  }, 3000);
+}
+
+// ✅ Agregar animaciones CSS si no existen
+if (!document.getElementById('toastStylesModificar')) {
+  const style = document.createElement('style');
+  style.id = 'toastStylesModificar';
+  style.textContent = `
+    @keyframes toastSlideInModificar { 
+      from { transform: translateX(100%); opacity: 0; } 
+      to { transform: translateX(0); opacity: 1; } 
+    }
+    @keyframes toastSlideOutModificar { 
+      from { transform: translateX(0); opacity: 1; } 
+      to { transform: translateX(100%); opacity: 0; } 
+    }
+  `;
+  document.head.appendChild(style);
 }
 
 // ==========================================
