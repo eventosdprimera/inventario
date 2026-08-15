@@ -11,6 +11,18 @@ let recepcionGuardadaId = null;
 // ✅ Cola de escaneos para múltiples escáneres simultáneos
 let colaEscaneosRecepcion = [];
 let procesandoEscaneoRecepcion = false;
+// ==========================================
+// ✅ FUNCIÓN PARA OBTENER LA FECHA DE HOY EN CARACAS (UTC-4)
+// ==========================================
+function obtenerFechaHoyCaracas() {
+  const opciones = {
+    timeZone: 'America/Caracas',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  };
+  return new Date().toLocaleDateString('en-CA', opciones); // Retorna "YYYY-MM-DD"
+}
 
 // ==========================================
 // ✅ INYECTAR ESTILOS CSS (porque el dashboard descarta el <head>)
