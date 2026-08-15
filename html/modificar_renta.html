@@ -194,11 +194,12 @@
       <textarea id="editObservaciones" rows="3" placeholder="Notas adicionales..."></textarea>
     </div>
 
-    <!-- Botones de acción -->
-    <div class="button-group">
-      <button type="button" class="btn-action btn-primary" onclick="guardarCambiosRenta()" id="btnGuardarCambios"> Guardar Cambios</button>
-      <button type="button" class="btn-action btn-secondary" onclick="cancelarEdicion()">❌ Cancelar y Volver</button>
-    </div>
+ <!-- Botones de acción -->
+<div class="button-group">
+  <button type="button" class="btn-action btn-primary" onclick="guardarCambiosRenta()" id="btnGuardarCambios">💾 Guardar Cambios</button>
+  <button type="button" class="btn-action" onclick="imprimirComprobanteModificacion()" id="btnReimprimirMod" style="display: none; background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white;">🖨️ Imprimir Comprobante</button>
+  <button type="button" class="btn-action btn-secondary" onclick="cancelarEdicion()">❌ Cancelar y Volver</button>
+</div>
   </fieldset>
 </div>
 
