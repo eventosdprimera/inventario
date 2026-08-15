@@ -14,7 +14,7 @@ const PERMISOS_POR_ROL = {
     'consulta-ver',
     'inventario-registrar', 'inventario-modificar', 'inventario-eliminar',
     'rentar-crear', 'rentar-modificar', 'rentar-eliminar', 'rentar-vencidas', 'rentar-historial',
-    'recepcion-equipos',
+    'recepcion-equipos', 'recepcion-modificar', 'recepcion-historial',
     'averias-registrar', 'averias-modificar', 'averias-reintegrar',
     'ventas-crear', 'ventas-modificar', 'ventas-eliminar',
     'reportes-ver',
@@ -25,7 +25,7 @@ const PERMISOS_POR_ROL = {
     'consulta-ver',
     'inventario-registrar',
     'rentar-crear', 'rentar-vencidas',
-    'recepcion-equipos',
+    'recepcion-equipos','recepcion-historial',
     'averias-registrar'
   ],
   consultor: [
@@ -212,6 +212,53 @@ if (modulo === 'recepcion' && operacion === 'equipos') {
   } catch (err) {
     console.error('Error cargando recepción:', err);
     contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el módulo de recepción: ${err.message}</p></fieldset>`;
+  }
+  return;
+}
+  // ==========================================
+// RECEPCIÓN → MODIFICAR
+// ==========================================
+if (modulo === 'recepcion' && operacion === 'modificar') {
+  try {
+    if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+    if (typeof inicializarModificarRecepcion === 'undefined') await cargarScript('js/modificar_recepcion.js');
+    const response = await fetch('html/modificar_recepcion.html');
+    if (!response.ok) throw new Error('No se pudo cargar html/modificar_recepcion.html');
+    const htmlText = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+    const container = doc.querySelector('.container');
+    if (!container) throw new Error('No se encontró .container');
+    contenidoDiv.innerHTML = container.innerHTML;
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (typeof inicializarModificarRecepcion === 'function') await inicializarModificarRecepcion();
+  } catch (err) {
+    console.error('Error cargando modificar recepción:', err);
+    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el módulo: ${err.message}</p></fieldset>`;
+  }
+  return;
+}
+
+// ==========================================
+// RECEPCIÓN → HISTORIAL
+// ==========================================
+if (modulo === 'recepcion' && operacion === 'historial') {
+  try {
+    if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+    if (typeof inicializarHistorialRecepcion === 'undefined') await cargarScript('js/historial_recepcion.js');
+    const response = await fetch('html/historial_recepcion.html');
+    if (!response.ok) throw new Error('No se pudo cargar html/historial_recepcion.html');
+    const htmlText = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+    const container = doc.querySelector('.container');
+    if (!container) throw new Error('No se encontró .container');
+    contenidoDiv.innerHTML = container.innerHTML;
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (typeof inicializarHistorialRecepcion === 'function') await inicializarHistorialRecepcion();
+  } catch (err) {
+    console.error('Error cargando historial recepción:', err);
+    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el módulo: ${err.message}</p></fieldset>`;
   }
   return;
 }
