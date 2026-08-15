@@ -190,7 +190,29 @@ async function cargarContenido(action) {
     }
     return;
   }
-
+// ==========================================
+// 2.5 RECEPCIÓN DE EQUIPOS
+// ==========================================
+if (modulo === 'recepcion' && operacion === 'equipos') {
+  try {
+    if (typeof registrarLog === 'undefined') await cargarScript('js/logs.js');
+    if (typeof inicializarRecepcionEquipos === 'undefined') await cargarScript('js/recepcion_equipos.js');
+    const response = await fetch('html/recepcion_equipos.html');
+    if (!response.ok) throw new Error('No se pudo cargar html/recepcion_equipos.html');
+    const htmlText = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+    const container = doc.querySelector('.container');
+    if (!container) throw new Error('No se encontró .container');
+    contenidoDiv.innerHTML = container.innerHTML;
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (typeof inicializarRecepcionEquipos === 'function') await inicializarRecepcionEquipos();
+  } catch (err) {
+    console.error('Error cargando recepción:', err);
+    contenidoDiv.innerHTML = `<fieldset><legend>Error</legend><p>No se pudo cargar el módulo de recepción: ${err.message}</p></fieldset>`;
+  }
+  return;
+}
   // ==========================================
   // 2. INVENTARIO → REGISTRAR
   // ==========================================
