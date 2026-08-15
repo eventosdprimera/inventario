@@ -163,34 +163,36 @@ async function generarNumeroRenta() {
     const serie = 'RENT';
     const patron = `${serie}-${año}-%`;
 
-    // ✅ 1. Buscar en las 3 tablas EN PARALELO
-    const [rentasActivas, rentasTerminadas, rentasEliminadas] = await Promise.all([
-      // Tabla principal de rentas
+    // ✅ 1. Buscar en las 3 tablas EN PARALELO (sin .catch, Supabase devuelve error en la respuesta)
+    const [resActivas, resTerminadas, resEliminadas] = await Promise.all([
       supabaseClient
         .from('rentas')
         .select('numero_renta')
-        .like('numero_renta', patron)
-        .catch(err => ({ data: [], error: err })),
+        .like('numero_renta', patron),
 
-      // Tabla de rentas terminadas (si existe)
       supabaseClient
         .from('rentas_terminadas')
         .select('numero_renta')
-        .like('numero_renta', patron)
-        .catch(err => ({ data: [], error: err })),
+        .like('numero_renta', patron),
 
-      // Tabla de rentas eliminadas (si existe)
       supabaseClient
         .from('rentas_eliminadas')
         .select('numero_renta')
         .like('numero_renta', patron)
-        .catch(err => ({ data: [], error: err }))
     ]);
 
-    // ✅ 2. Recolectar TODOS los números de renta encontrados
+    // ✅ 2. Recolectar TODOS los números encontrados (ignorando tablas con error)
     const todosLosNumeros = [];
 
-    [rentasActivas, rentasTerminadas, rentasEliminadas].forEach(resultado => {
+    [
+      { resultado: resActivas, nombre: 'rentas' },
+      { resultado: resTerminadas, nombre: 'rentas_terminadas' },
+      { resultado: resEliminadas, nombre: 'rentas_eliminadas' }
+    ].forEach(({ resultado, nombre }) => {
+      if (resultado.error) {
+        console.warn(`⚠️ No se pudo consultar la tabla "${nombre}":`, resultado.error.message);
+        return; // Ignorar esta tabla y continuar con las demás
+      }
       if (resultado.data && Array.isArray(resultado.data)) {
         resultado.data.forEach(row => {
           if (row.numero_renta) {
@@ -231,7 +233,6 @@ async function generarNumeroRenta() {
     mostrarToast('Error al generar el número de renta', 'error');
   }
 }
-
 // ==========================================
 // CARGAR CLIENTES EXISTENTES
 // ==========================================
