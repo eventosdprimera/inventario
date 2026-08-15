@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Historial de Recepción - Eventos D' Primera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">📜 Historial de Recepción</h1>
+    <p class="page-subtitle">Consulte todas las recepciones de equipos registradas</p>
+  </div>
+
+  <div id="mensaje" class="mensaje"></div>
+
+  <!-- SECCIÓN 1: FILTROS -->
+  <fieldset>
+    <legend>🔍 Filtros de Búsqueda</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>N° Recepción</label>
+        <input type="text" id="filtroNumeroRec" placeholder="Ej: REC-2026-0001">
+      </div>
+      <div class="form-group">
+        <label>N° Renta</label>
+        <input type="text" id="filtroRentaRec" placeholder="Ej: RENT-2026-0003">
+      </div>
+      <div class="form-group">
+        <label>Cliente</label>
+        <input type="text" id="filtroClienteRec" placeholder="Nombre del cliente...">
+      </div>
+      <div class="form-group">
+        <label>Estado</label>
+        <select id="filtroEstadoRec">
+          <option value="">Todos</option>
+          <option value="completa">✅ Completa</option>
+          <option value="con_faltantes">⚠️ Con Faltantes</option>
+          <option value="parcial">🔶 Parcial</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Fecha Desde</label>
+        <input type="date" id="filtroFechaDesdeRec">
+      </div>
+      <div class="form-group">
+        <label>Fecha Hasta</label>
+        <input type="date" id="filtroFechaHastaRec">
+      </div>
+    </div>
+    <div style="margin-top: 15px; display: flex; gap: 10px;">
+      <button type="button" class="btn-action btn-primary" onclick="buscarHistorialRecepcion()">🔎 Buscar</button>
+      <button type="button" class="btn-action btn-secondary" onclick="limpiarFiltrosHistorial()">🔄 Limpiar</button>
+    </div>
+  </fieldset>
+
+  <!-- SECCIÓN 2: LISTA DE RECEPCIONES -->
+  <fieldset id="fieldsetListaHistorial">
+    <legend>📋 Recepciones Registradas</legend>
+    <div id="contadorHistorial" class="contador-info">Total: 0 recepción(es)</div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 50px;">#</th>
+            <th>N° Recepción</th>
+            <th>N° Renta</th>
+            <th>Cliente</th>
+            <th>Fecha Recepción</th>
+            <th style="text-align: center;">Recibidos</th>
+            <th style="text-align: center;">Faltantes</th>
+            <th style="text-align: center;">Estado</th>
+            <th style="width: 110px;"></th>
+          </tr>
+        </thead>
+        <tbody id="tbodyHistorialRecepciones"></tbody>
+      </table>
+    </div>
+    <div id="paginacionHistorial" class="paginacion"></div>
+  </fieldset>
+
+  <!-- SECCIÓN 3: DETALLE DE LA RECEPCIÓN (oculto) -->
+  <fieldset id="fieldsetDetalleHistorial" style="display: none;">
+    <legend>📦 Detalle de Recepción <span id="detalleNumeroRecepcion" style="color: #fbbf24;"></span></legend>
+    <div id="detalleInfoRecepcion" class="renta-info"></div>
+    <div id="detalleEstadisticas" class="stats-grid"></div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 40px;">#</th>
+            <th>Código</th>
+            <th>Equipo</th>
+            <th>Serial</th>
+            <th style="text-align: center;">Cant.</th>
+            <th style="text-align: center;">Estado</th>
+            <th style="text-align: center;">Hora Escaneo</th>
+            <th>Escaneado Por</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyDetalleItems"></tbody>
+      </table>
+    </div>
+    <div class="button-group">
+      <button type="button" class="btn-action btn-primary" onclick="imprimirDetalleHistorial()">🖨️ Imprimir Comprobante</button>
+      <button type="button" class="btn-action btn-secondary" onclick="volverAListaHistorial()">← Volver a la Lista</button>
+    </div>
+  </fieldset>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/historial_recepcion.js"></script>
+</body>
+</html>
