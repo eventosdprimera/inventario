@@ -144,50 +144,63 @@ async function cargarUsuarioRecepcion() {
 }
 
 // ==========================================
-// CARGAR RENTAS PENDIENTES (ACTIVAS Y VENCIDAS)
+// ✅ CARGAR RENTAS PENDIENTES (OPTIMIZADO - 1 SOLA CONSULTA)
 // ==========================================
 async function cargarRentasPendientes() {
   const tbody = document.getElementById('tbodyRentas');
   if (!tbody) return;
 
+  // ✅ 1. Mostrar skeleton loader inmediatamente (sensación de velocidad)
+  tbody.innerHTML = Array(5).fill(0).map(() => `
+    <tr>
+      <td><div style="height: 14px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmerRecepcion 1.5s infinite; border-radius: 4px;"></div></td>
+      <td><div style="height: 14px; width: 120px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmerRecepcion 1.5s infinite; border-radius: 4px;"></div></td>
+      <td><div style="height: 14px; width: 180px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmerRecepcion 1.5s infinite; border-radius: 4px;"></div></td>
+      <td><div style="height: 14px; width: 90px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmerRecepcion 1.5s infinite; border-radius: 4px;"></div></td>
+      <td><div style="height: 14px; width: 90px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmerRecepcion 1.5s infinite; border-radius: 4px;"></div></td>
+      <td><div style="height: 14px; width: 50px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmerRecepcion 1.5s infinite; border-radius: 4px;"></div></td>
+      <td><div style="height: 14px; width: 80px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmerRecepcion 1.5s infinite; border-radius: 4px;"></div></td>
+      <td><div style="height: 14px; width: 90px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmerRecepcion 1.5s infinite; border-radius: 4px;"></div></td>
+    </tr>
+  `).join('');
+
+  // ✅ 2. Agregar animación shimmer si no existe
+  if (!document.getElementById('shimmerRecepcionStyles')) {
+    const style = document.createElement('style');
+    style.id = 'shimmerRecepcionStyles';
+    style.textContent = `@keyframes shimmerRecepcion { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`;
+    document.head.appendChild(style);
+  }
+
   try {
+    // ✅ 3. UNA SOLA CONSULTA con el conteo de equipos incluido
     const { data, error } = await supabaseClient
       .from('rentas')
-      .select('*')
+      .select('*, rentas_items(count)')  // ← El conteo viene en la misma consulta
       .eq('estado', 'activa')
       .order('fecha_devolucion', { ascending: true });
 
     if (error) throw error;
 
-    // Enriquecer con conteo de items y detectar vencidas
+    // ✅ 4. Procesar los datos (sin consultas adicionales)
     const hoy = new Date().toISOString().split('T')[0];
-    const rentasConItems = await Promise.all(
-      (data || []).map(async (renta) => {
-        const { data: items, error: errItems } = await supabaseClient
-          .from('rentas_items')
-          .select('id', { count: 'exact', head: true })
-          .eq('renta_id', renta.id);
+    rentasPendientes = (data || []).map(renta => {
+      // El conteo viene en renta.rentas_items[0].count
+      const totalEquipos = renta.rentas_items?.[0]?.count || 0;
+      const estadoVisual = (renta.fecha_devolucion && renta.fecha_devolucion < hoy) ? 'vencida' : 'activa';
+      
+      // Eliminar el array rentas_items para no cargar datos innecesarios
+      const { rentas_items, ...rentaLimpia } = renta;
+      
+      return { ...rentaLimpia, total_equipos: totalEquipos, estado_visual: estadoVisual };
+    });
 
-        const totalEquipos = items !== null ? 0 : 0;
-        // Obtener conteo real
-        const { count } = await supabaseClient
-          .from('rentas_items')
-          .select('*', { count: 'exact', head: true })
-          .eq('renta_id', renta.id);
-
-        const estadoVisual = (renta.fecha_devolucion && renta.fecha_devolucion < hoy) ? 'vencida' : 'activa';
-        return { ...renta, total_equipos: count || 0, estado_visual: estadoVisual };
-      })
-    );
-
-    rentasPendientes = rentasConItems;
     renderizarListaRentas();
   } catch (err) {
     console.error('Error al cargar rentas:', err);
     tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 40px; color: #ef4444;">Error al cargar: ${err.message}</td></tr>`;
   }
 }
-
 // ==========================================
 // RENDERIZAR LISTA DE RENTAS
 // ==========================================
