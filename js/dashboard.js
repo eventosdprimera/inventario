@@ -14,6 +14,7 @@ const PERMISOS_POR_ROL = {
     'consulta-ver',
     'inventario-registrar', 'inventario-modificar', 'inventario-eliminar',
     'rentar-crear', 'rentar-modificar', 'rentar-eliminar', 'rentar-vencidas', 'rentar-historial',
+    'recepcion-equipos',
     'averias-registrar', 'averias-modificar', 'averias-reintegrar',
     'ventas-crear', 'ventas-modificar', 'ventas-eliminar',
     'reportes-ver',
@@ -24,6 +25,7 @@ const PERMISOS_POR_ROL = {
     'consulta-ver',
     'inventario-registrar',
     'rentar-crear', 'rentar-vencidas',
+    'recepcion-equipos',
     'averias-registrar'
   ],
   consultor: [
