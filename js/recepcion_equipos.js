@@ -846,44 +846,44 @@ async function guardarRecepcion() {
       if (errorLote) throw errorLote;
     }
 
-    // ========================================
-    // ✅ 3. GUARDAR EN RENTAS_TERMINADAS (CON COLUMNAS CORRECTAS)
-    // ========================================
-    const { data: rentaTerminadaData, error: errorTerminada } = await supabaseClient
-      .from('rentas_terminadas')
-      .insert({
-        numero_renta: rentaSeleccionadaRecepcion.numero_renta,
-        serie: rentaSeleccionadaRecepcion.serie || 'RENT',
-        fecha_creacion: rentaSeleccionadaRecepcion.fecha_creacion,
-        fecha_renta: rentaSeleccionadaRecepcion.fecha_renta,
-        fecha_devolucion_programada: rentaSeleccionadaRecepcion.fecha_devolucion,
-        fecha_devolucion_real: fechaHoyCaracas,
-        cliente_nombre: rentaSeleccionadaRecepcion.cliente_nombre,
-        cliente_telefono: rentaSeleccionadaRecepcion.cliente_telefono,
-        cliente_email: rentaSeleccionadaRecepcion.cliente_email,
-        cliente_direccion: rentaSeleccionadaRecepcion.cliente_direccion,
-        ingeniero_nombre: rentaSeleccionadaRecepcion.ingeniero_nombre,
-        ingeniero_contacto: rentaSeleccionadaRecepcion.ingeniero_contacto,
-        subtotal: rentaSeleccionadaRecepcion.subtotal,
-        descuento: rentaSeleccionadaRecepcion.descuento,
-        total: rentaSeleccionadaRecepcion.total,
-        estado: 'devuelta',
-        observaciones: rentaSeleccionadaRecepcion.observaciones,
-        usuario_registro: rentaSeleccionadaRecepcion.usuario_registro,
-        usuario_registro_id: rentaSeleccionadaRecepcion.usuario_registro_id,
-        fecha_terminacion: new Date().toISOString(),
-        recibido_por_email: usuarioActualRecepcion?.email || 'unknown',
-        recibido_por_id: usuarioActualRecepcion?.id || null,
-        dias_anticipados: dias_anticipados,
-        dias_retraso: dias_retraso,
-        observaciones_terminacion: observacionesTerminacion
-      })
-      .select()
-      .single();
+   // ========================================
+// ✅ 3. GUARDAR EN RENTAS_TERMINADAS (COLUMNAS CORRECTAS)
+// ========================================
+const { data: rentaTerminadaData, error: errorTerminada } = await supabaseClient
+  .from('rentas_terminadas')
+  .insert({
+    numero_renta: rentaSeleccionadaRecepcion.numero_renta,
+    serie: rentaSeleccionadaRecepcion.serie || 'RENT',
+    fecha_creacion: rentaSeleccionadaRecepcion.fecha_creacion,
+    fecha_renta: rentaSeleccionadaRecepcion.fecha_renta,
+    fecha_devolucion_programada: rentaSeleccionadaRecepcion.fecha_devolucion,  // ✅ CORRECTO
+    fecha_devolucion_real: fechaHoyCaracas,                                     // ✅ CORRECTO
+    cliente_nombre: rentaSeleccionadaRecepcion.cliente_nombre,
+    cliente_telefono: rentaSeleccionadaRecepcion.cliente_telefono,
+    cliente_email: rentaSeleccionadaRecepcion.cliente_email,
+    cliente_direccion: rentaSeleccionadaRecepcion.cliente_direccion,
+    ingeniero_nombre: rentaSeleccionadaRecepcion.ingeniero_nombre,
+    ingeniero_contacto: rentaSeleccionadaRecepcion.ingeniero_contacto,
+    subtotal: rentaSeleccionadaRecepcion.subtotal,
+    descuento: rentaSeleccionadaRecepcion.descuento,
+    total: rentaSeleccionadaRecepcion.total,
+    estado: 'devuelta',
+    observaciones: rentaSeleccionadaRecepcion.observaciones,
+    usuario_registro: rentaSeleccionadaRecepcion.usuario_registro,
+    usuario_registro_id: rentaSeleccionadaRecepcion.usuario_registro_id,
+    fecha_terminacion: new Date().toISOString(),
+    recibido_por_email: usuarioActualRecepcion?.email || 'unknown',
+    recibido_por_id: usuarioActualRecepcion?.id || null,
+    dias_anticipados: dias_anticipados,
+    dias_retraso: dias_retraso,
+    observaciones_terminacion: observacionesTerminacion
+  })
+  .select()
+  .single();
 
-    if (errorTerminada) {
-      throw new Error('Error al guardar en rentas_terminadas: ' + errorTerminada.message);
-    }
+if (errorTerminada) {
+  throw new Error('Error al guardar en rentas_terminadas: ' + errorTerminada.message);
+}
 
     // ========================================
     // ✅ 4. GUARDAR ITEMS EN RENTAS_ITEMS_TERMINADAS (EN LOTES DE 100)
