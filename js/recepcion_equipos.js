@@ -923,4 +923,4 @@ if (!document.getElementById('toastStylesRecepcion')) {
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
   inicializarRecepcionEquipos();
-});js/recepcion_equipos.js
+});
