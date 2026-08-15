@@ -18,7 +18,7 @@ function obtenerFechaHoyCaracas() {
     month: '2-digit', 
     day: '2-digit' 
   };
-  return new Date().toLocaleDateString('en-CA', opciones); // Retorna "YYYY-MM-DD"
+  return new Date().toLocaleDateString('en-CA', opciones);
 }
 
 // ==========================================
@@ -40,6 +40,9 @@ async function inicializarEliminarRenta() {
 
   await cargarUsuarioEliminar();
   await buscarRentasEliminar();
+  
+  // ✅ NUEVO: Cargar historial de rentas eliminadas
+  await cargarHistorialRentasEliminadas();
 
   console.log('✅ === ELIMINAR RENTA INICIALIZADO ===');
 }
@@ -69,7 +72,7 @@ async function cargarUsuarioEliminar() {
 }
 
 // ==========================================
-// ✅ BUSCAR RENTAS (EXCLUYENDO TERMINADAS/DEVUELTAS)
+// ✅ BUSCAR RENTAS ACTIVAS (EXCLUYENDO TERMINADAS/DEVUELTAS)
 // ==========================================
 async function buscarRentasEliminar() {
   const filtroCliente = document.getElementById('filtroClienteEliminar')?.value.trim() || '';
@@ -78,7 +81,6 @@ async function buscarRentasEliminar() {
   const filtroHasta = document.getElementById('filtroFechaHastaEliminar')?.value || '';
 
   try {
-    // ✅ CAPA DE SEGURIDAD 1: Excluir explícitamente estados cerrados
     let query = supabaseClient
       .from('rentas')
       .select('*', { count: 'exact' })
@@ -108,6 +110,76 @@ async function buscarRentasEliminar() {
 }
 
 // ==========================================
+// ✅ NUEVO: CARGAR HISTORIAL DE RENTAS ELIMINADAS
+// ==========================================
+async function cargarHistorialRentasEliminadas() {
+  const tbody = document.getElementById('tbodyHistorialEliminadas');
+  if (!tbody) {
+    console.log('ℹ️ Elemento tbodyHistorialEliminadas no encontrado');
+    return;
+  }
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('rentas_eliminadas')
+      .select('*')
+      .order('fecha_eliminacion', { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">
+            No hay rentas eliminadas recientemente
+          </td>
+        </tr>`;
+      return;
+    }
+
+    renderizarTablaHistorialEliminadas(data);
+
+  } catch (err) {
+    console.error('Error al cargar historial:', err);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 40px; color: #ef4444;">
+          Error al cargar historial: ${err.message}
+        </td>
+      </tr>`;
+  }
+}
+
+// ==========================================
+// ✅ NUEVO: RENDERIZAR TABLA DE HISTORIAL
+// ==========================================
+function renderizarTablaHistorialEliminadas(rentas) {
+  const tbody = document.getElementById('tbodyHistorialEliminadas');
+  if (!tbody) return;
+
+  tbody.innerHTML = rentas.map(renta => {
+    const fechaEliminacion = renta.fecha_eliminacion 
+      ? new Date(renta.fecha_eliminacion).toLocaleString('es-ES') 
+      : '-';
+    const eliminadoPor = renta.eliminado_por_email || 'N/A';
+    
+    return `
+      <tr>
+        <td style="font-family: monospace; font-weight: 600; color: #1e3a8a;">${renta.numero_renta}</td>
+        <td><strong>${renta.cliente_nombre}</strong></td>
+        <td style="text-align: right; font-weight: 600;">$${parseFloat(renta.total).toFixed(2)}</td>
+        <td>${fechaEliminacion}</td>
+        <td>${eliminadoPor}</td>
+        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${renta.motivo_eliminacion || ''}">
+          ${renta.motivo_eliminacion || 'Sin motivo'}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ==========================================
 // RENDERIZAR TABLA DE RENTAS (CON ESTADO DINÁMICO)
 // ==========================================
 function renderizarTablaRentasEliminar(totalRegistros) {
@@ -133,7 +205,6 @@ function renderizarTablaRentasEliminar(totalRegistros) {
     const fechaInicio = new Date(renta.fecha_renta + 'T12:00:00').toLocaleDateString('es-ES');
     const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00').toLocaleDateString('es-ES');
     
-    // Lógica visual: si está activa pero la fecha ya pasó, se muestra como vencida
     let estadoReal = renta.estado;
     if (renta.estado === 'activa' && renta.fecha_devolucion && renta.fecha_devolucion <= hoyCaracas) {
       estadoReal = 'vencida';
@@ -224,12 +295,10 @@ function limpiarFiltrosEliminar() {
 }
 
 // ==========================================
-// ✅ SELECCIONAR RENTA PARA ELIMINAR (CON VALIDACIÓN DE ESTADO)
+// ✅ SELECCIONAR RENTA PARA ELIMINAR
 // ==========================================
 async function seleccionarRentaEliminar(numeroRenta) {
   try {
-    // ✅ CAPA DE SEGURIDAD 2: Solo permitir cargar si el estado es 'activa' (o visualmente vencida pero aún activa en BD)
-    // Esto bloquea automáticamente 'devuelta', 'cancelada' o 'terminada'
     const { data: renta, error } = await supabaseClient
       .from('rentas')
       .select('*')
@@ -434,9 +503,11 @@ async function confirmarEliminacionRenta() {
       btnEliminar.textContent = '🗑️ Eliminar Renta Permanentemente';
     }
 
-    setTimeout(() => {
+    setTimeout(async () => {
       paginaActualEliminar = 1;
-      buscarRentasEliminar();
+      await buscarRentasEliminar();
+      // ✅ NUEVO: Recargar historial después de eliminar
+      await cargarHistorialRentasEliminadas();
     }, 1500);
 
   } catch (err) {
