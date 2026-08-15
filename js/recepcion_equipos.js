@@ -691,7 +691,7 @@ async function generarNumeroRecepcion() {
 }
 
 // ==========================================
-// GUARDAR RECEPCIÓN
+// ✅ GUARDAR RECEPCIÓN (BLOQUEADO SI HAY PENDIENTES)
 // ==========================================
 async function guardarRecepcion() {
   if (!rentaSeleccionadaRecepcion) return;
@@ -700,23 +700,40 @@ async function guardarRecepcion() {
   const recibidos = itemsRecepcion.filter(i => i.estado_recepcion === 'recibido').length;
   const faltantes = itemsRecepcion.filter(i => i.estado_recepcion === 'faltante').length;
 
-  // Validación: si hay pendientes, requerir confirmación del admin
+  // ✅ VALIDACIÓN ESTRICTA: NO se puede guardar con equipos pendientes
   if (pendientes > 0) {
-    if (usuarioActualRecepcion?.rol !== 'administrador') {
-      mostrarToastRecepcion(`⚠️ Hay ${pendientes} equipo(s) pendiente(s). Solo un administrador puede guardar así.`, 'error');
-      return;
-    }
-
-    const confirmacion = confirm(
-      `⚠️ ATENCIÓN ADMINISTRADOR\n\n` +
-      `Hay ${pendientes} equipo(s) SIN procesar:\n` +
-      `- Recibidos: ${recibidos}\n` +
-      `- Faltantes marcados: ${faltantes}\n` +
-      `- Pendientes: ${pendientes}\n\n` +
-      `¿Está SEGURO de guardar la recepción INCOMPLETA?\n` +
-      `Los equipos pendientes quedarán registrados como NO RECIBIDOS.`
+    mostrarToastRecepcion(
+      `⚠️ Hay ${pendientes} equipo(s) pendiente(s). Debe escanearlos como recibidos o marcarlos como faltantes antes de guardar.`,
+      'error'
     );
-    if (!confirmacion) return;
+
+    // ✅ Resaltar las filas pendientes para que sea fácil identificarlas
+    itemsRecepcion.forEach(item => {
+      if (item.estado_recepcion === 'pendiente') {
+        const fila = document.getElementById(`fila-item-${item.id}`);
+        if (fila) {
+          fila.style.transition = 'all 0.3s';
+          fila.style.background = '#fef3c7';
+          fila.style.borderLeft = '4px solid #f59e0b';
+          fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    });
+
+    // Quitar el resaltado después de 3 segundos
+    setTimeout(() => {
+      itemsRecepcion.forEach(item => {
+        if (item.estado_recepcion === 'pendiente') {
+          const fila = document.getElementById(`fila-item-${item.id}`);
+          if (fila) {
+            fila.style.background = '';
+            fila.style.borderLeft = '';
+          }
+        }
+      });
+    }, 3000);
+
+    return; // ❌ BLOQUEA el guardado
   }
 
   const btnGuardar = document.getElementById('btnGuardarRecepcion');
@@ -726,10 +743,8 @@ async function guardarRecepcion() {
   }
 
   try {
-    // Determinar estado final
-    let estadoFinal = 'completa';
-    if (faltantes > 0 && pendientes === 0) estadoFinal = 'con_faltantes';
-    if (pendientes > 0) estadoFinal = 'parcial';
+    // Determinar estado final (ya no puede ser 'parcial' porque no hay pendientes)
+    let estadoFinal = faltantes > 0 ? 'con_faltantes' : 'completa';
 
     const observaciones = document.getElementById('observacionesRecepcion')?.value.trim() || '';
 
@@ -745,7 +760,7 @@ async function guardarRecepcion() {
         fecha_devolucion_esperada: rentaSeleccionadaRecepcion.fecha_devolucion,
         total_equipos: itemsRecepcion.length,
         equipos_recibidos: recibidos,
-        equipos_faltantes: faltantes + pendientes,
+        equipos_faltantes: faltantes,
         estado: estadoFinal,
         observaciones: observaciones,
         recibido_por_email: usuarioActualRecepcion?.email || 'unknown',
@@ -757,7 +772,7 @@ async function guardarRecepcion() {
     if (errorRecepcion) throw errorRecepcion;
     recepcionGuardadaId = recepcionData.id;
 
-    // ✅ 2. Insertar items en LOTES DE 100 (mucho más rápido)
+    // 2. Insertar items en lotes de 100
     const TAMANO_LOTE = 100;
     for (let i = 0; i < itemsRecepcion.length; i += TAMANO_LOTE) {
       const lote = itemsRecepcion.slice(i, i + TAMANO_LOTE).map(item => ({
@@ -793,7 +808,7 @@ async function guardarRecepcion() {
 
     // 4. Registrar log
     if (typeof registrarLog === 'function') {
-      const descripcion = `Recepción ${numeroRecepcionActual} | Renta: ${rentaSeleccionadaRecepcion.numero_renta} | Cliente: ${rentaSeleccionadaRecepcion.cliente_nombre} | Recibidos: ${recibidos}/${itemsRecepcion.length} | Faltantes: ${faltantes + pendientes} | Estado: ${estadoFinal} | Por: ${usuarioActualRecepcion?.email || 'Desconocido'}`;
+      const descripcion = `Recepción ${numeroRecepcionActual} | Renta: ${rentaSeleccionadaRecepcion.numero_renta} | Cliente: ${rentaSeleccionadaRecepcion.cliente_nombre} | Recibidos: ${recibidos}/${itemsRecepcion.length} | Faltantes: ${faltantes} | Estado: ${estadoFinal} | Por: ${usuarioActualRecepcion?.email || 'Desconocido'}`;
       await registrarLog('rentar', 'Recepción de equipos', descripcion, estadoFinal === 'completa' ? 'success' : 'warning');
     }
 
