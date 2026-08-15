@@ -7,7 +7,7 @@ let currentUserEmail = null;
 let relojInterval = null;
 
 // ============================================
-// CONFIGURACIÓN DE PERMISOS POR ROL
+// CONFIGURACIÓN DE ROL
 // ============================================
 const PERMISOS_POR_ROL = {
   administrador: [
