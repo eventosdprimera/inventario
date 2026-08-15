@@ -207,7 +207,7 @@ function renderizarListaHistorial() {
         <td style="text-align: center;">
           <button type="button" onclick="verDetalleHistorial(${rec.id})"
                   class="btn-action btn-primary" style="padding: 6px 14px; font-size: 12px; margin-right: 0;">
-            👁️ Ver
+             Ver
           </button>
         </td>
       </tr>
