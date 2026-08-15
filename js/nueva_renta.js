@@ -153,29 +153,82 @@ async function cargarUsuario() {
 }
 
 // ==========================================
-// GENERAR NÚMERO DE RENTA
+// ✅ GENERAR NÚMERO DE RENTA (ÚNICO E IRREPETIBLE)
+// Busca en TODAS las tablas: rentas, terminadas y eliminadas
 // ==========================================
 async function generarNumeroRenta() {
   try {
     const fechaCaracas = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"}));
     const año = fechaCaracas.getFullYear();
     const serie = 'RENT';
-    const { data, error } = await supabaseClient
-      .from('rentas')
-      .select('numero_renta')
-      .like('numero_renta', `${serie}-${año}-%`)
-      .order('numero_renta', { ascending: false })
-      .limit(1);
-    let siguienteNumero = 1;
-    if (data && data.length > 0 && data[0].numero_renta) {
-      const ultimoNumero = data[0].numero_renta.split('-').pop();
-      siguienteNumero = parseInt(ultimoNumero) + 1;
-    }
+    const patron = `${serie}-${año}-%`;
+
+    // ✅ 1. Buscar en las 3 tablas EN PARALELO
+    const [rentasActivas, rentasTerminadas, rentasEliminadas] = await Promise.all([
+      // Tabla principal de rentas
+      supabaseClient
+        .from('rentas')
+        .select('numero_renta')
+        .like('numero_renta', patron)
+        .catch(err => ({ data: [], error: err })),
+
+      // Tabla de rentas terminadas (si existe)
+      supabaseClient
+        .from('rentas_terminadas')
+        .select('numero_renta')
+        .like('numero_renta', patron)
+        .catch(err => ({ data: [], error: err })),
+
+      // Tabla de rentas eliminadas (si existe)
+      supabaseClient
+        .from('rentas_eliminadas')
+        .select('numero_renta')
+        .like('numero_renta', patron)
+        .catch(err => ({ data: [], error: err }))
+    ]);
+
+    // ✅ 2. Recolectar TODOS los números de renta encontrados
+    const todosLosNumeros = [];
+
+    [rentasActivas, rentasTerminadas, rentasEliminadas].forEach(resultado => {
+      if (resultado.data && Array.isArray(resultado.data)) {
+        resultado.data.forEach(row => {
+          if (row.numero_renta) {
+            todosLosNumeros.push(row.numero_renta);
+          }
+        });
+      }
+    });
+
+    console.log(`📊 Números de renta encontrados: ${todosLosNumeros.length}`);
+    console.log('📋 Lista:', todosLosNumeros);
+
+    // ✅ 3. Extraer el número más alto de TODOS
+    let numeroMaximo = 0;
+    todosLosNumeros.forEach(numero => {
+      try {
+        const parteNumerica = numero.split('-').pop(); // "RENT-2026-0003" → "0003"
+        const num = parseInt(parteNumerica);
+        if (!isNaN(num) && num > numeroMaximo) {
+          numeroMaximo = num;
+        }
+      } catch (e) {
+        console.warn('⚠️ Número de renta con formato inválido:', numero);
+      }
+    });
+
+    // ✅ 4. Generar el siguiente número
+    const siguienteNumero = numeroMaximo + 1;
     numeroRentaActual = `${serie}-${año}-${String(siguienteNumero).padStart(4, '0')}`;
+
+    console.log(`✅ Número de renta generado: ${numeroRentaActual} (máximo anterior: ${numeroMaximo})`);
+
     const elNumero = document.getElementById('numeroRenta');
     if (elNumero) elNumero.textContent = numeroRentaActual;
+
   } catch (err) {
-    console.error('Error al generar número:', err);
+    console.error('❌ Error al generar número:', err);
+    mostrarToast('Error al generar el número de renta', 'error');
   }
 }
 
