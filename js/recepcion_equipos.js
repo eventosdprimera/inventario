@@ -1,4 +1,18 @@
 // ==========================================
+// VARIABLES GLOBALES
+// ==========================================
+let rentasPendientes = [];
+let rentaSeleccionadaRecepcion = null;
+let itemsRecepcion = [];
+let usuarioActualRecepcion = null;
+let numeroRecepcionActual = null;
+let recepcionGuardadaId = null;
+
+// ✅ Cola de escaneos para múltiples escáneres simultáneos
+let colaEscaneosRecepcion = [];
+let procesandoEscaneoRecepcion = false;
+
+// ==========================================
 // ✅ INYECTAR ESTILOS CSS (porque el dashboard descarta el <head>)
 // ==========================================
 function inyectarEstilosRecepcion() {
@@ -67,23 +81,32 @@ function inyectarEstilosRecepcion() {
     }
   `;
   document.head.appendChild(style);
-}// ==========================================
-// VARIABLES GLOBALES
+}
+
 // ==========================================
-let rentasPendientes = [];
-let rentaSeleccionadaRecepcion = null;
-let itemsRecepcion = [];
-let usuarioActualRecepcion = null;
-let numeroRecepcionActual = null;
-let recepcionGuardadaId = null;
+// ✅ NORMALIZAR CÓDIGO (quita guiones y espacios, mayúsculas)
+// ==========================================
+function normalizarCodigo(codigo) {
+  return (codigo || '').replace(/[^A-Z0-9]/gi, '').toUpperCase();
+}
 
 // ==========================================
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarRecepcionEquipos() {
   console.log('📥 === INICIANDO RECEPCIÓN DE EQUIPOS ===');
-    inyectarEstilosRecepcion();
-  
+
+  // ✅ Inyectar estilos primero
+  inyectarEstilosRecepcion();
+
+  // Resetear estado
+  rentasPendientes = [];
+  rentaSeleccionadaRecepcion = null;
+  itemsRecepcion = [];
+  colaEscaneosRecepcion = [];
+  numeroRecepcionActual = null;
+  recepcionGuardadaId = null;
+
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -91,14 +114,14 @@ async function inicializarRecepcionEquipos() {
   }
 
   if (typeof supabaseClient === 'undefined') {
-    mostrarMensajeRecepcion('Error: Supabase no está disponible', 'error');
+    mostrarToastRecepcion('Error: Supabase no está disponible', 'error');
     return;
   }
 
   await cargarUsuarioRecepcion();
-  await cargarRentasPendientes();
   configurarInputEscaneo();
-  
+  await cargarRentasPendientes();
+
   console.log('✅ === RECEPCIÓN DE EQUIPOS INICIALIZADA ===');
 }
 
@@ -130,23 +153,34 @@ async function cargarRentasPendientes() {
   try {
     const { data, error } = await supabaseClient
       .from('rentas')
-      .select(`
-        *,
-        rentas_items(count)
-      `)
-      .in('estado', ['activa'])
+      .select('*')
+      .eq('estado', 'activa')
       .order('fecha_devolucion', { ascending: true });
 
     if (error) throw error;
 
     // Enriquecer con conteo de items y detectar vencidas
     const hoy = new Date().toISOString().split('T')[0];
-    rentasPendientes = (data || []).map(r => {
-      const totalEquipos = r.rentas_items?.[0]?.count || 0;
-      const estadoVisual = (r.fecha_devolucion && r.fecha_devolucion < hoy) ? 'vencida' : 'activa';
-      return { ...r, total_equipos: totalEquipos, estado_visual: estadoVisual };
-    });
+    const rentasConItems = await Promise.all(
+      (data || []).map(async (renta) => {
+        const { data: items, error: errItems } = await supabaseClient
+          .from('rentas_items')
+          .select('id', { count: 'exact', head: true })
+          .eq('renta_id', renta.id);
 
+        const totalEquipos = items !== null ? 0 : 0;
+        // Obtener conteo real
+        const { count } = await supabaseClient
+          .from('rentas_items')
+          .select('*', { count: 'exact', head: true })
+          .eq('renta_id', renta.id);
+
+        const estadoVisual = (renta.fecha_devolucion && renta.fecha_devolucion < hoy) ? 'vencida' : 'activa';
+        return { ...renta, total_equipos: count || 0, estado_visual: estadoVisual };
+      })
+    );
+
+    rentasPendientes = rentasConItems;
     renderizarListaRentas();
   } catch (err) {
     console.error('Error al cargar rentas:', err);
@@ -177,7 +211,7 @@ function renderizarListaRentas() {
     const fechaDev = new Date(renta.fecha_devolucion + 'T12:00:00').toLocaleDateString('es-ES');
     const badgeClass = renta.estado_visual === 'vencida' ? 'badge-vencida' : 'badge-activa';
     const estadoTexto = renta.estado_visual === 'vencida' ? '⚠️ Vencida' : '✅ Activa';
-    
+
     return `
       <tr>
         <td>${index + 1}</td>
@@ -190,7 +224,7 @@ function renderizarListaRentas() {
         <td style="text-align: center;"><span class="${badgeClass}">${estadoTexto}</span></td>
         <td style="text-align: center;">
           <button type="button" onclick="seleccionarRentaRecepcion('${renta.numero_renta}')"
-                  class="btn-action btn-primary" style="padding: 6px 14px; font-size: 12px;">
+                  class="btn-action btn-primary" style="padding: 6px 14px; font-size: 12px; margin-right: 0;">
             📥 Recibir
           </button>
         </td>
@@ -211,7 +245,7 @@ async function seleccionarRentaRecepcion(numeroRenta) {
       .single();
 
     if (error || !renta) {
-      mostrarMensajeRecepcion('No se pudo cargar la renta', 'error');
+      mostrarToastRecepcion('No se pudo cargar la renta', 'error');
       return;
     }
 
@@ -224,7 +258,7 @@ async function seleccionarRentaRecepcion(numeroRenta) {
     if (errorItems) throw errorItems;
 
     rentaSeleccionadaRecepcion = renta;
-    
+
     // Inicializar items con estado pendiente
     itemsRecepcion = (items || []).map(item => ({
       ...item,
@@ -234,25 +268,45 @@ async function seleccionarRentaRecepcion(numeroRenta) {
       observacion_item: ''
     }));
 
+    // Resetear cola y contador
+    colaEscaneosRecepcion = [];
+    procesandoEscaneoRecepcion = false;
+
     // Renderizar info
     renderizarInfoRenta(renta);
     renderizarTablaEquiposRecepcion();
     actualizarEstadisticas();
     await generarNumeroRecepcion();
 
+    // Limpiar campos
+    const obsEl = document.getElementById('observacionesRecepcion');
+    if (obsEl) obsEl.value = '';
+
     // Mostrar sección de recepción
     document.getElementById('fieldsetListaRentas').style.display = 'none';
     document.getElementById('fieldsetRecepcion').style.display = 'block';
-    document.getElementById('recepcionNumeroRenta').textContent = `#${renta.numero_renta}`;
+    const numRentaEl = document.getElementById('recepcionNumeroRenta');
+    if (numRentaEl) numRentaEl.textContent = `#${renta.numero_renta}`;
 
-    // Focus en input de escaneo
+    // Resetear botón de guardar
+    const btnGuardar = document.getElementById('btnGuardarRecepcion');
+    if (btnGuardar) {
+      btnGuardar.disabled = false;
+      btnGuardar.innerHTML = '💾 Guardar Recepción';
+      btnGuardar.style.animation = '';
+    }
+    const btnImprimir = document.getElementById('btnImprimirRecepcion');
+    if (btnImprimir) btnImprimir.style.display = 'none';
+
+    // ✅ Focus en input de escaneo
     setTimeout(() => {
-      document.getElementById('inputEscaneo')?.focus();
+      const input = document.getElementById('inputEscaneo');
+      if (input) input.focus();
     }, 300);
 
   } catch (err) {
     console.error('Error al seleccionar renta:', err);
-    mostrarMensajeRecepcion('Error al cargar la renta: ' + err.message, 'error');
+    mostrarToastRecepcion('Error al cargar la renta: ' + err.message, 'error');
   }
 }
 
@@ -303,6 +357,18 @@ function renderizarTablaEquiposRecepcion() {
   const tbody = document.getElementById('tbodyEquiposRecepcion');
   if (!tbody) return;
 
+  if (itemsRecepcion.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; padding: 30px; color: #6b7280;">
+          No hay equipos en esta renta.
+        </td>
+      </tr>`;
+    return;
+  }
+
+  const esAdmin = usuarioActualRecepcion?.rol === 'administrador';
+
   tbody.innerHTML = itemsRecepcion.map((item, index) => {
     const estadoClass = `item-${item.estado_recepcion}`;
     const estadoIcon = item.estado_recepcion === 'recibido' ? '✅' :
@@ -311,8 +377,7 @@ function renderizarTablaEquiposRecepcion() {
                         item.estado_recepcion === 'faltante' ? 'Faltante' : 'Pendiente';
     const horaEscaneo = item.fecha_escaneo ?
       new Date(item.fecha_escaneo).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-';
-    const esAdmin = usuarioActualRecepcion?.rol === 'administrador';
-    
+
     return `
       <tr class="${estadoClass}" id="fila-item-${item.id}">
         <td>${index + 1}</td>
@@ -327,7 +392,7 @@ function renderizarTablaEquiposRecepcion() {
                    ${item.estado_recepcion === 'faltante' ? 'checked' : ''}
                    ${!esAdmin ? 'disabled title="Solo administradores"' : ''}
                    onchange="toggleFaltante(${item.id}, this.checked)">
-            <label for="faltante-${item.id}">Marcar faltante</label>
+            <label for="faltante-${item.id}">Faltante</label>
           </div>
         </td>
         <td style="font-family: monospace; font-size: 12px; text-align: center;">${horaEscaneo}</td>
@@ -337,43 +402,99 @@ function renderizarTablaEquiposRecepcion() {
 }
 
 // ==========================================
-// CONFIGURAR INPUT DE ESCANEO (SOPORTE MÚLTIPLES ESCÁNERES)
+// ✅ CONFIGURAR INPUT DE ESCANEO (FOCO AUTOMÁTICO + MULTI-ESCÁNER)
 // ==========================================
 function configurarInputEscaneo() {
   const input = document.getElementById('inputEscaneo');
   if (!input) return;
 
-  // Forzar mayúsculas
+  // Evitar listeners duplicados
+  if (input.dataset.recepcionListenerAttached) return;
+
+  // Forzar mayúsculas en tiempo real
   input.addEventListener('input', (e) => {
     const cursorPos = e.target.selectionStart;
     e.target.value = e.target.value.toUpperCase();
     e.target.setSelectionRange(cursorPos, cursorPos);
   });
 
-  // Procesar al presionar Enter (el escáner envía Enter automáticamente)
+  // ✅ Procesar al presionar Enter (el escáner envía Enter automáticamente)
   input.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      procesarEscaneo(input.value.trim());
+      const codigo = input.value.trim();
+
+      if (codigo) {
+        // Agregar a la cola y procesar (soporta múltiples escáneres)
+        colaEscaneosRecepcion.push(codigo);
+        procesarColaEscaneosRecepcion();
+      }
+
+      // ✅ Limpiar y reenfoncar INMEDIATAMENTE para el siguiente escaneo
       input.value = '';
+      input.focus();
     }
   });
+
+  // ✅ Mantener foco permanente: si se hace click fuera de controles, volver al input
+  document.addEventListener('click', (e) => {
+    const esControl = e.target.closest('button') ||
+                      e.target.closest('input') ||
+                      e.target.closest('textarea') ||
+                      e.target.closest('select');
+
+    if (!esControl) {
+      const inputEscaneo = document.getElementById('inputEscaneo');
+      const fieldsetRecepcion = document.getElementById('fieldsetRecepcion');
+      // Solo reenfoncar si estamos en la sección de recepción activa
+      if (inputEscaneo && fieldsetRecepcion && fieldsetRecepcion.style.display !== 'none') {
+        inputEscaneo.focus();
+      }
+    }
+  });
+
+  input.dataset.recepcionListenerAttached = 'true';
 }
 
 // ==========================================
-// PROCESAR ESCANEO (SOPORTA MÚLTIPLES ESCÁNERES SIMULTÁNEOS)
+// ✅ PROCESAR COLA DE ESCANEOS (evita perder códigos con escaneo rápido)
+// ==========================================
+async function procesarColaEscaneosRecepcion() {
+  if (procesandoEscaneoRecepcion) return;
+  procesandoEscaneoRecepcion = true;
+
+  while (colaEscaneosRecepcion.length > 0) {
+    const codigo = colaEscaneosRecepcion.shift();
+    try {
+      await procesarEscaneo(codigo);
+    } catch (err) {
+      console.error('Error procesando escaneo:', err);
+    }
+  }
+
+  procesandoEscaneoRecepcion = false;
+
+  // ✅ Asegurar foco al terminar la cola
+  const input = document.getElementById('inputEscaneo');
+  if (input) input.focus();
+}
+
+// ==========================================
+// ✅ PROCESAR ESCANEO (CON NORMALIZACIÓN DE CÓDIGOS)
 // ==========================================
 async function procesarEscaneo(codigo) {
   if (!codigo || !rentaSeleccionadaRecepcion) return;
 
   // Sanitizar
   codigo = codigo.replace(/'/g, '').replace(/"/g, '').replace(/`/g, '').trim();
+  const codigoNormalizado = normalizarCodigo(codigo);
 
-  // Buscar en la lista de items (case-insensitive)
-  const codigoUpper = codigo.toUpperCase();
+  if (!codigoNormalizado) return;
+
+  // ✅ Buscar NORMALIZANDO ambos lados (con o sin guiones, mayúsculas/minúsculas)
   const itemEncontrado = itemsRecepcion.find(item =>
-    item.codigo_barras.toUpperCase() === codigoUpper ||
-    (item.serial && item.serial.toUpperCase() === codigoUpper)
+    normalizarCodigo(item.codigo_barras) === codigoNormalizado ||
+    (item.serial && normalizarCodigo(item.serial) === codigoNormalizado)
   );
 
   if (!itemEncontrado) {
@@ -382,12 +503,12 @@ async function procesarEscaneo(codigo) {
   }
 
   if (itemEncontrado.estado_recepcion === 'recibido') {
-    mostrarToastRecepcion(`ℹ️ Equipo "${itemEncontrado.nombre_equipo}" ya fue escaneado`, 'warning');
+    mostrarToastRecepcion(`ℹ️ ${itemEncontrado.nombre_equipo} ya fue escaneado`, 'warning');
     return;
   }
 
   if (itemEncontrado.estado_recepcion === 'faltante') {
-    mostrarToastRecepcion(`⚠️ Equipo "${itemEncontrado.nombre_equipo}" estaba marcado como faltante. Actualizando...`, 'warning');
+    mostrarToastRecepcion(`⚠️ ${itemEncontrado.nombre_equipo} estaba como faltante. Actualizando...`, 'warning');
   }
 
   // ✅ Marcar como recibido
@@ -395,20 +516,18 @@ async function procesarEscaneo(codigo) {
   itemEncontrado.fecha_escaneo = new Date().toISOString();
   itemEncontrado.escaneado_por = usuarioActualRecepcion?.email || 'unknown';
 
-  // Actualizar visualmente solo esa fila
   actualizarFilaItem(itemEncontrado);
   actualizarEstadisticas();
 
-  // Efecto visual de confirmación
+  // Efecto visual de confirmación y scroll a la fila
   const fila = document.getElementById(`fila-item-${itemEncontrado.id}`);
   if (fila) {
     fila.classList.add('item-escaneando');
     setTimeout(() => fila.classList.remove('item-escaneando'), 500);
+    fila.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   mostrarToastRecepcion(`✅ ${itemEncontrado.nombre_equipo} recibido`, 'exito');
-
-  // Verificar si todos están recibidos/marcados
   verificarRecepcionCompleta();
 }
 
@@ -427,19 +546,19 @@ function actualizarFilaItem(item) {
   const estadoTexto = item.estado_recepcion === 'recibido' ? 'Recibido' :
                       item.estado_recepcion === 'faltante' ? 'Faltante' : 'Pendiente';
 
-  // Actualizar celda de estado
-  const celdasEstado = fila.querySelectorAll('td');
-  if (celdasEstado[5]) {
-    celdasEstado[5].innerHTML = `${estadoIcon} ${estadoTexto}`;
-    celdasEstado[5].style.fontWeight = '700';
-    celdasEstado[5].style.textAlign = 'center';
+  // Actualizar celda de estado (índice 5)
+  const celdas = fila.querySelectorAll('td');
+  if (celdas[5]) {
+    celdas[5].innerHTML = `${estadoIcon} ${estadoTexto}`;
+    celdas[5].style.fontWeight = '700';
+    celdas[5].style.textAlign = 'center';
   }
 
-  // Actualizar hora de escaneo
-  if (celdasEstado[7]) {
+  // Actualizar hora de escaneo (índice 7)
+  if (celdas[7]) {
     const horaEscaneo = item.fecha_escaneo ?
       new Date(item.fecha_escaneo).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-';
-    celdasEstado[7].innerHTML = horaEscaneo;
+    celdas[7].innerHTML = horaEscaneo;
   }
 
   // Actualizar checkbox
@@ -490,18 +609,21 @@ function actualizarEstadisticas() {
   const faltantes = itemsRecepcion.filter(i => i.estado_recepcion === 'faltante').length;
   const procesados = recibidos + faltantes;
 
-  document.getElementById('statTotal').textContent = total;
-  document.getElementById('statRecibidos').textContent = recibidos;
-  document.getElementById('statPendientes').textContent = pendientes;
-  document.getElementById('statFaltantes').textContent = faltantes;
+  const elTotal = document.getElementById('statTotal');
+  const elRecibidos = document.getElementById('statRecibidos');
+  const elPendientes = document.getElementById('statPendientes');
+  const elFaltantes = document.getElementById('statFaltantes');
+  if (elTotal) elTotal.textContent = total;
+  if (elRecibidos) elRecibidos.textContent = recibidos;
+  if (elPendientes) elPendientes.textContent = pendientes;
+  if (elFaltantes) elFaltantes.textContent = faltantes;
 
   const porcentaje = total > 0 ? Math.round((procesados / total) * 100) : 0;
   const progressBar = document.getElementById('progressBar');
   const progressText = document.getElementById('progressText');
-  
+
   if (progressBar) {
     progressBar.style.width = `${porcentaje}%`;
-    // Cambiar color según el progreso
     if (porcentaje === 100) {
       progressBar.style.background = 'linear-gradient(90deg, #10b981 0%, #059669 100%)';
     } else if (porcentaje >= 50) {
@@ -521,9 +643,9 @@ function actualizarEstadisticas() {
 function verificarRecepcionCompleta() {
   const pendientes = itemsRecepcion.filter(i => i.estado_recepcion === 'pendiente').length;
   const btnGuardar = document.getElementById('btnGuardarRecepcion');
-  
+
   if (pendientes === 0 && btnGuardar) {
-    btnGuardar.style.animation = 'pulse 1s infinite';
+    btnGuardar.style.animation = 'pulseRecepcion 1s infinite';
     btnGuardar.innerHTML = '✅ ¡Listo para guardar!';
   } else if (btnGuardar) {
     btnGuardar.style.animation = '';
@@ -540,15 +662,13 @@ async function generarNumeroRecepcion() {
     const serie = 'REC';
     const patron = `${serie}-${año}-%`;
 
-    // ✅ Solo una consulta (la tabla de recepciones)
     const resRecepciones = await supabaseClient
       .from('recepcion_equipos')
       .select('numero_recepcion')
-      .like('numero_renta', patron);
+      .like('numero_recepcion', patron);
 
     let numeroMaximo = 0;
-    
-    // ✅ Verificar que data exista antes de iterar
+
     if (resRecepciones.data && Array.isArray(resRecepciones.data)) {
       resRecepciones.data.forEach(row => {
         try {
@@ -583,10 +703,10 @@ async function guardarRecepcion() {
   // Validación: si hay pendientes, requerir confirmación del admin
   if (pendientes > 0) {
     if (usuarioActualRecepcion?.rol !== 'administrador') {
-      mostrarMensajeRecepcion(`⚠️ Hay ${pendientes} equipo(s) pendiente(s). Solo un administrador puede guardar con faltantes.`, 'error');
+      mostrarToastRecepcion(`⚠️ Hay ${pendientes} equipo(s) pendiente(s). Solo un administrador puede guardar así.`, 'error');
       return;
     }
-    
+
     const confirmacion = confirm(
       `⚠️ ATENCIÓN ADMINISTRADOR\n\n` +
       `Hay ${pendientes} equipo(s) SIN procesar:\n` +
@@ -637,7 +757,7 @@ async function guardarRecepcion() {
     if (errorRecepcion) throw errorRecepcion;
     recepcionGuardadaId = recepcionData.id;
 
-    // 2. Insertar items en lotes de 100
+    // ✅ 2. Insertar items en LOTES DE 100 (mucho más rápido)
     const TAMANO_LOTE = 100;
     for (let i = 0; i < itemsRecepcion.length; i += TAMANO_LOTE) {
       const lote = itemsRecepcion.slice(i, i + TAMANO_LOTE).map(item => ({
@@ -673,12 +793,12 @@ async function guardarRecepcion() {
 
     // 4. Registrar log
     if (typeof registrarLog === 'function') {
-      const descripcion = `Recepción ${numeroRecepcionActual} | Renta: ${rentaSeleccionadaRecepcion.numero_renta} | Cliente: ${rentaSeleccionadaRecepcion.cliente_nombre} | Recibidos: ${recibidos}/${itemsRecepcion.length} | Faltantes: ${faltantes} | Estado: ${estadoFinal} | Por: ${usuarioActualRecepcion?.email || 'Desconocido'}`;
+      const descripcion = `Recepción ${numeroRecepcionActual} | Renta: ${rentaSeleccionadaRecepcion.numero_renta} | Cliente: ${rentaSeleccionadaRecepcion.cliente_nombre} | Recibidos: ${recibidos}/${itemsRecepcion.length} | Faltantes: ${faltantes + pendientes} | Estado: ${estadoFinal} | Por: ${usuarioActualRecepcion?.email || 'Desconocido'}`;
       await registrarLog('rentar', 'Recepción de equipos', descripcion, estadoFinal === 'completa' ? 'success' : 'warning');
     }
 
-    mostrarMensajeRecepcion(`✅ Recepción ${numeroRecepcionActual} guardada exitosamente`, 'exito');
-    
+    mostrarToastRecepcion(`✅ Recepción ${numeroRecepcionActual} guardada exitosamente`, 'exito');
+
     // Mostrar botón de imprimir
     const btnImprimir = document.getElementById('btnImprimirRecepcion');
     if (btnImprimir) btnImprimir.style.display = 'inline-block';
@@ -688,14 +808,14 @@ async function guardarRecepcion() {
       btnGuardar.style.animation = '';
     }
 
-    // Auto-imprimir y luego volver a la lista
+    // Auto-imprimir después de guardar
     setTimeout(() => {
       imprimirComprobanteRecepcion();
     }, 800);
 
   } catch (err) {
     console.error('Error al guardar recepción:', err);
-    mostrarMensajeRecepcion('Error al guardar: ' + err.message, 'error');
+    mostrarToastRecepcion('Error al guardar: ' + err.message, 'error');
     if (btnGuardar) {
       btnGuardar.disabled = false;
       btnGuardar.innerHTML = '💾 Guardar Recepción';
@@ -709,28 +829,29 @@ async function guardarRecepcion() {
 function cancelarRecepcion() {
   const pendientes = itemsRecepcion.filter(i => i.estado_recepcion === 'pendiente').length;
   const procesados = itemsRecepcion.length - pendientes;
-  
-  if (procesados > 0 && !confirm(`¿Cancelar recepción? Se perderán ${procesados} equipo(s) ya escaneados.`)) {
+
+  if (procesados > 0 && !recepcionGuardadaId && !confirm(`¿Cancelar recepción? Se perderán ${procesados} equipo(s) ya escaneados.`)) {
     return;
   }
 
   rentaSeleccionadaRecepcion = null;
   itemsRecepcion = [];
   recepcionGuardadaId = null;
+  colaEscaneosRecepcion = [];
 
   document.getElementById('fieldsetListaRentas').style.display = 'block';
   document.getElementById('fieldsetRecepcion').style.display = 'none';
 
-  // Recargar lista
+  // Recargar lista de rentas
   cargarRentasPendientes();
 }
 
 // ==========================================
-// IMPRIMIR COMPROBANTE PEQUEÑO (TICKET)
+// ✅ IMPRIMIR COMPROBANTE DE RECEPCIÓN (TAMAÑO CARTA)
 // ==========================================
 function imprimirComprobanteRecepcion() {
-  if (!rentaSeleccionadaRecepcion || !recepcionGuardadaId) {
-    mostrarMensajeRecepcion('No hay recepción guardada para imprimir', 'error');
+  if (!rentaSeleccionadaRecepcion) {
+    mostrarToastRecepcion('No hay recepción para imprimir', 'error');
     return;
   }
 
@@ -739,20 +860,26 @@ function imprimirComprobanteRecepcion() {
   const pendientes = itemsRecepcion.filter(i => i.estado_recepcion === 'pendiente').length;
   const observaciones = document.getElementById('observacionesRecepcion')?.value.trim() || '';
 
+  const logoUrl = new URL('img/logo.png', window.location.href).href;
+
   const itemsHTML = itemsRecepcion.map((item, i) => {
     const icono = item.estado_recepcion === 'recibido' ? '✅' :
                   item.estado_recepcion === 'faltante' ? '❌' : '⏳';
     const estadoTexto = item.estado_recepcion.toUpperCase();
+    const colorEstado = item.estado_recepcion === 'recibido' ? '#10b981' :
+                        item.estado_recepcion === 'faltante' ? '#dc2626' : '#f59e0b';
     const hora = item.fecha_escaneo ?
       new Date(item.fecha_escaneo).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '-';
-    
+
     return `
       <tr>
-        <td style="padding: 4px 6px; border-bottom: 1px dashed #ddd; font-size: 10px;">${i + 1}</td>
-        <td style="padding: 4px 6px; border-bottom: 1px dashed #ddd; font-size: 10px; font-family: monospace;">${item.codigo_barras}</td>
-        <td style="padding: 4px 6px; border-bottom: 1px dashed #ddd; font-size: 10px;">${item.nombre_equipo}</td>
-        <td style="padding: 4px 6px; border-bottom: 1px dashed #ddd; font-size: 10px; text-align: center;">${icono}</td>
-        <td style="padding: 4px 6px; border-bottom: 1px dashed #ddd; font-size: 9px; text-align: center;">${hora}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center;">${i + 1}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; font-family: monospace; font-size: 10px;">${item.codigo_barras}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;"><strong>${item.nombre_equipo}</strong><br><small style="color:#666;">${item.marca || ''} ${item.modelo || ''}</small></td>
+        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${item.serial || '-'}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center;">${item.cantidad}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center; color: ${colorEstado}; font-weight: 700;">${icono} ${estadoTexto}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center;">${hora}</td>
       </tr>
     `;
   }).join('');
@@ -760,101 +887,157 @@ function imprimirComprobanteRecepcion() {
   const estadoFinal = pendientes > 0 ? 'PARCIAL' : (faltantes > 0 ? 'CON FALTANTES' : 'COMPLETA');
   const estadoColor = estadoFinal === 'COMPLETA' ? '#10b981' : (estadoFinal === 'PARCIAL' ? '#f59e0b' : '#dc2626');
 
-  const ventana = window.open('', '_blank', 'width=400,height=700');
+  const ventana = window.open('', '_blank', 'width=900,height=1100');
   const html = `<!DOCTYPE html>
 <html>
 <head>
-<title>Comprobante Recepción ${numeroRecepcionActual}</title>
+<title>Comprobante de Recepción ${numeroRecepcionActual}</title>
 <style>
-@page { size: 80mm auto; margin: 3mm; }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Courier New', monospace; font-size: 11px; color: #000; padding: 5mm; width: 80mm; }
-.header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
-.header h1 { font-size: 14px; margin-bottom: 3px; }
-.header p { font-size: 10px; color: #555; }
-.numero-rec { text-align: center; background: #000; color: white; padding: 6px; margin: 8px 0; font-weight: bold; font-size: 13px; letter-spacing: 1px; }
-.info-section { margin: 8px 0; padding: 6px 0; border-bottom: 1px dashed #000; }
-.info-row { display: flex; justify-content: space-between; margin: 3px 0; font-size: 10px; }
-.info-row strong { font-weight: bold; }
-.estado-final { text-align: center; padding: 8px; margin: 8px 0; border: 2px solid ${estadoColor}; border-radius: 4px; background: ${estadoColor}15; color: ${estadoColor}; font-weight: bold; font-size: 13px; }
-.stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin: 8px 0; }
-.stat-box { text-align: center; padding: 4px; border: 1px solid #000; font-size: 10px; }
-.stat-box strong { display: block; font-size: 16px; margin: 2px 0; }
-table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 10px; }
-th { background: #000; color: white; padding: 4px; font-size: 9px; text-align: left; }
-.observaciones { margin: 8px 0; padding: 6px; border: 1px dashed #000; font-size: 10px; font-style: italic; }
-.footer { text-align: center; margin-top: 10px; padding-top: 8px; border-top: 2px dashed #000; font-size: 9px; color: #555; }
-.firma { margin-top: 15px; text-align: center; }
-.firma-line { border-top: 1px solid #000; margin-top: 25px; padding-top: 3px; font-size: 10px; }
-@media print {
-  .no-print { display: none; }
-  body { width: 80mm; padding: 0; }
-}
+@page { size: letter; margin: 15mm; }
+* { box-sizing: border-box; }
+body { font-family: Arial, sans-serif; font-size: 12px; color: #333; max-width: 216mm; margin: 0 auto; padding: 10mm; }
+.header { text-align: center; border-bottom: 3px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; }
+.logo-container { display: flex; justify-content: center; align-items: center; margin-bottom: 10px; }
+.logo-img { max-width: 250px; max-height: 250px; object-fit: contain; }
+.brand h1 { color: #1e3a8a; margin: 10px 0 5px 0; font-size: 26px; font-family: 'Libre Caslon Text', serif; }
+.brand p { margin: 3px 0 0 0; color: #666; font-size: 12px; }
+.numero-recepcion-box { background: linear-gradient(135deg, #eff6ff, #dbeafe); padding: 12px 20px; border-radius: 8px; margin: 15px auto; display: inline-block; border: 2px dashed #3b82f6; }
+.numero-recepcion-box .label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+.numero-recepcion-box .valor { font-size: 22px; font-weight: bold; color: #1e3a8a; font-family: monospace; margin-top: 3px; }
+.estado-final { text-align: center; padding: 12px; margin: 15px 0; border: 2px solid ${estadoColor}; border-radius: 8px; background: ${estadoColor}15; color: ${estadoColor}; font-weight: bold; font-size: 16px; }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.info-box { background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; }
+.info-box h3 { margin: 0 0 10px 0; color: #1e3a8a; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+.info-box p { margin: 5px 0; font-size: 12px; }
+.info-box p strong { color: #374151; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0; }
+.stat-box { text-align: center; padding: 15px; border-radius: 8px; border: 2px solid; }
+.stat-box.total { border-color: #1e3a8a; background: #eff6ff; }
+.stat-box.recibidos { border-color: #10b981; background: #d1fae5; }
+.stat-box.faltantes { border-color: #dc2626; background: #fee2e2; }
+.stat-box .stat-num { font-size: 28px; font-weight: 700; font-family: monospace; }
+.stat-box.total .stat-num { color: #1e3a8a; }
+.stat-box.recibidos .stat-num { color: #10b981; }
+.stat-box.faltantes .stat-num { color: #dc2626; }
+.stat-box .stat-label { font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 600; margin-top: 5px; }
+table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+th { background: #1e3a8a; color: white; padding: 10px 8px; text-align: left; font-size: 11px; text-transform: uppercase; }
+td { padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 11px; }
+.observaciones { margin-top: 20px; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; }
+.observaciones h4 { margin: 0 0 5px 0; color: #92400e; font-size: 12px; }
+.observaciones p { margin: 0; font-size: 12px; }
+.firmas { margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; text-align: center; }
+.firma-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 5px; }
+.firma-line p { margin: 3px 0; font-size: 12px; }
+.footer { margin-top: 30px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 10px; }
+@media print { .no-print { display: none !important; } body { padding: 0; } }
 </style>
 </head>
 <body>
 <div class="header">
-<h1>EVENTOS D' PRIMERA</h1>
-<p>Comprobante de Recepción</p>
+<div class="logo-container">
+<img src="${logoUrl}" alt="Logo Eventos D' Primera" class="logo-img" onerror="this.style.display='none'">
 </div>
-
-<div class="numero-rec">N° ${numeroRecepcionActual}</div>
+<div class="brand">
+<h1>Eventos D' Primera</h1>
+<p>Sistema de Inventario y Rentas</p>
+</div>
+<div class="numero-recepcion-box">
+<div class="label">Comprobante de Recepción N°</div>
+<div class="valor">${numeroRecepcionActual}</div>
+</div>
+</div>
 
 <div class="estado-final">
-${estadoFinal}
+ESTADO DE LA RECEPCIÓN: ${estadoFinal}
 </div>
 
-<div class="info-section">
-<div class="info-row"><span>Renta:</span> <strong>${rentaSeleccionadaRecepcion.numero_renta}</strong></div>
-<div class="info-row"><span>Cliente:</span> <strong>${rentaSeleccionadaRecepcion.cliente_nombre}</strong></div>
-<div class="info-row"><span>Teléfono:</span> <strong>${rentaSeleccionadaRecepcion.cliente_telefono || 'N/A'}</strong></div>
-<div class="info-row"><span>Fecha Recepción:</span> <strong>${new Date().toLocaleString('es-ES')}</strong></div>
-<div class="info-row"><span>Recibido por:</span> <strong>${usuarioActualRecepcion?.email || 'N/A'}</strong></div>
+<div class="info-grid">
+<div class="info-box">
+<h3>👤 Cliente / Responsable</h3>
+<p><strong>Nombre:</strong> ${rentaSeleccionadaRecepcion.cliente_nombre}</p>
+<p><strong>Teléfono:</strong> ${rentaSeleccionadaRecepcion.cliente_telefono || 'N/A'}</p>
+<p><strong>Renta Asociada:</strong> ${rentaSeleccionadaRecepcion.numero_renta}</p>
+</div>
+<div class="info-box">
+<h3>📅 Detalles de Recepción</h3>
+<p><strong>Fecha Recepción:</strong> ${new Date().toLocaleString('es-ES')}</p>
+<p><strong>Devolución Esperada:</strong> ${rentaSeleccionadaRecepcion.fecha_devolucion ? new Date(rentaSeleccionadaRecepcion.fecha_devolucion + 'T12:00:00').toLocaleDateString('es-ES') : 'N/A'}</p>
+<p><strong>Recibido por:</strong> ${usuarioActualRecepcion?.email || 'N/A'}</p>
+</div>
 </div>
 
 <div class="stats">
-<div class="stat-box">Total<strong>${itemsRecepcion.length}</strong></div>
-<div class="stat-box" style="color: #10b981;">Recib.<strong>${recibidos}</strong></div>
-<div class="stat-box" style="color: #dc2626;">Falt.<strong>${faltantes + pendientes}</strong></div>
+<div class="stat-box total">
+<div class="stat-num">${itemsRecepcion.length}</div>
+<div class="stat-label">Total Equipos</div>
+</div>
+<div class="stat-box recibidos">
+<div class="stat-num">${recibidos}</div>
+<div class="stat-label">✅ Recibidos</div>
+</div>
+<div class="stat-box faltantes">
+<div class="stat-num">${faltantes + pendientes}</div>
+<div class="stat-label">❌ Faltantes</div>
+</div>
 </div>
 
+<h3 style="margin: 20px 0 10px 0; color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 5px;">📦 Detalle de Equipos (${itemsRecepcion.length})</h3>
 <table>
 <thead>
 <tr>
-<th>#</th>
-<th>Código</th>
+<th style="width: 30px;">#</th>
+<th style="width: 130px;">Código</th>
 <th>Equipo</th>
-<th>Est.</th>
-<th>Hora</th>
+<th style="width: 100px;">Serial</th>
+<th style="text-align: center; width: 50px;">Cant.</th>
+<th style="text-align: center; width: 110px;">Estado</th>
+<th style="text-align: center; width: 70px;">Hora</th>
 </tr>
 </thead>
-<tbody>${itemsHTML}</tbody>
+<tbody>
+${itemsHTML}
+</tbody>
 </table>
 
-${observaciones ? `<div class="observaciones"><strong>Obs:</strong> ${observaciones}</div>` : ''}
+${observaciones ? `
+<div class="observaciones">
+<h4>📝 Observaciones</h4>
+<p>${observaciones}</p>
+</div>
+` : ''}
 
-<div class="firma">
+<div class="firmas">
+<div>
 <div class="firma-line">
-<strong>${rentaSeleccionadaRecepcion.cliente_nombre}</strong><br>
-Firma del Cliente
+<p><strong>${rentaSeleccionadaRecepcion.cliente_nombre}</strong></p>
+<p>Cliente / Responsable</p>
+<p style="font-size: 10px; color: #666;">Firma de conformidad</p>
+</div>
+</div>
+<div>
+<div class="firma-line">
+<p><strong>${usuarioActualRecepcion?.email || 'Administrador'}</strong></p>
+<p>Recibido por</p>
+<p style="font-size: 10px; color: #666;">Firma del responsable</p>
+</div>
 </div>
 </div>
 
 <div class="footer">
-<p>© Eventos D' Primera</p>
-<p>${new Date().toLocaleString('es-ES')}</p>
+<p>©copyright Eventos de Primera | 2026-2027 | Comprobante generado el ${new Date().toLocaleString('es-ES')}</p>
 </div>
 
-<div class="no-print" style="margin-top: 20px; text-align: center;">
-<button onclick="window.print()" style="padding: 8px 20px; background: #1e3a8a; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px;">🖨️ Imprimir</button>
-<button onclick="window.close()" style="padding: 8px 20px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">Cerrar</button>
+<div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
+<button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">🖨️ Imprimir Comprobante</button>
+<button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">❌ Cerrar</button>
 </div>
 </body>
 </html>`;
-  
+
   ventana.document.write(html);
   ventana.document.close();
-  
+
   // Auto-abrir diálogo de impresión
   setTimeout(() => {
     ventana.focus();
@@ -863,57 +1046,48 @@ Firma del Cliente
 }
 
 // ==========================================
-// MOSTRAR MENSAJE
-// ==========================================
-function mostrarMensajeRecepcion(texto, tipo) {
-  const msg = document.getElementById('mensaje');
-  if (msg) {
-    msg.textContent = texto;
-    msg.className = `mensaje ${tipo}`;
-    setTimeout(() => { msg.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
-    if (tipo === 'exito') {
-      setTimeout(() => { if (msg.classList.contains('exito')) msg.className = 'mensaje'; }, 5000);
-    }
-  }
-}
-
-// ==========================================
-// SISTEMA TOAST (mensajes flotantes laterales)
+// ✅ SISTEMA TOAST (mensajes flotantes laterales - SIN SCROLL)
 // ==========================================
 function mostrarToastRecepcion(texto, tipo) {
   let toastContainer = document.getElementById('toastContainerRecepcion');
   if (!toastContainer) {
     toastContainer = document.createElement('div');
     toastContainer.id = 'toastContainerRecepcion';
-    toastContainer.style.cssText = `position: fixed; top: 80px; right: 20px; z-index: 999999; display: flex; flex-direction: column; gap: 10px; max-width: 350px;`;
+    toastContainer.style.cssText = `position: fixed; top: 80px; right: 20px; z-index: 999999; display: flex; flex-direction: column; gap: 10px; max-width: 380px; pointer-events: none;`;
     document.body.appendChild(toastContainer);
   }
 
   const bgColor = tipo === 'exito' ? '#d1fae5' : (tipo === 'error' ? '#fee2e2' : '#fef3c7');
   const borderColor = tipo === 'exito' ? '#10b981' : (tipo === 'error' ? '#dc2626' : '#f59e0b');
   const textColor = tipo === 'exito' ? '#065f46' : (tipo === 'error' ? '#991b1b' : '#92400e');
+  const icono = tipo === 'exito' ? '✅' : (tipo === 'error' ? '⚠️' : 'ℹ️');
 
   const toast = document.createElement('div');
-  toast.style.cssText = `background: ${bgColor}; border-left: 4px solid ${borderColor}; color: ${textColor}; padding: 12px 16px; border-radius: 8px; font-size: 13px; font-family: 'Poppins', sans-serif; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: toastSlideIn 0.3s ease; display: flex; align-items: center; gap: 10px;`;
-  toast.innerHTML = `<span style="font-size: 16px;">${tipo === 'exito' ? '✅' : (tipo === 'error' ? '⚠️' : 'ℹ️')}</span><span style="flex: 1;">${texto}</span><span onclick="this.parentElement.remove()" style="cursor: pointer; font-size: 16px; opacity: 0.6;">✕</span>`;
+  toast.style.cssText = `background: ${bgColor}; border-left: 4px solid ${borderColor}; color: ${textColor}; padding: 12px 16px; border-radius: 8px; font-size: 13px; font-family: 'Poppins', sans-serif; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.2); animation: toastSlideInRecepcion 0.3s ease; display: flex; align-items: center; gap: 10px; pointer-events: auto;`;
+  toast.innerHTML = `<span style="font-size: 16px;">${icono}</span><span style="flex: 1;">${texto}</span><span onclick="this.parentElement.remove()" style="cursor: pointer; font-size: 16px; opacity: 0.6;">✕</span>`;
 
   toastContainer.appendChild(toast);
 
+  // Limitar a 5 toasts visibles
+  while (toastContainer.children.length > 5) {
+    toastContainer.removeChild(toastContainer.firstChild);
+  }
+
   setTimeout(() => {
     if (toast.parentElement) {
-      toast.style.animation = 'toastSlideOut 0.3s ease forwards';
+      toast.style.animation = 'toastSlideOutRecepcion 0.3s ease forwards';
       setTimeout(() => toast.remove(), 300);
     }
   }, 3000);
 }
 
-// Animaciones toast
+// ✅ Animaciones toast
 if (!document.getElementById('toastStylesRecepcion')) {
   const style = document.createElement('style');
   style.id = 'toastStylesRecepcion';
   style.textContent = `
-    @keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    @keyframes toastSlideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+    @keyframes toastSlideInRecepcion { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes toastSlideOutRecepcion { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
   `;
   document.head.appendChild(style);
 }
@@ -922,5 +1096,6 @@ if (!document.getElementById('toastStylesRecepcion')) {
 // INICIALIZAR AL CARGAR EL DOM
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('📄 Recepción de Equipos DOM cargado');
   inicializarRecepcionEquipos();
 });
