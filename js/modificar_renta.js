@@ -333,6 +333,9 @@ async function seleccionarRentaModificar(numeroRenta) {
     document.getElementById('fieldsetLista').style.display = 'none';
     document.getElementById('fieldsetEdicion').style.display = 'block';
     document.getElementById('fieldsetEdicion').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // ✅ Mostrar botón de imprimir cuando se carga una renta
+const btnReimprimir = document.getElementById('btnReimprimirMod');
+if (btnReimprimir) btnReimprimir.style.display = 'inline-block';
 
     // ✅ Focus en el input de búsqueda de equipos
     const inputEquipo = document.getElementById('editBuscarEquipo');
@@ -754,36 +757,51 @@ async function guardarCambiosRenta() {
       const descripcion = `Modificó Renta #${rentaEditando.numero_renta} | Cliente: ${clienteNombre} | Total: $${total.toFixed(2)} | Equipos: ${itemsEdicion.length} | Modificado por: ${usuarioActualModificarRenta?.email || 'Desconocido'}`;
       await registrarLog('rentar', 'Renta modificada', descripcion, 'warning');
     }
-
     mostrarMensajeModificar(`✅ Renta #${rentaEditando.numero_renta} modificada exitosamente`, 'exito');
 
-    // ✅ Limpieza automática
-    rentaEditando = null;
-    itemsEdicion = [];
-    cacheEquiposEdicion.clear();
-    colaEscaneosEdicion = [];
-    contadorItemsEdicion = 0;
+    // ✅ Actualizar el texto del botón
+    if (btnGuardar) btnGuardar.textContent = '✅ Guardada';
 
-    ['editClienteNombre', 'editClienteTelefono', 'editClienteEmail', 'editClienteDireccion', 'editIngenieroNombre', 'editIngenieroContacto', 'editObservaciones'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-
-    const editDescuento = document.getElementById('editDescuento');
-    if (editDescuento) editDescuento.value = '0';
-
-    document.getElementById('fieldsetLista').style.display = 'block';
-    document.getElementById('fieldsetEdicion').style.display = 'none';
-
-    if (btnGuardar) {
-      btnGuardar.disabled = false;
-      btnGuardar.textContent = '💾 Guardar Cambios';
-    }
-
+    // ✅ SECUENCIA: Imprimir primero, luego limpiar
     setTimeout(() => {
-      paginaActualModificar = 1;
-      buscarRentas();
-    }, 1500);
+      // 1. Imprimir comprobante con los datos modificados
+      imprimirComprobanteModificacion();
+
+      // 2. Esperar y luego limpiar todo
+      setTimeout(() => {
+        rentaEditando = null;
+        itemsEdicion = [];
+        cacheEquiposEdicion.clear();
+        colaEscaneosEdicion = [];
+        contadorItemsEdicion = 0;
+
+        ['editClienteNombre', 'editClienteTelefono', 'editClienteEmail', 'editClienteDireccion', 'editIngenieroNombre', 'editIngenieroContacto', 'editObservaciones'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+
+        const editDescuento = document.getElementById('editDescuento');
+        if (editDescuento) editDescuento.value = '0';
+
+        // ✅ Ocultar botón de imprimir
+        const btnReimprimir = document.getElementById('btnReimprimirMod');
+        if (btnReimprimir) btnReimprimir.style.display = 'none';
+
+        document.getElementById('fieldsetLista').style.display = 'block';
+        document.getElementById('fieldsetEdicion').style.display = 'none';
+
+        if (btnGuardar) {
+          btnGuardar.disabled = false;
+          btnGuardar.textContent = '💾 Guardar Cambios';
+        }
+
+        setTimeout(() => {
+          paginaActualModificar = 1;
+          buscarRentas();
+        }, 500);
+
+      }, 1500); // Esperar 1.5 segundos antes de limpiar
+    }, 500); // Esperar 0.5 segundos antes de imprimir
 
   } catch (err) {
     console.error('Error al guardar cambios:', err);
@@ -803,14 +821,18 @@ function cancelarEdicion() {
     return;
   }
 
-  rentaEditando = null;
-  itemsEdicion = [];
-  cacheEquiposEdicion.clear();
-  colaEscaneosEdicion = [];
-  contadorItemsEdicion = 0;
+ rentaEditando = null;
+itemsEdicion = [];
+cacheEquiposEdicion.clear();
+colaEscaneosEdicion = [];
+contadorItemsEdicion = 0;
 
-  document.getElementById('fieldsetLista').style.display = 'block';
-  document.getElementById('fieldsetEdicion').style.display = 'none';
+// ✅ Ocultar botón de imprimir
+const btnReimprimir = document.getElementById('btnReimprimirMod');
+if (btnReimprimir) btnReimprimir.style.display = 'none';
+
+document.getElementById('fieldsetLista').style.display = 'block';
+document.getElementById('fieldsetEdicion').style.display = 'none';
 
   const btnGuardar = document.getElementById('btnGuardarCambios');
   if (btnGuardar) {
