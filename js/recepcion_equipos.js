@@ -1,4 +1,73 @@
 // ==========================================
+// ✅ INYECTAR ESTILOS CSS (porque el dashboard descarta el <head>)
+// ==========================================
+function inyectarEstilosRecepcion() {
+  if (document.getElementById('estilos-recepcion-inyectados')) return;
+  const style = document.createElement('style');
+  style.id = 'estilos-recepcion-inyectados';
+  style.textContent = `
+    .container { max-width: 1400px; margin: 0 auto; padding: 30px; }
+    .page-header { margin-bottom: 25px; }
+    .page-title { font-family: 'Libre Caslon Text', serif; color: #1e3a8a; font-size: 28px; margin-bottom: 8px; }
+    .page-subtitle { color: #6b7280; font-size: 14px; }
+    fieldset { background-color: white; border: 2px solid #e5e7eb; border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+    legend { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 600; letter-spacing: 0.5px; }
+    .table-container { overflow-x: auto; margin-top: 15px; border-radius: 8px; border: 1px solid #e5e7eb; }
+    table { width: 100%; border-collapse: collapse; background: white; }
+    th { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+    td { padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+    tr:hover { background: #f9fafb; }
+    .btn-action { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-family: 'Poppins', sans-serif; margin-right: 10px; }
+    .btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(30,58,138,0.3); }
+    .btn-secondary { background-color: #6b7280; color: white; }
+    .btn-success { background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white; }
+    .btn-danger { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color: white; }
+    .button-group { margin-top: 25px; padding-top: 20px; border-top: 2px solid #e5e7eb; display: flex; flex-wrap: wrap; gap: 10px; }
+    .mensaje { padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; display: none; }
+    .mensaje.exito { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; display: block; }
+    .mensaje.error { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; display: block; }
+    .mensaje.warning { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; display: block; }
+    .badge-activa { background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .badge-vencida { background: #fee2e2; color: #991b1b; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; animation: pulseRecepcion 2s infinite; }
+    .item-pendiente { background: #f9fafb; }
+    .item-recibido { background: #d1fae5 !important; border-left: 4px solid #10b981; }
+    .item-faltante { background: #fee2e2 !important; border-left: 4px solid #dc2626; }
+    .item-escaneando { background: #dbeafe !important; animation: flashRecepcion 0.5s; }
+    @keyframes pulseRecepcion { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    @keyframes flashRecepcion { 0% { background: #fef3c7; } 100% { background: #d1fae5; } }
+    .progress-container { background: #f3f4f6; border-radius: 20px; overflow: hidden; height: 30px; margin: 15px 0; position: relative; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+    .progress-bar { height: 100%; background: linear-gradient(90deg, #10b981 0%, #34d399 100%); transition: width 0.5s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 13px; }
+    .progress-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #374151; font-weight: 600; font-size: 13px; z-index: 2; text-shadow: 0 0 3px white, 0 0 3px white; }
+    .escaner-section { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding: 25px; border-radius: 12px; border: 2px dashed #3b82f6; margin-bottom: 20px; text-align: center; }
+    .escaner-input { width: 100%; padding: 15px 20px; font-size: 18px; font-family: 'Courier New', monospace; font-weight: 700; text-align: center; border: 3px solid #1e3a8a; border-radius: 8px; letter-spacing: 2px; text-transform: uppercase; }
+    .escaner-input:focus { outline: none; border-color: #10b981; box-shadow: 0 0 0 4px rgba(16,185,129,0.2); }
+    .renta-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .renta-info-box { background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .renta-info-box label { font-size: 11px; color: #6b7280; text-transform: uppercase; display: block; margin-bottom: 5px; font-weight: 600; }
+    .renta-info-box strong { color: #1e3a8a; font-size: 14px; display: block; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+    .stat-card { background: white; padding: 20px; border-radius: 12px; text-align: center; border-top: 4px solid; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .stat-card.total { border-color: #1e3a8a; }
+    .stat-card.recibidos { border-color: #10b981; }
+    .stat-card.pendientes { border-color: #f59e0b; }
+    .stat-card.faltantes { border-color: #dc2626; }
+    .stat-number { font-size: 32px; font-weight: 700; font-family: 'Courier New', monospace; margin-bottom: 5px; }
+    .stat-label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+    .stat-card.total .stat-number { color: #1e3a8a; }
+    .stat-card.recibidos .stat-number { color: #10b981; }
+    .stat-card.pendientes .stat-number { color: #f59e0b; }
+    .stat-card.faltantes .stat-number { color: #dc2626; }
+    .faltante-checkbox { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .faltante-checkbox input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: #dc2626; }
+    .faltante-checkbox label { cursor: pointer; font-size: 12px; color: #dc2626; font-weight: 600; }
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .renta-info { grid-template-columns: 1fr; }
+    }
+  `;
+  document.head.appendChild(style);
+}// ==========================================
 // VARIABLES GLOBALES
 // ==========================================
 let rentasPendientes = [];
@@ -13,6 +82,7 @@ let recepcionGuardadaId = null;
 // ==========================================
 async function inicializarRecepcionEquipos() {
   console.log('📥 === INICIANDO RECEPCIÓN DE EQUIPOS ===');
+    inyectarEstilosRecepcion();
   
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
@@ -462,7 +532,7 @@ function verificarRecepcionCompleta() {
 }
 
 // ==========================================
-// GENERAR NÚMERO DE RECEPCIÓN
+// ✅ GENERAR NÚMERO DE RECEPCIÓN (CORREGIDO)
 // ==========================================
 async function generarNumeroRecepcion() {
   try {
@@ -470,27 +540,30 @@ async function generarNumeroRecepcion() {
     const serie = 'REC';
     const patron = `${serie}-${año}-%`;
 
-    const [resActivas, resHistorial] = await Promise.all([
-      supabaseClient
-        .from('recepcion_equipos')
-        .select('numero_recepcion')
-        .like('numero_recepcion', patron),
-      // Podrías agregar más tablas si tienes historial
-    ]);
+    // ✅ Solo una consulta (la tabla de recepciones)
+    const resRecepciones = await supabaseClient
+      .from('recepcion_equipos')
+      .select('numero_recepcion')
+      .like('numero_renta', patron);
 
     let numeroMaximo = 0;
-    [resActivas, resHistorial].forEach(res => {
-      if (res.data) {
-        res.data.forEach(row => {
-          try {
+    
+    // ✅ Verificar que data exista antes de iterar
+    if (resRecepciones.data && Array.isArray(resRecepciones.data)) {
+      resRecepciones.data.forEach(row => {
+        try {
+          if (row.numero_recepcion) {
             const num = parseInt(row.numero_recepcion.split('-').pop());
             if (!isNaN(num) && num > numeroMaximo) numeroMaximo = num;
-          } catch (e) {}
-        });
-      }
-    });
+          }
+        } catch (e) {
+          console.warn('Número de recepción inválido:', row.numero_recepcion);
+        }
+      });
+    }
 
     numeroRecepcionActual = `${serie}-${año}-${String(numeroMaximo + 1).padStart(4, '0')}`;
+    console.log(`✅ Número de recepción generado: ${numeroRecepcionActual}`);
   } catch (err) {
     console.error('Error generando número:', err);
     numeroRecepcionActual = `REC-${new Date().getFullYear()}-0001`;
