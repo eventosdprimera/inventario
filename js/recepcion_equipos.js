@@ -691,7 +691,7 @@ async function generarNumeroRecepcion() {
 }
 
 // ==========================================
-// ✅ GUARDAR RECEPCIÓN (CON HISTORIAL EN RENTAS_TERMINADAS)
+// ✅ GUARDAR RECEPCIÓN (CORREGIDO PARA TU ESTRUCTURA DE TABLAS)
 // ==========================================
 async function guardarRecepcion() {
   if (!rentaSeleccionadaRecepcion) return;
@@ -707,7 +707,6 @@ async function guardarRecepcion() {
       'error'
     );
 
-    // Resaltar las filas pendientes
     itemsRecepcion.forEach(item => {
       if (item.estado_recepcion === 'pendiente') {
         const fila = document.getElementById(`fila-item-${item.id}`);
@@ -715,7 +714,6 @@ async function guardarRecepcion() {
           fila.style.transition = 'all 0.3s';
           fila.style.background = '#fef3c7';
           fila.style.borderLeft = '4px solid #f59e0b';
-          fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       }
     });
@@ -747,6 +745,43 @@ async function guardarRecepcion() {
     const observaciones = document.getElementById('observacionesRecepcion')?.value.trim() || '';
 
     // ========================================
+    // ✅ CALCULAR DÍAS DE RETRASO/ANTICIPACIÓN
+    // ========================================
+    const fechaProgramada = new Date(rentaSeleccionadaRecepcion.fecha_devolucion + 'T12:00:00');
+    const fechaReal = new Date();
+    fechaReal.setHours(12, 0, 0, 0);
+
+    const diffMs = fechaReal - fechaProgramada;
+    const diffDias = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+    let dias_anticipados = 0;
+    let dias_retraso = 0;
+    if (diffDias < 0) {
+      dias_anticipados = Math.abs(diffDias);
+    } else if (diffDias > 0) {
+      dias_retraso = diffDias;
+    }
+
+    // Generar mensaje de terminación
+    let observacionesTerminacion = '';
+    if (dias_retraso > 0) {
+      observacionesTerminacion = `Recibida con ${dias_retraso} día(s) de retraso.`;
+    } else if (dias_anticipados > 0) {
+      observacionesTerminacion = `Recibida ${dias_anticipados} día(s) antes de lo previsto.`;
+    } else {
+      observacionesTerminacion = 'Recibida en la fecha programada.';
+    }
+
+    if (faltantes > 0) {
+      observacionesTerminacion += ` Equipos faltantes: ${faltantes}.`;
+    }
+    if (observaciones) {
+      observacionesTerminacion += ` Obs: ${observaciones}`;
+    }
+
+    const fechaHoyCaracas = obtenerFechaHoyCaracas();
+
+    // ========================================
     // 1. Insertar recepción principal
     // ========================================
     const { data: recepcionData, error: errorRecepcion } = await supabaseClient
@@ -773,7 +808,7 @@ async function guardarRecepcion() {
     recepcionGuardadaId = recepcionData.id;
 
     // ========================================
-    // 2. Insertar items en lotes de 100
+    // 2. Insertar items de recepción en lotes de 100
     // ========================================
     const TAMANO_LOTE = 100;
     for (let i = 0; i < itemsRecepcion.length; i += TAMANO_LOTE) {
@@ -799,16 +834,17 @@ async function guardarRecepcion() {
     }
 
     // ========================================
-    // ✅ 3. NUEVO: GUARDAR EN RENTAS_TERMINADAS (HISTORIAL)
+    // ✅ 3. GUARDAR EN RENTAS_TERMINADAS (CON COLUMNAS CORRECTAS)
     // ========================================
-    const { error: errorTerminada } = await supabaseClient
+    const { data: rentaTerminadaData, error: errorTerminada } = await supabaseClient
       .from('rentas_terminadas')
       .insert({
         numero_renta: rentaSeleccionadaRecepcion.numero_renta,
         serie: rentaSeleccionadaRecepcion.serie || 'RENT',
+        fecha_creacion: rentaSeleccionadaRecepcion.fecha_creacion,
         fecha_renta: rentaSeleccionadaRecepcion.fecha_renta,
-        fecha_devolucion: rentaSeleccionadaRecepcion.fecha_devolucion,
-        fecha_terminacion: new Date().toISOString(),
+        fecha_devolucion_programada: rentaSeleccionadaRecepcion.fecha_devolucion,
+        fecha_devolucion_real: fechaHoyCaracas,
         cliente_nombre: rentaSeleccionadaRecepcion.cliente_nombre,
         cliente_telefono: rentaSeleccionadaRecepcion.cliente_telefono,
         cliente_email: rentaSeleccionadaRecepcion.cliente_email,
@@ -818,24 +854,52 @@ async function guardarRecepcion() {
         subtotal: rentaSeleccionadaRecepcion.subtotal,
         descuento: rentaSeleccionadaRecepcion.descuento,
         total: rentaSeleccionadaRecepcion.total,
-        estado: 'terminada',
+        estado: 'devuelta',
         observaciones: rentaSeleccionadaRecepcion.observaciones,
         usuario_registro: rentaSeleccionadaRecepcion.usuario_registro,
         usuario_registro_id: rentaSeleccionadaRecepcion.usuario_registro_id,
-        numero_recepcion: numeroRecepcionActual,
-        terminado_por_email: usuarioActualRecepcion?.email || 'unknown',
-        terminado_por_id: usuarioActualRecepcion?.id || null,
-        motivo_terminacion: `Recepción de equipos completada (${estadoFinal}). Recibidos: ${recibidos}, Faltantes: ${faltantes}`
-      });
+        fecha_terminacion: new Date().toISOString(),
+        recibido_por_email: usuarioActualRecepcion?.email || 'unknown',
+        recibido_por_id: usuarioActualRecepcion?.id || null,
+        dias_anticipados: dias_anticipados,
+        dias_retraso: dias_retraso,
+        observaciones_terminacion: observacionesTerminacion
+      })
+      .select()
+      .single();
 
     if (errorTerminada) {
-      console.warn('⚠️ No se pudo guardar en rentas_terminadas:', errorTerminada);
-      // No bloquear el proceso si falla el historial, solo advertir
-      mostrarToastRecepcion('⚠️ Recepción guardada pero hubo un problema con el historial', 'warning');
+      throw new Error('Error al guardar en rentas_terminadas: ' + errorTerminada.message);
     }
 
     // ========================================
-    // 4. Actualizar estado de la renta original a 'devuelta'
+    // ✅ 4. GUARDAR ITEMS EN RENTAS_ITEMS_TERMINADAS (EN LOTES DE 100)
+    // ========================================
+    for (let i = 0; i < itemsRecepcion.length; i += TAMANO_LOTE) {
+      const loteItems = itemsRecepcion.slice(i, i + TAMANO_LOTE).map(item => ({
+        renta_terminada_id: rentaTerminadaData.id,
+        renta_id_original: rentaSeleccionadaRecepcion.id,
+        codigo_barras: item.codigo_barras,
+        nombre_equipo: item.nombre_equipo,
+        marca: item.marca,
+        modelo: item.modelo,
+        serial: item.serial,
+        cantidad: item.cantidad,
+        precio_unitario: item.precio_unitario,
+        subtotal: item.subtotal
+      }));
+
+      const { error: errorLoteTerminadas } = await supabaseClient
+        .from('rentas_items_terminadas')
+        .insert(loteItems);
+
+      if (errorLoteTerminadas) {
+        throw new Error('Error al guardar items terminados: ' + errorLoteTerminadas.message);
+      }
+    }
+
+    // ========================================
+    // 5. Actualizar estado de la renta original a 'devuelta'
     // ========================================
     const { error: errorUpdateRenta } = await supabaseClient
       .from('rentas')
@@ -847,27 +911,31 @@ async function guardarRecepcion() {
     }
 
     // ========================================
-    // 5. Registrar log
+    // 6. Registrar log
     // ========================================
     if (typeof registrarLog === 'function') {
-      const descripcion = `Recepción ${numeroRecepcionActual} | Renta: ${rentaSeleccionadaRecepcion.numero_renta} | Cliente: ${rentaSeleccionadaRecepcion.cliente_nombre} | Recibidos: ${recibidos}/${itemsRecepcion.length} | Faltantes: ${faltantes} | Estado: ${estadoFinal} | Guardada en historial de terminadas | Por: ${usuarioActualRecepcion?.email || 'Desconocido'}`;
+      const descripcion = `Recepción ${numeroRecepcionActual} | Renta: ${rentaSeleccionadaRecepcion.numero_renta} | Cliente: ${rentaSeleccionadaRecepcion.cliente_nombre} | Recibidos: ${recibidos}/${itemsRecepcion.length} | Faltantes: ${faltantes} | Retraso: ${dias_retraso} día(s) | Guardada en historial | Por: ${usuarioActualRecepcion?.email || 'Desconocido'}`;
       await registrarLog('rentar', 'Recepción de equipos', descripcion, estadoFinal === 'completa' ? 'success' : 'warning');
     }
 
     mostrarToastRecepcion(`✅ Recepción ${numeroRecepcionActual} guardada exitosamente`, 'exito');
-
-    // Mostrar botón de imprimir
-    const btnImprimir = document.getElementById('btnImprimirRecepcion');
-    if (btnImprimir) btnImprimir.style.display = 'inline-block';
 
     if (btnGuardar) {
       btnGuardar.innerHTML = '✅ Guardada';
       btnGuardar.style.animation = '';
     }
 
-    // Auto-imprimir después de guardar
+    // ========================================
+    // ✅ 7. FLUJO DE IMPRESIÓN CORREGIDO (SIN DOBLE VISTA)
+    // ========================================
     setTimeout(() => {
+      // 1. Imprimir UNA sola vez
       imprimirComprobanteRecepcion();
+
+      // 2. Después de 1.5 segundos, limpiar TODO y volver a la lista
+      setTimeout(() => {
+        limpiarYVolverALista();
+      }, 1500);
     }, 800);
 
   } catch (err) {
@@ -878,6 +946,36 @@ async function guardarRecepcion() {
       btnGuardar.innerHTML = '💾 Guardar Recepción';
     }
   }
+}
+
+// ==========================================
+// ✅ LIMPIAR Y VOLVER A LA LISTA DE RENTAS
+// ==========================================
+function limpiarYVolverALista() {
+  // Limpiar variables
+  rentaSeleccionadaRecepcion = null;
+  itemsRecepcion = [];
+  recepcionGuardadaId = null;
+  colaEscaneosRecepcion = [];
+  numeroRecepcionActual = null;
+
+  // Limpiar campos
+  const obsEl = document.getElementById('observacionesRecepcion');
+  if (obsEl) obsEl.value = '';
+
+  // Ocultar botón de imprimir (ya se imprimió automáticamente)
+  const btnImprimir = document.getElementById('btnImprimirRecepcion');
+  if (btnImprimir) btnImprimir.style.display = 'none';
+
+  // Cambiar vista: mostrar lista, ocultar formulario de recepción
+  document.getElementById('fieldsetListaRentas').style.display = 'block';
+  document.getElementById('fieldsetRecepcion').style.display = 'none';
+
+  // Recargar lista de rentas pendientes
+  cargarRentasPendientes();
+
+  // Scroll al top
+  document.getElementById('fieldsetListaRentas')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 // ==========================================
 // CANCELAR RECEPCIÓN
