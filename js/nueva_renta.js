@@ -12,15 +12,21 @@ let autocompleteFiltro = '';
 let autocompleteIndexActivo = -1;
 let fechaHoyStr = '';
 
+// ✅ NUEVAS VARIABLES PARA OPTIMIZACIÓN
+let cacheEquipos = new Map(); // Caché de equipos ya buscados
+let procesandoEscaneo = false; // Flag para evitar escaneos simultáneos
+let colaEscaneos = []; // Cola de códigos pendientes
+let contadorEscaneos = 0; // Contador total de escaneos
+
 // ==========================================
 // ✅ FUNCIÓN PARA OBTENER LA FECHA DE HOY EN CARACAS (UTC-4)
 // ==========================================
 function obtenerFechaHoyCaracas() {
-  const opciones = { 
-    timeZone: 'America/Caracas', 
-    year: 'numeric', 
-    month: '2-digit', 
-    day: '2-digit' 
+  const opciones = {
+    timeZone: 'America/Caracas',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
   };
   return new Date().toLocaleDateString('en-CA', opciones);
 }
@@ -30,12 +36,14 @@ function obtenerFechaHoyCaracas() {
 // ==========================================
 async function inicializarNuevaRenta() {
   console.log('🤝 === INICIANDO NUEVA RENTA ===');
-
   itemsRenta = [];
   rentaGuardadaId = null;
   autocompleteFiltro = '';
   autocompletePagina = 1;
   autocompleteIndexActivo = -1;
+  cacheEquipos.clear();
+  colaEscaneos = [];
+  contadorEscaneos = 0;
 
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
@@ -51,18 +59,15 @@ async function inicializarNuevaRenta() {
   await cargarUsuario();
   await generarNumeroRenta();
   await cargarClientesExistentes();
-  
   fechaHoyStr = obtenerFechaHoyCaracas();
-  
+
   const elFechaRenta = document.getElementById('fechaRenta');
   const elFechaDevolucion = document.getElementById('fechaDevolucion');
   const elFechaEmision = document.getElementById('fechaEmision');
-  
   if (elFechaRenta) {
     elFechaRenta.value = fechaHoyStr;
     elFechaRenta.min = fechaHoyStr;
   }
-  
   if (elFechaDevolucion) {
     const fechaDev = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"}));
     fechaDev.setDate(fechaDev.getDate() + 7);
@@ -72,12 +77,10 @@ async function inicializarNuevaRenta() {
     elFechaDevolucion.value = `${devYear}-${devMonth}-${devDay}`;
     elFechaDevolucion.min = fechaHoyStr;
   }
-  
   if (elFechaEmision) {
     const fechaCaracasObj = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"}));
     elFechaEmision.textContent = fechaCaracasObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
   }
-
   if (elFechaRenta && elFechaDevolucion) {
     elFechaRenta.addEventListener('change', () => {
       elFechaDevolucion.min = elFechaRenta.value;
@@ -92,20 +95,17 @@ async function inicializarNuevaRenta() {
     const nuevoInput = inputBusqueda.cloneNode(true);
     inputBusqueda.parentNode.replaceChild(nuevoInput, inputBusqueda);
     
+    // ✅ Forzar mayúsculas en tiempo real
     nuevoInput.addEventListener('input', (e) => {
       const cursorPos = e.target.selectionStart;
       e.target.value = e.target.value.toUpperCase();
       e.target.setSelectionRange(cursorPos, cursorPos);
     });
     
-    nuevoInput.addEventListener('blur', (e) => {
-      formatearCodigoBarras(e.target);
-    });
-    
+    // ✅ Detectar Enter para agregar equipo
     nuevoInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        formatearCodigoBarras(e.target);
         agregarEquipo();
       }
     });
@@ -115,7 +115,6 @@ async function inicializarNuevaRenta() {
   if (inputTelefono) {
     const nuevoTel = inputTelefono.cloneNode(true);
     inputTelefono.parentNode.replaceChild(nuevoTel, inputTelefono);
-    
     nuevoTel.addEventListener('input', (e) => {
       e.target.value = e.target.value.replace(/[^0-9]/g, '');
       if (e.target.value.length > 11) {
@@ -132,42 +131,17 @@ async function inicializarNuevaRenta() {
 }
 
 // ==========================================
-// FORMATEAR CÓDIGO DE BARRAS
-// ==========================================
-function formatearCodigoBarras(input) {
-  let valor = input.value.trim();
-  if (!valor) return;
-  
-  valor = valor.replace(/-/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  
-  let formateado = '';
-  if (valor.length > 0) formateado = valor.substring(0, 2);
-  if (valor.length > 2) formateado += '-' + valor.substring(2, 10);
-  if (valor.length > 10) formateado += '-' + valor.substring(10, 16);
-  if (valor.length > 16) formateado += '-' + valor.substring(16, 22);
-  
-  if (valor.length > 22) {
-    valor = valor.substring(0, 22);
-    formateado = valor.substring(0, 2) + '-' + valor.substring(2, 10) + '-' + valor.substring(10, 16) + '-' + valor.substring(16, 22);
-  }
-  
-  input.value = formateado;
-}
-
-// ==========================================
 // CARGAR USUARIO
 // ==========================================
 async function cargarUsuario() {
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) return;
-
     const { data, error } = await supabaseClient
       .from('usuarios')
       .select('*')
       .eq('email', session.user.email)
       .maybeSingle();
-
     if (data && !error) {
       usuarioActualRenta = data;
     } else {
@@ -186,25 +160,20 @@ async function generarNumeroRenta() {
     const fechaCaracas = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"}));
     const año = fechaCaracas.getFullYear();
     const serie = 'RENT';
-    
     const { data, error } = await supabaseClient
       .from('rentas')
       .select('numero_renta')
       .like('numero_renta', `${serie}-${año}-%`)
       .order('numero_renta', { ascending: false })
       .limit(1);
-
     let siguienteNumero = 1;
     if (data && data.length > 0 && data[0].numero_renta) {
       const ultimoNumero = data[0].numero_renta.split('-').pop();
       siguienteNumero = parseInt(ultimoNumero) + 1;
     }
-
     numeroRentaActual = `${serie}-${año}-${String(siguienteNumero).padStart(4, '0')}`;
-    
     const elNumero = document.getElementById('numeroRenta');
     if (elNumero) elNumero.textContent = numeroRentaActual;
-    
   } catch (err) {
     console.error('Error al generar número:', err);
   }
@@ -220,9 +189,7 @@ async function cargarClientesExistentes() {
       .select('cliente_nombre, cliente_telefono, cliente_email')
       .not('cliente_nombre', 'is', null)
       .order('cliente_nombre', { ascending: true });
-
     if (error) return;
-
     const unicos = new Map();
     (data || []).forEach(r => {
       const nombre = r.cliente_nombre.trim();
@@ -234,7 +201,6 @@ async function cargarClientesExistentes() {
         });
       }
     });
-
     clientesCache = Array.from(unicos.values());
     console.log(`✅ Lista de clientes actualizada: ${clientesCache.length} clientes únicos`);
   } catch (err) {
@@ -288,7 +254,6 @@ function configurarAutocompleteCliente() {
       if (e.key === 'Escape') ocultarLista();
       return;
     }
-
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       autocompleteIndexActivo = Math.min(autocompleteIndexActivo + 1, items.length - 1);
@@ -317,20 +282,17 @@ function configurarAutocompleteCliente() {
 function renderizarAutocomplete() {
   const lista = document.getElementById('autocompleteList');
   if (!lista) return;
-
   if (!autocompleteFiltro) {
     lista.classList.remove('visible');
     lista.innerHTML = '';
     return;
   }
-
   const filtrados = clientesCache.filter(c => c.nombre.toLowerCase().startsWith(autocompleteFiltro));
   if (filtrados.length === 0) {
     lista.classList.remove('visible');
     lista.innerHTML = '';
     return;
   }
-
   const totalPaginas = Math.ceil(filtrados.length / AUTOCOMPLETE_POR_PAGINA);
   const inicio = (autocompletePagina - 1) * AUTOCOMPLETE_POR_PAGINA;
   const fin = inicio + AUTOCOMPLETE_POR_PAGINA;
@@ -342,7 +304,6 @@ function renderizarAutocomplete() {
     const detalles = [];
     if (cliente.telefono) detalles.push(`📞 ${cliente.telefono}`);
     if (cliente.email) detalles.push(`📧 ${cliente.email}`);
-    
     html += `
       <div class="autocomplete-item" data-index="${globalIdx}" onclick="seleccionarCliente('${cliente.nombre.replace(/'/g, "\\'")}', '${cliente.telefono || ''}', '${cliente.email || ''}')">
         <div class="cliente-nombre">${cliente.nombre}</div>
@@ -387,11 +348,9 @@ function seleccionarCliente(nombre, telefono, email) {
   const inputNombre = document.getElementById('clienteNombre');
   const inputTel = document.getElementById('clienteTelefono');
   const inputEmail = document.getElementById('clienteEmail');
-  
   if (inputNombre) inputNombre.value = nombre;
   if (inputTel && telefono) inputTel.value = telefono;
   if (inputEmail && email) inputEmail.value = email;
-  
   const lista = document.getElementById('autocompleteList');
   if (lista) {
     lista.classList.remove('visible');
@@ -410,16 +369,12 @@ function mostrarToast(texto, tipo) {
     toastContainer.style.cssText = `position: fixed; top: 80px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; max-width: 350px;`;
     document.body.appendChild(toastContainer);
   }
-
   const toast = document.createElement('div');
   const bgColor = tipo === 'exito' ? '#d1fae5' : (tipo === 'error' ? '#fee2e2' : '#fef3c7');
   const borderColor = tipo === 'exito' ? '#10b981' : (tipo === 'error' ? '#dc2626' : '#f59e0b');
   const textColor = tipo === 'exito' ? '#065f46' : (tipo === 'error' ? '#991b1b' : '#92400e');
-  
   toast.style.cssText = `background: ${bgColor}; border-left: 4px solid ${borderColor}; color: ${textColor}; padding: 14px 18px; border-radius: 8px; font-size: 14px; font-family: 'Poppins', sans-serif; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: toastSlideIn 0.3s ease; display: flex; align-items: center; gap: 10px;`;
-  
   toast.innerHTML = `<span style="font-size: 18px;">${tipo === 'exito' ? '✅' : (tipo === 'error' ? '⚠️' : 'ℹ️')}</span><span style="flex: 1;">${texto}</span><span onclick="this.parentElement.remove()" style="cursor: pointer; font-size: 18px; opacity: 0.6;">✕</span>`;
-
   toastContainer.appendChild(toast);
   setTimeout(() => {
     if (toast.parentElement) {
@@ -437,84 +392,199 @@ if (!document.getElementById('toastStyles')) {
 }
 
 // ==========================================
-// AGREGAR EQUIPO
+// ✅ BUSCAR EQUIPO CON CACHÉ Y TIMEOUT
+// ==========================================
+async function buscarEquipoEnBD(codigoBusqueda) {
+  // ✅ 1. Verificar caché primero (búsqueda case-insensitive)
+  const codigoUpper = codigoBusqueda.toUpperCase();
+  if (cacheEquipos.has(codigoUpper)) {
+    return cacheEquipos.get(codigoUpper);
+  }
+
+  // ✅ 2. Timeout para evitar que se cuelgue si Supabase tarda mucho
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Timeout: La búsqueda tardó demasiado')), 10000)
+  );
+
+  try {
+    const searchPromise = (async () => {
+      // Primero buscar por código de barras (case-insensitive)
+      let { data, error } = await supabaseClient
+        .from('equipos')
+        .select('*')
+        .ilike('codigo_barras', codigoBusqueda)
+        .maybeSingle();
+
+      // Si no encontró por código, buscar por serial (case-insensitive)
+      if (!data && !error) {
+        const resultado = await supabaseClient
+          .from('equipos')
+          .select('*')
+          .ilike('serial', codigoBusqueda)
+          .maybeSingle();
+        data = resultado.data;
+        error = resultado.error;
+      }
+
+      if (error) throw error;
+      return data;
+    })();
+
+    const data = await Promise.race([searchPromise, timeoutPromise]);
+
+    // ✅ 3. Guardar en caché si se encontró
+    if (data) {
+      cacheEquipos.set(codigoUpper, data);
+    }
+
+    return data;
+  } catch (err) {
+    console.error('Error al buscar equipo:', err);
+    return null;
+  }
+}
+
+// ==========================================
+// ✅ AGREGAR EQUIPO (OPTIMIZADO CON COLA Y CACHÉ)
 // ==========================================
 async function agregarEquipo() {
   const input = document.getElementById('buscarEquipoInput');
   if (!input) return;
-  
   let codigo = input.value.trim();
+  
   if (!codigo) {
     mostrarToast('Por favor ingrese un código de barras o serial', 'error');
     input.focus();
     return;
   }
 
-  let codigoLimpio = codigo.replace(/-/g, '').toUpperCase();
-  let codigoFormateado = '';
-  if (codigoLimpio.length > 0) codigoFormateado = codigoLimpio.substring(0, 2);
-  if (codigoLimpio.length > 2) codigoFormateado += '-' + codigoLimpio.substring(2, 10);
-  if (codigoLimpio.length > 10) codigoFormateado += '-' + codigoLimpio.substring(10, 16);
-  if (codigoLimpio.length > 16) codigoFormateado += '-' + codigoLimpio.substring(16, 22);
-  
-  input.value = codigoFormateado;
-  
-  try {
-    const { data, error } = await supabaseClient
-      .from('equipos')
-      .select('*')
-      .or(`codigo_barras.eq.${codigoFormateado},serial.eq.${codigoFormateado}`)
-      .maybeSingle();
+  // ✅ Sanitizar el código
+  codigo = codigo.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim();
+  input.value = ''; // ✅ Limpiar input inmediatamente para permitir el siguiente escaneo
+  input.focus();
 
-    if (error || !data) {
-      mostrarToast(`Equipo no encontrado: "${codigoFormateado}"`, 'error');
-      input.value = '';
-      input.focus();
-      return;
-    }
-
-    const existe = itemsRenta.some(item => item.codigo_barras === data.codigo_barras);
-    if (existe) {
-      mostrarToast('⚠️ Este equipo ya está en la lista de esta renta', 'error');
-      input.value = '';
-      input.focus();
-      return;
-    }
-
-    const precioUnitario = data.costo || 0;
-    itemsRenta.push({
-      codigo_barras: data.codigo_barras,
-      nombre_equipo: data.nombre_equipo,
-      marca: data.marca,
-      modelo: data.modelo,
-      serial: data.serial,
-      cantidad: 1,
-      precio_unitario: precioUnitario,
-      subtotal: precioUnitario
-    });
-
-    input.value = '';
-    input.focus();
-
-    renderizarTablaItems();
-    calcularTotales();
-    mostrarToast(`✅ Equipo agregado: ${data.nombre_equipo}`, 'exito');
-
-  } catch (err) {
-    console.error('Error al agregar equipo:', err);
-    mostrarToast('Error al buscar equipo', 'error');
-    input.value = '';
-    input.focus();
-  }
+  // ✅ Agregar a la cola y procesar
+  colaEscaneos.push(codigo);
+  procesarColaEscaneos();
 }
 
 // ==========================================
-// RENDERIZAR TABLA
+// ✅ PROCESAR COLA DE ESCANEOS (EVITA SATURACIÓN)
+// ==========================================
+async function procesarColaEscaneos() {
+  if (procesandoEscaneo) return; // Ya hay un proceso activo
+  procesandoEscaneo = true;
+
+  while (colaEscaneos.length > 0) {
+    const codigo = colaEscaneos.shift();
+    try {
+      await procesarEscaneoIndividual(codigo);
+    } catch (err) {
+      console.error('Error procesando escaneo:', err);
+      mostrarToast(`Error al procesar: ${codigo}`, 'error');
+    }
+  }
+
+  procesandoEscaneo = false;
+}
+
+// ==========================================
+// ✅ PROCESAR ESCANEO INDIVIDUAL
+// ==========================================
+async function procesarEscaneoIndividual(codigo) {
+  contadorEscaneos++;
+
+  // ✅ Buscar equipo (con caché)
+  const equipo = await buscarEquipoEnBD(codigo);
+
+  if (!equipo) {
+    mostrarToast(`Equipo no encontrado: "${codigo}"`, 'error');
+    return;
+  }
+
+  // ✅ Verificar si ya está en la lista
+  const existe = itemsRenta.some(item => item.codigo_barras === equipo.codigo_barras);
+  if (existe) {
+    mostrarToast('⚠️ Este equipo ya está en la lista de esta renta', 'error');
+    return;
+  }
+
+  const precioUnitario = equipo.costo || 0;
+  const nuevoItem = {
+    id: Date.now() + '_' + contadorEscaneos, // ✅ ID único para cada fila
+    codigo_barras: equipo.codigo_barras,
+    nombre_equipo: equipo.nombre_equipo,
+    marca: equipo.marca,
+    modelo: equipo.modelo,
+    serial: equipo.serial,
+    cantidad: 1,
+    precio_unitario: precioUnitario,
+    subtotal: precioUnitario
+  };
+
+  itemsRenta.push(nuevoItem);
+
+  // ✅ Agregar SOLO la nueva fila (sin re-renderizar todo)
+  agregarFilaATabla(nuevoItem, itemsRenta.length - 1);
+  
+  // ✅ Actualizar solo los totales
+  actualizarTotales();
+
+  mostrarToast(`✅ Equipo agregado: ${equipo.nombre_equipo} (${itemsRenta.length} total)`, 'exito');
+}
+
+// ==========================================
+// ✅ AGREGAR FILA A LA TABLA (SIN RE-RENDERIZAR TODO)
+// ==========================================
+function agregarFilaATabla(item, index) {
+  const tbody = document.getElementById('tbodyItems');
+  if (!tbody) return;
+
+  // ✅ Si es el primer item, limpiar el mensaje de "no hay equipos"
+  const filaVacia = tbody.querySelector('td[colspan]');
+  if (filaVacia) {
+    tbody.innerHTML = '';
+  }
+
+  // ✅ Crear la nueva fila
+  const fila = document.createElement('tr');
+  fila.id = `fila-item-${item.id}`;
+  fila.innerHTML = `
+    <td>${index + 1}</td>
+    <td style="font-family: monospace; font-size: 11px;">${item.codigo_barras}</td>
+    <td><strong>${item.nombre_equipo}</strong></td>
+    <td>${item.serial || '-'}</td>
+    <td style="text-align: right;">$${item.precio_unitario.toFixed(2)}</td>
+    <td style="text-align: center;">
+      <input type="number" min="1" value="${item.cantidad}"
+        style="width: 60px; padding: 4px 8px; border: 1px solid #e5e7eb; border-radius: 4px; text-align: center;"
+        onchange="actualizarCantidadPorId('${item.id}', this.value)">
+    </td>
+    <td style="text-align: right;" id="subtotal-${item.id}"><strong>$${item.subtotal.toFixed(2)}</strong></td>
+    <td style="text-align: center;">
+      <button type="button" onclick="eliminarItemPorId('${item.id}')"
+        style="background: #fee2e2; color: #dc2626; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
+        onmouseover="this.style.background='#dc2626'; this.style.color='white';"
+        onmouseout="this.style.background='#fee2e2'; this.style.color='#dc2626';"
+        title="Eliminar equipo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          <line x1="10" y1="11" x2="10" y2="17"></line>
+          <line x1="14" y1="11" x2="14" y2="17"></line>
+        </svg>
+      </button>
+    </td>
+  `;
+  tbody.appendChild(fila);
+}
+
+// ==========================================
+// RENDERIZAR TABLA (solo para inicialización o eliminación)
 // ==========================================
 function renderizarTablaItems() {
   const tbody = document.getElementById('tbodyItems');
   if (!tbody) return;
-  
   if (itemsRenta.length === 0) {
     tbody.innerHTML = `
       <tr>
@@ -525,26 +595,30 @@ function renderizarTablaItems() {
       </tr>`;
     return;
   }
-
-  tbody.innerHTML = itemsRenta.map((item, index) => `
-    <tr>
+  
+  // ✅ Usar DocumentFragment para renderizado masivo más rápido
+  const fragment = document.createDocumentFragment();
+  itemsRenta.forEach((item, index) => {
+    const fila = document.createElement('tr');
+    fila.id = `fila-item-${item.id}`;
+    fila.innerHTML = `
       <td>${index + 1}</td>
       <td style="font-family: monospace; font-size: 11px;">${item.codigo_barras}</td>
       <td><strong>${item.nombre_equipo}</strong></td>
       <td>${item.serial || '-'}</td>
       <td style="text-align: right;">$${item.precio_unitario.toFixed(2)}</td>
       <td style="text-align: center;">
-        <input type="number" min="1" value="${item.cantidad}" 
-               style="width: 60px; padding: 4px 8px; border: 1px solid #e5e7eb; border-radius: 4px; text-align: center;"
-               onchange="actualizarCantidad(${index}, this.value)">
+        <input type="number" min="1" value="${item.cantidad}"
+          style="width: 60px; padding: 4px 8px; border: 1px solid #e5e7eb; border-radius: 4px; text-align: center;"
+          onchange="actualizarCantidadPorId('${item.id}', this.value)">
       </td>
-      <td style="text-align: right;"><strong>$${item.subtotal.toFixed(2)}</strong></td>
+      <td style="text-align: right;" id="subtotal-${item.id}"><strong>$${item.subtotal.toFixed(2)}</strong></td>
       <td style="text-align: center;">
-        <button type="button" onclick="eliminarItem(${index})" 
-                style="background: #fee2e2; color: #dc2626; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
-                onmouseover="this.style.background='#dc2626'; this.style.color='white';"
-                onmouseout="this.style.background='#fee2e2'; this.style.color='#dc2626';"
-                title="Eliminar equipo">
+        <button type="button" onclick="eliminarItemPorId('${item.id}')"
+          style="background: #fee2e2; color: #dc2626; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"
+          onmouseover="this.style.background='#dc2626'; this.style.color='white';"
+          onmouseout="this.style.background='#fee2e2'; this.style.color='#dc2626';"
+          title="Eliminar equipo">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3 6 5 6 21 6"></polyline>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -553,25 +627,73 @@ function renderizarTablaItems() {
           </svg>
         </button>
       </td>
-    </tr>
-  `).join('');
+    `;
+    fragment.appendChild(fila);
+  });
+  tbody.innerHTML = '';
+  tbody.appendChild(fragment);
 }
 
-function actualizarCantidad(index, cantidad) {
+// ==========================================
+// ✅ ACTUALIZAR CANTIDAD POR ID (SIN RE-RENDERIZAR)
+// ==========================================
+function actualizarCantidadPorId(itemId, cantidad) {
   const qty = parseInt(cantidad) || 1;
-  itemsRenta[index].cantidad = qty;
-  itemsRenta[index].subtotal = itemsRenta[index].precio_unitario * qty;
-  renderizarTablaItems();
-  calcularTotales();
+  const item = itemsRenta.find(i => i.id === itemId);
+  if (!item) return;
+
+  item.cantidad = qty;
+  item.subtotal = item.precio_unitario * qty;
+
+  // ✅ Actualizar solo la celda del subtotal de esta fila
+  const celdaSubtotal = document.getElementById(`subtotal-${itemId}`);
+  if (celdaSubtotal) {
+    celdaSubtotal.innerHTML = `<strong>$${item.subtotal.toFixed(2)}</strong>`;
+  }
+
+  actualizarTotales();
 }
 
-function eliminarItem(index) {
+// ==========================================
+// ✅ ELIMINAR ITEM POR ID
+// ==========================================
+function eliminarItemPorId(itemId) {
+  const index = itemsRenta.findIndex(i => i.id === itemId);
+  if (index === -1) return;
+
   itemsRenta.splice(index, 1);
-  renderizarTablaItems();
-  calcularTotales();
+
+  // ✅ Eliminar la fila del DOM directamente
+  const fila = document.getElementById(`fila-item-${itemId}`);
+  if (fila) fila.remove();
+
+  // ✅ Si no quedan items, mostrar mensaje vacío
+  if (itemsRenta.length === 0) {
+    renderizarTablaItems();
+  } else {
+    // ✅ Actualizar los números de fila (solo si es necesario)
+    actualizarNumerosFilas();
+  }
+
+  actualizarTotales();
 }
 
-function calcularTotales() {
+// ==========================================
+// ✅ ACTUALIZAR NÚMEROS DE FILA (rápido)
+// ==========================================
+function actualizarNumerosFilas() {
+  itemsRenta.forEach((item, index) => {
+    const fila = document.getElementById(`fila-item-${item.id}`);
+    if (fila && fila.cells[0]) {
+      fila.cells[0].textContent = index + 1;
+    }
+  });
+}
+
+// ==========================================
+// ✅ ACTUALIZAR TOTALES (SIN RE-RENDERIZAR)
+// ==========================================
+function actualizarTotales() {
   const subtotal = itemsRenta.reduce((sum, item) => sum + item.subtotal, 0);
   const descuentoInput = document.getElementById('descuento');
   const descuento = descuentoInput ? (parseFloat(descuentoInput.value) || 0) : 0;
@@ -583,6 +705,10 @@ function calcularTotales() {
   if (elTotal) elTotal.textContent = `$${total.toFixed(2)}`;
 }
 
+function calcularTotales() {
+  actualizarTotales();
+}
+
 // ==========================================
 // ✅ GUARDAR RENTA (CON ACTUALIZACIÓN DE CLIENTES EN TIEMPO REAL)
 // ==========================================
@@ -591,35 +717,30 @@ async function guardarRenta() {
   const clienteTelefono = document.getElementById('clienteTelefono')?.value.trim() || '';
   const fechaRenta = document.getElementById('fechaRenta')?.value || '';
   const fechaDevolucion = document.getElementById('fechaDevolucion')?.value || '';
-  
-  if (!clienteNombre) { 
-    mostrarMensaje('Por favor ingrese el nombre del cliente/responsable', 'error'); 
-    return; 
+
+  if (!clienteNombre) {
+    mostrarMensaje('Por favor ingrese el nombre del cliente/responsable', 'error');
+    return;
   }
-  
   if (clienteTelefono && clienteTelefono.length !== 11) {
     mostrarMensaje('El teléfono debe tener exactamente 11 dígitos', 'error');
     return;
   }
-  
-  if (!fechaRenta || !fechaDevolucion) { 
-    mostrarMensaje('Por favor ingrese las fechas de renta y devolución', 'error'); 
-    return; 
+  if (!fechaRenta || !fechaDevolucion) {
+    mostrarMensaje('Por favor ingrese las fechas de renta y devolución', 'error');
+    return;
   }
-  
   if (fechaRenta < fechaHoyStr) {
     mostrarMensaje('La fecha de inicio no puede ser anterior al día actual (Caracas)', 'error');
     return;
   }
-  
   if (fechaDevolucion < fechaRenta) {
     mostrarMensaje('La fecha de devolución no puede ser anterior a la fecha de inicio', 'error');
     return;
   }
-  
-  if (itemsRenta.length === 0) { 
-    mostrarMensaje('Por favor agregue al menos un equipo', 'error'); 
-    return; 
+  if (itemsRenta.length === 0) {
+    mostrarMensaje('Por favor agregue al menos un equipo', 'error');
+    return;
   }
 
   const btnGuardar = document.getElementById('btnGuardar');
@@ -634,9 +755,9 @@ async function guardarRenta() {
     const { data: rentaData, error: rentaError } = await supabaseClient
       .from('rentas')
       .insert({
-        numero_renta: numeroRentaActual, 
-        serie: 'RENT', 
-        fecha_renta: fechaRenta, 
+        numero_renta: numeroRentaActual,
+        serie: 'RENT',
+        fecha_renta: fechaRenta,
         fecha_devolucion: fechaDevolucion,
         cliente_nombre: clienteNombre,
         cliente_telefono: clienteTelefono,
@@ -644,9 +765,9 @@ async function guardarRenta() {
         cliente_direccion: document.getElementById('clienteDireccion')?.value.trim() || '',
         ingeniero_nombre: document.getElementById('ingenieroNombre')?.value.trim() || '',
         ingeniero_contacto: document.getElementById('ingenieroContacto')?.value.trim() || '',
-        subtotal: subtotal, 
-        descuento: descuento, 
-        total: total, 
+        subtotal: subtotal,
+        descuento: descuento,
+        total: total,
         estado: 'activa',
         observaciones: document.getElementById('observaciones')?.value.trim() || '',
         usuario_registro: usuarioActualRenta?.email || 'unknown',
@@ -655,21 +776,29 @@ async function guardarRenta() {
       .select().single();
 
     if (rentaError) throw rentaError;
+
     rentaGuardadaId = rentaData.id;
 
-    for (const item of itemsRenta) {
-      const { error: itemError } = await supabaseClient.from('rentas_items').insert({
-        renta_id: rentaData.id, 
-        codigo_barras: item.codigo_barras, 
+    // ✅ Insertar items en lotes de 50 para mejor rendimiento
+    const TAMANO_LOTE = 50;
+    for (let i = 0; i < itemsRenta.length; i += TAMANO_LOTE) {
+      const lote = itemsRenta.slice(i, i + TAMANO_LOTE).map(item => ({
+        renta_id: rentaData.id,
+        codigo_barras: item.codigo_barras,
         nombre_equipo: item.nombre_equipo,
-        marca: item.marca, 
-        modelo: item.modelo, 
-        serial: item.serial, 
+        marca: item.marca,
+        modelo: item.modelo,
+        serial: item.serial,
         cantidad: item.cantidad,
-        precio_unitario: item.precio_unitario, 
+        precio_unitario: item.precio_unitario,
         subtotal: item.subtotal
-      });
-      if (itemError) throw itemError;
+      }));
+
+      const { error: loteError } = await supabaseClient
+        .from('rentas_items')
+        .insert(lote);
+
+      if (loteError) throw loteError;
     }
 
     if (typeof registrarLog === 'function') {
@@ -680,37 +809,32 @@ async function guardarRenta() {
     }
 
     mostrarMensaje(`✅ Renta #${numeroRentaActual} guardada exitosamente`, 'exito');
-    
     const btnImprimir = document.getElementById('btnImprimir');
     if (btnImprimir) btnImprimir.style.display = 'inline-block';
     if (btnGuardar) btnGuardar.textContent = '✅ Guardada';
 
     // ✅ SECUENCIA DE LIMPIEZA AUTOMÁTICA
     setTimeout(() => {
-      // 1. Imprimir comprobante primero
       imprimirComprobante();
-      
-      // 2. Esperar un momento y luego limpiar todo para la siguiente renta
       setTimeout(async () => {
-        // ✅ CORRECCIÓN CLAVE: Actualizar la lista de clientes en tiempo real
         await cargarClientesExistentes();
-        
         itemsRenta = [];
         rentaGuardadaId = null;
-        
+        cacheEquipos.clear();
+        colaEscaneos = [];
+        contadorEscaneos = 0;
+
         ['clienteNombre', 'clienteTelefono', 'clienteEmail', 'clienteDireccion', 'ingenieroNombre', 'ingenieroContacto', 'observaciones'].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.value = '';
         });
-        
         const descuentoEl = document.getElementById('descuento');
         if (descuentoEl) descuentoEl.value = '0';
-        
+
         const fechaHoyCaracas = obtenerFechaHoyCaracas();
         const elFechaRenta = document.getElementById('fechaRenta');
         const elFechaDevolucion = document.getElementById('fechaDevolucion');
         const fechaEmision = document.getElementById('fechaEmision');
-        
         if (elFechaRenta) {
           elFechaRenta.value = fechaHoyCaracas;
           elFechaRenta.min = fechaHoyCaracas;
@@ -728,21 +852,15 @@ async function guardarRenta() {
           const fechaCaracasObj = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"}));
           fechaEmision.textContent = fechaCaracasObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
         }
-        
         renderizarTablaItems();
         calcularTotales();
-        
-        // Generar el siguiente número de renta
         await generarNumeroRenta();
-        
-        if (btnGuardar) { 
-          btnGuardar.disabled = false; 
-          btnGuardar.textContent = '💾 Guardar Renta'; 
+        if (btnGuardar) {
+          btnGuardar.disabled = false;
+          btnGuardar.textContent = '💾 Guardar Renta';
         }
-        
         mostrarMensaje('Formulario listo para nueva renta', 'exito');
-        
-      }, 1500); // 1.5 segundos después de imprimir
+      }, 1500);
     }, 500);
 
   } catch (err) {
@@ -756,9 +874,9 @@ async function guardarRenta() {
 // IMPRIMIR COMPROBANTE
 // ==========================================
 function imprimirComprobante() {
-  if (!rentaGuardadaId) { 
-    mostrarMensaje('Primero debe guardar la renta', 'error'); 
-    return; 
+  if (!rentaGuardadaId) {
+    mostrarMensaje('Primero debe guardar la renta', 'error');
+    return;
   }
 
   const clienteNombre = document.getElementById('clienteNombre')?.value || 'N/A';
@@ -793,131 +911,123 @@ function imprimirComprobante() {
   const html = `<!DOCTYPE html>
 <html>
 <head>
-  <title>Comprobante de Renta #${numeroRentaActual}</title>
-  <style>
-    @page { size: letter; margin: 15mm; }
-    * { box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; font-size: 12px; color: #333; max-width: 216mm; margin: 0 auto; padding: 10mm; }
-    .header { text-align: center; border-bottom: 3px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; }
-    .logo-container { display: flex; justify-content: center; align-items: center; margin-bottom: 10px; }
-    .logo-img { max-width: 250px; max-height: 250px; object-fit: contain; }
-    .brand h1 { color: #1e3a8a; margin: 10px 0 5px 0; font-size: 26px; font-family: 'Libre Caslon Text', serif; }
-    .brand p { margin: 3px 0 0 0; color: #666; font-size: 12px; }
-    .numero-renta-box { background: linear-gradient(135deg, #eff6ff, #dbeafe); padding: 12px 20px; border-radius: 8px; margin: 15px auto; display: inline-block; border: 2px dashed #3b82f6; }
-    .numero-renta-box .label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-    .numero-renta-box .valor { font-size: 22px; font-weight: bold; color: #1e3a8a; font-family: monospace; margin-top: 3px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-    .info-box { background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; }
-    .info-box h3 { margin: 0 0 10px 0; color: #1e3a8a; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
-    .info-box p { margin: 5px 0; font-size: 12px; }
-    .info-box p strong { color: #374151; }
-    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-    th { background: #1e3a8a; color: white; padding: 10px 8px; text-align: left; font-size: 11px; text-transform: uppercase; }
-    td { padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 11px; }
-    .totales { text-align: right; margin-top: 20px; padding: 15px; background: #eff6ff; border-radius: 8px; }
-    .totales p { margin: 5px 0; font-size: 13px; }
-    .totales .total { font-size: 20px; font-weight: bold; color: #1e3a8a; border-top: 2px solid #1e3a8a; padding-top: 10px; margin-top: 10px; }
-    .observaciones { margin-top: 20px; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; }
-    .observaciones h4 { margin: 0 0 5px 0; color: #92400e; font-size: 12px; }
-    .observaciones p { margin: 0; font-size: 12px; }
-    .firmas { margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; text-align: center; }
-    .firma-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 5px; }
-    .firma-line p { margin: 3px 0; font-size: 12px; }
-    .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 10px; }
-    @media print { .no-print { display: none !important; } body { padding: 0; } }
-  </style>
+<title>Comprobante de Renta #${numeroRentaActual}</title>
+<style>
+@page { size: letter; margin: 15mm; }
+* { box-sizing: border-box; }
+body { font-family: Arial, sans-serif; font-size: 12px; color: #333; max-width: 216mm; margin: 0 auto; padding: 10mm; }
+.header { text-align: center; border-bottom: 3px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; }
+.logo-container { display: flex; justify-content: center; align-items: center; margin-bottom: 10px; }
+.logo-img { max-width: 250px; max-height: 250px; object-fit: contain; }
+.brand h1 { color: #1e3a8a; margin: 10px 0 5px 0; font-size: 26px; font-family: 'Libre Caslon Text', serif; }
+.brand p { margin: 3px 0 0 0; color: #666; font-size: 12px; }
+.numero-renta-box { background: linear-gradient(135deg, #eff6ff, #dbeafe); padding: 12px 20px; border-radius: 8px; margin: 15px auto; display: inline-block; border: 2px dashed #3b82f6; }
+.numero-renta-box .label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+.numero-renta-box .valor { font-size: 22px; font-weight: bold; color: #1e3a8a; font-family: monospace; margin-top: 3px; }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.info-box { background: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; }
+.info-box h3 { margin: 0 0 10px 0; color: #1e3a8a; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+.info-box p { margin: 5px 0; font-size: 12px; }
+.info-box p strong { color: #374151; }
+table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+th { background: #1e3a8a; color: white; padding: 10px 8px; text-align: left; font-size: 11px; text-transform: uppercase; }
+td { padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 11px; }
+.totales { text-align: right; margin-top: 20px; padding: 15px; background: #eff6ff; border-radius: 8px; }
+.totales p { margin: 5px 0; font-size: 13px; }
+.totales .total { font-size: 20px; font-weight: bold; color: #1e3a8a; border-top: 2px solid #1e3a8a; padding-top: 10px; margin-top: 10px; }
+.observaciones { margin-top: 20px; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; }
+.observaciones h4 { margin: 0 0 5px 0; color: #92400e; font-size: 12px; }
+.observaciones p { margin: 0; font-size: 12px; }
+.firmas { margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; text-align: center; }
+.firma-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 5px; }
+.firma-line p { margin: 3px 0; font-size: 12px; }
+.footer { margin-top: 30px; text-align: center; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 10px; }
+@media print { .no-print { display: none !important; } body { padding: 0; } }
+</style>
 </head>
 <body>
-  <div class="header">
-    <div class="logo-container">
-      <img src="${logoUrl}" alt="Logo Eventos D' Primera" class="logo-img" onerror="this.style.display='none'">
-    </div>
-    <div class="brand">
-      <h1>Eventos D' Primera</h1>
-      <p>Sistema de Inventario y Rentas</p>
-    </div>
-    <div class="numero-renta-box">
-      <div class="label">Comprobante de Renta N°</div>
-      <div class="valor">${numeroRentaActual}</div>
-    </div>
-  </div>
-
-  <div class="info-grid">
-    <div class="info-box">
-      <h3>👤 Cliente / Responsable</h3>
-      <p><strong>Nombre:</strong> ${clienteNombre}</p>
-      <p><strong>Teléfono:</strong> ${clienteTel}</p>
-      <p><strong>Email:</strong> ${clienteEmail}</p>
-      <p><strong>Dirección:</strong> ${clienteDir}</p>
-    </div>
-    <div class="info-box">
-      <h3>📅 Detalles de Renta</h3>
-      <p><strong>Fecha Inicio:</strong> ${fechaRenta ? new Date(fechaRenta + 'T12:00:00').toLocaleDateString('es-ES') : 'N/A'}</p>
-      <p><strong>Fecha Devolución:</strong> ${fechaDevolucion ? new Date(fechaDevolucion + 'T12:00:00').toLocaleDateString('es-ES') : 'N/A'}</p>
-      <p><strong>Ingeniero:</strong> ${ingenieroNombre}</p>
-      <p><strong>Contacto Ing.:</strong> ${ingenieroContacto}</p>
-    </div>
-  </div>
-
-  <h3 style="margin: 20px 0 10px 0; color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 5px;">📦 Equipos Rentados (${itemsRenta.length})</h3>
-  <table>
-    <thead>
-      <tr>
-        <th style="width: 30px;">#</th>
-        <th style="width: 130px;">Código</th>
-        <th>Equipo</th>
-        <th style="width: 100px;">Serial</th>
-        <th style="text-align: right; width: 80px;">Precio</th>
-        <th style="text-align: center; width: 50px;">Cant.</th>
-        <th style="text-align: right; width: 90px;">Subtotal</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${itemsHTML}
-    </tbody>
-  </table>
-
-  <div class="totales">
-    <p>Subtotal: <strong>${subtotal}</strong></p>
-    <p>Descuento: <strong>$${parseFloat(descuento).toFixed(2)}</strong></p>
-    <p class="total">TOTAL: <strong>${total}</strong></p>
-  </div>
-
-  ${observaciones ? `
-  <div class="observaciones">
-    <h4>📝 Observaciones</h4>
-    <p>${observaciones}</p>
-  </div>
-  ` : ''}
-
-  <div class="firmas">
-    <div>
-      <div class="firma-line">
-        <p><strong>${clienteNombre}</strong></p>
-        <p>Cliente / Responsable</p>
-        <p style="font-size: 10px; color: #666;">Firma de conformidad</p>
-      </div>
-    </div>
-    <div>
-      <div class="firma-line">
-        <p><strong>${usuarioActualRenta?.email || 'Administrador'}</strong></p>
-        <p>Entregado por</p>
-        <p style="font-size: 10px; color: #666;">Firma del responsable</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="footer">
-    <p>©copyright Eventos de Primera | 2026-2027 | Documento generado el ${new Date().toLocaleString('es-ES')}</p>
-  </div>
-
-  <div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
-    <button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">🖨️ Imprimir Comprobante</button>
-    <button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">❌ Cerrar</button>
-  </div>
+<div class="header">
+<div class="logo-container">
+<img src="${logoUrl}" alt="Logo Eventos D' Primera" class="logo-img" onerror="this.style.display='none'">
+</div>
+<div class="brand">
+<h1>Eventos D' Primera</h1>
+<p>Sistema de Inventario y Rentas</p>
+</div>
+<div class="numero-renta-box">
+<div class="label">Comprobante de Renta N°</div>
+<div class="valor">${numeroRentaActual}</div>
+</div>
+</div>
+<div class="info-grid">
+<div class="info-box">
+<h3>👤 Cliente / Responsable</h3>
+<p><strong>Nombre:</strong> ${clienteNombre}</p>
+<p><strong>Teléfono:</strong> ${clienteTel}</p>
+<p><strong>Email:</strong> ${clienteEmail}</p>
+<p><strong>Dirección:</strong> ${clienteDir}</p>
+</div>
+<div class="info-box">
+<h3>📅 Detalles de Renta</h3>
+<p><strong>Fecha Inicio:</strong> ${fechaRenta ? new Date(fechaRenta + 'T12:00:00').toLocaleDateString('es-ES') : 'N/A'}</p>
+<p><strong>Fecha Devolución:</strong> ${fechaDevolucion ? new Date(fechaDevolucion + 'T12:00:00').toLocaleDateString('es-ES') : 'N/A'}</p>
+<p><strong>Ingeniero:</strong> ${ingenieroNombre}</p>
+<p><strong>Contacto Ing.:</strong> ${ingenieroContacto}</p>
+</div>
+</div>
+<h3 style="margin: 20px 0 10px 0; color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 5px;">📦 Equipos Rentados (${itemsRenta.length})</h3>
+<table>
+<thead>
+<tr>
+<th style="width: 30px;">#</th>
+<th style="width: 130px;">Código</th>
+<th>Equipo</th>
+<th style="width: 100px;">Serial</th>
+<th style="text-align: right; width: 80px;">Precio</th>
+<th style="text-align: center; width: 50px;">Cant.</th>
+<th style="text-align: right; width: 90px;">Subtotal</th>
+</tr>
+</thead>
+<tbody>
+${itemsHTML}
+</tbody>
+</table>
+<div class="totales">
+<p>Subtotal: <strong>${subtotal}</strong></p>
+<p>Descuento: <strong>$${parseFloat(descuento).toFixed(2)}</strong></p>
+<p class="total">TOTAL: <strong>${total}</strong></p>
+</div>
+${observaciones ? `
+<div class="observaciones">
+<h4>📝 Observaciones</h4>
+<p>${observaciones}</p>
+</div>
+` : ''}
+<div class="firmas">
+<div>
+<div class="firma-line">
+<p><strong>${clienteNombre}</strong></p>
+<p>Cliente / Responsable</p>
+<p style="font-size: 10px; color: #666;">Firma de conformidad</p>
+</div>
+</div>
+<div>
+<div class="firma-line">
+<p><strong>${usuarioActualRenta?.email || 'Administrador'}</strong></p>
+<p>Entregado por</p>
+<p style="font-size: 10px; color: #666;">Firma del responsable</p>
+</div>
+</div>
+</div>
+<div class="footer">
+<p>©copyright Eventos de Primera | 2026-2027 | Documento generado el ${new Date().toLocaleString('es-ES')}</p>
+</div>
+<div class="no-print" style="margin-top: 30px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px;">
+<button onclick="window.print()" style="padding: 12px 30px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; margin-right: 10px;">🖨️ Imprimir Comprobante</button>
+<button onclick="window.close()" style="padding: 12px 30px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">❌ Cerrar</button>
+</div>
 </body>
 </html>`;
-
   ventana.document.write(html);
   ventana.document.close();
 }
@@ -927,30 +1037,27 @@ function imprimirComprobante() {
 // ==========================================
 function limpiarFormulario() {
   if (itemsRenta.length > 0 && !confirm('¿Está seguro de iniciar una nueva renta? Se perderán los datos no guardados.')) return;
-
   itemsRenta = [];
   rentaGuardadaId = null;
-  
+  cacheEquipos.clear();
+  colaEscaneos = [];
+  contadorEscaneos = 0;
+
   ['clienteNombre', 'clienteTelefono', 'clienteEmail', 'clienteDireccion', 'ingenieroNombre', 'ingenieroContacto', 'observaciones'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  
   const descuentoEl = document.getElementById('descuento');
   if (descuentoEl) descuentoEl.value = '0';
-  
   const btnImprimir = document.getElementById('btnImprimir');
   if (btnImprimir) btnImprimir.style.display = 'none';
-  
   const btnGuardar = document.getElementById('btnGuardar');
   if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = '💾 Guardar Renta'; }
-  
+
   const fechaHoyCaracas = obtenerFechaHoyCaracas();
-  
   const elFechaRenta = document.getElementById('fechaRenta');
   const elFechaDevolucion = document.getElementById('fechaDevolucion');
   const fechaEmision = document.getElementById('fechaEmision');
-  
   if (elFechaRenta) {
     elFechaRenta.value = fechaHoyCaracas;
     elFechaRenta.min = fechaHoyCaracas;
@@ -968,17 +1075,16 @@ function limpiarFormulario() {
     const fechaCaracasObj = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Caracas"}));
     fechaEmision.textContent = fechaCaracasObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
   }
-  
+
   const lista = document.getElementById('autocompleteList');
   if (lista) {
     lista.classList.remove('visible');
     lista.innerHTML = '';
   }
-  
+
   renderizarTablaItems();
   calcularTotales();
   generarNumeroRenta();
-  
   mostrarMensaje('Formulario listo para nueva renta', 'exito');
 }
 
