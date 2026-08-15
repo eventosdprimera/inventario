@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modificar Recepción - Eventos D' Primera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">✏️ Modificar Recepción</h1>
+    <p class="page-subtitle">Actualice recepciones para registrar equipos faltantes que aparecen después</p>
+  </div>
+
+  <div id="mensaje" class="mensaje"></div>
+
+  <!-- SECCIÓN 1: LISTA DE RECEPCIONES -->
+  <fieldset id="fieldsetListaModRec">
+    <legend>📋 Recepciones Registradas</legend>
+
+    <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 15px; display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+      <div style="flex: 1; min-width: 200px;">
+        <label style="display: block; font-size: 11px; color: #6b7280; text-transform: uppercase; margin-bottom: 5px; font-weight: 600;">Buscar (N° recepción, renta o cliente)</label>
+        <input type="text" id="filtroBusquedaModRec" placeholder="Escriba para filtrar..." style="width: 100%; padding: 10px; border: 2px solid #e5e7eb; border-radius: 6px;">
+      </div>
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; color: #374151; font-weight: 600; padding-bottom: 10px;">
+        <input type="checkbox" id="filtroSoloFaltantes" style="width: 18px; height: 18px; accent-color: #dc2626;">
+        Mostrar solo con faltantes
+      </label>
+      <button type="button" class="btn-action btn-primary" onclick="cargarRecepcionesModificables()" style="margin-bottom: 0;">🔎 Filtrar</button>
+    </div>
+
+    <div id="contadorModRec" class="contador-info">Total: 0 recepción(es)</div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 50px;">#</th>
+            <th>N° Recepción</th>
+            <th>N° Renta</th>
+            <th>Cliente</th>
+            <th>Fecha Recepción</th>
+            <th style="text-align: center;">Recibidos</th>
+            <th style="text-align: center;">Faltantes</th>
+            <th style="text-align: center;">Estado</th>
+            <th style="width: 130px;"></th>
+          </tr>
+        </thead>
+        <tbody id="tbodyListaModRec"></tbody>
+      </table>
+    </div>
+    <div id="paginacionModRec" class="paginacion"></div>
+  </fieldset>
+
+  <!-- SECCIÓN 2: EDICIÓN DE LA RECEPCIÓN (oculto) -->
+  <fieldset id="fieldsetEdicionModRec" style="display: none;">
+    <legend>✏️ Editar Recepción <span id="edicionNumeroRecepcion" style="color: #fbbf24;"></span></legend>
+
+    <div style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-bottom: 20px; font-size: 13px; color: #1e40af;">
+      💡 <strong>Instrucciones:</strong> Escanee el código de barras de los equipos que estaban <strong>faltantes</strong> para marcarlos como recibidos. Si un equipo recibido fue marcado por error, puede devolverlo a faltante (solo administrador).
+    </div>
+
+    <!-- Info de la recepción -->
+    <div id="edicionInfoRecepcion" class="renta-info"></div>
+
+    <!-- Estadísticas en vivo -->
+    <div class="stats-grid">
+      <div class="stat-card total">
+        <div class="stat-number" id="modStatTotal">0</div>
+        <div class="stat-label">Total Equipos</div>
+      </div>
+      <div class="stat-card recibidos">
+        <div class="stat-number" id="modStatRecibidos">0</div>
+        <div class="stat-label">✅ Recibidos</div>
+      </div>
+      <div class="stat-card faltantes">
+        <div class="stat-number" id="modStatFaltantes">0</div>
+        <div class="stat-label">❌ Faltantes</div>
+      </div>
+    </div>
+
+    <!-- Indicador de cambios pendientes -->
+    <div id="indicadorCambios" style="display: none; background: #fef3c7; padding: 12px 16px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 15px; font-size: 13px; color: #92400e; font-weight: 600;">
+      ⚠️ Tiene <span id="contadorCambios">0</span> cambio(s) sin guardar
+    </div>
+
+    <!-- Input de escaneo -->
+    <div class="escaner-section">
+      <div style="font-size: 14px; color: #1e3a8a; font-weight: 600; margin-bottom: 10px;">
+        🔍 Escanee el código del equipo que estaba faltante
+      </div>
+      <input type="text" id="inputEscaneoModRec" class="escaner-input" placeholder="ESCANEE EL CÓDIGO..." autocomplete="off">
+    </div>
+
+    <!-- Tabla de equipos -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 40px;">#</th>
+            <th>Código</th>
+            <th>Equipo</th>
+            <th>Serial</th>
+            <th style="text-align: center;">Cant.</th>
+            <th style="text-align: center;">Estado</th>
+            <th style="width: 200px; text-align: center;">Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyEdicionItems"></tbody>
+      </table>
+    </div>
+
+    <!-- Observaciones -->
+    <div style="margin-top: 20px;">
+      <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 600; font-size: 13px;">📝 Observaciones de la modificación</label>
+      <textarea id="observacionesModRec" rows="3" placeholder="Ej: Aparecieron los equipos que faltaban..." style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-family: 'Poppins', sans-serif;"></textarea>
+    </div>
+
+    <!-- Botones -->
+    <div class="button-group">
+      <button type="button" class="btn-action btn-success" onclick="guardarModificacionRecepcion()" id="btnGuardarModRec">💾 Guardar Cambios</button>
+      <button type="button" class="btn-action btn-primary" onclick="imprimirComprobanteModRec()" id="btnImprimirModRec" style="display: none;">🖨️ Imprimir Comprobante</button>
+      <button type="button" class="btn-action btn-secondary" onclick="cancelarModificacionRecepcion()">❌ Cancelar</button>
+    </div>
+  </fieldset>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/modificar_recepcion.js"></script>
+</body>
+</html>
