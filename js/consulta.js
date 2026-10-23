@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// IMPRIMIR STICKER (OPTIMIZADO PARA TÉRMICA 80MM, GIRADO 180° Y CON AVANCE DE PAPEL)
+// IMPRIMIR STICKER (GIRADO 90°, MÁS PEQUEÑO, PARA TÉRMICA 80MM)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -596,13 +596,13 @@ function imprimirStickerCodigo() {
   document.body.appendChild(tempDiv);
 
   try {
-    // ✅ Código de barras ajustado para ancho seguro de 74mm
+    // ✅ Código de barras ajustado para el nuevo tamaño reducido
     JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
       format: "CODE128", 
-      width: 1.8,       
-      height: 40,       
+      width: 1.6,       
+      height: 35,       
       displayValue: true,
-      fontSize: 12,     
+      fontSize: 11,     
       margin: 0,        
       font: "Courier New", 
       fontOptions: "bold",
@@ -624,16 +624,15 @@ function imprimirStickerCodigo() {
 <head>
   <title>Sticker - ${equipo.codigo_barras}</title>
   <style>
-    /* ✅ CONFIGURACIÓN CRÍTICA: Tamaño de página fijo para forzar el avance del papel */
     @page { 
-      size: 80mm 150mm; /* Ancho 80mm, Alto 150mm (garantiza que la impresora avance) */
+      size: 80mm 150mm;
       margin: 0; 
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
     html, body { 
       width: 80mm; 
-      min-height: 150mm; /* Fuerza al navegador a renderizar esta altura mínima */
+      min-height: 150mm;
       font-family: Arial, Helvetica, sans-serif; 
       overflow: hidden; 
       background: white;
@@ -644,47 +643,47 @@ function imprimirStickerCodigo() {
       flex-direction: column;
       justify-content: flex-start; 
       align-items: center; 
-      padding-top: 5mm; /* Pequeño margen inicial */
+      padding-top: 5mm;
     }
 
-    /* ✅ STICKER: 74mm de ancho, 45mm de alto, girado 180° */
+    /* ✅ STICKER MÁS PEQUEÑO (65mm x 38mm) Y GIRADO 90° */
     .sticker { 
-      width: 74mm; 
-      height: 45mm; 
+      width: 65mm; 
+      height: 38mm; 
       border: 0.5mm solid #000; 
-      padding: 2mm; 
+      padding: 1.5mm; 
       text-align: center; 
       display: flex; 
       flex-direction: column; 
       justify-content: space-between; 
       align-items: center;
-      transform: rotate(180deg); 
+      transform: rotate(90deg); 
       transform-origin: center center; 
       background: white;
-      flex-shrink: 0; /* Evita que se aplaste */
+      flex-shrink: 0;
     }
     
     .empresa { 
-      font-size: 9pt; 
+      font-size: 8pt; 
       font-weight: 900; 
       color: #000; 
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 1mm; 
+      margin-bottom: 0.5mm; 
     }
     .nombre { 
-      font-size: 8pt; 
+      font-size: 7pt; 
       font-weight: bold; 
       color: #000;
       line-height: 1.1; 
-      margin-bottom: 1mm; 
+      margin-bottom: 0.5mm; 
       max-width: 100%;
       overflow: hidden; 
       text-overflow: ellipsis; 
       white-space: nowrap; 
     }
     .barcode { 
-      margin: 1mm 0; 
+      margin: 0.5mm 0; 
       display: flex; 
       justify-content: center; 
       align-items: center; 
@@ -695,19 +694,19 @@ function imprimirStickerCodigo() {
       height: auto; 
     }
     .codigo { 
-      font-size: 10pt; 
+      font-size: 9pt; 
       font-weight: 900; 
       font-family: 'Courier New', monospace; 
       color: #000;
-      letter-spacing: 0.5mm; 
-      margin-top: 1mm;
+      letter-spacing: 0.4mm; 
+      margin-top: 0.5mm;
     }
     .info { 
-      font-size: 7pt; 
+      font-size: 6pt; 
       color: #000; 
       font-weight: 600;
       line-height: 1.1; 
-      margin-top: 1mm;
+      margin-top: 0.5mm;
       max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -728,8 +727,6 @@ function imprimirStickerCodigo() {
     <div class="info">${equipo.marca || ''}${equipo.modelo ? ' ' + equipo.modelo : ''}${equipo.serial ? ' | ' + equipo.serial : ''}</div>
   </div>
 
-  <!-- ✅ ESPACIADOR OBLIGATORIO: Fuerza a la impresora a avanzar 50mm de papel en blanco -->
-  <!-- Esto hace que el sticker salga completamente de la ranura para poder arrancarlo -->
   <div style="height: 50mm; width: 100%;"></div>
   
   <div class="no-print" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: white; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 9999;">
