@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// ✅ IMPRIMIR STICKER CON CÓDIGO DE BARRAS (ROTADO 180°)
+// ✅ IMPRIMIR STICKER PARA IMPRESORA TÉRMICA 3NSTAR RPT006B (80x40mm)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -597,9 +597,16 @@ function imprimirStickerCodigo() {
   document.body.appendChild(tempDiv);
 
   try {
+    // ✅ Configuración optimizada para lectura con pistola y etiqueta 80x40mm
     JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
-      format: "CODE128", width: 1.2, height: 35, displayValue: true,
-      fontSize: 9, margin: 1, font: "Courier New", fontOptions: "bold"
+      format: "CODE128",
+      width: 1.8,           // Barras más anchas para mejor lectura
+      height: 25,           // Altura del código (mm)
+      displayValue: true,   // Mostrar número debajo
+      fontSize: 11,         // Tamaño de fuente legible
+      margin: 2,            // Margen interno
+      font: "Courier New",
+      fontOptions: "bold"
     });
 
     const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
@@ -607,7 +614,7 @@ function imprimirStickerCodigo() {
 
     const ventana = window.open('', '_blank', 'width=400,height=300');
     if (!ventana || ventana.closed) {
-      mostrarToastConsulta('⚠️ El navegador bloqueó la ventana emergente', 'error');
+      mostrarToastConsulta('️ El navegador bloqueó la ventana emergente', 'error');
       return;
     }
 
@@ -617,43 +624,97 @@ function imprimirStickerCodigo() {
 <head>
   <title>Sticker - ${equipo.codigo_barras}</title>
   <style>
-    @page { size: letter; margin: 0; }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 216mm; height: 279mm; font-family: Arial, sans-serif; overflow: hidden; }
-    body { display: flex; justify-content: flex-start; align-items: flex-start; padding: 5mm; }
+    /* ✅ Configuración exacta para impresora térmica 3nstar RPT006B con etiquetas 80x40mm */
+    @page { 
+      size: 80mm 40mm;  /* Tamaño exacto de la etiqueta */
+      margin: 0;        /* Sin márgenes para aprovechar todo el espacio */
+    }
     
-    /* ✅ ESTILOS OPTIMIZADOS PARA ROTACIÓN DE 180 GRADOS */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    html, body { 
+      width: 80mm; 
+      height: 40mm; 
+      font-family: Arial, sans-serif; 
+      overflow: hidden;
+    }
+    
+    body { 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      padding: 1mm;  /* Margen mínimo para evitar cortes */
+    }
+    
+    /* ✅ Contenedor del sticker - dimensiones exactas para etiqueta 80x40mm */
     .sticker { 
-      width: 70mm; 
-      height: 35mm; 
-      border: 0.5mm solid #000; 
-      padding: 1.5mm 2mm; 
+      width: 78mm;    /* 80mm - 2mm de margen total */
+      height: 38mm;   /* 40mm - 2mm de margen total */
+      border: 0.3mm solid #000; 
+      padding: 1mm 1.5mm; 
       text-align: center; 
       display: flex; 
       flex-direction: column; 
-      justify-content: space-between; 
-      
-      /* 1. Rotar 180 grados (boca abajo) */
-      transform: rotate(180deg); 
-      
-      /* 2. Usar el centro como punto de giro para que se voltee en su mismo lugar 
-            sin salirse de la esquina superior izquierda */
-      transform-origin: center; 
-      
-      /* Evitar que se corte entre páginas al imprimir */
-      page-break-inside: avoid;
+      justify-content: space-between;
+      background: white;
     }
 
-    .empresa { font-size: 6pt; font-weight: bold; color: #1e3a8a; line-height: 1; margin-bottom: 0.5mm; }
-    .nombre { font-size: 6pt; font-weight: bold; line-height: 1.1; margin-bottom: 0.5mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .barcode { margin: 0.5mm 0; display: flex; justify-content: center; align-items: center; }
-    .barcode svg { max-width: 100%; height: auto; max-height: 12mm; }
-    .codigo { font-size: 7pt; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 0.3mm; line-height: 1; }
-    .info { font-size: 5pt; color: #333; line-height: 1.1; margin-top: 0.3mm; }
+    /* ✅ Nombre de la empresa - compacto pero legible */
+    .empresa { 
+      font-size: 5pt; 
+      font-weight: bold; 
+      color: #1e3a8a; 
+      line-height: 1; 
+      margin-bottom: 0.5mm;
+    }
+    
+    /* ✅ Nombre del equipo - truncado si es muy largo */
+    .nombre { 
+      font-size: 5.5pt; 
+      font-weight: bold; 
+      line-height: 1.1; 
+      margin-bottom: 0.5mm; 
+      overflow: hidden; 
+      text-overflow: ellipsis; 
+      white-space: nowrap;
+    }
+    
+    /* ✅ Código de barras - optimizado para lectura con pistola */
+    .barcode { 
+      margin: 0.5mm 0; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center;
+      flex: 1;  /* Ocupa el espacio disponible */
+    }
+    
+    .barcode svg { 
+      max-width: 100%; 
+      height: auto; 
+      max-height: 20mm;  /* Altura máxima del código */
+    }
+    
+    /* ✅ Número del código de barras - grande y legible */
+    .codigo { 
+      font-size: 8pt; 
+      font-weight: bold; 
+      font-family: 'Courier New', monospace; 
+      letter-spacing: 0.2mm; 
+      line-height: 1;
+      margin-top: 0.3mm;
+    }
+    
+    /* ✅ Información adicional - compacta */
+    .info { 
+      font-size: 4.5pt; 
+      color: #333; 
+      line-height: 1.1; 
+      margin-top: 0.3mm;
+    }
     
     @media print { 
-      body { padding: 5mm; } 
-      .sticker { border: 0.3mm solid #000; } 
+      body { padding: 1mm; } 
+      .sticker { border: 0.2mm solid #000; } 
       .no-print { display: none !important; } 
     }
   </style>
@@ -661,7 +722,7 @@ function imprimirStickerCodigo() {
 <body>
   <div class="sticker">
     <div class="empresa">EVENTOS D' PRIMERA</div>
-    <div class="nombre">${(equipo.nombre_equipo || '').substring(0, 40)}</div>
+    <div class="nombre">${(equipo.nombre_equipo || '').substring(0, 35)}</div>
     <div class="barcode">${barcodeSVG}</div>
     <div class="codigo">${equipo.codigo_barras}</div>
     <div class="info">${equipo.marca || ''}${equipo.modelo ? ' ' + equipo.modelo : ''}${equipo.serial ? ' | S/N: ' + equipo.serial : ''}</div>
