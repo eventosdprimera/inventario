@@ -579,9 +579,6 @@ function limpiarConsulta() {
   document.getElementById('buscarConsulta').focus();
 }
 
-// ==========================================
-// ✅ STICKER FINAL - RPT006B 80mm - DERECHO - DISEÑO ORIGINAL - SIN DESPERDICIO
-// ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
     mostrarToastConsulta('No hay equipo seleccionado', 'error');
@@ -609,7 +606,7 @@ function imprimirStickerCodigo() {
 
     const ventana = window.open('', '_blank', 'width=400,height=400');
     if (!ventana || ventana.closed) {
-      mostrarToastConsulta('⚠️ Permita ventanas emergentes', 'error');
+      mostrarToastConsulta('️ Permita ventanas emergentes', 'error');
       return;
     }
 
@@ -617,30 +614,32 @@ function imprimirStickerCodigo() {
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Sticker ${equipo.codigo_barras}</title>
+<title>Sticker</title>
 <style>
-  /* ✅ TAMAÑO EXACTO DEL FORMULARIO STICKER80: 80mm x 50mm */
-  @page { size: 80mm 50mm; margin: 0; }
+  /* ✅ Usamos el tamaño que ya tienes en el driver */
+  @page { size: 80mm 297mm; margin: 0; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body {
+  html { background: white; }
+  body {
     width: 80mm;
-    height: 50mm;
-    margin: 0; padding: 0;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    color: black;
     overflow: hidden;
-    background: #fff; color: #000;
-    font-family: Arial, Helvetica, sans-serif;
   }
-  /* ✅ STICKER DERECHO (vertical) CON DISEÑO ORIGINAL */
+  /* ✅ Sticker de altura fija 50mm - el resto queda en blanco */
   .sticker {
     width: 80mm;
     height: 50mm;
     padding: 2mm 4mm;
-    border: 0.4mm solid #000;
+    border: 0.3mm solid #000;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
     text-align: center;
+    background: white;
   }
   .equipo-nombre {
     font-size: 10pt;
@@ -674,7 +673,7 @@ function imprimirStickerCodigo() {
     <div class="info-marca">${equipo.marca || ''} ${equipo.modelo || ''}</div>
   </div>
   <div class="no-print">
-    <button style="background:#1e3a8a;color:#fff;" onclick="window.print()">🖨️ Imprimir</button>
+    <button style="background:#1e3a8a;color:#fff;" onclick="window.print()">️ Imprimir</button>
     <button style="background:#6b7280;color:#fff;" onclick="window.close()">❌ Cerrar</button>
   </div>
   <script>
