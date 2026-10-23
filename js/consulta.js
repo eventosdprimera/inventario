@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// ✅ IMPRIMIR STICKER PARA IMPRESORA TÉRMICA 3NSTAR RPT006B (80x40mm)
+// ✅ IMPRIMIR STICKER PARA IMPRESORA TÉRMICA 3NSTAR RPT006B (80x40mm) - SIN ROTACIÓN
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -600,10 +600,10 @@ function imprimirStickerCodigo() {
     // ✅ Configuración optimizada para lectura con pistola y etiqueta 80x40mm
     JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
       format: "CODE128",
-      width: 1.8,           // Barras más anchas para mejor lectura
-      height: 25,           // Altura del código (mm)
+      width: 2,             // Barras más anchas para mejor lectura
+      height: 20,           // Altura del código (mm)
       displayValue: true,   // Mostrar número debajo
-      fontSize: 11,         // Tamaño de fuente legible
+      fontSize: 10,         // Tamaño de fuente legible
       margin: 2,            // Margen interno
       font: "Courier New",
       fontOptions: "bold"
@@ -614,7 +614,7 @@ function imprimirStickerCodigo() {
 
     const ventana = window.open('', '_blank', 'width=400,height=300');
     if (!ventana || ventana.closed) {
-      mostrarToastConsulta('️ El navegador bloqueó la ventana emergente', 'error');
+      mostrarToastConsulta('⚠️ El navegador bloqueó la ventana emergente', 'error');
       return;
     }
 
@@ -624,10 +624,10 @@ function imprimirStickerCodigo() {
 <head>
   <title>Sticker - ${equipo.codigo_barras}</title>
   <style>
-    /* ✅ Configuración exacta para impresora térmica 3nstar RPT006B con etiquetas 80x40mm */
+    /* ✅ Configuración para impresora térmica 3nstar RPT006B con etiquetas 80x40mm */
     @page { 
-      size: 80mm 40mm;  /* Tamaño exacto de la etiqueta */
-      margin: 0;        /* Sin márgenes para aprovechar todo el espacio */
+      size: 80mm 40mm;  /* Ancho x Alto de la etiqueta */
+      margin: 0;
     }
     
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -640,80 +640,81 @@ function imprimirStickerCodigo() {
     }
     
     body { 
-      display: flex; 
-      justify-content: center; 
-      align-items: center; 
-      padding: 1mm;  /* Margen mínimo para evitar cortes */
+      padding: 2mm;  /* Margen seguro para impresora térmica */
     }
     
-    /* ✅ Contenedor del sticker - dimensiones exactas para etiqueta 80x40mm */
+    /* ✅ Contenedor del sticker - orientación NATURAL horizontal */
     .sticker { 
-      width: 78mm;    /* 80mm - 2mm de margen total */
-      height: 38mm;   /* 40mm - 2mm de margen total */
+      width: 76mm;    /* 80mm - 4mm de margen total */
+      height: 36mm;   /* 40mm - 4mm de margen total */
       border: 0.3mm solid #000; 
-      padding: 1mm 1.5mm; 
-      text-align: center; 
+      padding: 1.5mm 2mm; 
       display: flex; 
       flex-direction: column; 
       justify-content: space-between;
       background: white;
+      /* ❌ SIN transform: rotate - orientación natural */
     }
 
-    /* ✅ Nombre de la empresa - compacto pero legible */
+    /* ✅ Layout en dos columnas para aprovechar el ancho */
+    .sticker-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1mm;
+    }
+
     .empresa { 
-      font-size: 5pt; 
+      font-size: 6pt; 
       font-weight: bold; 
       color: #1e3a8a; 
-      line-height: 1; 
-      margin-bottom: 0.5mm;
+      line-height: 1;
     }
     
-    /* ✅ Nombre del equipo - truncado si es muy largo */
     .nombre { 
-      font-size: 5.5pt; 
+      font-size: 6pt; 
       font-weight: bold; 
       line-height: 1.1; 
-      margin-bottom: 0.5mm; 
       overflow: hidden; 
       text-overflow: ellipsis; 
       white-space: nowrap;
+      max-width: 50mm;
     }
     
-    /* ✅ Código de barras - optimizado para lectura con pistola */
+    /* ✅ Código de barras - horizontal, ocupando todo el ancho */
     .barcode { 
-      margin: 0.5mm 0; 
+      margin: 1mm 0; 
       display: flex; 
       justify-content: center; 
       align-items: center;
-      flex: 1;  /* Ocupa el espacio disponible */
     }
     
     .barcode svg { 
-      max-width: 100%; 
+      width: 100%;
+      max-width: 72mm;
       height: auto; 
-      max-height: 20mm;  /* Altura máxima del código */
     }
     
-    /* ✅ Número del código de barras - grande y legible */
+    /* ✅ Número del código de barras - grande y centrado */
     .codigo { 
-      font-size: 8pt; 
+      font-size: 9pt; 
       font-weight: bold; 
       font-family: 'Courier New', monospace; 
-      letter-spacing: 0.2mm; 
-      line-height: 1;
-      margin-top: 0.3mm;
+      letter-spacing: 0.3mm; 
+      text-align: center;
+      margin: 0.5mm 0;
     }
     
-    /* ✅ Información adicional - compacta */
+    /* ✅ Información adicional - en una línea compacta */
     .info { 
-      font-size: 4.5pt; 
+      font-size: 5pt; 
       color: #333; 
-      line-height: 1.1; 
-      margin-top: 0.3mm;
+      text-align: center;
+      line-height: 1.2;
     }
     
     @media print { 
-      body { padding: 1mm; } 
+      body { padding: 2mm; } 
       .sticker { border: 0.2mm solid #000; } 
       .no-print { display: none !important; } 
     }
@@ -721,8 +722,10 @@ function imprimirStickerCodigo() {
 </head>
 <body>
   <div class="sticker">
-    <div class="empresa">EVENTOS D' PRIMERA</div>
-    <div class="nombre">${(equipo.nombre_equipo || '').substring(0, 35)}</div>
+    <div class="sticker-header">
+      <div class="empresa">EVENTOS D' PRIMERA</div>
+      <div class="nombre">${(equipo.nombre_equipo || '').substring(0, 30)}</div>
+    </div>
     <div class="barcode">${barcodeSVG}</div>
     <div class="codigo">${equipo.codigo_barras}</div>
     <div class="info">${equipo.marca || ''}${equipo.modelo ? ' ' + equipo.modelo : ''}${equipo.serial ? ' | S/N: ' + equipo.serial : ''}</div>
