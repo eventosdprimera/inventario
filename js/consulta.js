@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// IMPRIMIR STICKER (GIRADO 90°, MÁS PEQUEÑO, POSICIÓN ORIGINAL)
+// IMPRIMIR STICKER (GIRADO 180°, MÁS PEQUEÑO, POSICIÓN ORIGINAL)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -645,7 +645,7 @@ function imprimirStickerCodigo() {
       padding: 5mm;
     }
 
-    /* ✅ STICKER MÁS PEQUEÑO (65mm x 38mm), GIRADO 90°, POSICIÓN ORIGINAL ESQUINA SUPERIOR IZQUIERDA */
+    /* ✅ STICKER MÁS PEQUEÑO (65mm x 38mm), GIRADO 180°, POSICIÓN ORIGINAL ESQUINA SUPERIOR IZQUIERDA */
     .sticker { 
       width: 65mm; 
       height: 38mm; 
@@ -656,10 +656,10 @@ function imprimirStickerCodigo() {
       flex-direction: column; 
       justify-content: space-between; 
       align-items: center;
-      transform: rotate(90deg); 
+      transform: rotate(180deg); 
       transform-origin: top left; 
-      margin-left: 38mm; 
-      margin-top: 0mm;
+      margin-left: 65mm; 
+      margin-top: 38mm;
       background: white;
       flex-shrink: 0;
     }
