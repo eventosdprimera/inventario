@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// ✅ IMPRIMIR STICKER PARA IMPRESORA TÉRMICA 3NSTAR RPT006B (80x40mm) - SIN ROTACIÓN
+// ✅ IMPRIMIR STICKER PARA 3NSTAR RPT006B (80x40mm) - SOLUCIÓN DEFINITIVA
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -589,7 +589,6 @@ function imprimirStickerCodigo() {
   }
   const equipo = equipoSeleccionadoConsulta;
 
-  // Generar código de barras temporalmente
   const tempDiv = document.createElement('div');
   tempDiv.style.position = 'absolute';
   tempDiv.style.left = '-9999px';
@@ -597,15 +596,14 @@ function imprimirStickerCodigo() {
   document.body.appendChild(tempDiv);
 
   try {
-    // ✅ Configuración optimizada para lectura con pistola y etiqueta 80x40mm
     JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
       format: "CODE128",
-      width: 2,             // Barras más anchas para mejor lectura
-      height: 20,           // Altura del código (mm)
-      displayValue: true,   // Mostrar número debajo
-      fontSize: 10,         // Tamaño de fuente legible
-      margin: 2,            // Margen interno
-      font: "Courier New",
+      width: 1.5,
+      height: 18,
+      displayValue: true,
+      fontSize: 9,
+      margin: 0,
+      font: "Arial",
       fontOptions: "bold"
     });
 
@@ -614,7 +612,7 @@ function imprimirStickerCodigo() {
 
     const ventana = window.open('', '_blank', 'width=400,height=300');
     if (!ventana || ventana.closed) {
-      mostrarToastConsulta('⚠️ El navegador bloqueó la ventana emergente', 'error');
+      mostrarToastConsulta('️ El navegador bloqueó la ventana emergente', 'error');
       return;
     }
 
@@ -624,111 +622,112 @@ function imprimirStickerCodigo() {
 <head>
   <title>Sticker - ${equipo.codigo_barras}</title>
   <style>
-    /* ✅ Configuración para impresora térmica 3nstar RPT006B con etiquetas 80x40mm */
+    /* ✅ Configuración CRÍTICA para impresora térmica de rollo */
     @page { 
-      size: 80mm 40mm;  /* Ancho x Alto de la etiqueta */
+      size: 80mm 40mm;
       margin: 0;
     }
     
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { 
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box;
+    }
     
-    html, body { 
-      width: 80mm; 
-      height: 40mm; 
-      font-family: Arial, sans-serif; 
+    html {
+      width: 80mm;
+      height: 40mm;
       overflow: hidden;
     }
     
     body { 
-      padding: 2mm;  /* Margen seguro para impresora térmica */
+      width: 80mm;
+      height: 40mm;  /* ✅ ALTO EXACTO - CRÍTICO */
+      overflow: hidden;  /* ✅ Evita que crezca */
+      font-family: Arial, sans-serif;
+      padding: 2mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
     
-    /* ✅ Contenedor del sticker - orientación NATURAL horizontal */
-    .sticker { 
-      width: 76mm;    /* 80mm - 4mm de margen total */
-      height: 36mm;   /* 40mm - 4mm de margen total */
-      border: 0.3mm solid #000; 
-      padding: 1.5mm 2mm; 
-      display: flex; 
-      flex-direction: column; 
+    .sticker {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
       justify-content: space-between;
-      background: white;
-      /* ❌ SIN transform: rotate - orientación natural */
     }
 
-    /* ✅ Layout en dos columnas para aprovechar el ancho */
-    .sticker-header {
+    .header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
+      border-bottom: 0.2mm solid #000;
+      padding-bottom: 1mm;
       margin-bottom: 1mm;
     }
 
     .empresa { 
-      font-size: 6pt; 
+      font-size: 5pt; 
       font-weight: bold; 
-      color: #1e3a8a; 
-      line-height: 1;
+      color: #1e3a8a;
     }
     
     .nombre { 
-      font-size: 6pt; 
-      font-weight: bold; 
-      line-height: 1.1; 
-      overflow: hidden; 
-      text-overflow: ellipsis; 
+      font-size: 5pt; 
+      font-weight: bold;
+      text-align: right;
+      max-width: 45mm;
+      overflow: hidden;
+      text-overflow: ellipsis;
       white-space: nowrap;
-      max-width: 50mm;
     }
     
-    /* ✅ Código de barras - horizontal, ocupando todo el ancho */
     .barcode { 
-      margin: 1mm 0; 
       display: flex; 
       justify-content: center; 
       align-items: center;
+      flex: 1;
     }
     
     .barcode svg { 
       width: 100%;
-      max-width: 72mm;
-      height: auto; 
+      max-width: 76mm;
+      height: auto;
     }
     
-    /* ✅ Número del código de barras - grande y centrado */
     .codigo { 
-      font-size: 9pt; 
+      font-size: 8pt; 
       font-weight: bold; 
       font-family: 'Courier New', monospace; 
-      letter-spacing: 0.3mm; 
       text-align: center;
-      margin: 0.5mm 0;
+      letter-spacing: 0.2mm;
     }
     
-    /* ✅ Información adicional - en una línea compacta */
     .info { 
-      font-size: 5pt; 
+      font-size: 4.5pt; 
       color: #333; 
       text-align: center;
-      line-height: 1.2;
+      border-top: 0.2mm solid #000;
+      padding-top: 1mm;
     }
     
     @media print { 
-      body { padding: 2mm; } 
-      .sticker { border: 0.2mm solid #000; } 
+      body { padding: 2mm; }
       .no-print { display: none !important; } 
     }
   </style>
 </head>
 <body>
   <div class="sticker">
-    <div class="sticker-header">
+    <div class="header">
       <div class="empresa">EVENTOS D' PRIMERA</div>
-      <div class="nombre">${(equipo.nombre_equipo || '').substring(0, 30)}</div>
+      <div class="nombre">${(equipo.nombre_equipo || '').substring(0, 25)}</div>
     </div>
     <div class="barcode">${barcodeSVG}</div>
     <div class="codigo">${equipo.codigo_barras}</div>
-    <div class="info">${equipo.marca || ''}${equipo.modelo ? ' ' + equipo.modelo : ''}${equipo.serial ? ' | S/N: ' + equipo.serial : ''}</div>
+    <div class="info">${equipo.marca || ''} ${equipo.modelo || ''}</div>
   </div>
   
   <div class="no-print" style="position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px;">
