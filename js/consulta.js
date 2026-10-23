@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// ✅ IMPRIMIR STICKER - CENTRADO EN HOJA A4 CON STICKERS PRECORTADOS
+// ✅ STICKER PARA ROLLO DE ETIQUETAS 80mm x 40mm (con gap 3mm)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -598,16 +598,16 @@ function imprimirStickerCodigo() {
   try {
     JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
       format: "CODE128",
-      width: 2,
-      height: 50,
+      width: 1.8,
+      height: 40,
       displayValue: false,
-      margin: 5
+      margin: 0
     });
 
     const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
     document.body.removeChild(tempDiv);
 
-    const ventana = window.open('', '_blank', 'width=800,height=600');
+    const ventana = window.open('', '_blank', 'width=400,height=400');
     if (!ventana || ventana.closed) {
       mostrarToastConsulta('⚠️ Permita ventanas emergentes', 'error');
       return;
@@ -616,147 +616,152 @@ function imprimirStickerCodigo() {
     const htmlSticker = `<!DOCTYPE html>
 <html>
 <head>
-  <title>Sticker - ${equipo.codigo_barras}</title>
-  <style>
-    @page {
-      size: A4;
-      margin: 0;
+<meta charset="UTF-8">
+<title>Sticker ${equipo.codigo_barras}</title>
+<style>
+  /* ✅ TAMAÑO EXACTO DE CADA STICKER: 80mm x 40mm */
+  @page {
+    size: 80mm 40mm;
+    margin: 0;
+  }
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  html, body {
+    width: 80mm;
+    height: 40mm;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: white;
+    font-family: Arial, Helvetica, sans-serif;
+    color: black;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* ✅ CONTENEDOR CENTRADO DENTRO DEL CUADRO DE 40mm */
+  .sticker {
+    width: 80mm;
+    height: 40mm;
+    padding: 2mm 3mm;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;  /* ✅ Centrado vertical */
+    text-align: center;
+    gap: 1mm;
+  }
+  
+  /* ✅ EMPRESA */
+  .empresa {
+    font-size: 8pt;
+    font-weight: bold;
+    color: #1e3a8a;
+    text-transform: uppercase;
+    letter-spacing: 0.3mm;
+    line-height: 1;
+  }
+  
+  /* ✅ NOMBRE DEL EQUIPO */
+  .nombre {
+    font-size: 8pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    line-height: 1.1;
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 74mm;
+  }
+  
+  /* ✅ CÓDIGO DE BARRAS */
+  .barcode {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .barcode svg {
+    max-width: 70mm;
+    height: 10mm;
+  }
+  
+  /* ✅ CÓDIGO EN TEXTO */
+  .codigo-texto {
+    font-family: 'Courier New', monospace;
+    font-size: 7pt;
+    font-weight: bold;
+    letter-spacing: 0.3mm;
+    line-height: 1;
+    word-break: break-all;
+    max-width: 74mm;
+  }
+  
+  /* ✅ INFO EXTRA (marca/modelo) */
+  .info-extra {
+    font-size: 6pt;
+    color: #333;
+    line-height: 1;
+    max-width: 74mm;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  
+  /* ✅ BOTONES SOLO EN PANTALLA */
+  .no-print {
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+    display: flex;
+    gap: 8px;
+    z-index: 9999;
+  }
+  
+  .no-print button {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: Arial, sans-serif;
+  }
+  
+  .btn-print { background: #1e3a8a; color: white; }
+  .btn-close { background: #6b7280; color: white; }
+  
+  @media print {
+    .no-print { display: none !important; }
+    html, body {
+      width: 80mm;
+      height: 40mm;
+      margin: 0 !important;
+      padding: 0 !important;
     }
-    
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      width: 210mm;
-      height: 297mm;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-family: Arial, sans-serif;
-      background: white;
-    }
-    
-    /* ✅ STICKER CENTRADO CON DIMENSIONES EXACTAS */
-    .sticker {
-      width: 70mm;
-      height: 35mm;
-      border: 0.3mm solid #000;
-      padding: 3mm 4mm;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      text-align: center;
-      background: white;
-    }
-    
-    /* ✅ EMPRESA ARRIBA */
-    .empresa {
-      font-size: 9pt;
-      font-weight: bold;
-      color: #1e3a8a;
-      text-transform: uppercase;
-      letter-spacing: 0.5mm;
-      margin-bottom: 1mm;
-    }
-    
-    /* ✅ NOMBRE DEL EQUIPO */
-    .nombre {
-      font-size: 10pt;
-      font-weight: bold;
-      color: #000;
-      margin-bottom: 1.5mm;
-      line-height: 1.2;
-    }
-    
-    /* ✅ CÓDIGO DE BARRAS */
-    .barcode {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin: 1mm 0;
-    }
-    
-    .barcode svg {
-      max-width: 62mm;
-      height: auto;
-    }
-    
-    /* ✅ CÓDIGO EN TEXTO GRANDE */
-    .codigo-texto {
-      font-family: 'Courier New', monospace;
-      font-size: 11pt;
-      font-weight: bold;
-      color: #000;
-      letter-spacing: 0.3mm;
-      margin: 1mm 0;
-    }
-    
-    /* ✅ INFO EXTRA ABAJO */
-    .info-extra {
-      font-size: 7pt;
-      color: #333;
-      margin-top: 1mm;
-    }
-    
-    /* ✅ BOTONES SOLO EN PANTALLA */
-    .no-print {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      display: flex;
-      gap: 10px;
-      z-index: 9999;
-    }
-    
-    .no-print button {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-    }
-    
-    .btn-print { background: #1e3a8a; color: white; }
-    .btn-close { background: #6b7280; color: white; }
-    
-    @media print {
-      .no-print { display: none !important; }
-      body {
-        width: 210mm;
-        height: 297mm;
-      }
-    }
-  </style>
+  }
+</style>
 </head>
 <body>
   <div class="sticker">
     <div class="empresa">EVENTOS D' PRIMERA</div>
-    <div class="nombre">${(equipo.nombre_equipo || 'EQUIPO').substring(0, 40)}</div>
+    <div class="nombre">${(equipo.nombre_equipo || 'EQUIPO').substring(0, 35)}</div>
     <div class="barcode">${barcodeSVG}</div>
     <div class="codigo-texto">${equipo.codigo_barras}</div>
-    <div class="info-extra">
-      ${equipo.marca || equipo.modelo ? `${equipo.marca || ''} ${equipo.modelo || ''}` : ''}
-      ${equipo.serial ? ` | S/N: ${equipo.serial}` : ''}
-    </div>
+    <div class="info-extra">${equipo.marca || ''} ${equipo.modelo || ''}</div>
   </div>
   
   <div class="no-print">
-    <button class="btn-print" onclick="window.print()">️ Imprimir Sticker</button>
-    <button class="btn-close" onclick="window.close()"> Cerrar</button>
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
+    <button class="btn-close" onclick="window.close()">❌ Cerrar</button>
   </div>
   
   <script>
     window.onload = function() {
-      setTimeout(function() {
-        window.focus();
-        window.print();
-      }, 500);
+      setTimeout(function() { window.focus(); window.print(); }, 500);
     };
   <\/script>
 </body>
