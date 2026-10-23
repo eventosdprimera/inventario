@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// ✅ IMPRIMIR STICKER - ROLLO ADHESIVO 80mm x 40mm
+// ✅ IMPRIMIR STICKER CON CÓDIGO DE BARRAS (ROTADO 90° DE FORMA ROBUSTA)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -589,6 +589,7 @@ function imprimirStickerCodigo() {
   }
   const equipo = equipoSeleccionadoConsulta;
 
+  // Generar código de barras temporalmente
   const tempDiv = document.createElement('div');
   tempDiv.style.position = 'absolute';
   tempDiv.style.left = '-9999px';
@@ -597,173 +598,86 @@ function imprimirStickerCodigo() {
 
   try {
     JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
-      format: "CODE128",
-      width: 1.5,
-      height: 35,
-      displayValue: false,
-      margin: 0
+      format: "CODE128", width: 1.2, height: 35, displayValue: true,
+      fontSize: 9, margin: 1, font: "Courier New", fontOptions: "bold"
     });
 
     const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
     document.body.removeChild(tempDiv);
 
-    const ventana = window.open('', '_blank', 'width=400,height=400');
+    const ventana = window.open('', '_blank', 'width=400,height=300');
     if (!ventana || ventana.closed) {
-      mostrarToastConsulta('⚠️ Permita ventanas emergentes', 'error');
+      mostrarToastConsulta('⚠️ El navegador bloqueó la ventana emergente', 'error');
       return;
     }
 
-    const htmlSticker = `<!DOCTYPE html>
+    const htmlSticker = `
+<!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Sticker ${equipo.codigo_barras}</title>
-<style>
-  /* ✅ TAMAÑO EXACTO DEL CUADRO DEL ROLLO */
-  @page {
-    size: 80mm 40mm;
-    margin: 0;
-  }
-  
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  
-  html, body {
-    width: 80mm;
-    height: 40mm;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    background: white;
-    font-family: Arial, Helvetica, sans-serif;
-    color: black;
-  }
-  
-  /* ✅ CONTENEDOR CENTRADO DENTRO DEL CUADRO */
-  .sticker {
-    width: 80mm;
-    height: 40mm;
-    padding: 2mm 3mm;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    gap: 1mm;
-  }
-  
-  /* ✅ EMPRESA ARRIBA */
-  .empresa {
-    font-size: 8pt;
-    font-weight: bold;
-    color: #1e3a8a;
-    text-transform: uppercase;
-    letter-spacing: 0.3mm;
-    line-height: 1;
-  }
-  
-  /* ✅ NOMBRE DEL EQUIPO */
-  .nombre {
-    font-size: 8pt;
-    font-weight: bold;
-    text-transform: uppercase;
-    line-height: 1.1;
-    width: 100%;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    max-width: 74mm;
-  }
-  
-  /* ✅ CÓDIGO DE BARRAS */
-  .barcode {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-  }
-  
-  .barcode svg {
-    max-width: 70mm;
-    height: 10mm;
-  }
-  
-  /* ✅ CÓDIGO EN TEXTO */
-  .codigo-texto {
-    font-family: 'Courier New', monospace;
-    font-size: 7pt;
-    font-weight: bold;
-    letter-spacing: 0.3mm;
-    line-height: 1;
-    word-break: break-all;
-    max-width: 74mm;
-  }
-  
-  /* ✅ INFO EXTRA (marca/modelo) */
-  .info-extra {
-    font-size: 6pt;
-    color: #333;
-    line-height: 1;
-    max-width: 74mm;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-  
-  /* ✅ BOTONES SOLO EN PANTALLA */
-  .no-print {
-    position: fixed;
-    bottom: 15px;
-    right: 15px;
-    display: flex;
-    gap: 8px;
-    z-index: 9999;
-  }
-  
-  .no-print button {
-    padding: 10px 18px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: Arial, sans-serif;
-  }
-  
-  .btn-print { background: #1e3a8a; color: white; }
-  .btn-close { background: #6b7280; color: white; }
-  
-  @media print {
-    .no-print { display: none !important; }
-    html, body {
-      width: 80mm;
-      height: 40mm;
-      margin: 0 !important;
-      padding: 0 !important;
+  <title>Sticker - ${equipo.codigo_barras}</title>
+  <style>
+    @page { size: letter; margin: 0; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 216mm; height: 279mm; font-family: Arial, sans-serif; overflow: hidden; }
+    body { display: flex; justify-content: flex-start; align-items: flex-start; padding: 5mm; }
+    
+    /* ✅ ESTILOS OPTIMIZADOS PARA ROTACIÓN DE 90 GRADOS EN ESQUINA SUPERIOR IZQUIERDA */
+    .sticker { 
+      width: 70mm; 
+      height: 35mm; 
+      border: 0.5mm solid #000; 
+      padding: 1.5mm 2mm; 
+      text-align: center; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: space-between; 
+      
+      /* 1. Rotar 90 grados en sentido horario */
+      transform: rotate(90deg); 
+      
+      /* 2. Fijar el punto de rotación en la esquina superior izquierda */
+      transform-origin: top left; 
+      
+      /* 3. Compensación: al rotar, la altura original (35mm) se proyecta hacia el eje X negativo. 
+            Este margen lo empuja 35mm a la derecha, ubicándolo perfectamente alineado */
+      margin-left: 35mm; 
+      margin-top: 0mm; 
+      
+      /* Evitar que se corte entre páginas al imprimir */
+      page-break-inside: avoid;
     }
-  }
-</style>
+
+    .empresa { font-size: 6pt; font-weight: bold; color: #1e3a8a; line-height: 1; margin-bottom: 0.5mm; }
+    .nombre { font-size: 6pt; font-weight: bold; line-height: 1.1; margin-bottom: 0.5mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .barcode { margin: 0.5mm 0; display: flex; justify-content: center; align-items: center; }
+    .barcode svg { max-width: 100%; height: auto; max-height: 12mm; }
+    .codigo { font-size: 7pt; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 0.3mm; line-height: 1; }
+    .info { font-size: 5pt; color: #333; line-height: 1.1; margin-top: 0.3mm; }
+    
+    @media print { 
+      body { padding: 5mm; } 
+      .sticker { border: 0.3mm solid #000; } 
+      .no-print { display: none !important; } 
+    }
+  </style>
 </head>
 <body>
   <div class="sticker">
     <div class="empresa">EVENTOS D' PRIMERA</div>
-    <div class="nombre">${(equipo.nombre_equipo || 'EQUIPO').substring(0, 35)}</div>
+    <div class="nombre">${(equipo.nombre_equipo || '').substring(0, 40)}</div>
     <div class="barcode">${barcodeSVG}</div>
-    <div class="codigo-texto">${equipo.codigo_barras}</div>
-    <div class="info-extra">${equipo.marca || ''} ${equipo.modelo || ''}</div>
+    <div class="codigo">${equipo.codigo_barras}</div>
+    <div class="info">${equipo.marca || ''}${equipo.modelo ? ' ' + equipo.modelo : ''}${equipo.serial ? ' | S/N: ' + equipo.serial : ''}</div>
   </div>
   
-  <div class="no-print">
-    <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
-    <button class="btn-close" onclick="window.close()"> Cerrar</button>
+  <div class="no-print" style="position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px;">
+    <button onclick="window.print()" style="padding: 10px 20px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">🖨️ Imprimir</button>
+    <button onclick="window.close()" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">Cerrar</button>
   </div>
-  
-  <script>
-    window.onload = function() {
-      setTimeout(function() { window.focus(); window.print(); }, 500);
-    };
-  <\/script>
 </body>
-</html>`;
+</html>
+    `;
 
     ventana.document.open();
     ventana.document.write(htmlSticker);
@@ -771,7 +685,7 @@ function imprimirStickerCodigo() {
 
   } catch (err) {
     console.error('❌ Error al generar sticker:', err);
-    mostrarToastConsulta('Error: ' + err.message, 'error');
+    mostrarToastConsulta('Error al generar el sticker: ' + err.message, 'error');
     if (document.body.contains(tempDiv)) document.body.removeChild(tempDiv);
   }
 }
