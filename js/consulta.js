@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// IMPRIMIR STICKER (SIN ESPACIO EN BLANCO ARRIBA)
+// IMPRIMIR STICKER (ALTO EXACTO 40mm - SIN CORTE)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -661,28 +661,27 @@ function imprimirStickerCodigo() {
 <head>
   <title>Sticker</title>
   <style>
+    /* El driver ignora esto pero lo dejamos por si acaso */
     @page { 
-      size: 80mm 297mm; 
+      size: 80mm 40mm; 
       margin: 0;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { 
       width: 80mm; 
-      height: 297mm; 
+      height: 40mm;  /* ← ALTO EXACTO DEL STICKER */
       background: white;
       overflow: hidden;
     }
-    /* ✅ Posicionamiento absoluto para eliminar cualquier espacio */
+    /* Sin posicionamiento negativo - la imagen va en su lugar natural */
     img { 
-      position: absolute;
-      top: 0;
-      left: 0;
       width: 80mm; 
       height: 40mm; 
-      object-fit: contain; 
+      display: block;
     }
     @media print { 
       .no-print { display: none !important; } 
+      @page { margin: 0; }
     }
   </style>
 </head>
