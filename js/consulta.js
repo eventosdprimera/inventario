@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// ✅ STICKER PARA ROLLO DE ETIQUETAS 80mm x 40mm (con gap 3mm)
+// ✅ IMPRIMIR STICKER - ROLLO ADHESIVO 80mm x 40mm
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -598,8 +598,8 @@ function imprimirStickerCodigo() {
   try {
     JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
       format: "CODE128",
-      width: 1.8,
-      height: 40,
+      width: 1.5,
+      height: 35,
       displayValue: false,
       margin: 0
     });
@@ -619,7 +619,7 @@ function imprimirStickerCodigo() {
 <meta charset="UTF-8">
 <title>Sticker ${equipo.codigo_barras}</title>
 <style>
-  /* ✅ TAMAÑO EXACTO DE CADA STICKER: 80mm x 40mm */
+  /* ✅ TAMAÑO EXACTO DEL CUADRO DEL ROLLO */
   @page {
     size: 80mm 40mm;
     margin: 0;
@@ -636,11 +636,9 @@ function imprimirStickerCodigo() {
     background: white;
     font-family: Arial, Helvetica, sans-serif;
     color: black;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
   }
   
-  /* ✅ CONTENEDOR CENTRADO DENTRO DEL CUADRO DE 40mm */
+  /* ✅ CONTENEDOR CENTRADO DENTRO DEL CUADRO */
   .sticker {
     width: 80mm;
     height: 40mm;
@@ -648,12 +646,12 @@ function imprimirStickerCodigo() {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;  /* ✅ Centrado vertical */
+    justify-content: center;
     text-align: center;
     gap: 1mm;
   }
   
-  /* ✅ EMPRESA */
+  /* ✅ EMPRESA ARRIBA */
   .empresa {
     font-size: 8pt;
     font-weight: bold;
@@ -756,7 +754,7 @@ function imprimirStickerCodigo() {
   
   <div class="no-print">
     <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
-    <button class="btn-close" onclick="window.close()">❌ Cerrar</button>
+    <button class="btn-close" onclick="window.close()"> Cerrar</button>
   </div>
   
   <script>
