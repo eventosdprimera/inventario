@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// IMPRIMIR STICKER (COMPATIBLE CON POS-80 80x297mm)
+// IMPRIMIR STICKER (SIN ESPACIO EN BLANCO ARRIBA)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -609,7 +609,6 @@ function imprimirStickerCodigo() {
   const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
   const svgUrl = URL.createObjectURL(svgBlob);
 
-  // Canvas de 80mm x 40mm a 300 DPI
   const canvas = document.createElement('canvas');
   canvas.width = 945;
   canvas.height = 472;
@@ -662,22 +661,22 @@ function imprimirStickerCodigo() {
 <head>
   <title>Sticker</title>
   <style>
-    /* ✅ Usamos el tamaño que YA tiene tu impresora configurado */
     @page { 
       size: 80mm 297mm; 
-      margin: 0; 
+      margin: 0;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
+    html, body { 
       width: 80mm; 
       height: 297mm; 
-      display: flex; 
-      justify-content: flex-start; 
-      align-items: flex-start; 
-      background: white; 
+      background: white;
+      overflow: hidden;
     }
-    /* El sticker se posiciona arriba, el resto queda en blanco */
+    /* ✅ Posicionamiento absoluto para eliminar cualquier espacio */
     img { 
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 80mm; 
       height: 40mm; 
       object-fit: contain; 
