@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// IMPRIMIR STICKER (GIRADO 90°, MÁS PEQUEÑO, PARA TÉRMICA 80MM)
+// IMPRIMIR STICKER (GIRADO 90°, MÁS PEQUEÑO, POSICIÓN ORIGINAL)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -640,13 +640,12 @@ function imprimirStickerCodigo() {
     
     body { 
       display: flex; 
-      flex-direction: column;
       justify-content: flex-start; 
-      align-items: center; 
-      padding-top: 5mm;
+      align-items: flex-start; 
+      padding: 5mm;
     }
 
-    /* ✅ STICKER MÁS PEQUEÑO (65mm x 38mm) Y GIRADO 90° */
+    /* ✅ STICKER MÁS PEQUEÑO (65mm x 38mm), GIRADO 90°, POSICIÓN ORIGINAL ESQUINA SUPERIOR IZQUIERDA */
     .sticker { 
       width: 65mm; 
       height: 38mm; 
@@ -658,7 +657,9 @@ function imprimirStickerCodigo() {
       justify-content: space-between; 
       align-items: center;
       transform: rotate(90deg); 
-      transform-origin: center center; 
+      transform-origin: top left; 
+      margin-left: 38mm; 
+      margin-top: 0mm;
       background: white;
       flex-shrink: 0;
     }
