@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// IMPRIMIR STICKER CON CÓDIGO DE BARRAS (ROTADO 180° Y AGRANDADO)
+// IMPRIMIR STICKER (OPTIMIZADO PARA TÉRMICA 80MM, GIRADO 180° Y AGRANDADO)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -596,16 +596,23 @@ function imprimirStickerCodigo() {
   document.body.appendChild(tempDiv);
 
   try {
-    // ✅ Código de barras un poco más grande y legible
+    // ✅ Ajuste de código de barras para ancho máximo de 74mm
     JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
-      format: "CODE128", width: 1.5, height: 40, displayValue: true,
-      fontSize: 10, margin: 1, font: "Courier New", fontOptions: "bold"
+      format: "CODE128", 
+      width: 1.8,       // Barras un poco más anchas para lectura fácil en térmica
+      height: 40,       // Altura adecuada
+      displayValue: true,
+      fontSize: 12,     // Texto del código más grande
+      margin: 0,        // Sin márgenes internos para aprovechar el espacio
+      font: "Courier New", 
+      fontOptions: "bold",
+      lineColor: "#000000" // Negro puro para térmica
     });
 
     const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
     document.body.removeChild(tempDiv);
 
-    const ventana = window.open('', '_blank', 'width=400,height=300');
+    const ventana = window.open('', '_blank', 'width=400,height=500');
     if (!ventana || ventana.closed) {
       mostrarToastConsulta('⚠️ El navegador bloqueó la ventana emergente', 'error');
       return;
@@ -617,48 +624,112 @@ function imprimirStickerCodigo() {
 <head>
   <title>Sticker - ${equipo.codigo_barras}</title>
   <style>
-    @page { size: letter; margin: 5mm; }
+    /* ✅ CONFIGURACIÓN CRÍTICA PARA IMPRESORA TÉRMICA DE 80MM */
+    @page { 
+      size: 80mm auto; /* Ancho fijo 80mm, alto automático según contenido */
+      margin: 0; 
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 216mm; height: 279mm; font-family: Arial, sans-serif; overflow: hidden; }
-    body { display: flex; justify-content: flex-start; align-items: flex-start; padding: 5mm; }
     
-    /* ✅ GIRADO 180 GRADOS Y AGRANDADO (scale 1.15) */
-    .sticker { 
+    html, body { 
       width: 80mm; 
-      height: 40mm; 
+      font-family: Arial, Helvetica, sans-serif; 
+      overflow: hidden; 
+      background: white;
+    }
+    
+    body { 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      padding: 2mm; /* Margen de seguridad mínimo */
+    }
+
+    /* ✅ STICKER: 74mm de ancho (seguro para 80mm), 45mm de alto, girado 180° */
+    .sticker { 
+      width: 74mm; 
+      height: 45mm; 
       border: 0.5mm solid #000; 
-      padding: 2mm 3mm; 
+      padding: 2mm; 
       text-align: center; 
       display: flex; 
       flex-direction: column; 
       justify-content: space-between; 
-      transform: rotate(180deg) scale(1.15); 
+      align-items: center;
+      transform: rotate(180deg); 
       transform-origin: center center; 
-      margin: 10mm; 
+      background: white;
     }
     
-    /* ✅ Tamaños de fuente aumentados proporcionalmente */
-    .empresa { font-size: 7pt; font-weight: bold; color: #1e3a8a; line-height: 1; margin-bottom: 0.5mm; }
-    .nombre { font-size: 7pt; font-weight: bold; line-height: 1.1; margin-bottom: 0.5mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .barcode { margin: 0.5mm 0; display: flex; justify-content: center; align-items: center; }
-    .barcode svg { max-width: 100%; height: auto; max-height: 14mm; }
-    .codigo { font-size: 8pt; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 0.3mm; line-height: 1; }
-    .info { font-size: 6pt; color: #333; line-height: 1.1; margin-top: 0.3mm; }
-    
-    @media print { body { padding: 5mm; } .sticker { border: 0.3mm solid #000; } .no-print { display: none !important; } }
+    /* ✅ TEXTOS EN NEGRO PURO (óptimo para impresión térmica) y más grandes */
+    .empresa { 
+      font-size: 9pt; 
+      font-weight: 900; 
+      color: #000; 
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 1mm; 
+    }
+    .nombre { 
+      font-size: 8pt; 
+      font-weight: bold; 
+      color: #000;
+      line-height: 1.1; 
+      margin-bottom: 1mm; 
+      max-width: 100%;
+      overflow: hidden; 
+      text-overflow: ellipsis; 
+      white-space: nowrap; 
+    }
+    .barcode { 
+      margin: 1mm 0; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      width: 100%;
+    }
+    .barcode svg { 
+      max-width: 100%; 
+      height: auto; 
+    }
+    .codigo { 
+      font-size: 10pt; 
+      font-weight: 900; 
+      font-family: 'Courier New', monospace; 
+      color: #000;
+      letter-spacing: 0.5mm; 
+      margin-top: 1mm;
+    }
+    .info { 
+      font-size: 7pt; 
+      color: #000; 
+      font-weight: 600;
+      line-height: 1.1; 
+      margin-top: 1mm;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Ocultar botones al imprimir */
+    @media print { 
+      .no-print { display: none !important; } 
+    }
   </style>
 </head>
 <body>
   <div class="sticker">
-    <div class="empresa">EVENTOS D' PRIMERA</div>
-    <div class="nombre">${(equipo.nombre_equipo || '').substring(0, 40)}</div>
+    <div class="empresa">Eventos D' Primera</div>
+    <div class="nombre">${(equipo.nombre_equipo || 'EQUIPO').substring(0, 35).toUpperCase()}</div>
     <div class="barcode">${barcodeSVG}</div>
     <div class="codigo">${equipo.codigo_barras}</div>
-    <div class="info">${equipo.marca || ''}${equipo.modelo ? ' ' + equipo.modelo : ''}${equipo.serial ? ' | S/N: ' + equipo.serial : ''}</div>
+    <div class="info">${equipo.marca || ''}${equipo.modelo ? ' ' + equipo.modelo : ''}${equipo.serial ? ' | ' + equipo.serial : ''}</div>
   </div>
-  <div class="no-print" style="position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px;">
-    <button onclick="window.print()" style="padding: 10px 20px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">🖨️ Imprimir</button>
-    <button onclick="window.close()" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">Cerrar</button>
+  
+  <div class="no-print" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: white; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+    <button onclick="window.print()" style="padding: 10px 20px; background: #000; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">🖨️ IMPRIMIR</button>
+    <button onclick="window.close()" style="padding: 10px 20px; background: #666; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">Cerrar</button>
   </div>
 </body>
 </html>
