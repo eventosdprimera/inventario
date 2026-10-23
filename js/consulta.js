@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// IMPRIMIR STICKER (ROTADO 180°, SIN PAPEL EXTRA, UNA ETIQUETA)
+// IMPRIMIR STICKER (SIN ROTACIÓN, TAMAÑO EXACTO DE ETIQUETA)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -623,33 +623,28 @@ function imprimirStickerCodigo() {
 <head>
   <title>Sticker - ${equipo.codigo_barras}</title>
   <style>
-    /* ✅ TAMAÑO EXACTO DE UNA ETIQUETA - SIN ALTURA EXTRA */
     @page { 
       size: 70mm 40mm;
-      margin: 0; 
+      margin: 0;
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    html { 
+    * { 
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box; 
+    }
+    html, body { 
       width: 70mm; 
       height: 40mm;
       overflow: hidden;
-    }
-    
-    /* ✅ ROTAR TODO EL BODY 180° - así la impresora no avanza espacio vacío */
-    body { 
-      width: 70mm; 
-      height: 40mm;
       font-family: Arial, Helvetica, sans-serif; 
       background: white;
-      transform: rotate(180deg);
-      transform-origin: center center;
+    }
+    body { 
       display: flex; 
       justify-content: center; 
       align-items: center; 
       padding: 2mm;
     }
-
     .sticker { 
       width: 66mm; 
       height: 36mm; 
@@ -662,13 +657,11 @@ function imprimirStickerCodigo() {
       align-items: center;
       background: white;
     }
-    
     .empresa { 
       font-size: 8pt; 
       font-weight: 900; 
       color: #000; 
       text-transform: uppercase;
-      letter-spacing: 0.5px;
       margin-bottom: 0.5mm; 
     }
     .nombre { 
@@ -684,9 +677,6 @@ function imprimirStickerCodigo() {
     }
     .barcode { 
       margin: 0.5mm 0; 
-      display: flex; 
-      justify-content: center; 
-      align-items: center; 
       width: 100%;
     }
     .barcode svg { 
@@ -698,7 +688,6 @@ function imprimirStickerCodigo() {
       font-weight: 900; 
       font-family: 'Courier New', monospace; 
       color: #000;
-      letter-spacing: 0.4mm; 
       margin-top: 0.5mm;
     }
     .info { 
@@ -712,7 +701,6 @@ function imprimirStickerCodigo() {
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-
     @media print { 
       .no-print { display: none !important; } 
     }
