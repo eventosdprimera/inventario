@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// IMPRIMIR STICKER (SIN ROTACIÓN, SIN PAPEL EXTRA, UNO POR ETIQUETA)
+// IMPRIMIR STICKER (ROTADO 180°, SIN PAPEL EXTRA, UNA ETIQUETA)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -596,7 +596,6 @@ function imprimirStickerCodigo() {
   document.body.appendChild(tempDiv);
 
   try {
-    // ✅ Código de barras ajustado
     JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
       format: "CODE128", 
       width: 1.6,       
@@ -624,29 +623,33 @@ function imprimirStickerCodigo() {
 <head>
   <title>Sticker - ${equipo.codigo_barras}</title>
   <style>
-    /* ✅ TAMAÑO DE UNA SOLA ETIQUETA */
+    /* ✅ TAMAÑO EXACTO DE UNA ETIQUETA - SIN ALTURA EXTRA */
     @page { 
       size: 70mm 40mm;
       margin: 0; 
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
-    html, body { 
+    html { 
+      width: 70mm; 
+      height: 40mm;
+      overflow: hidden;
+    }
+    
+    /* ✅ ROTAR TODO EL BODY 180° - así la impresora no avanza espacio vacío */
+    body { 
       width: 70mm; 
       height: 40mm;
       font-family: Arial, Helvetica, sans-serif; 
-      overflow: hidden; 
       background: white;
-    }
-    
-    body { 
+      transform: rotate(180deg);
+      transform-origin: center center;
       display: flex; 
       justify-content: center; 
       align-items: center; 
       padding: 2mm;
     }
 
-    /* ✅ STICKER SIN ROTACIÓN, TAMAÑO REDUCIDO */
     .sticker { 
       width: 66mm; 
       height: 36mm; 
@@ -658,7 +661,6 @@ function imprimirStickerCodigo() {
       justify-content: space-between; 
       align-items: center;
       background: white;
-      flex-shrink: 0;
     }
     
     .empresa { 
