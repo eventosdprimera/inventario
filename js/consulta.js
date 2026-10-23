@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// IMPRIMIR STICKER (VERSIÓN ANTI-ROTACIÓN DE DRIVER)
+// IMPRIMIR STICKER (VERSIÓN FINAL SIN ROTACIÓN CSS)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -589,6 +589,7 @@ function imprimirStickerCodigo() {
   }
   const equipo = equipoSeleccionadoConsulta;
 
+  // 1. Generar código de barras temporalmente
   const tempDiv = document.createElement('div');
   tempDiv.style.position = 'absolute';
   tempDiv.style.left = '-9999px';
@@ -596,13 +597,14 @@ function imprimirStickerCodigo() {
   document.body.appendChild(tempDiv);
 
   try {
+    // ✅ Configuración optimizada para que se lea bien en 80mm de ancho
     JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
       format: "CODE128", 
-      width: 2.0,       
+      width: 2.0,       // Más grueso para lectura fácil
       height: 45,       
       displayValue: true,
       fontSize: 11, 
-      margin: 0,        
+      margin: 0,        // Sin margen interno en el SVG
       font: "Arial", 
       fontOptions: "bold"
     });
@@ -616,13 +618,14 @@ function imprimirStickerCodigo() {
       return;
     }
 
+    // 2. HTML y CSS nativo (SIN transforms que confundan al driver)
     const htmlSticker = `
 <!DOCTYPE html>
 <html>
 <head>
   <title>Sticker - ${equipo.codigo_barras}</title>
   <style>
-    /* ✅ FORZAR TAMAÑO FÍSICO SIN ROTACIÓN CSS */
+    /* ✅ 1. Tamaño físico exacto del papel térmico SIN márgenes del navegador */
     @page { 
       size: 80mm 40mm; 
       margin: 0; 
@@ -630,33 +633,35 @@ function imprimirStickerCodigo() {
     
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
+    /* ✅ 2. Cuerpo con dimensiones exactas y centrado natural */
     body { 
       width: 80mm; 
       height: 40mm; 
       font-family: Arial, Helvetica, sans-serif; 
-      /* Diseño directo, sin transforms que confundan al driver */
       display: flex; 
       flex-direction: column; 
       justify-content: center; 
       align-items: center; 
-      padding: 2mm; 
+      padding: 2mm; /* Único margen de seguridad interno */
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
     
+    /* ✅ 3. El sticker ocupa todo el espacio, sin rotaciones extrañas */
     .sticker { 
       width: 100%; 
       height: 100%;
-      text-align: center; 
       border: 0.3mm solid #000; 
       padding: 2mm 1mm; 
       display: flex; 
       flex-direction: column; 
       justify-content: space-between; 
+      align-items: center;
+      text-align: center;
     }
     
     .empresa { font-size: 8pt; font-weight: 900; color: #000; letter-spacing: 0.5px; }
-    .nombre { font-size: 8pt; font-weight: bold; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 1mm 0; }
+    .nombre { font-size: 8pt; font-weight: bold; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; margin: 1mm 0; }
     .barcode { display: flex; justify-content: center; align-items: center; margin: 1mm 0; }
     .barcode svg { max-width: 95%; height: auto; max-height: 14mm; }
     .codigo { font-size: 10pt; font-weight: 900; font-family: 'Courier New', monospace; letter-spacing: 1px; }
