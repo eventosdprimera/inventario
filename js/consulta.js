@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// ✅ IMPRIMIR STICKER CON CÓDIGO DE BARRAS (ROTADO 90° DE FORMA ROBUSTA)
+// ✅ IMPRIMIR STICKER CON CÓDIGO DE BARRAS (ROTADO 180°)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -622,7 +622,7 @@ function imprimirStickerCodigo() {
     html, body { width: 216mm; height: 279mm; font-family: Arial, sans-serif; overflow: hidden; }
     body { display: flex; justify-content: flex-start; align-items: flex-start; padding: 5mm; }
     
-    /* ✅ ESTILOS OPTIMIZADOS PARA ROTACIÓN DE 90 GRADOS EN ESQUINA SUPERIOR IZQUIERDA */
+    /* ✅ ESTILOS OPTIMIZADOS PARA ROTACIÓN DE 180 GRADOS */
     .sticker { 
       width: 70mm; 
       height: 35mm; 
@@ -633,16 +633,12 @@ function imprimirStickerCodigo() {
       flex-direction: column; 
       justify-content: space-between; 
       
-      /* 1. Rotar 90 grados en sentido horario */
-      transform: rotate(90deg); 
+      /* 1. Rotar 180 grados (boca abajo) */
+      transform: rotate(180deg); 
       
-      /* 2. Fijar el punto de rotación en la esquina superior izquierda */
-      transform-origin: top left; 
-      
-      /* 3. Compensación: al rotar, la altura original (35mm) se proyecta hacia el eje X negativo. 
-            Este margen lo empuja 35mm a la derecha, ubicándolo perfectamente alineado */
-      margin-left: 35mm; 
-      margin-top: 0mm; 
+      /* 2. Usar el centro como punto de giro para que se voltee en su mismo lugar 
+            sin salirse de la esquina superior izquierda */
+      transform-origin: center; 
       
       /* Evitar que se corte entre páginas al imprimir */
       page-break-inside: avoid;
