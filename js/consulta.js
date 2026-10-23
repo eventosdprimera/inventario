@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// ✅ IMPRIMIR STICKER - ROTADO 90° PARA IMPRESORA TÉRMICA 80mm (INSTAR RPT006B)
+// ✅ IMPRIMIR STICKER - OPTIMIZADO TÉRMICA 80mm (SIN DESPERDICIO)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -589,7 +589,7 @@ function imprimirStickerCodigo() {
   }
   const equipo = equipoSeleccionadoConsulta;
 
-  // Generar el código de barras en un SVG temporal
+  // Generar código de barras en SVG temporal
   const tempDiv = document.createElement('div');
   tempDiv.style.position = 'absolute';
   tempDiv.style.left = '-9999px';
@@ -600,7 +600,7 @@ function imprimirStickerCodigo() {
     JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
       format: "CODE128",
       width: 1.5,
-      height: 50,
+      height: 45,
       displayValue: false,
       margin: 0
     });
@@ -608,22 +608,22 @@ function imprimirStickerCodigo() {
     const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
     document.body.removeChild(tempDiv);
 
-    const ventana = window.open('', '_blank', 'width=400,height=600');
+    const ventana = window.open('', '_blank', 'width=400,height=400');
     if (!ventana || ventana.closed) {
-      mostrarToastConsulta('⚠️ El navegador bloqueó la ventana emergente. Permita ventanas emergentes.', 'error');
+      mostrarToastConsulta('⚠️ Permita ventanas emergentes', 'error');
       return;
     }
 
-    // ✅ HTML con rotación de 90 grados para orientación horizontal
+    // ✅ HTML con altura EXACTA para que la impresora corte justo después
     const htmlSticker = `<!DOCTYPE html>
 <html>
 <head>
   <title>Sticker - ${equipo.codigo_barras}</title>
   <style>
-    /* ✅ CONFIGURACIÓN PARA IMPRESORA TÉRMICA 80mm */
+    /* ✅ TAMAÑO EXACTO DEL STICKER - la impresora corta aquí */
     @page {
-      size: 80mm auto;
-      margin: 0;
+      size: 80mm 55mm;    /* Ancho 80mm, Alto 55mm exacto */
+      margin: 0;           /* SIN márgenes - no desperdicia papel */
     }
     
     * { 
@@ -634,41 +634,25 @@ function imprimirStickerCodigo() {
     
     html, body {
       width: 80mm;
+      height: 55mm;         /* Altura exacta */
       font-family: Arial, Helvetica, sans-serif;
       background: white;
       color: black;
+      overflow: hidden;     /* Evita que se extienda */
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
     
-    body {
-      padding: 2mm;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-    }
-    
-    /* ✅ CONTENEDOR ROTADO 90 GRADOS */
-    .sticker-rotado {
-      width: 76mm;
-      height: 50mm;
-      border: 0.3mm dashed #000;
-      padding: 2mm;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      gap: 3mm;
-      transform: rotate(90deg);
-      transform-origin: center center;
-    }
-    
-    /* ✅ SECCIÓN IZQUIERDA: Información */
-    .info-section {
-      flex: 1;
+    /* ✅ Sticker vertical, centrado, sin rotación */
+    .sticker {
+      width: 80mm;
+      height: 55mm;
+      padding: 3mm 4mm;
       display: flex;
       flex-direction: column;
-      gap: 1mm;
+      align-items: center;
+      justify-content: space-between;
+      text-align: center;
     }
     
     .empresa {
@@ -676,27 +660,57 @@ function imprimirStickerCodigo() {
       font-weight: bold;
       color: #000;
       text-transform: uppercase;
-      letter-spacing: 0.3mm;
-      border-bottom: 0.2mm solid #000;
-      padding-bottom: 1mm;
+      letter-spacing: 0.5mm;
+      width: 100%;
+      border-bottom: 0.3mm solid #000;
+      padding-bottom: 1.5mm;
     }
     
     .nombre {
       font-size: 9pt;
       font-weight: bold;
       line-height: 1.2;
+      width: 100%;
       text-transform: uppercase;
       word-wrap: break-word;
+      padding: 1mm 0;
+    }
+    
+    .barcode {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .barcode svg {
+      max-width: 72mm;
+      height: auto;
+    }
+    
+    .codigo-texto {
+      font-size: 8pt;
+      font-weight: bold;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 0.5mm;
+      padding: 0.5mm 0;
+      word-break: break-all;
+      width: 100%;
     }
     
     .info-extra {
       font-size: 7pt;
+      color: #000;
+      width: 100%;
+      border-top: 0.3mm solid #000;
+      padding-top: 1.5mm;
       line-height: 1.3;
-      margin-top: 1mm;
     }
     
     .info-extra .fila {
       display: flex;
+      justify-content: space-between;
+      margin: 0.3mm 0;
       gap: 2mm;
     }
     
@@ -705,37 +719,7 @@ function imprimirStickerCodigo() {
       text-transform: uppercase;
     }
     
-    /* ✅ SECCIÓN DERECHA: Código de barras */
-    .barcode-section {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1mm;
-      min-width: 35mm;
-    }
-    
-    .barcode {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    
-    .barcode svg {
-      max-width: 35mm;
-      height: auto;
-    }
-    
-    .codigo-texto {
-      font-size: 7pt;
-      font-weight: bold;
-      font-family: 'Courier New', monospace;
-      letter-spacing: 0.5mm;
-      text-align: center;
-      word-break: break-all;
-      max-width: 35mm;
-    }
-    
-    /* ✅ Solo visible en pantalla */
+    /* Solo visible en pantalla, NO se imprime */
     .no-print {
       position: fixed;
       bottom: 20px;
@@ -755,66 +739,54 @@ function imprimirStickerCodigo() {
       font-family: Arial, sans-serif;
     }
     
-    .btn-print {
-      background: #1e3a8a;
-      color: white;
-    }
+    .btn-print { background: #1e3a8a; color: white; }
+    .btn-close { background: #6b7280; color: white; }
     
-    .btn-close {
-      background: #6b7280;
-      color: white;
-    }
-    
-    /* ✅ Al imprimir */
+    /* ✅ Al imprimir: solo el sticker, sin nada extra */
     @media print {
-      .no-print { 
-        display: none !important; 
-      }
-      
+      .no-print { display: none !important; }
       html, body {
         width: 80mm;
-        margin: 0;
-        padding: 0;
-      }
-      
-      .sticker-rotado {
-        page-break-after: always;
+        height: 55mm;
+        margin: 0 !important;
+        padding: 0 !important;
       }
     }
   </style>
 </head>
 <body>
-  <div class="sticker-rotado">
-    <!-- SECCIÓN IZQUIERDA: Información -->
-    <div class="info-section">
-      <div class="empresa">EVENTOS D' PRIMERA</div>
-      <div class="nombre">${(equipo.nombre_equipo || 'EQUIPO').substring(0, 40)}</div>
-      <div class="info-extra">
-        ${equipo.marca || equipo.modelo ? `
-        <div class="fila">
-          <span class="label">Modelo:</span>
-          <span>${(equipo.marca || '')} ${(equipo.modelo || '')}</span>
-        </div>
-        ` : ''}
-        ${equipo.serial ? `
-        <div class="fila">
-          <span class="label">Serial:</span>
-          <span>${equipo.serial}</span>
-        </div>
-        ` : ''}
-      </div>
-    </div>
+  <div class="sticker">
+    <!-- 1. Empresa -->
+    <div class="empresa">EVENTOS D' PRIMERA</div>
     
-    <!-- SECCIÓN DERECHA: Código de barras -->
-    <div class="barcode-section">
-      <div class="barcode">${barcodeSVG}</div>
-      <div class="codigo-texto">${equipo.codigo_barras}</div>
+    <!-- 2. Nombre del equipo -->
+    <div class="nombre">${(equipo.nombre_equipo || 'EQUIPO').substring(0, 45)}</div>
+    
+    <!-- 3. Código de barras -->
+    <div class="barcode">${barcodeSVG}</div>
+    
+    <!-- 4. Código en texto -->
+    <div class="codigo-texto">${equipo.codigo_barras}</div>
+    
+    <!-- 5. Info extra compacta -->
+    <div class="info-extra">
+      ${equipo.marca || equipo.modelo ? `
+      <div class="fila">
+        <span class="label">Modelo:</span>
+        <span>${(equipo.marca || '').substring(0,15)} ${(equipo.modelo || '').substring(0,15)}</span>
+      </div>
+      ` : ''}
+      ${equipo.serial ? `
+      <div class="fila">
+        <span class="label">S/N:</span>
+        <span>${equipo.serial.substring(0, 25)}</span>
+      </div>
+      ` : ''}
     </div>
   </div>
   
-  <!-- Botones solo visibles en pantalla -->
   <div class="no-print">
-    <button class="btn-print" onclick="window.print()">🖨️ Imprimir Sticker</button>
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
     <button class="btn-close" onclick="window.close()">❌ Cerrar</button>
   </div>
   
@@ -823,7 +795,7 @@ function imprimirStickerCodigo() {
       setTimeout(function() {
         window.focus();
         window.print();
-      }, 500);
+      }, 400);
     };
   <\/script>
 </body>
@@ -839,7 +811,6 @@ function imprimirStickerCodigo() {
     if (document.body.contains(tempDiv)) document.body.removeChild(tempDiv);
   }
 }
-
 // ==========================================
 // IMPRIMIR FICHA COMPLETA
 // ==========================================
