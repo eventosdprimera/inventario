@@ -579,8 +579,8 @@ function limpiarConsulta() {
   document.getElementById('buscarConsulta').focus();
 }
 
-// ==========================================
-// IMPRIMIR STICKER (GIRADO 180°, MÁS PEQUEÑO, POSICIÓN ORIGINAL)
+/// ==========================================
+// IMPRIMIR STICKER (AJUSTADO PARA ROLLO 2-UP, GIRADO 180°, SIN SOBRESALIR)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -596,13 +596,13 @@ function imprimirStickerCodigo() {
   document.body.appendChild(tempDiv);
 
   try {
-    // ✅ Código de barras ajustado para el nuevo tamaño reducido
+    // ✅ Código de barras ajustado para etiqueta pequeña (~38mm x 25mm)
     JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
       format: "CODE128", 
-      width: 1.6,       
-      height: 35,       
+      width: 1.4,       // Barras más delgadas para que quepa
+      height: 25,       // Altura reducida
       displayValue: true,
-      fontSize: 11,     
+      fontSize: 9,      // Texto más pequeño
       margin: 0,        
       font: "Courier New", 
       fontOptions: "bold",
@@ -614,7 +614,7 @@ function imprimirStickerCodigo() {
 
     const ventana = window.open('', '_blank', 'width=400,height=500');
     if (!ventana || ventana.closed) {
-      mostrarToastConsulta('⚠️ El navegador bloqueó la ventana emergente', 'error');
+      mostrarToastConsulta('️ El navegador bloqueó la ventana emergente', 'error');
       return;
     }
 
@@ -624,15 +624,16 @@ function imprimirStickerCodigo() {
 <head>
   <title>Sticker - ${equipo.codigo_barras}</title>
   <style>
+    /* ✅ TAMAÑO EXACTO DE UNA SOLA ETIQUETA (aprox 40mm x 30mm) */
     @page { 
-      size: 80mm 150mm;
+      size: 40mm 30mm; /* Ancho y alto de UNA sola etiqueta */
       margin: 0; 
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
     html, body { 
-      width: 80mm; 
-      min-height: 150mm;
+      width: 40mm; 
+      height: 30mm;
       font-family: Arial, Helvetica, sans-serif; 
       overflow: hidden; 
       background: white;
@@ -642,49 +643,47 @@ function imprimirStickerCodigo() {
       display: flex; 
       justify-content: flex-start; 
       align-items: flex-start; 
-      padding: 5mm;
+      padding: 1mm; /* Margen mínimo de seguridad */
     }
 
-    /* ✅ STICKER MÁS PEQUEÑO (65mm x 38mm), GIRADO 180°, POSICIÓN ORIGINAL ESQUINA SUPERIOR IZQUIERDA */
+    /* ✅ STICKER AJUSTADO PARA CABER EXACTAMENTE EN UNA ETIQUETA */
     .sticker { 
-      width: 65mm; 
-      height: 38mm; 
-      border: 0.5mm solid #000; 
-      padding: 1.5mm; 
+      width: 38mm;  /* 2mm menos que el ancho de la etiqueta */
+      height: 28mm; /* 2mm menos que el alto de la etiqueta */
+      border: 0.3mm solid #000; 
+      padding: 1mm; 
       text-align: center; 
       display: flex; 
       flex-direction: column; 
       justify-content: space-between; 
       align-items: center;
       transform: rotate(180deg); 
-      transform-origin: top left; 
-      margin-left: 65mm; 
-      margin-top: 38mm;
+      transform-origin: center center; 
       background: white;
       flex-shrink: 0;
     }
     
     .empresa { 
-      font-size: 8pt; 
+      font-size: 7pt; 
       font-weight: 900; 
       color: #000; 
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 0.5mm; 
+      letter-spacing: 0.3px;
+      margin-bottom: 0.3mm; 
     }
     .nombre { 
-      font-size: 7pt; 
+      font-size: 6pt; 
       font-weight: bold; 
       color: #000;
       line-height: 1.1; 
-      margin-bottom: 0.5mm; 
+      margin-bottom: 0.3mm; 
       max-width: 100%;
       overflow: hidden; 
       text-overflow: ellipsis; 
       white-space: nowrap; 
     }
     .barcode { 
-      margin: 0.5mm 0; 
+      margin: 0.3mm 0; 
       display: flex; 
       justify-content: center; 
       align-items: center; 
@@ -695,25 +694,27 @@ function imprimirStickerCodigo() {
       height: auto; 
     }
     .codigo { 
-      font-size: 9pt; 
+      font-size: 8pt; 
       font-weight: 900; 
       font-family: 'Courier New', monospace; 
       color: #000;
-      letter-spacing: 0.4mm; 
-      margin-top: 0.5mm;
+      letter-spacing: 0.3mm; 
+      margin-top: 0.3mm;
     }
     .info { 
-      font-size: 6pt; 
+      font-size: 5pt; 
       color: #000; 
       font-weight: 600;
       line-height: 1.1; 
-      margin-top: 0.5mm;
+      margin-top: 0.3mm;
       max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
+    /* ✅ SIN ESPACIADOR: No queremos que avance a la siguiente etiqueta */
+    
     @media print { 
       .no-print { display: none !important; } 
     }
@@ -722,13 +723,11 @@ function imprimirStickerCodigo() {
 <body>
   <div class="sticker">
     <div class="empresa">Eventos D' Primera</div>
-    <div class="nombre">${(equipo.nombre_equipo || 'EQUIPO').substring(0, 35).toUpperCase()}</div>
+    <div class="nombre">${(equipo.nombre_equipo || 'EQUIPO').substring(0, 30).toUpperCase()}</div>
     <div class="barcode">${barcodeSVG}</div>
     <div class="codigo">${equipo.codigo_barras}</div>
     <div class="info">${equipo.marca || ''}${equipo.modelo ? ' ' + equipo.modelo : ''}${equipo.serial ? ' | ' + equipo.serial : ''}</div>
   </div>
-
-  <div style="height: 50mm; width: 100%;"></div>
   
   <div class="no-print" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: white; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 9999;">
     <button onclick="window.print()" style="padding: 10px 20px; background: #000; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">🖨️ IMPRIMIR</button>
