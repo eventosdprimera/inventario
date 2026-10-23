@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// ✅ IMPRIMIR STICKER - OPTIMIZADO TÉRMICA 80mm (SIN DESPERDICIO)
+// ✅ IMPRIMIR STICKER - HORIZONTAL, DISEÑO ORIGINAL, SIN DESPERDICIO
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -599,8 +599,8 @@ function imprimirStickerCodigo() {
   try {
     JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
       format: "CODE128",
-      width: 1.5,
-      height: 45,
+      width: 1.3,
+      height: 38,
       displayValue: false,
       margin: 0
     });
@@ -608,133 +608,106 @@ function imprimirStickerCodigo() {
     const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
     document.body.removeChild(tempDiv);
 
-    const ventana = window.open('', '_blank', 'width=400,height=400');
+    const ventana = window.open('', '_blank', 'width=400,height=300');
     if (!ventana || ventana.closed) {
       mostrarToastConsulta('⚠️ Permita ventanas emergentes', 'error');
       return;
     }
 
-    // ✅ HTML con altura EXACTA para que la impresora corte justo después
     const htmlSticker = `<!DOCTYPE html>
 <html>
 <head>
   <title>Sticker - ${equipo.codigo_barras}</title>
   <style>
-    /* ✅ TAMAÑO EXACTO DEL STICKER - la impresora corta aquí */
-    @page {
-      size: 80mm 55mm;    /* Ancho 80mm, Alto 55mm exacto */
-      margin: 0;           /* SIN márgenes - no desperdicia papel */
-    }
+    /* ✅ TAMAÑO EXACTO: el papel SOLO avanza 58mm (largo del sticker) */
+    @page { size: 80mm 58mm; margin: 0; }
     
-    * { 
-      margin: 0; 
-      padding: 0; 
-      box-sizing: border-box; 
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     
     html, body {
       width: 80mm;
-      height: 55mm;         /* Altura exacta */
-      font-family: Arial, Helvetica, sans-serif;
+      height: 58mm;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
       background: white;
-      color: black;
-      overflow: hidden;     /* Evita que se extienda */
+      font-family: Arial, Helvetica, sans-serif;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
     
-    /* ✅ Sticker vertical, centrado, sin rotación */
+    /* ✅ STICKER HORIZONTAL (rotado 90°) - DISEÑO ORIGINAL */
     .sticker {
-      width: 80mm;
-      height: 55mm;
-      padding: 3mm 4mm;
+      position: absolute;
+      width: 58mm;    /* lado largo del sticker horizontal */
+      height: 38mm;   /* lado corto del sticker horizontal */
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(90deg);
+      border: 0.5mm solid #000;
+      padding: 2mm 3mm;
+      text-align: center;
       display: flex;
       flex-direction: column;
-      align-items: center;
       justify-content: space-between;
-      text-align: center;
+      background: white;
     }
     
-    .empresa {
-      font-size: 10pt;
+    /* ✅ Diseño original: nombre del equipo */
+    .equipo-nombre {
+      font-size: 11pt;
       font-weight: bold;
+      text-transform: uppercase;
+      line-height: 1.1;
       color: #000;
-      text-transform: uppercase;
-      letter-spacing: 0.5mm;
-      width: 100%;
-      border-bottom: 0.3mm solid #000;
-      padding-bottom: 1.5mm;
     }
     
-    .nombre {
-      font-size: 9pt;
+    /* ✅ Diseño original: código en texto */
+    .codigo-texto {
+      font-family: 'Courier New', monospace;
+      font-size: 8pt;
       font-weight: bold;
-      line-height: 1.2;
-      width: 100%;
-      text-transform: uppercase;
-      word-wrap: break-word;
-      padding: 1mm 0;
+      margin: 0.5mm 0;
+      color: #000;
+      letter-spacing: 0.3mm;
     }
     
+    /* ✅ Barcode centrado */
     .barcode {
-      width: 100%;
       display: flex;
       justify-content: center;
       align-items: center;
+      margin: 0.5mm 0;
     }
     
     .barcode svg {
-      max-width: 72mm;
+      max-width: 52mm;
       height: auto;
     }
     
-    .codigo-texto {
-      font-size: 8pt;
-      font-weight: bold;
-      font-family: 'Courier New', monospace;
-      letter-spacing: 0.5mm;
-      padding: 0.5mm 0;
-      word-break: break-all;
-      width: 100%;
-    }
-    
-    .info-extra {
+    /* ✅ Diseño original: marca y modelo */
+    .info-marca {
       font-size: 7pt;
-      color: #000;
-      width: 100%;
-      border-top: 0.3mm solid #000;
-      padding-top: 1.5mm;
-      line-height: 1.3;
-    }
-    
-    .info-extra .fila {
-      display: flex;
-      justify-content: space-between;
-      margin: 0.3mm 0;
-      gap: 2mm;
-    }
-    
-    .info-extra .label {
-      font-weight: bold;
-      text-transform: uppercase;
+      color: #333;
+      margin-top: 0.5mm;
     }
     
     /* Solo visible en pantalla, NO se imprime */
     .no-print {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: 15px;
+      right: 15px;
       display: flex;
-      gap: 10px;
+      gap: 8px;
       z-index: 9999;
     }
     
     .no-print button {
-      padding: 12px 24px;
+      padding: 10px 20px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       font-family: Arial, sans-serif;
     }
@@ -742,12 +715,12 @@ function imprimirStickerCodigo() {
     .btn-print { background: #1e3a8a; color: white; }
     .btn-close { background: #6b7280; color: white; }
     
-    /* ✅ Al imprimir: solo el sticker, sin nada extra */
+    /* ✅ Al imprimir: forzar tamaño exacto, ocultar botones */
     @media print {
       .no-print { display: none !important; }
       html, body {
         width: 80mm;
-        height: 55mm;
+        height: 58mm;
         margin: 0 !important;
         padding: 0 !important;
       }
@@ -755,36 +728,15 @@ function imprimirStickerCodigo() {
   </style>
 </head>
 <body>
+  <!-- STICKER CON DISEÑO ORIGINAL -->
   <div class="sticker">
-    <!-- 1. Empresa -->
-    <div class="empresa">EVENTOS D' PRIMERA</div>
-    
-    <!-- 2. Nombre del equipo -->
-    <div class="nombre">${(equipo.nombre_equipo || 'EQUIPO').substring(0, 45)}</div>
-    
-    <!-- 3. Código de barras -->
-    <div class="barcode">${barcodeSVG}</div>
-    
-    <!-- 4. Código en texto -->
+    <div class="equipo-nombre">${(equipo.nombre_equipo || 'EQUIPO').substring(0, 40)}</div>
     <div class="codigo-texto">${equipo.codigo_barras}</div>
-    
-    <!-- 5. Info extra compacta -->
-    <div class="info-extra">
-      ${equipo.marca || equipo.modelo ? `
-      <div class="fila">
-        <span class="label">Modelo:</span>
-        <span>${(equipo.marca || '').substring(0,15)} ${(equipo.modelo || '').substring(0,15)}</span>
-      </div>
-      ` : ''}
-      ${equipo.serial ? `
-      <div class="fila">
-        <span class="label">S/N:</span>
-        <span>${equipo.serial.substring(0, 25)}</span>
-      </div>
-      ` : ''}
-    </div>
+    <div class="barcode">${barcodeSVG}</div>
+    <div class="info-marca">${equipo.marca || ''} ${equipo.modelo || ''}</div>
   </div>
   
+  <!-- Botones solo en pantalla -->
   <div class="no-print">
     <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
     <button class="btn-close" onclick="window.close()">❌ Cerrar</button>
