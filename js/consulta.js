@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// IMPRIMIR STICKER (VERSIÓN FINAL SIN ROTACIÓN CSS)
+// IMPRIMIR STICKER (MÉTODO CANVAS A PRUEBA DE DRIVERS)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -589,115 +589,132 @@ function imprimirStickerCodigo() {
   }
   const equipo = equipoSeleccionadoConsulta;
 
-  // 1. Generar código de barras temporalmente
+  // 1. Generar el código de barras como SVG temporal
   const tempDiv = document.createElement('div');
-  tempDiv.style.position = 'absolute';
-  tempDiv.style.left = '-9999px';
-  tempDiv.innerHTML = '<svg id="stickerBarcodeConsulta"></svg>';
+  tempDiv.style.display = 'none';
+  tempDiv.innerHTML = '<svg id="svgBarcodeTemporal"></svg>';
   document.body.appendChild(tempDiv);
 
-  try {
-    // ✅ Configuración optimizada para que se lea bien en 80mm de ancho
-    JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
-      format: "CODE128", 
-      width: 2.0,       // Más grueso para lectura fácil
-      height: 45,       
-      displayValue: true,
-      fontSize: 11, 
-      margin: 0,        // Sin margen interno en el SVG
-      font: "Arial", 
-      fontOptions: "bold"
-    });
+  JsBarcode("#svgBarcodeTemporal", equipo.codigo_barras, {
+    format: "CODE128", 
+    width: 3, 
+    height: 100, 
+    displayValue: true,
+    fontSize: 30, 
+    margin: 0, 
+    font: "Arial", 
+    fontOptions: "bold"
+  });
 
-    const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
+  // Convertir SVG a URL de imagen
+  const svgData = new XMLSerializer().serializeToString(tempDiv.querySelector('svg'));
+  const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+  const svgUrl = URL.createObjectURL(svgBlob);
+
+  // 2. Crear un Canvas de alta resolución (aprox 300 DPI para 80x40mm)
+  // 80mm = ~945 px, 40mm = ~472 px
+  const canvas = document.createElement('canvas');
+  canvas.width = 945;
+  canvas.height = 472;
+  const ctx = canvas.getContext('2d');
+
+  // 3. Dibujar el fondo blanco
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 4. Dibujar borde
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(15, 15, canvas.width - 30, canvas.height - 30);
+
+  // 5. Dibujar textos superiores
+  ctx.fillStyle = '#000000';
+  ctx.textAlign = 'center';
+  
+  ctx.font = 'bold 36px Arial';
+  ctx.fillText("EVENTOS D' PRIMERA", canvas.width / 2, 70);
+
+  ctx.font = 'bold 32px Arial';
+  const nombre = (equipo.nombre_equipo || 'EQUIPO').toUpperCase();
+  const nombreCorto = nombre.length > 30 ? nombre.substring(0, 30) + '...' : nombre;
+  ctx.fillText(nombreCorto, canvas.width / 2, 120);
+
+  // 6. Cargar la imagen del código de barras y dibujarla en el canvas
+  const barcodeImg = new Image();
+  barcodeImg.onload = function() {
+    // Dibujar el código de barras centrado
+    const imgWidth = 700; // Ancho fijo para que quepa bien
+    const imgHeight = (barcodeImg.height / barcodeImg.width) * imgWidth;
+    const x = (canvas.width - imgWidth) / 2;
+    const y = 160;
+    ctx.drawImage(barcodeImg, x, y, imgWidth, imgHeight);
+
+    // 7. Dibujar texto inferior (Info)
+    ctx.font = 'bold 28px Arial';
+    const info = `${equipo.marca || ''} ${equipo.modelo || ''} | S/N: ${equipo.serial || 'N/A'}`;
+    const infoCorto = info.length > 40 ? info.substring(0, 40) + '...' : info;
+    ctx.fillText(infoCorto, canvas.width / 2, canvas.height - 40);
+
+    // 8. Convertir todo el canvas a una sola imagen PNG
+    const imageData = canvas.toDataURL("image/png");
+    
+    // Limpiar elementos temporales
+    URL.revokeObjectURL(svgUrl);
     document.body.removeChild(tempDiv);
 
+    // 9. Abrir ventana de impresión SOLO con la imagen (inmune a rotaciones del driver)
     const ventana = window.open('', '_blank', 'width=400,height=300');
     if (!ventana || ventana.closed) {
       mostrarToastConsulta('⚠️ El navegador bloqueó la ventana emergente', 'error');
       return;
     }
 
-    // 2. HTML y CSS nativo (SIN transforms que confundan al driver)
     const htmlSticker = `
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Sticker - ${equipo.codigo_barras}</title>
+  <title>Sticker</title>
   <style>
-    /* ✅ 1. Tamaño físico exacto del papel térmico SIN márgenes del navegador */
+    /* ✅ Tamaño físico exacto, sin márgenes del navegador */
     @page { 
       size: 80mm 40mm; 
       margin: 0; 
     }
-    
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    /* ✅ 2. Cuerpo con dimensiones exactas y centrado natural */
     body { 
       width: 80mm; 
       height: 40mm; 
-      font-family: Arial, Helvetica, sans-serif; 
       display: flex; 
-      flex-direction: column; 
       justify-content: center; 
       align-items: center; 
-      padding: 2mm; /* Único margen de seguridad interno */
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
+      background: white; 
     }
-    
-    /* ✅ 3. El sticker ocupa todo el espacio, sin rotaciones extrañas */
-    .sticker { 
+    /* La imagen ocupa todo el espacio, el driver no puede distorsionarla */
+    img { 
       width: 100%; 
-      height: 100%;
-      border: 0.3mm solid #000; 
-      padding: 2mm 1mm; 
-      display: flex; 
-      flex-direction: column; 
-      justify-content: space-between; 
-      align-items: center;
-      text-align: center;
+      height: 100%; 
+      object-fit: contain; 
     }
-    
-    .empresa { font-size: 8pt; font-weight: 900; color: #000; letter-spacing: 0.5px; }
-    .nombre { font-size: 8pt; font-weight: bold; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; margin: 1mm 0; }
-    .barcode { display: flex; justify-content: center; align-items: center; margin: 1mm 0; }
-    .barcode svg { max-width: 95%; height: auto; max-height: 14mm; }
-    .codigo { font-size: 10pt; font-weight: 900; font-family: 'Courier New', monospace; letter-spacing: 1px; }
-    .info { font-size: 6.5pt; color: #000; font-weight: 600; margin-top: 1mm; }
-    
     @media print { 
       .no-print { display: none !important; } 
     }
   </style>
 </head>
 <body>
-  <div class="sticker">
-    <div class="empresa">EVENTOS D' PRIMERA</div>
-    <div class="nombre">${(equipo.nombre_equipo || 'EQUIPO').toUpperCase()}</div>
-    <div class="barcode">${barcodeSVG}</div>
-    <div class="codigo">${equipo.codigo_barras}</div>
-    <div class="info">${(equipo.marca || '')} ${equipo.modelo || ''} | S/N: ${equipo.serial || 'N/A'}</div>
-  </div>
-  
+  <img src="${imageData}" alt="Sticker">
   <div class="no-print" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
     <button onclick="window.print()" style="padding: 10px 20px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">🖨️ IMPRIMIR</button>
     <button onclick="window.close()" style="padding: 10px 20px; background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">CANCELAR</button>
   </div>
 </body>
-</html>
-    `;
+</html>`;
 
     ventana.document.open();
     ventana.document.write(htmlSticker);
     ventana.document.close();
-
-  } catch (err) {
-    console.error('❌ Error al generar sticker:', err);
-    mostrarToastConsulta('Error al generar el sticker: ' + err.message, 'error');
-    if (document.body.contains(tempDiv)) document.body.removeChild(tempDiv);
-  }
+  };
+  
+  barcodeImg.src = svgUrl;
 }
 // ==========================================
 // IMPRIMIR FICHA COMPLETA
