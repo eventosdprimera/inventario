@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// IMPRIMIR STICKER (CORREGIDO PARA 80x40 mm SIN DESPLAZAMIENTO)
+// IMPRIMIR STICKER (VERSIÓN ANTI-ROTACIÓN DE DRIVER)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -589,7 +589,6 @@ function imprimirStickerCodigo() {
   }
   const equipo = equipoSeleccionadoConsulta;
 
-  // 1. Generar código de barras temporalmente
   const tempDiv = document.createElement('div');
   tempDiv.style.position = 'absolute';
   tempDiv.style.left = '-9999px';
@@ -599,11 +598,11 @@ function imprimirStickerCodigo() {
   try {
     JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
       format: "CODE128", 
-      width: 2.0,       // Más grueso para lectura fácil en 80mm
-      height: 50,       
+      width: 2.0,       
+      height: 45,       
       displayValue: true,
-      fontSize: 12, 
-      margin: 0,        // Sin margen interno en el SVG
+      fontSize: 11, 
+      margin: 0,        
       font: "Arial", 
       fontOptions: "bold"
     });
@@ -611,21 +610,19 @@ function imprimirStickerCodigo() {
     const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
     document.body.removeChild(tempDiv);
 
-    // 2. Abrir ventana de impresión
     const ventana = window.open('', '_blank', 'width=400,height=300');
     if (!ventana || ventana.closed) {
       mostrarToastConsulta('⚠️ El navegador bloqueó la ventana emergente', 'error');
       return;
     }
 
-    // 3. HTML y CSS optimizado para térmica
     const htmlSticker = `
 <!DOCTYPE html>
 <html>
 <head>
   <title>Sticker - ${equipo.codigo_barras}</title>
   <style>
-    /* ✅ REGLA CRÍTICA: Tamaño exacto y SIN MÁRGENES del navegador */
+    /* ✅ FORZAR TAMAÑO FÍSICO SIN ROTACIÓN CSS */
     @page { 
       size: 80mm 40mm; 
       margin: 0; 
@@ -637,23 +634,25 @@ function imprimirStickerCodigo() {
       width: 80mm; 
       height: 40mm; 
       font-family: Arial, Helvetica, sans-serif; 
-      /* Centrado perfecto sin usar transformaciones */
+      /* Diseño directo, sin transforms que confundan al driver */
       display: flex; 
       flex-direction: column; 
       justify-content: center; 
       align-items: center; 
-      padding: 2mm; /* Único margen de seguridad interno */
+      padding: 2mm; 
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
     }
     
     .sticker { 
       width: 100%; 
+      height: 100%;
       text-align: center; 
       border: 0.3mm solid #000; 
       padding: 2mm 1mm; 
       display: flex; 
       flex-direction: column; 
       justify-content: space-between; 
-      height: 100%;
     }
     
     .empresa { font-size: 8pt; font-weight: 900; color: #000; letter-spacing: 0.5px; }
