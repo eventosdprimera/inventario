@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// ✅ IMPRIMIR STICKER PARA 3NSTAR RPT006B (80x40mm) - SOLUCIÓN DEFINITIVA
+// IMPRIMIR STICKER CON CÓDIGO DE BARRAS (ROTADO 180° Y AGRANDADO)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -596,15 +596,10 @@ function imprimirStickerCodigo() {
   document.body.appendChild(tempDiv);
 
   try {
+    // ✅ Código de barras un poco más grande y legible
     JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
-      format: "CODE128",
-      width: 1.5,
-      height: 18,
-      displayValue: true,
-      fontSize: 9,
-      margin: 0,
-      font: "Arial",
-      fontOptions: "bold"
+      format: "CODE128", width: 1.5, height: 40, displayValue: true,
+      fontSize: 10, margin: 1, font: "Courier New", fontOptions: "bold"
     });
 
     const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
@@ -612,7 +607,7 @@ function imprimirStickerCodigo() {
 
     const ventana = window.open('', '_blank', 'width=400,height=300');
     if (!ventana || ventana.closed) {
-      mostrarToastConsulta('️ El navegador bloqueó la ventana emergente', 'error');
+      mostrarToastConsulta('⚠️ El navegador bloqueó la ventana emergente', 'error');
       return;
     }
 
@@ -622,114 +617,45 @@ function imprimirStickerCodigo() {
 <head>
   <title>Sticker - ${equipo.codigo_barras}</title>
   <style>
-    /* ✅ Configuración CRÍTICA para impresora térmica de rollo */
-    @page { 
-      size: 80mm 40mm;
-      margin: 0;
-    }
+    @page { size: letter; margin: 5mm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 216mm; height: 279mm; font-family: Arial, sans-serif; overflow: hidden; }
+    body { display: flex; justify-content: flex-start; align-items: flex-start; padding: 5mm; }
     
-    * { 
-      margin: 0; 
-      padding: 0; 
-      box-sizing: border-box;
-    }
-    
-    html {
-      width: 80mm;
-      height: 40mm;
-      overflow: hidden;
-    }
-    
-    body { 
-      width: 80mm;
-      height: 40mm;  /* ✅ ALTO EXACTO - CRÍTICO */
-      overflow: hidden;  /* ✅ Evita que crezca */
-      font-family: Arial, sans-serif;
-      padding: 2mm;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    
-    .sticker {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      border-bottom: 0.2mm solid #000;
-      padding-bottom: 1mm;
-      margin-bottom: 1mm;
-    }
-
-    .empresa { 
-      font-size: 5pt; 
-      font-weight: bold; 
-      color: #1e3a8a;
-    }
-    
-    .nombre { 
-      font-size: 5pt; 
-      font-weight: bold;
-      text-align: right;
-      max-width: 45mm;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    
-    .barcode { 
+    /* ✅ GIRADO 180 GRADOS Y AGRANDADO (scale 1.15) */
+    .sticker { 
+      width: 80mm; 
+      height: 40mm; 
+      border: 0.5mm solid #000; 
+      padding: 2mm 3mm; 
+      text-align: center; 
       display: flex; 
-      justify-content: center; 
-      align-items: center;
-      flex: 1;
+      flex-direction: column; 
+      justify-content: space-between; 
+      transform: rotate(180deg) scale(1.15); 
+      transform-origin: center center; 
+      margin: 10mm; 
     }
     
-    .barcode svg { 
-      width: 100%;
-      max-width: 76mm;
-      height: auto;
-    }
+    /* ✅ Tamaños de fuente aumentados proporcionalmente */
+    .empresa { font-size: 7pt; font-weight: bold; color: #1e3a8a; line-height: 1; margin-bottom: 0.5mm; }
+    .nombre { font-size: 7pt; font-weight: bold; line-height: 1.1; margin-bottom: 0.5mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .barcode { margin: 0.5mm 0; display: flex; justify-content: center; align-items: center; }
+    .barcode svg { max-width: 100%; height: auto; max-height: 14mm; }
+    .codigo { font-size: 8pt; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 0.3mm; line-height: 1; }
+    .info { font-size: 6pt; color: #333; line-height: 1.1; margin-top: 0.3mm; }
     
-    .codigo { 
-      font-size: 8pt; 
-      font-weight: bold; 
-      font-family: 'Courier New', monospace; 
-      text-align: center;
-      letter-spacing: 0.2mm;
-    }
-    
-    .info { 
-      font-size: 4.5pt; 
-      color: #333; 
-      text-align: center;
-      border-top: 0.2mm solid #000;
-      padding-top: 1mm;
-    }
-    
-    @media print { 
-      body { padding: 2mm; }
-      .no-print { display: none !important; } 
-    }
+    @media print { body { padding: 5mm; } .sticker { border: 0.3mm solid #000; } .no-print { display: none !important; } }
   </style>
 </head>
 <body>
   <div class="sticker">
-    <div class="header">
-      <div class="empresa">EVENTOS D' PRIMERA</div>
-      <div class="nombre">${(equipo.nombre_equipo || '').substring(0, 25)}</div>
-    </div>
+    <div class="empresa">EVENTOS D' PRIMERA</div>
+    <div class="nombre">${(equipo.nombre_equipo || '').substring(0, 40)}</div>
     <div class="barcode">${barcodeSVG}</div>
     <div class="codigo">${equipo.codigo_barras}</div>
-    <div class="info">${equipo.marca || ''} ${equipo.modelo || ''}</div>
+    <div class="info">${equipo.marca || ''}${equipo.modelo ? ' ' + equipo.modelo : ''}${equipo.serial ? ' | S/N: ' + equipo.serial : ''}</div>
   </div>
-  
   <div class="no-print" style="position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px;">
     <button onclick="window.print()" style="padding: 10px 20px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">🖨️ Imprimir</button>
     <button onclick="window.close()" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">Cerrar</button>
