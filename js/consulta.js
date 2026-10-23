@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// IMPRIMIR STICKER (OPTIMIZADO PARA TÉRMICA 80MM, GIRADO 180° Y AGRANDADO)
+// IMPRIMIR STICKER (OPTIMIZADO PARA TÉRMICA 80MM, GIRADO 180° Y CON AVANCE DE PAPEL)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -596,17 +596,17 @@ function imprimirStickerCodigo() {
   document.body.appendChild(tempDiv);
 
   try {
-    // ✅ Ajuste de código de barras para ancho máximo de 74mm
+    // ✅ Código de barras ajustado para ancho seguro de 74mm
     JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
       format: "CODE128", 
-      width: 1.8,       // Barras un poco más anchas para lectura fácil en térmica
-      height: 40,       // Altura adecuada
+      width: 1.8,       
+      height: 40,       
       displayValue: true,
-      fontSize: 12,     // Texto del código más grande
-      margin: 0,        // Sin márgenes internos para aprovechar el espacio
+      fontSize: 12,     
+      margin: 0,        
       font: "Courier New", 
       fontOptions: "bold",
-      lineColor: "#000000" // Negro puro para térmica
+      lineColor: "#000000"
     });
 
     const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
@@ -624,15 +624,16 @@ function imprimirStickerCodigo() {
 <head>
   <title>Sticker - ${equipo.codigo_barras}</title>
   <style>
-    /* ✅ CONFIGURACIÓN CRÍTICA PARA IMPRESORA TÉRMICA DE 80MM */
+    /* ✅ CONFIGURACIÓN CRÍTICA: Tamaño de página fijo para forzar el avance del papel */
     @page { 
-      size: 80mm auto; /* Ancho fijo 80mm, alto automático según contenido */
+      size: 80mm 150mm; /* Ancho 80mm, Alto 150mm (garantiza que la impresora avance) */
       margin: 0; 
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
     html, body { 
       width: 80mm; 
+      min-height: 150mm; /* Fuerza al navegador a renderizar esta altura mínima */
       font-family: Arial, Helvetica, sans-serif; 
       overflow: hidden; 
       background: white;
@@ -640,12 +641,13 @@ function imprimirStickerCodigo() {
     
     body { 
       display: flex; 
-      justify-content: center; 
+      flex-direction: column;
+      justify-content: flex-start; 
       align-items: center; 
-      padding: 2mm; /* Margen de seguridad mínimo */
+      padding-top: 5mm; /* Pequeño margen inicial */
     }
 
-    /* ✅ STICKER: 74mm de ancho (seguro para 80mm), 45mm de alto, girado 180° */
+    /* ✅ STICKER: 74mm de ancho, 45mm de alto, girado 180° */
     .sticker { 
       width: 74mm; 
       height: 45mm; 
@@ -659,9 +661,9 @@ function imprimirStickerCodigo() {
       transform: rotate(180deg); 
       transform-origin: center center; 
       background: white;
+      flex-shrink: 0; /* Evita que se aplaste */
     }
     
-    /* ✅ TEXTOS EN NEGRO PURO (óptimo para impresión térmica) y más grandes */
     .empresa { 
       font-size: 9pt; 
       font-weight: 900; 
@@ -712,7 +714,6 @@ function imprimirStickerCodigo() {
       white-space: nowrap;
     }
 
-    /* Ocultar botones al imprimir */
     @media print { 
       .no-print { display: none !important; } 
     }
@@ -726,8 +727,12 @@ function imprimirStickerCodigo() {
     <div class="codigo">${equipo.codigo_barras}</div>
     <div class="info">${equipo.marca || ''}${equipo.modelo ? ' ' + equipo.modelo : ''}${equipo.serial ? ' | ' + equipo.serial : ''}</div>
   </div>
+
+  <!-- ✅ ESPACIADOR OBLIGATORIO: Fuerza a la impresora a avanzar 50mm de papel en blanco -->
+  <!-- Esto hace que el sticker salga completamente de la ranura para poder arrancarlo -->
+  <div style="height: 50mm; width: 100%;"></div>
   
-  <div class="no-print" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: white; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+  <div class="no-print" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: white; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 9999;">
     <button onclick="window.print()" style="padding: 10px 20px; background: #000; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">🖨️ IMPRIMIR</button>
     <button onclick="window.close()" style="padding: 10px 20px; background: #666; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">Cerrar</button>
   </div>
