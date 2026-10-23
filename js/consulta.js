@@ -580,7 +580,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// IMPRIMIR STICKER (SIN ROTACIÓN, TAMAÑO EXACTO DE ETIQUETA)
+// IMPRIMIR STICKER CON CÓDIGO DE BARRAS (OPTIMIZADO PARA 80x40 mm)
 // ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -589,6 +589,7 @@ function imprimirStickerCodigo() {
   }
   const equipo = equipoSeleccionadoConsulta;
 
+  // Generar código de barras temporalmente
   const tempDiv = document.createElement('div');
   tempDiv.style.position = 'absolute';
   tempDiv.style.left = '-9999px';
@@ -598,20 +599,19 @@ function imprimirStickerCodigo() {
   try {
     JsBarcode("#stickerBarcodeConsulta", equipo.codigo_barras, {
       format: "CODE128", 
-      width: 1.6,       
-      height: 35,       
+      width: 1.8,       // Un poco más ancho para mejor lectura en 80mm
+      height: 45,       // Altura proporcional
       displayValue: true,
-      fontSize: 11,     
-      margin: 0,        
+      fontSize: 11, 
+      margin: 1, 
       font: "Courier New", 
-      fontOptions: "bold",
-      lineColor: "#000000"
+      fontOptions: "bold"
     });
 
     const barcodeSVG = tempDiv.querySelector('svg').outerHTML;
     document.body.removeChild(tempDiv);
 
-    const ventana = window.open('', '_blank', 'width=400,height=500');
+    const ventana = window.open('', '_blank', 'width=400,height=300');
     if (!ventana || ventana.closed) {
       mostrarToastConsulta('⚠️ El navegador bloqueó la ventana emergente', 'error');
       return;
@@ -623,101 +623,66 @@ function imprimirStickerCodigo() {
 <head>
   <title>Sticker - ${equipo.codigo_barras}</title>
   <style>
-    @page { 
-      size: 70mm 40mm;
-      margin: 0;
-    }
-    * { 
-      margin: 0; 
-      padding: 0; 
-      box-sizing: border-box; 
-    }
+    /* ✅ Tamaño exacto para impresora térmica de 80x40 mm */
+    @page { size: 80mm 40mm; margin: 2mm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
     html, body { 
-      width: 70mm; 
-      height: 40mm;
-      overflow: hidden;
-      font-family: Arial, Helvetica, sans-serif; 
-      background: white;
-    }
-    body { 
+      width: 80mm; 
+      height: 40mm; 
+      font-family: Arial, sans-serif; 
+      overflow: hidden; 
       display: flex; 
       justify-content: center; 
       align-items: center; 
-      padding: 2mm;
     }
+    
     .sticker { 
-      width: 66mm; 
-      height: 36mm; 
+      width: 76mm;   /* 80mm - 4mm de margen total */
+      height: 36mm;  /* 40mm - 4mm de margen total */
       border: 0.5mm solid #000; 
-      padding: 1.5mm; 
+      padding: 2mm; 
       text-align: center; 
       display: flex; 
       flex-direction: column; 
       justify-content: space-between; 
-      align-items: center;
-      background: white;
+      
+      /* 
+        ✅ CONTROL DE ROTACIÓN:
+        - rotate(0deg): Formato horizontal correcto (Recomendado para 80mm de ancho).
+        - rotate(180deg): Usa este si tu impresora lo imprime "cabeza abajo".
+        - rotate(270deg): Usa este SOLO si tu impresora está configurada en modo vertical (40mm de ancho).
+      */
+      transform: rotate(0deg); 
+      transform-origin: center; 
     }
-    .empresa { 
-      font-size: 8pt; 
-      font-weight: 900; 
-      color: #000; 
-      text-transform: uppercase;
-      margin-bottom: 0.5mm; 
-    }
-    .nombre { 
-      font-size: 7pt; 
-      font-weight: bold; 
-      color: #000;
-      line-height: 1.1; 
-      margin-bottom: 0.5mm; 
-      max-width: 100%;
-      overflow: hidden; 
-      text-overflow: ellipsis; 
-      white-space: nowrap; 
-    }
-    .barcode { 
-      margin: 0.5mm 0; 
-      width: 100%;
-    }
-    .barcode svg { 
-      max-width: 100%; 
-      height: auto; 
-    }
-    .codigo { 
-      font-size: 9pt; 
-      font-weight: 900; 
-      font-family: 'Courier New', monospace; 
-      color: #000;
-      margin-top: 0.5mm;
-    }
-    .info { 
-      font-size: 6pt; 
-      color: #000; 
-      font-weight: 600;
-      line-height: 1.1; 
-      margin-top: 0.5mm;
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+    
+    .empresa { font-size: 7pt; font-weight: bold; color: #1e3a8a; line-height: 1; margin-bottom: 1mm; }
+    .nombre { font-size: 7pt; font-weight: bold; line-height: 1.1; margin-bottom: 1mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .barcode { margin: 1mm 0; display: flex; justify-content: center; align-items: center; }
+    .barcode svg { max-width: 100%; height: auto; max-height: 15mm; }
+    .codigo { font-size: 9pt; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 0.5mm; line-height: 1; }
+    .info { font-size: 6pt; color: #333; line-height: 1.1; margin-top: 1mm; }
+    
     @media print { 
+      body { padding: 0; } 
+      .sticker { border: 0.3mm solid #000; } 
       .no-print { display: none !important; } 
     }
   </style>
 </head>
 <body>
   <div class="sticker">
-    <div class="empresa">Eventos D' Primera</div>
-    <div class="nombre">${(equipo.nombre_equipo || 'EQUIPO').substring(0, 35).toUpperCase()}</div>
+    <div class="empresa">EVENTOS D' PRIMERA</div>
+    <div class="nombre">${(equipo.nombre_equipo || '').substring(0, 40)}</div>
     <div class="barcode">${barcodeSVG}</div>
     <div class="codigo">${equipo.codigo_barras}</div>
-    <div class="info">${equipo.marca || ''}${equipo.modelo ? ' ' + equipo.modelo : ''}${equipo.serial ? ' | ' + equipo.serial : ''}</div>
+    <div class="info">${equipo.marca || ''}${equipo.modelo ? ' ' + equipo.modelo : ''}${equipo.serial ? ' | S/N: ' + equipo.serial : ''}</div>
   </div>
   
-  <div class="no-print" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: white; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 9999;">
-    <button onclick="window.print()" style="padding: 10px 20px; background: #000; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">🖨️ IMPRIMIR</button>
-    <button onclick="window.close()" style="padding: 10px 20px; background: #666; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">Cerrar</button>
+  <div class="no-print" style="position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px;">
+    <button onclick="window.print()" style="padding: 10px 20px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">🖨️ Imprimir</button>
+    <button onclick="window.close()" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">Cerrar</button>
   </div>
 </body>
 </html>
