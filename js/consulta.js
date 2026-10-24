@@ -580,19 +580,28 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// IMPRIMIR STICKER CON QZ TRAY (COMANDOS DIRECTOS)
+// IMPRIMIR STICKER CON QZ TRAY
 // ==========================================
 async function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
     mostrarToastConsulta('No hay equipo seleccionado', 'error');
     return;
   }
+
+  // Verificar que QZ Tray esté disponible
+  if (typeof qz === 'undefined') {
+    mostrarToastConsulta('❌ QZ Tray no está cargado. Agrega el script en el HTML.', 'error');
+    console.error('QZ Tray no está definido. Agrega: <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.4/qz-tray.min.js"><\/script>');
+    return;
+  }
+
   const equipo = equipoSeleccionadoConsulta;
 
   try {
     // 1. Conectar a QZ Tray
     if (!qz.websocket.isActive()) {
       await qz.websocket.connect();
+      console.log('✅ Conectado a QZ Tray');
     }
 
     // 2. Generar código de barras como SVG
@@ -615,21 +624,20 @@ async function imprimirStickerCodigo() {
     const svgData = new XMLSerializer().serializeToString(tempDiv.querySelector('svg'));
     document.body.removeChild(tempDiv);
 
-    // 3. Configurar impresora para etiquetas 80mm x 40mm con gap
+    // 3. Configurar impresora
     const config = qz.configs.create("POS-80", {
       name: "POS-80",
-      width: 80,      // 80mm de ancho
-      height: 40,     // 40mm de alto
+      width: 80,
+      height: 40,
       units: "mm",
       dpi: 203,
       density: 14,
-      thickness: 0,
       margins: 0,
-      gap: 3,         // Gap de 3mm entre etiquetas
-      cut: true       // Corte automático
+      gap: 3,
+      cut: true
     });
 
-    // 4. Crear contenido HTML del sticker
+    // 4. Contenido HTML
     const htmlContent = `
       <div style="width: 80mm; height: 40mm; text-align: center; font-family: Arial; padding: 2mm;">
         <div style="font-size: 14px; font-weight: bold; margin-bottom: 2mm;">EVENTOS D' PRIMERA</div>
@@ -640,7 +648,7 @@ async function imprimirStickerCodigo() {
       </div>
     `;
 
-    // 5. Enviar a imprimir
+    // 5. Imprimir
     const data = [{ type: 'qz.html', data: htmlContent }];
     await qz.print(config, data);
 
@@ -648,10 +656,9 @@ async function imprimirStickerCodigo() {
 
   } catch (err) {
     console.error('Error al imprimir:', err);
-    mostrarToastConsulta('Error al imprimir: ' + err.message, 'error');
+    mostrarToastConsulta('Error: ' + err.message, 'error');
   } finally {
-    // Desconectar QZ Tray
-    if (qz.websocket.isActive()) {
+    if (qz.websocket && qz.websocket.isActive()) {
       await qz.websocket.disconnect();
     }
   }
