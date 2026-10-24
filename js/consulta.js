@@ -579,132 +579,82 @@ function limpiarConsulta() {
   document.getElementById('buscarConsulta').focus();
 }
 
-function imprimirStickerCodigo() {
+// ==========================================
+// IMPRIMIR STICKER CON QZ TRAY (COMANDOS DIRECTOS)
+// ==========================================
+async function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
     mostrarToastConsulta('No hay equipo seleccionado', 'error');
     return;
   }
   const equipo = equipoSeleccionadoConsulta;
 
-  const tempDiv = document.createElement('div');
-  tempDiv.style.display = 'none';
-  tempDiv.innerHTML = '<svg id="svgBarcodeTemporal"></svg>';
-  document.body.appendChild(tempDiv);
+  try {
+    // 1. Conectar a QZ Tray
+    if (!qz.websocket.isActive()) {
+      await qz.websocket.connect();
+    }
 
-  JsBarcode("#svgBarcodeTemporal", equipo.codigo_barras, {
-    format: "CODE128", 
-    width: 2, 
-    height: 80, 
-    displayValue: true,
-    fontSize: 24, 
-    margin: 0, 
-    font: "Arial", 
-    fontOptions: "bold"
-  });
+    // 2. Generar código de barras como SVG
+    const tempDiv = document.createElement('div');
+    tempDiv.style.display = 'none';
+    tempDiv.innerHTML = '<svg id="svgBarcodeTemporal"></svg>';
+    document.body.appendChild(tempDiv);
 
-  const svgData = new XMLSerializer().serializeToString(tempDiv.querySelector('svg'));
-  const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-  const svgUrl = URL.createObjectURL(svgBlob);
+    JsBarcode("#svgBarcodeTemporal", equipo.codigo_barras, {
+      format: "CODE128", 
+      width: 2, 
+      height: 80, 
+      displayValue: true,
+      fontSize: 24, 
+      margin: 0, 
+      font: "Arial", 
+      fontOptions: "bold"
+    });
 
-  const canvas = document.createElement('canvas');
-  canvas.width = 945;
-  canvas.height = 472;
-  const ctx = canvas.getContext('2d');
-
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.strokeStyle = '#000000';
-  ctx.lineWidth = 3;
-  ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
-
-  ctx.fillStyle = '#000000';
-  ctx.textAlign = 'center';
-  
-  ctx.font = 'bold 32px Arial';
-  ctx.fillText("EVENTOS D' PRIMERA", canvas.width / 2, 60);
-
-  ctx.font = 'bold 28px Arial';
-  const nombre = (equipo.nombre_equipo || 'EQUIPO').toUpperCase();
-  const nombreCorto = nombre.length > 25 ? nombre.substring(0, 25) + '...' : nombre;
-  ctx.fillText(nombreCorto, canvas.width / 2, 100);
-
-  const barcodeImg = new Image();
-  barcodeImg.onload = function() {
-    const imgWidth = 750;
-    const imgHeight = (barcodeImg.height / barcodeImg.width) * imgWidth;
-    const x = (canvas.width - imgWidth) / 2;
-    const y = 130;
-    ctx.drawImage(barcodeImg, x, y, imgWidth, imgHeight);
-
-    ctx.font = 'bold 24px Arial';
-    const info = `${equipo.marca || ''} ${equipo.modelo || ''} | S/N: ${equipo.serial || 'N/A'}`;
-    const infoCorto = info.length > 35 ? info.substring(0, 35) + '...' : info;
-    ctx.fillText(infoCorto, canvas.width / 2, canvas.height - 30);
-
-    const imageData = canvas.toDataURL("image/png");
-    URL.revokeObjectURL(svgUrl);
+    const svgData = new XMLSerializer().serializeToString(tempDiv.querySelector('svg'));
     document.body.removeChild(tempDiv);
 
-    const ventana = window.open('', '_blank', 'width=400,height=300');
-    if (!ventana || ventana.closed) {
-      mostrarToastConsulta('⚠️ El navegador bloqueó la ventana emergente', 'error');
-      return;
-    }
+    // 3. Configurar impresora para etiquetas 80mm x 40mm con gap
+    const config = qz.configs.create("POS-80", {
+      name: "POS-80",
+      width: 80,      // 80mm de ancho
+      height: 40,     // 40mm de alto
+      units: "mm",
+      dpi: 203,
+      density: 14,
+      thickness: 0,
+      margins: 0,
+      gap: 3,         // Gap de 3mm entre etiquetas
+      cut: true       // Corte automático
+    });
 
-    // ✅ ROTAR 90 GRADOS PARA COMPENSAR LA ORIENTACIÓN DE LA IMPRESORA
-    const htmlSticker = `
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Sticker</title>
-  <style>
-    @page { 
-      size: 40mm 80mm; 
-      margin: 0;
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      width: 40mm; 
-      height: 80mm; 
-      background: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .sticker-rotated {
-      width: 80mm;
-      height: 40mm;
-      transform: rotate(90deg);
-      transform-origin: center;
-    }
-    img { 
-      width: 80mm; 
-      height: 40mm; 
-      display: block;
-    }
-    @media print { 
-      .no-print { display: none !important; } 
-    }
-  </style>
-</head>
-<body>
-  <div class="sticker-rotated">
-    <img src="${imageData}" alt="Sticker">
-  </div>
-  <div class="no-print" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-    <button onclick="window.print()" style="padding: 10px 20px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">🖨️ IMPRIMIR</button>
-    <button onclick="window.close()" style="padding: 10px 20px; background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">CANCELAR</button>
-  </div>
-</body>
-</html>`;
+    // 4. Crear contenido HTML del sticker
+    const htmlContent = `
+      <div style="width: 80mm; height: 40mm; text-align: center; font-family: Arial; padding: 2mm;">
+        <div style="font-size: 14px; font-weight: bold; margin-bottom: 2mm;">EVENTOS D' PRIMERA</div>
+        <div style="font-size: 12px; font-weight: bold; margin-bottom: 2mm;">${(equipo.nombre_equipo || 'EQUIPO').toUpperCase()}</div>
+        <div style="margin: 2mm 0;">${svgData}</div>
+        <div style="font-size: 11px; font-weight: bold;">${equipo.codigo_barras}</div>
+        <div style="font-size: 9px; margin-top: 1mm;">${equipo.marca || ''} ${equipo.modelo || ''} | S/N: ${equipo.serial || 'N/A'}</div>
+      </div>
+    `;
 
-    ventana.document.open();
-    ventana.document.write(htmlSticker);
-    ventana.document.close();
-  };
-  
-  barcodeImg.src = svgUrl;
+    // 5. Enviar a imprimir
+    const data = [{ type: 'qz.html', data: htmlContent }];
+    await qz.print(config, data);
+
+    mostrarToastConsulta('✅ Sticker impreso correctamente', 'exito');
+
+  } catch (err) {
+    console.error('Error al imprimir:', err);
+    mostrarToastConsulta('Error al imprimir: ' + err.message, 'error');
+  } finally {
+    // Desconectar QZ Tray
+    if (qz.websocket.isActive()) {
+      await qz.websocket.disconnect();
+    }
+  }
 }
 // ==========================================
 // IMPRIMIR FICHA COMPLETA
