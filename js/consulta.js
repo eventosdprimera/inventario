@@ -50,7 +50,6 @@ function inyectarEstilosConsulta() {
     .foto-preview-consulta img { width: 100%; height: 100%; object-fit: cover; }
     .foto-preview-placeholder { text-align: center; color: #9ca3af; font-size: 11px; padding: 30px; grid-column: 1 / -1; }
     .foto-preview-placeholder-icon { font-size: 40px; margin-bottom: 8px; }
-    /* ✅ NUEVO: Skeleton loader para carga rápida */
     .skeleton-row td { padding: 14px 12px; }
     .skeleton-bar { height: 14px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
@@ -61,9 +60,9 @@ function inyectarEstilosConsulta() {
 }
 
 // ==========================================
-// CARGAR FOTOS
+// CARGAR FOTOS (✅ CORREGIDO: Se agregó "async function")
 // ==========================================
-cargarFotosConsulta(equipo) {
+async function cargarFotosConsulta(equipo) {
   const contenedor = document.getElementById('consultaFotos');
   contenedor.innerHTML = '';
   contenedor.className = 'fotos-grid-consulta';
@@ -154,72 +153,56 @@ function cerrarZoomInfalibleConsulta() {
 // INICIALIZACIÓN
 // ==========================================
 async function inicializarConsulta() {
-  // Inyectar estilos primero
   inyectarEstilosConsulta();
-
   let intentos = 0;
   while (typeof supabaseClient === 'undefined' && intentos < 50) {
     await new Promise(resolve => setTimeout(resolve, 100));
     intentos++;
   }
-
   if (typeof supabaseClient === 'undefined') {
     mostrarToastConsulta('Error: Supabase no está disponible', 'error');
     return;
   }
-
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
     const { data } = await supabaseClient.from('usuarios').select('*').eq('email', session.user.email).maybeSingle();
     usuarioActualConsulta = data || { email: session.user.email, id: session.user.id, rol: 'consultor' };
   }
-
   const inputBusqueda = document.getElementById('buscarConsulta');
   if (inputBusqueda) {
-    // ✅ Forzar MAYÚSCULAS en tiempo real (para el lector USB)
     inputBusqueda.addEventListener('input', (e) => {
       const cursorPos = e.target.selectionStart;
       e.target.value = e.target.value.toUpperCase();
       e.target.setSelectionRange(cursorPos, cursorPos);
     });
-
-    // ✅ Detectar Enter para buscar (el lector USB envía Enter automáticamente)
     inputBusqueda.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
         buscarEquipoConsulta();
       }
     });
-
-    // ✅ Auto-focus para que el lector funcione inmediatamente
     setTimeout(() => inputBusqueda.focus(), 100);
   }
-
   const filtroEstatus = document.getElementById('filtroEstatus');
   const filtroFechaInicio = document.getElementById('filtroFechaInicio');
   const filtroFechaFin = document.getElementById('filtroFechaFin');
   if (filtroEstatus) filtroEstatus.addEventListener('change', () => { paginaActualConsulta = 1; aplicarFiltrosYRenderizar(); });
   if (filtroFechaInicio) filtroFechaInicio.addEventListener('change', () => { paginaActualConsulta = 1; aplicarFiltrosYRenderizar(); });
   if (filtroFechaFin) filtroFechaFin.addEventListener('change', () => { paginaActualConsulta = 1; aplicarFiltrosYRenderizar(); });
-
   await cargarListaEquipos();
 }
 
 // ==========================================
-// ✅ DETERMINAR ESTATUS OPTIMIZADO (3 consultas EN PARALELO)
+// DETERMINAR ESTATUS OPTIMIZADO
 // ==========================================
 async function determinarEstatus(codigoBarras) {
   let estatus = 'operativo';
   let infoAdicional = null;
-
-  // ✅ EJECUTAR LAS 3 CONSULTAS EN PARALELO (no secuenciales)
   const [averiaResult, rentaResult, equipoResult] = await Promise.all([
     supabaseClient.from('equipos_averiados').select('*').eq('codigo_barras', codigoBarras).neq('estado_reparacion', 'reintegrado').maybeSingle(),
     verificarSiEstaRentado(codigoBarras),
     supabaseClient.from('equipos').select('estatus').eq('codigo_barras', codigoBarras).maybeSingle()
   ]);
-
-  // 1. ¿Está averiado?
   const averiaActiva = averiaResult.data;
   if (averiaActiva && !averiaResult.error) {
     estatus = 'averiado';
@@ -235,8 +218,6 @@ async function determinarEstatus(codigoBarras) {
     };
     return { estatus, infoAdicional };
   }
-
-  // 2. ¿Está rentado?
   const { estaRentado, renta, item } = rentaResult;
   if (estaRentado && renta) {
     estatus = 'rentado';
@@ -255,8 +236,6 @@ async function determinarEstatus(codigoBarras) {
     };
     return { estatus, infoAdicional };
   }
-
-  // 3. Estatus normal de la tabla equipos
   if (equipoResult.data) {
     estatus = equipoResult.data.estatus || 'operativo';
   }
@@ -268,23 +247,11 @@ async function determinarEstatus(codigoBarras) {
 // ==========================================
 async function verificarSiEstaRentado(codigoBarras) {
   try {
-    const { data: itemsRenta, error: errorItems } = await supabaseClient
-      .from('rentas_items')
-      .select('renta_id, cantidad, precio_unitario')
-      .eq('codigo_barras', codigoBarras);
-    if (errorItems || !itemsRenta || itemsRenta.length === 0) {
-      return { estaRentado: false, renta: null, item: null };
-    }
+    const { data: itemsRenta, error: errorItems } = await supabaseClient.from('rentas_items').select('renta_id, cantidad, precio_unitario').eq('codigo_barras', codigoBarras);
+    if (errorItems || !itemsRenta || itemsRenta.length === 0) return { estaRentado: false, renta: null, item: null };
     for (const item of itemsRenta) {
-      const { data: renta, error: errorRenta } = await supabaseClient
-        .from('rentas')
-        .select('*')
-        .eq('id', item.renta_id)
-        .eq('estado', 'activa')
-        .maybeSingle();
-      if (!errorRenta && renta) {
-        return { estaRentado: true, renta: renta, item: item };
-      }
+      const { data: renta, error: errorRenta } = await supabaseClient.from('rentas').select('*').eq('id', item.renta_id).eq('estado', 'activa').maybeSingle();
+      if (!errorRenta && renta) return { estaRentado: true, renta: renta, item: item };
     }
     return { estaRentado: false, renta: null, item: null };
   } catch (err) {
@@ -294,7 +261,7 @@ async function verificarSiEstaRentado(codigoBarras) {
 }
 
 // ==========================================
-// BUSCAR EQUIPO (CASE-INSENSITIVE)
+// BUSCAR EQUIPO
 // ==========================================
 async function buscarEquipoConsulta() {
   const input = document.getElementById('buscarConsulta');
@@ -304,40 +271,23 @@ async function buscarEquipoConsulta() {
     mostrarToastConsulta('Por favor ingrese un código de barras o serial', 'error');
     return;
   }
-
-  // ✅ Sanitizar y convertir a MAYÚSCULAS
   codigo = codigo.replace(/'/g, '-').replace(/"/g, '-').replace(/`/g, '-').trim().toUpperCase();
-  input.value = codigo; // ✅ Actualizar el input con mayúsculas
-
+  input.value = codigo;
   try {
-    // ✅ Primero buscar por código de barras (case-insensitive)
-    let { data: equipo, error } = await supabaseClient
-      .from('equipos')
-      .select('*')
-      .ilike('codigo_barras', codigo)  // ✅ ilike = case-insensitive
-      .maybeSingle();
-
-    // ✅ Si no encontró por código, buscar por serial (case-insensitive)
+    let { data: equipo, error } = await supabaseClient.from('equipos').select('*').ilike('codigo_barras', codigo).maybeSingle();
     if (!equipo && !error) {
-      const resultado = await supabaseClient
-        .from('equipos')
-        .select('*')
-        .ilike('serial', codigo)  // ✅ ilike = case-insensitive
-        .maybeSingle();
+      const resultado = await supabaseClient.from('equipos').select('*').ilike('serial', codigo).maybeSingle();
       equipo = resultado.data;
       error = resultado.error;
     }
-
     if (error || !equipo) {
       mostrarToastConsulta('Equipo no encontrado', 'error');
       input.value = '';
       input.focus();
       return;
     }
-
     equipoSeleccionadoConsulta = equipo;
     const { estatus, infoAdicional } = await determinarEstatus(equipo.codigo_barras);
-
     document.getElementById('consultaCodigo').textContent = equipo.codigo_barras || '-';
     document.getElementById('consultaNombre').textContent = equipo.nombre_equipo || '-';
     document.getElementById('consultaMarca').textContent = equipo.marca || '-';
@@ -345,10 +295,7 @@ async function buscarEquipoConsulta() {
     document.getElementById('consultaSerial').textContent = equipo.serial || '-';
     document.getElementById('consultaCosto').textContent = equipo.costo ? `$${parseFloat(equipo.costo).toFixed(2)}` : '$0.00';
     document.getElementById('consultaMedida').textContent = equipo.medida_valor ? `${equipo.medida_valor} ${equipo.medida_unidad || ''}` : '-';
-
-    const estatusBadge = `<span class="badge badge-${estatus}">${estatus.toUpperCase()}</span>`;
-    document.getElementById('consultaEstatus').innerHTML = estatusBadge;
-
+    document.getElementById('consultaEstatus').innerHTML = `<span class="badge badge-${estatus}">${estatus.toUpperCase()}</span>`;
     const infoDiv = document.getElementById('infoAdicional');
     if (infoAdicional) {
       infoDiv.innerHTML = `
@@ -362,19 +309,15 @@ async function buscarEquipoConsulta() {
               </div>
             `).join('')}
           </div>
-        </div>
-      `;
+        </div>`;
     } else {
       infoDiv.innerHTML = '<p style="color: #065f46; font-size: 14px; text-align: center; padding: 20px; background: #d1fae5; border-radius: 8px; font-weight: 600;">✅ Este equipo está disponible (no está rentado ni averiado).</p>';
     }
-
     await cargarFotosConsulta(equipo);
-
     document.getElementById('btnImprimirSticker').style.display = 'inline-block';
     document.getElementById('btnImprimirFicha').style.display = 'inline-block';
     document.getElementById('fieldsetFichaConsulta').style.display = 'block';
     document.getElementById('fieldsetFichaConsulta').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
     if (typeof registrarLog === 'function') {
       await registrarLog('consulta', 'Equipo consultado', `Código: ${equipo.codigo_barras} (${equipo.nombre_equipo}) | Estatus: ${estatus} | Consultado por: ${usuarioActualConsulta?.email || 'Desconocido'}`, 'info');
     }
@@ -383,14 +326,13 @@ async function buscarEquipoConsulta() {
     mostrarToastConsulta('Error al buscar: ' + err.message, 'error');
   }
 }
+
 // ==========================================
-// ✅ CARGAR LISTA DE EQUIPOS (OPTIMIZADO CON PAGINACIÓN REAL)
+// CARGAR LISTA DE EQUIPOS
 // ==========================================
 async function cargarListaEquipos() {
   const tbody = document.getElementById('tbodyEquipos');
   if (!tbody) return;
-
-  // ✅ Mostrar skeleton loader inmediatamente (no espera nada)
   const skeletonRows = Array(POR_PAGINA_CONSULTA).fill(0).map(() => `
     <tr class="skeleton-row">
       <td><div class="skeleton-bar" style="width: 30px;"></div></td>
@@ -401,17 +343,12 @@ async function cargarListaEquipos() {
       <td><div class="skeleton-bar" style="width: 80px;"></div></td>
       <td><div class="skeleton-bar" style="width: 90px;"></div></td>
       <td><div class="skeleton-bar" style="width: 70px;"></div></td>
-    </tr>
-  `).join('');
+    </tr>`).join('');
   tbody.innerHTML = skeletonRows;
-
   try {
-    // Leer filtros actuales
     filtrosActuales.estatus = document.getElementById('filtroEstatus')?.value || '';
     filtrosActuales.fechaInicio = document.getElementById('filtroFechaInicio')?.value || '';
     filtrosActuales.fechaFin = document.getElementById('filtroFechaFin')?.value || '';
-
-    // ✅ 1. Construir query base con filtros (reutilizable)
     const construirQuery = (soloConteo = false) => {
       let q = supabaseClient.from('equipos').select(soloConteo ? 'id' : '*', soloConteo ? { count: 'exact', head: true } : {});
       if (filtrosActuales.estatus) q = q.eq('estatus', filtrosActuales.estatus);
@@ -420,64 +357,41 @@ async function cargarListaEquipos() {
       if (!soloConteo) q = q.order('fecha_registro', { ascending: false });
       return q;
     };
-
-    // ✅ 2. Ejecutar CONTEO y DATOS en PARALELO (gran optimización)
     const desde = (paginaActualConsulta - 1) * POR_PAGINA_CONSULTA;
     const hasta = desde + POR_PAGINA_CONSULTA - 1;
-
-    const [conteoResult, datosResult] = await Promise.all([
-      construirQuery(true),
-      construirQuery(false).range(desde, hasta)
-    ]);
-
+    const [conteoResult, datosResult] = await Promise.all([construirQuery(true), construirQuery(false).range(desde, hasta)]);
     const { count, error: errorCount } = conteoResult;
     const { data: equipos, error } = datosResult;
-
     if (error) throw error;
-
     totalEquiposConsulta = count || 0;
     const contadorDiv = document.getElementById('contadorEquipos');
     if (contadorDiv) contadorDiv.textContent = `Total: ${totalEquiposConsulta} equipo(s)`;
-
     if (!equipos || equipos.length === 0) {
       tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: #6b7280;"><div style="font-size: 40px; margin-bottom: 10px;">📭</div><div>No se encontraron equipos</div></td></tr>`;
       renderizarPaginacionConsulta();
       return;
     }
-
-    // ✅ 3. PRIMERO mostrar la tabla SIN enriquecer (respuesta instantánea)
     renderizarTablaBasica(equipos);
-
-    // ✅ 4. Enriquecer SOLO los 20 equipos de esta página EN PARALELO
-    const equiposEnriquecidos = await Promise.all(
-      equipos.map(async (equipo) => {
-        try {
-          const { estatus, infoAdicional } = await determinarEstatus(equipo.codigo_barras);
-          return { ...equipo, estatus_real: estatus, info_adicional: infoAdicional };
-        } catch (err) {
-          return { ...equipo, estatus_real: equipo.estatus || 'operativo', info_adicional: null };
-        }
-      })
-    );
-
-    // ✅ 5. Actualizar la tabla con el estatus real (solo cambia la columna de estatus)
+    const equiposEnriquecidos = await Promise.all(equipos.map(async (equipo) => {
+      try {
+        const { estatus, infoAdicional } = await determinarEstatus(equipo.codigo_barras);
+        return { ...equipo, estatus_real: estatus, info_adicional: infoAdicional };
+      } catch (err) {
+        return { ...equipo, estatus_real: equipo.estatus || 'operativo', info_adicional: null };
+      }
+    }));
     actualizarEstatusEnTabla(equiposEnriquecidos);
     renderizarPaginacionConsulta();
-
   } catch (err) {
     console.error('Error al cargar equipos:', err);
     tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: #ef4444;">Error al cargar: ${err.message}</td></tr>`;
   }
 }
 
-// ==========================================
-// ✅ RENDERIZAR TABLA BÁSICA (sin estatus enriquecido - MUY RÁPIDO)
-// ==========================================
 function renderizarTablaBasica(equipos) {
   const tbody = document.getElementById('tbodyEquipos');
   if (!tbody) return;
   const desde = (paginaActualConsulta - 1) * POR_PAGINA_CONSULTA;
-
   tbody.innerHTML = equipos.map((equipo, index) => {
     const globalIndex = desde + index + 1;
     const fechaFormateada = equipo.fecha_registro ? new Date(equipo.fecha_registro).toLocaleDateString('es-ES') : '-';
@@ -493,49 +407,25 @@ function renderizarTablaBasica(equipos) {
         <td>${equipo.costo ? `$${parseFloat(equipo.costo).toFixed(2)}` : '$0.00'}</td>
         <td>${fechaFormateada}</td>
         <td id="celda-estatus-${equipo.id}"><span class="badge badge-${estatusBasico}">${estatusBasico.toUpperCase()}</span></td>
-      </tr>
-    `;
+      </tr>`;
   }).join('');
 }
 
-// ==========================================
-// ✅ ACTUALIZAR ESTATUS EN LA TABLA (solo cambia la celda)
-// ==========================================
 function actualizarEstatusEnTabla(equiposEnriquecidos) {
   equiposEnriquecidos.forEach(equipo => {
     const celda = document.getElementById(`celda-estatus-${equipo.id}`);
-    if (celda) {
-      celda.innerHTML = `<span class="badge badge-${equipo.estatus_real}">${equipo.estatus_real.toUpperCase()}</span>`;
-    }
+    if (celda) celda.innerHTML = `<span class="badge badge-${equipo.estatus_real}">${equipo.estatus_real.toUpperCase()}</span>`;
   });
 }
 
-// ==========================================
-// APLICAR FILTROS Y RENDERIZAR (ahora recarga desde BD)
-// ==========================================
-async function aplicarFiltrosYRenderizar() {
-  await cargarListaEquipos();
-}
+async function aplicarFiltrosYRenderizar() { await cargarListaEquipos(); }
+async function seleccionarEquipoLista(codigoBarras) { document.getElementById('buscarConsulta').value = codigoBarras; await buscarEquipoConsulta(); }
 
-// ==========================================
-// SELECCIONAR EQUIPO DE LA LISTA
-// ==========================================
-async function seleccionarEquipoLista(codigoBarras) {
-  document.getElementById('buscarConsulta').value = codigoBarras;
-  await buscarEquipoConsulta();
-}
-
-// ==========================================
-// PAGINACIÓN
-// ==========================================
 function renderizarPaginacionConsulta() {
   const cont = document.getElementById('paginacionConsulta');
   if (!cont) return;
   const totalPaginas = Math.ceil(totalEquiposConsulta / POR_PAGINA_CONSULTA);
-  if (totalPaginas <= 1) {
-    cont.innerHTML = `<span style="color: #6b7280; font-size: 13px;">Página 1 de 1</span>`;
-    return;
-  }
+  if (totalPaginas <= 1) { cont.innerHTML = `<span style="color: #6b7280; font-size: 13px;">Página 1 de 1</span>`; return; }
   let html = '';
   html += `<button type="button" onclick="cambiarPaginaConsulta(${paginaActualConsulta - 1})" style="padding: 8px 16px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;" ${paginaActualConsulta === 1 ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>‹ Anterior</button>`;
   html += `<span style="color: #374151; font-size: 13px; font-weight: 600;">Página ${paginaActualConsulta} de ${totalPaginas}</span>`;
@@ -548,13 +438,9 @@ async function cambiarPaginaConsulta(nuevaPagina) {
   if (nuevaPagina < 1 || nuevaPagina > totalPaginas) return;
   paginaActualConsulta = nuevaPagina;
   await cargarListaEquipos();
-  // Scroll al top de la tabla
   document.getElementById('tbodyEquipos')?.closest('.table-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// ==========================================
-// LIMPIAR FILTROS
-// ==========================================
 function limpiarFiltros() {
   const filtroEstatus = document.getElementById('filtroEstatus');
   const filtroFechaInicio = document.getElementById('filtroFechaInicio');
@@ -567,9 +453,6 @@ function limpiarFiltros() {
   mostrarToastConsulta('Filtros limpiados', 'exito');
 }
 
-// ==========================================
-// LIMPIAR CONSULTA
-// ==========================================
 function limpiarConsulta() {
   equipoSeleccionadoConsulta = null;
   document.getElementById('buscarConsulta').value = '';
@@ -579,38 +462,54 @@ function limpiarConsulta() {
   document.getElementById('buscarConsulta').focus();
 }
 
-async function probarImpresionQZ() {
+// ==========================================
+// ✅ IMPRIMIR STICKER CON QZ TRAY (CORREGIDO Y LISTO)
+// ==========================================
+async function imprimirStickerCodigo() {
+  if (!equipoSeleccionadoConsulta) {
+    mostrarToastConsulta('No hay equipo seleccionado', 'error');
+    return;
+  }
+  if (typeof qz === 'undefined') {
+    mostrarToastConsulta('❌ QZ Tray no está cargado en el HTML.', 'error');
+    return;
+  }
+  const equipo = equipoSeleccionadoConsulta;
   try {
     if (!qz.websocket.isActive()) {
       await qz.websocket.connect();
+      console.log('✅ Conectado a QZ Tray');
     }
+    const tempDiv = document.createElement('div');
+    tempDiv.style.display = 'none';
+    tempDiv.innerHTML = '<svg id="svgBarcodeTemporal"></svg>';
+    document.body.appendChild(tempDiv);
+    JsBarcode("#svgBarcodeTemporal", equipo.codigo_barras, {
+      format: "CODE128", width: 2, height: 80, displayValue: true, fontSize: 24, margin: 0, font: "Arial", fontOptions: "bold"
+    });
+    const svgData = new XMLSerializer().serializeToString(tempDiv.querySelector('svg'));
+    document.body.removeChild(tempDiv);
 
-    // 1. Obtener la lista real de impresoras que QZ Tray puede ver
-    const printers = await qz.printers.find();
-    console.log("🖨️ Impresoras detectadas por QZ Tray:", printers);
-    alert("Impresoras detectadas:\n" + printers.join("\n"));
+    // ⚠️ IMPORTANTE: Usa el nombre exacto de tu impresora en Windows. 
+    // Si en tu panel de control se llama diferente, cámbialo aquí abajo.
+    const config = qz.configs.create("POS-80 (copy 1)", {
+      width: 80, height: 40, units: "mm", dpi: 203, density: 14, margins: 0, gap: 3, cut: true
+    });
 
-    // 2. ⚠️ CAMBIA "POS-80" POR EL NOMBRE EXACTO QUE VISTE EN WINDOWS
-    // Si tu impresora se llama "POS-80 (Copy 1)", pon eso exactamente.
-    const nombreImpresora = "POS-80 (copy 1)"; 
+    const htmlContent = `
+      <div style="width: 80mm; height: 40mm; text-align: center; font-family: Arial; padding: 2mm; border: 1px solid black;">
+        <div style="font-size: 14px; font-weight: bold; margin-bottom: 2mm;">EVENTOS D' PRIMERA</div>
+        <div style="font-size: 12px; font-weight: bold; margin-bottom: 2mm;">${(equipo.nombre_equipo || 'EQUIPO').toUpperCase()}</div>
+        <div style="margin: 2mm 0;">${svgData}</div>
+        <div style="font-size: 11px; font-weight: bold;">${equipo.codigo_barras}</div>
+        <div style="font-size: 9px; margin-top: 1mm;">${equipo.marca || ''} ${equipo.modelo || ''} | S/N: ${equipo.serial || 'N/A'}</div>
+      </div>`;
 
-    const config = qz.configs.create(nombreImpresora);
-    
-    // 3. Enviar texto plano (es lo más seguro para probar)
-    const data = [
-      { 
-        type: 'raw', 
-        format: 'text', 
-        data: "HOLA MUNDO\nPRUEBA DE QZ TRAY\nCORTE DE PRUEBA\n\n\n" 
-      }
-    ];
-
+    const data = [{ type: 'html', data: htmlContent }]; // ✅ 'html' en minúsculas es la clave
     await qz.print(config, data);
-    console.log("✅ Datos enviados a la impresora:", nombreImpresora);
-    mostrarToastConsulta('✅ Prueba enviada. Revisa la impresora.', 'exito');
-
+    mostrarToastConsulta('✅ Sticker impreso correctamente', 'exito');
   } catch (err) {
-    console.error("❌ Error detallado:", err);
+    console.error('Error al imprimir:', err);
     mostrarToastConsulta('Error: ' + err.message, 'error');
   } finally {
     if (qz.websocket && qz.websocket.isActive()) {
@@ -618,6 +517,7 @@ async function probarImpresionQZ() {
     }
   }
 }
+
 // ==========================================
 // IMPRIMIR FICHA COMPLETA
 // ==========================================
@@ -637,8 +537,7 @@ function imprimirFichaCompleta() {
     <div style="display: inline-block; width: 48%; margin: 1%; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
       <img src="${fotoUrl}" style="width: 100%; height: 200px; object-fit: cover;">
       <div style="padding: 8px; text-align: center; font-size: 11px; color: #6b7280;">Foto ${i + 1}</div>
-    </div>
-  `).join('');
+    </div>`).join('');
   const infoAdicionalHTML = document.getElementById('infoAdicional').innerHTML;
   const ventana = window.open('', '_blank', 'width=900,height=1100');
   ventana.document.write(`<!DOCTYPE html>
@@ -702,14 +601,7 @@ body { font-family: 'Poppins', Arial, sans-serif; font-size: 12px; color: #333; 
 </div>
 </div>
 ${infoAdicionalHTML ? `<div class="info-box" style="margin-bottom: 20px;">${infoAdicionalHTML}</div>` : ''}
-${fotosHTML ? `
-<div class="fotos-section">
-<h3>📸 Fotos del Equipo</h3>
-<div style="display: flex; flex-wrap: wrap;">
-${fotosHTML}
-</div>
-</div>
-` : ''}
+${fotosHTML ? `<div class="fotos-section"><h3>📸 Fotos del Equipo</h3><div style="display: flex; flex-wrap: wrap;">${fotosHTML}</div></div>` : ''}
 <div class="footer">
 <p>©copyright Eventos de Primera | 2026-2027 | Ficha generada el ${new Date().toLocaleString('es-ES')}</p>
 </div>
