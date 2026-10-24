@@ -579,9 +579,6 @@ function limpiarConsulta() {
   document.getElementById('buscarConsulta').focus();
 }
 
-// ==========================================
-// IMPRIMIR STICKER (VERSIÓN FINAL - USA LO QUE EL DRIVER QUIERE)
-// ==========================================
 function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
     mostrarToastConsulta('No hay equipo seleccionado', 'error');
@@ -661,23 +658,16 @@ function imprimirStickerCodigo() {
 <head>
   <title>Sticker</title>
   <style>
-    /* USAMOS EXACTAMENTE LO QUE EL DRIVER TIENE CONFIGURADO */
+    /* ESTO LE DICE AL NAVEGADOR QUE USE 80mm x 40mm */
     @page { 
-      size: 80mm 297mm; 
+      size: 80mm 40mm; 
       margin: 0;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
       width: 80mm; 
-      height: 297mm; 
+      height: 40mm; 
       background: white;
-    }
-    /* Sticker pegado arriba sin márgenes */
-    .sticker-container {
-      width: 80mm;
-      height: 40mm;
-      margin: 0;
-      padding: 0;
     }
     img { 
       width: 80mm; 
@@ -690,11 +680,9 @@ function imprimirStickerCodigo() {
   </style>
 </head>
 <body>
-  <div class="sticker-container">
-    <img src="${imageData}" alt="Sticker">
-  </div>
+  <img src="${imageData}" alt="Sticker">
   <div class="no-print" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-    <button onclick="window.print()" style="padding: 10px 20px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">🖨️ IMPRIMIR</button>
+    <button onclick="window.print()" style="padding: 10px 20px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">️ IMPRIMIR</button>
     <button onclick="window.close()" style="padding: 10px 20px; background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">CANCELAR</button>
   </div>
 </body>
