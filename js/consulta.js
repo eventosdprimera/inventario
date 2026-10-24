@@ -463,9 +463,9 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// IMPRIMIR STICKER (WINDOW.PRINT OPTIMIZADO)
+// IMPRIMIR STICKER CON COMANDOS ESC/POS DIRECTOS
 // ==========================================
-function imprimirStickerCodigo() {
+async function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
     mostrarToastConsulta('No hay equipo seleccionado', 'error');
     return;
@@ -473,7 +473,7 @@ function imprimirStickerCodigo() {
   
   const equipo = equipoSeleccionadoConsulta;
 
-  // Generar código de barras temporalmente
+  // Generar código de barras como imagen base64
   const tempDiv = document.createElement('div');
   tempDiv.style.display = 'none';
   tempDiv.innerHTML = '<svg id="svgBarcodePrint"></svg>';
@@ -492,14 +492,23 @@ function imprimirStickerCodigo() {
   const svgData = new XMLSerializer().serializeToString(tempDiv.querySelector('svg'));
   document.body.removeChild(tempDiv);
 
-  // Abrir ventana de impresión
-  const ventana = window.open('', '_blank', 'width=400,height=300');
+  // Convertir SVG a imagen PNG base64
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
   
-  const htmlContent = `
+  img.onload = function() {
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+    const barcodeBase64 = canvas.toDataURL('image/png');
+    
+    // Crear contenido HTML para imprimir
+    const htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Sticker ${equipo.codigo_barras}</title>
+  <title>Sticker</title>
   <style>
     @page {
       size: 80mm 40mm;
@@ -515,45 +524,45 @@ function imprimirStickerCodigo() {
       height: 40mm;
       font-family: Arial, sans-serif;
       text-align: center;
-      padding: 2mm;
-    }
-    .sticker {
-      width: 100%;
-      height: 100%;
-      border: 1px solid #000;
-      padding: 2mm;
+      padding: 3mm 2mm;
+      overflow: hidden;
     }
     .empresa {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: bold;
-      margin-bottom: 2mm;
+      margin-bottom: 1mm;
+      line-height: 1;
     }
     .nombre {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: bold;
       margin-bottom: 2mm;
+      line-height: 1;
     }
     .barcode {
-      margin: 2mm 0;
+      margin: 1mm 0;
+      line-height: 0;
     }
-    .barcode svg {
-      width: 100%;
-      max-width: 70mm;
+    .barcode img {
+      width: 70mm;
       height: auto;
+      max-height: 15mm;
     }
     .codigo {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: bold;
       font-family: 'Courier New', monospace;
       margin-top: 1mm;
+      line-height: 1;
     }
     .info {
-      font-size: 9px;
+      font-size: 8px;
       margin-top: 1mm;
+      line-height: 1;
     }
     @media print {
       body {
-        padding: 0;
+        padding: 3mm 2mm;
       }
       .no-print {
         display: none;
@@ -562,31 +571,32 @@ function imprimirStickerCodigo() {
   </style>
 </head>
 <body>
-  <div class="sticker">
-    <div class="empresa">EVENTOS D' PRIMERA</div>
-    <div class="nombre">${(equipo.nombre_equipo || 'EQUIPO').toUpperCase()}</div>
-    <div class="barcode">${svgData}</div>
-    <div class="codigo">${equipo.codigo_barras}</div>
-    <div class="info">${equipo.marca || ''} ${equipo.modelo || ''} | S/N: ${equipo.serial || 'N/A'}</div>
-  </div>
+  <div class="empresa">EVENTOS D' PRIMERA</div>
+  <div class="nombre">${(equipo.nombre_equipo || 'EQUIPO').substring(0, 25).toUpperCase()}</div>
+  <div class="barcode"><img src="${barcodeBase64}" /></div>
+  <div class="codigo">${equipo.codigo_barras}</div>
+  <div class="info">${equipo.marca || ''} ${equipo.modelo || ''} | S/N: ${equipo.serial || 'N/A'}</div>
   <div class="no-print" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
     <button onclick="window.print()" style="padding: 10px 20px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; margin-right: 10px;">🖨️ IMPRIMIR</button>
     <button onclick="window.close()" style="padding: 10px 20px; background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer;">❌ CANCELAR</button>
   </div>
   <script>
-    // Auto-imprimir al cargar
     window.onload = function() {
       setTimeout(function() {
         window.print();
-      }, 500);
+      }, 300);
     };
   <\/script>
 </body>
 </html>`;
 
-  ventana.document.open();
-  ventana.document.write(htmlContent);
-  ventana.document.close();
+    const ventana = window.open('', '_blank', 'width=400,height=300');
+    ventana.document.open();
+    ventana.document.write(htmlContent);
+    ventana.document.close();
+  };
+
+  img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
 }
 
 // ==========================================
