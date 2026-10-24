@@ -652,6 +652,7 @@ function imprimirStickerCodigo() {
       return;
     }
 
+    // ✅ ROTAR 90 GRADOS PARA COMPENSAR LA ORIENTACIÓN DE LA IMPRESORA
     const htmlSticker = `
 <!DOCTYPE html>
 <html>
@@ -659,14 +660,23 @@ function imprimirStickerCodigo() {
   <title>Sticker</title>
   <style>
     @page { 
-      size: 80mm 297mm; 
+      size: 40mm 80mm; 
       margin: 0;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
-      width: 80mm; 
-      height: 297mm; 
+      width: 40mm; 
+      height: 80mm; 
       background: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .sticker-rotated {
+      width: 80mm;
+      height: 40mm;
+      transform: rotate(90deg);
+      transform-origin: center;
     }
     img { 
       width: 80mm; 
@@ -679,7 +689,9 @@ function imprimirStickerCodigo() {
   </style>
 </head>
 <body>
-  <img src="${imageData}" alt="Sticker">
+  <div class="sticker-rotated">
+    <img src="${imageData}" alt="Sticker">
+  </div>
   <div class="no-print" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
     <button onclick="window.print()" style="padding: 10px 20px; background: #1e3a8a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">🖨️ IMPRIMIR</button>
     <button onclick="window.close()" style="padding: 10px 20px; background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">CANCELAR</button>
