@@ -592,7 +592,7 @@ async function probarImpresionQZ() {
 
     // 2. ⚠️ CAMBIA "POS-80" POR EL NOMBRE EXACTO QUE VISTE EN WINDOWS
     // Si tu impresora se llama "POS-80 (Copy 1)", pon eso exactamente.
-    const nombreImpresora = "POS-80 (Copy 1)"; 
+    const nombreImpresora = "POS-80 (copy 1)"; 
 
     const config = qz.configs.create(nombreImpresora);
     
