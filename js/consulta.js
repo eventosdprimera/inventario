@@ -463,7 +463,7 @@ function limpiarConsulta() {
 }
 
 // ==========================================
-// ✅ IMPRIMIR STICKER CON QZ TRAY (CORREGIDO Y LISTO)
+// IMPRIMIR STICKER CON QZ TRAY (VERSIÓN RAW)
 // ==========================================
 async function imprimirStickerCodigo() {
   if (!equipoSeleccionadoConsulta) {
@@ -471,45 +471,90 @@ async function imprimirStickerCodigo() {
     return;
   }
   if (typeof qz === 'undefined') {
-    mostrarToastConsulta('❌ QZ Tray no está cargado en el HTML.', 'error');
+    mostrarToastConsulta('❌ QZ Tray no está cargado.', 'error');
     return;
   }
+  
   const equipo = equipoSeleccionadoConsulta;
+  
   try {
     if (!qz.websocket.isActive()) {
       await qz.websocket.connect();
-      console.log('✅ Conectado a QZ Tray');
     }
+
+    // Generar código de barras
     const tempDiv = document.createElement('div');
     tempDiv.style.display = 'none';
-    tempDiv.innerHTML = '<svg id="svgBarcodeTemporal"></svg>';
+    tempDiv.innerHTML = '<svg id="svgBarcode"></svg>';
     document.body.appendChild(tempDiv);
-    JsBarcode("#svgBarcodeTemporal", equipo.codigo_barras, {
-      format: "CODE128", width: 2, height: 80, displayValue: true, fontSize: 24, margin: 0, font: "Arial", fontOptions: "bold"
+
+    JsBarcode("#svgBarcode", equipo.codigo_barras, {
+      format: "CODE128", 
+      width: 2, 
+      height: 80, 
+      displayValue: true,
+      fontSize: 20, 
+      margin: 0, 
+      font: "Arial"
     });
+
     const svgData = new XMLSerializer().serializeToString(tempDiv.querySelector('svg'));
     document.body.removeChild(tempDiv);
 
-    // ⚠️ IMPORTANTE: Usa el nombre exacto de tu impresora en Windows. 
-    // Si en tu panel de control se llama diferente, cámbialo aquí abajo.
+    // Crear HTML completo del sticker
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          @page { size: 80mm 40mm; margin: 0; }
+          body { 
+            width: 80mm; 
+            height: 40mm; 
+            margin: 0; 
+            padding: 2mm; 
+            font-family: Arial, sans-serif; 
+            text-align: center;
+            box-sizing: border-box;
+          }
+          .empresa { font-size: 14px; font-weight: bold; margin-bottom: 2mm; }
+          .nombre { font-size: 12px; font-weight: bold; margin-bottom: 2mm; }
+          .barcode { margin: 2mm 0; }
+          .codigo { font-size: 11px; font-weight: bold; margin-top: 1mm; }
+          .info { font-size: 9px; margin-top: 1mm; }
+        </style>
+      </head>
+      <body>
+        <div class="empresa">EVENTOS D' PRIMERA</div>
+        <div class="nombre">${(equipo.nombre_equipo || 'EQUIPO').toUpperCase()}</div>
+        <div class="barcode">${svgData}</div>
+        <div class="codigo">${equipo.codigo_barras}</div>
+        <div class="info">${equipo.marca || ''} ${equipo.modelo || ''} | S/N: ${equipo.serial || 'N/A'}</div>
+      </body>
+      </html>
+    `;
+
+    // Configurar impresora
     const config = qz.configs.create("POS-80 (copy 1)", {
-      width: 80, height: 40, units: "mm", dpi: 203, density: 14, margins: 0, gap: 3, cut: true
+      width: 80,
+      height: 40,
+      units: "mm",
+      dpi: 203,
+      density: 14,
+      margins: 0,
+      gap: 3,
+      cut: true
     });
 
-    const htmlContent = `
-      <div style="width: 80mm; height: 40mm; text-align: center; font-family: Arial; padding: 2mm; border: 1px solid black;">
-        <div style="font-size: 14px; font-weight: bold; margin-bottom: 2mm;">EVENTOS D' PRIMERA</div>
-        <div style="font-size: 12px; font-weight: bold; margin-bottom: 2mm;">${(equipo.nombre_equipo || 'EQUIPO').toUpperCase()}</div>
-        <div style="margin: 2mm 0;">${svgData}</div>
-        <div style="font-size: 11px; font-weight: bold;">${equipo.codigo_barras}</div>
-        <div style="font-size: 9px; margin-top: 1mm;">${equipo.marca || ''} ${equipo.modelo || ''} | S/N: ${equipo.serial || 'N/A'}</div>
-      </div>`;
-
-    const data = [{ type: 'html', data: htmlContent }]; // ✅ 'html' en minúsculas es la clave
+    // ✅ ENVIAR COMO HTML COMPLETO CON DOCTYPE
+    const data = [{ type: 'html', data: htmlContent }];
+    
     await qz.print(config, data);
-    mostrarToastConsulta('✅ Sticker impreso correctamente', 'exito');
+    mostrarToastConsulta('✅ Sticker impreso', 'exito');
+
   } catch (err) {
-    console.error('Error al imprimir:', err);
+    console.error('Error:', err);
     mostrarToastConsulta('Error: ' + err.message, 'error');
   } finally {
     if (qz.websocket && qz.websocket.isActive()) {
