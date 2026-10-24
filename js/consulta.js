@@ -63,7 +63,7 @@ function inyectarEstilosConsulta() {
 // ==========================================
 // CARGAR FOTOS
 // ==========================================
-async function cargarFotosConsulta(equipo) {
+cargarFotosConsulta(equipo) {
   const contenedor = document.getElementById('consultaFotos');
   contenedor.innerHTML = '';
   contenedor.className = 'fotos-grid-consulta';
@@ -579,85 +579,40 @@ function limpiarConsulta() {
   document.getElementById('buscarConsulta').focus();
 }
 
-// ==========================================
-// IMPRIMIR STICKER CON QZ TRAY (CORREGIDO)
-// ==========================================
-async function imprimirStickerCodigo() {
-  if (!equipoSeleccionadoConsulta) {
-    mostrarToastConsulta('No hay equipo seleccionado', 'error');
-    return;
-  }
-
-  if (typeof qz === 'undefined') {
-    mostrarToastConsulta('❌ QZ Tray no está cargado en el HTML.', 'error');
-    return;
-  }
-
-  const equipo = equipoSeleccionadoConsulta;
-
+async function probarImpresionQZ() {
   try {
-    // 1. Conectar a QZ Tray
     if (!qz.websocket.isActive()) {
       await qz.websocket.connect();
-      console.log('✅ Conectado a QZ Tray');
     }
 
-    // 2. Generar código de barras como SVG
-    const tempDiv = document.createElement('div');
-    tempDiv.style.display = 'none';
-    tempDiv.innerHTML = '<svg id="svgBarcodeTemporal"></svg>';
-    document.body.appendChild(tempDiv);
+    // 1. Obtener la lista real de impresoras que QZ Tray puede ver
+    const printers = await qz.printers.find();
+    console.log("🖨️ Impresoras detectadas por QZ Tray:", printers);
+    alert("Impresoras detectadas:\n" + printers.join("\n"));
 
-    JsBarcode("#svgBarcodeTemporal", equipo.codigo_barras, {
-      format: "CODE128", 
-      width: 2, 
-      height: 80, 
-      displayValue: true,
-      fontSize: 24, 
-      margin: 0, 
-      font: "Arial", 
-      fontOptions: "bold"
-    });
+    // 2. ⚠️ CAMBIA "POS-80" POR EL NOMBRE EXACTO QUE VISTE EN WINDOWS
+    // Si tu impresora se llama "POS-80 (Copy 1)", pon eso exactamente.
+    const nombreImpresora = "POS-80 (Copy 1)"; 
 
-    const svgData = new XMLSerializer().serializeToString(tempDiv.querySelector('svg'));
-    document.body.removeChild(tempDiv);
-
-    // 3. Configurar impresora (80mm x 40mm con gap y corte)
-    const config = qz.configs.create("POS-80", {
-      name: "POS-80",
-      width: 80,
-      height: 40,
-      units: "mm",
-      dpi: 203,
-      density: 14,
-      margins: 0,
-      gap: 3,       // Detecta el espacio de 3mm entre etiquetas
-      cut: true     // Activa el corte automático
-    });
-
-    // 4. Contenido HTML del sticker
-    const htmlContent = `
-      <div style="width: 80mm; height: 40mm; text-align: center; font-family: Arial; padding: 2mm; border: 1px solid black;">
-        <div style="font-size: 14px; font-weight: bold; margin-bottom: 2mm;">EVENTOS D' PRIMERA</div>
-        <div style="font-size: 12px; font-weight: bold; margin-bottom: 2mm;">${(equipo.nombre_equipo || 'EQUIPO').toUpperCase()}</div>
-        <div style="margin: 2mm 0;">${svgData}</div>
-        <div style="font-size: 11px; font-weight: bold;">${equipo.codigo_barras}</div>
-        <div style="font-size: 9px; margin-top: 1mm;">${equipo.marca || ''} ${equipo.modelo || ''} | S/N: ${equipo.serial || 'N/A'}</div>
-      </div>
-    `;
-
-    // ✅ CORRECCIÓN CLAVE: Usar 'html' en lugar de 'qz.html'
-    const data = [{ type: 'html', data: htmlContent }];
+    const config = qz.configs.create(nombreImpresora);
     
-    // 5. Enviar a imprimir
+    // 3. Enviar texto plano (es lo más seguro para probar)
+    const data = [
+      { 
+        type: 'raw', 
+        format: 'text', 
+        data: "HOLA MUNDO\nPRUEBA DE QZ TRAY\nCORTE DE PRUEBA\n\n\n" 
+      }
+    ];
+
     await qz.print(config, data);
-    mostrarToastConsulta('✅ Sticker impreso correctamente', 'exito');
+    console.log("✅ Datos enviados a la impresora:", nombreImpresora);
+    mostrarToastConsulta('✅ Prueba enviada. Revisa la impresora.', 'exito');
 
   } catch (err) {
-    console.error('Error al imprimir:', err);
+    console.error("❌ Error detallado:", err);
     mostrarToastConsulta('Error: ' + err.message, 'error');
   } finally {
-    // Desconectar QZ Tray
     if (qz.websocket && qz.websocket.isActive()) {
       await qz.websocket.disconnect();
     }
