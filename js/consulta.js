@@ -658,15 +658,14 @@ function imprimirStickerCodigo() {
 <head>
   <title>Sticker</title>
   <style>
-    /* ✅ TAMAÑO EXACTO DE LA ETIQUETA: 80mm x 40mm */
     @page { 
-      size: 80mm 40mm; 
+      size: 80mm 297mm; 
       margin: 0;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
       width: 80mm; 
-      height: 40mm; 
+      height: 297mm; 
       background: white;
     }
     img { 
