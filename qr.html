@@ -31,7 +31,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1; /* Asegura que esté detrás de todo */
+            z-index: -1;
             pointer-events: none;
             overflow: hidden;
         }
@@ -58,7 +58,7 @@
             width: 600px;
             max-width: 80vw;
             opacity: 0.08;
-            z-index: -1; /* Asegura que esté detrás del contenido principal */
+            z-index: -1;
             pointer-events: none;
         }
 
@@ -71,7 +71,7 @@
             width: 100%;
             max-width: 800px;
             position: relative;
-            z-index: 1; /* Asegura que esté por encima del fondo */
+            z-index: 1;
             border-top: 5px solid #1e3a8a;
             backdrop-filter: blur(10px);
             margin: 40px auto;
@@ -84,7 +84,7 @@
         }
 
         .logo {
-            max-width: 250px;
+            max-width: 300px;
             height: auto;
             margin-bottom: 20px;
             display: block;
@@ -344,31 +344,136 @@
             margin-bottom: 4px;
         }
 
-        /* === RESPONSIVE === */
+        /* === RESPONSIVE - MÓVILES === */
         @media (max-width: 768px) {
             .main-container {
-                margin: 20px 15px;
+                margin: 20px 10px;
                 padding: 30px 20px;
+                border-radius: 15px;
             }
             
+            /* Logo más grande en móvil */
+            .logo {
+                max-width: 220px;
+            }
+            
+            /* Títulos más pequeños */
+            .titulo-sistema {
+                font-size: 24px;
+            }
+            
+            .subtitulo-sistema {
+                font-size: 13px;
+            }
+            
+            .section-title {
+                font-size: 20px;
+                margin-bottom: 20px;
+            }
+            
+            /* Teléfonos en una columna */
             .phones-grid {
                 grid-template-columns: 1fr;
+                gap: 15px;
             }
-
+            
+            .phone-card {
+                padding: 20px 15px;
+                flex-direction: row;
+                justify-content: center;
+                gap: 15px;
+            }
+            
+            .phone-card i {
+                width: 45px;
+                height: 45px;
+                font-size: 20px;
+            }
+            
+            .phone-card .number {
+                font-size: 16px;
+            }
+            
+            .phone-card .label {
+                font-size: 12px;
+            }
+            
+            /* Servicios en una columna */
             .services-list {
                 grid-template-columns: 1fr;
+                gap: 8px 0;
             }
-
-            .titulo-sistema {
-                font-size: 26px;
+            
+            .about-section {
+                padding: 25px 20px;
             }
-
+            
+            .about-section h4 {
+                font-size: 18px;
+                margin: 25px 0 12px 0;
+            }
+            
+            /* Redes sociales - botones un poco más pequeños */
+            .social-section {
+                padding: 25px 20px;
+            }
+            
+            .social-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 1.4rem;
+            }
+            
+            /* Mapa más pequeño */
+            .map-container {
+                height: 250px;
+            }
+            
+            /* Marca de agua más pequeña */
             .watermark-logo {
-                width: 300px;
+                width: 250px;
+            }
+        }
+        
+        /* === MÓVILES PEQUEÑOS === */
+        @media (max-width: 480px) {
+            .main-container {
+                padding: 25px 15px;
+                margin: 15px 8px;
+            }
+            
+            .logo {
+                max-width: 180px;
+            }
+            
+            .titulo-sistema {
+                font-size: 22px;
+            }
+            
+            .section-title {
+                font-size: 18px;
+            }
+            
+            .social-btn {
+                width: 55px;
+                height: 55px;
+                font-size: 1.3rem;
+            }
+            
+            .phone-card {
+                padding: 18px 12px;
+            }
+            
+            .phone-card .number {
+                font-size: 15px;
             }
             
             .map-container {
-                height: 300px;
+                height: 220px;
+            }
+            
+            .watermark-logo {
+                width: 200px;
             }
         }
     </style>
@@ -517,5 +622,4 @@
         });
     </script>
 </body>
-    <!-- Version 2.0 - Fix Vercel paths -->
 </html>
