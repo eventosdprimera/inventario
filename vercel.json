@@ -1,23 +1,17 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "*.html",
-      "use": "@vercel/static"
-    }
-  ],
+  "buildCommand": null,
+  "outputDirectory": ".",
+  "devCommand": null,
+  "installCommand": null,
   "routes": [
     {
-      "src": "/qr",
-      "dest": "/qr.html"
-    },
-    {
-      "src": "/qr.html",
-      "dest": "/qr.html"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/$1"
+      "dest": "/$1",
+      "headers": {
+        "Access-Control-Allow-Origin": "*"
+      }
     }
-  ]
+  ],
+  "public": true
 }
